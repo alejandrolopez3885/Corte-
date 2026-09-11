@@ -76,7 +76,6 @@ export async function createStaffAccount(options: {
     role: "staff",
     display_name: displayName.trim(),
     owner_id: ownerId,
-    assigned_date: null,
   });
   if (profileError) throw profileError;
 

@@ -65,6 +65,12 @@ export function locateDate(dateStr: string): DateLocation {
   return { monthKey, weekIndex, dayName };
 }
 
+export function formatAssignedDate(dateStr: string): string {
+  const date = new Date(`${dateStr}T00:00:00`);
+  const label = date.toLocaleDateString("es-MX", { weekday: "long", day: "numeric", month: "long" });
+  return label.charAt(0).toUpperCase() + label.slice(1);
+}
+
 export function computeWeekGastos(week: WeekData) {
   let totalMonto = 0, totalIngresado = 0, totalPendiente = 0, countIngresado = 0, countPendiente = 0;
   const perDay = DAYS.map((d) => {

@@ -5,7 +5,8 @@ import {
 } from "lucide-react";
 import { useAuth } from "../lib/auth.tsx";
 import { useAppData } from "../lib/useAppData";
-import { buildMonth, locateDate, money, round2, sumFromText, uid } from "../lib/dataModel";
+import { buildMonth, formatAssignedDate, locateDate, money, round2, sumFromText, uid } from "../lib/dataModel";
+import { useStaffAssignments } from "../lib/staffAssignments";
 import { DAYS, DAY_SHORT } from "../lib/types";
 import type { DayData, DayName, Gasto, MeseroCatalogEntry, MeseroCut, Profile, Transferencia, WeekData } from "../lib/types";
 import { Empty } from "../components/ui";
@@ -41,9 +42,11 @@ export default function CortesApp({ profile }: { profile: Profile }) {
   const [activeWeek, setActiveWeek] = useState(0);
   const [activeDay, setActiveDay] = useState<DayName>("Lunes");
   const [modal, setModal] = useState<ModalState>(null);
+  const [selectedAssignedDate, setSelectedAssignedDate] = useState<string | null>(null);
 
   const ownerInitialized = useRef(false);
-  const staffLastAssigned = useRef<string | null | undefined>(undefined);
+  const locatedForDate = useRef<string | null>(null);
+  const { assignments, status: assignmentsStatus } = useStaffAssignments(isOwner ? null : profile.id);
 
   // Dueño: al cargar, ubica el mes más reciente.
   useEffect(() => {
@@ -54,13 +57,12 @@ export default function CortesApp({ profile }: { profile: Profile }) {
     ownerInitialized.current = true;
   }, [data, isOwner]);
 
-  // Staff: se ubica automáticamente en el día que le asignó el dueño.
+  // Staff: cuando elige un día de su lista, lo ubica en mes/semana/día.
   useEffect(() => {
-    if (!data || isOwner) return;
-    if (staffLastAssigned.current === profile.assigned_date) return;
-    staffLastAssigned.current = profile.assigned_date;
-    if (!profile.assigned_date) return;
-    const loc = locateDate(profile.assigned_date);
+    if (!data || isOwner || !selectedAssignedDate) return;
+    if (locatedForDate.current === selectedAssignedDate) return;
+    locatedForDate.current = selectedAssignedDate;
+    const loc = locateDate(selectedAssignedDate);
     setActiveMonth(loc.monthKey);
     setActiveWeek(loc.weekIndex);
     setActiveDay(loc.dayName);
@@ -69,7 +71,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
       next.months[loc.monthKey] = buildMonth(loc.monthKey);
       persist(next);
     }
-  }, [data, isOwner, profile.assigned_date, persist]);
+  }, [data, isOwner, selectedAssignedDate, persist]);
 
   if (status === "loading" || !data) {
     return (
@@ -87,20 +89,81 @@ export default function CortesApp({ profile }: { profile: Profile }) {
     );
   }
 
-  if (!isOwner && !profile.assigned_date) {
-    return (
-      <div className="app-shell">
-        <header className="topbar">
-          <div className="brand">
-            <span className="brand-mark">Cortes</span>
+  if (!isOwner) {
+    if (assignmentsStatus === "loading" || assignments === null) {
+      return (
+        <div className="app-shell">
+          <div className="loading">Cargando tus días asignados…</div>
+        </div>
+      );
+    }
+    if (assignmentsStatus === "error") {
+      return (
+        <div className="app-shell">
+          <div className="full-page-msg">No se pudieron cargar tus días asignados. Intenta recargar la página.</div>
+        </div>
+      );
+    }
+    if (assignments.length === 0) {
+      return (
+        <div className="app-shell">
+          <header className="topbar">
+            <div className="brand">
+              <span className="brand-mark">Cortes</span>
+            </div>
+            <button className="icon-btn" onClick={signOut} aria-label="Cerrar sesión">
+              <LogOut size={18} />
+            </button>
+          </header>
+          <div className="full-page-msg">No tienes días asignados para hacer corte. Pide al encargado que te asigne uno.</div>
+        </div>
+      );
+    }
+    const stillValid = selectedAssignedDate && assignments.some((a) => a.assigned_date === selectedAssignedDate);
+    if (selectedAssignedDate && !stillValid) {
+      return (
+        <div className="app-shell">
+          <header className="topbar">
+            <div className="brand">
+              <span className="brand-mark">Cortes</span>
+            </div>
+            <button className="icon-btn" onClick={signOut} aria-label="Cerrar sesión">
+              <LogOut size={18} />
+            </button>
+          </header>
+          <div className="full-page-msg">Ya no tienes acceso a este día. Si fue un error, pide al encargado que te lo asigne de nuevo.</div>
+          <div style={{ padding: "0 20px" }}>
+            <button className="btn-primary" onClick={() => setSelectedAssignedDate(null)}>
+              Ver mis días asignados
+            </button>
           </div>
-          <button className="icon-btn" onClick={signOut} aria-label="Cerrar sesión">
-            <LogOut size={18} />
-          </button>
-        </header>
-        <div className="full-page-msg">Aún no tienes un día asignado. Pide al encargado que te asigne uno.</div>
-      </div>
-    );
+        </div>
+      );
+    }
+    if (!selectedAssignedDate) {
+      return (
+        <div className="app-shell">
+          <header className="topbar">
+            <div className="brand">
+              <span className="brand-mark">Cortes</span>
+            </div>
+            <button className="icon-btn" onClick={signOut} aria-label="Cerrar sesión">
+              <LogOut size={18} />
+            </button>
+          </header>
+          <div style={{ padding: "8px 20px" }}>
+            <p className="hint">Toca el día que vas a capturar:</p>
+            <div className="staff-name-grid">
+              {assignments.map((a) => (
+                <button key={a.id} className="staff-name-btn" onClick={() => setSelectedAssignedDate(a.assigned_date)}>
+                  {formatAssignedDate(a.assigned_date)}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      );
+    }
   }
 
   const monthKeys = Object.keys(data.months).sort();
@@ -307,7 +370,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
         <div className="brand">
           <span className="brand-mark">Cortes</span>
           {month && <span className="brand-month">{month.label}</span>}
-          {!isOwner && <span className="brand-role">Acceso de un día</span>}
+          {!isOwner && <span className="brand-role">Acceso por día asignado</span>}
         </div>
         <div className="topbar-actions">
           {saveState === "error" && <span className="save-badge error">No se guardó</span>}
@@ -392,7 +455,12 @@ export default function CortesApp({ profile }: { profile: Profile }) {
             </div>
           ) : (
             <div className="staff-banner">
-              Capturando el corte de {activeDay} · {profile.assigned_date}
+              <span>Capturando el corte de {selectedAssignedDate && formatAssignedDate(selectedAssignedDate)}</span>
+              {assignments && assignments.length > 1 && (
+                <button className="link-btn" onClick={() => setSelectedAssignedDate(null)}>
+                  Cambiar día
+                </button>
+              )}
             </div>
           )}
 

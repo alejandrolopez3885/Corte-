@@ -12,21 +12,26 @@ Hay 2 tipos de cuenta:
 
 - **Dueño (`owner`)**: acceso completo — todos los meses, semanas y días,
   catálogo de meseros, resúmenes. Inicia sesión con correo y contraseña.
-- **Staff (`staff`)**: solo puede capturar el corte del **día que el dueño le
-  asigne** (por fecha, desde el ícono de calendario en la barra superior).
-  El dueño da de alta a esta persona **desde la misma app** (nombre + PIN de
-  4 dígitos, sin correo) — no hace falta crearla en el dashboard de Supabase.
-  Esa persona entra desde "Soy del equipo, tengo un PIN" en la pantalla de
-  inicio, elige su nombre y teclea su PIN.
+- **Staff (`staff`)**: solo puede capturar el corte de **los días que el
+  dueño le asigne** (una o varias fechas, desde el ícono de calendario en la
+  barra superior). El dueño da de alta a esta persona **desde la misma app**
+  (nombre + PIN de 4 dígitos, sin correo) — no hace falta crearla en el
+  dashboard de Supabase. Esa persona entra desde "Soy del equipo, tengo un
+  PIN" en la pantalla de inicio, elige su nombre y teclea su PIN; si tiene
+  varios días asignados, primero elige cuál va a capturar.
 
   Por debajo sigue siendo una cuenta real de Supabase Auth (con un correo
   técnico invisible tipo `xxxx@cortes.local` y el PIN como contraseña), así
-  que reutiliza toda la seguridad y sesiones ya construidas. La restricción a
-  un solo día vive en la interfaz, no en la base de datos: a nivel de base de
-  datos el staff puede leer y escribir el mismo registro que el dueño. Si en
-  el futuro necesitas que esa restricción sea también a nivel de base de
-  datos, hay que pasar a tablas relacionales por día — puedes pedírmelo
-  cuando quieras.
+  que reutiliza toda la seguridad y sesiones ya construidas. Las fechas
+  asignadas sí viven en su propia tabla con permisos (RLS): el staff solo
+  puede leer sus propias fechas, y solo el dueño puede asignarlas o
+  quitarlas. Al quitar una fecha, esa persona pierde acceso a ese día de
+  inmediato — la app revisa sus fechas asignadas cada ~20 segundos mientras
+  está abierta, así que no necesita cerrar sesión ni recargar para que la
+  revocación tome efecto. Lo que sigue viviendo solo en la interfaz es el
+  acceso al resto del negocio (catálogo, otros meses/semanas): a nivel de
+  base de datos el staff puede leer y escribir el mismo registro `app_data`
+  que el dueño.
 
 ## 1. Crear el proyecto en Supabase
 
@@ -38,14 +43,17 @@ Hay 2 tipos de cuenta:
 3. Corre también [`supabase/migration_002_staff_pin.sql`](./supabase/migration_002_staff_pin.sql)
    de la misma forma (New query → pegar → Run). Esto crea la tabla que
    permite dar de alta a tu equipo con PIN desde la app.
-4. Ve a **Authentication → Sign In / Providers → Email** y **apaga "Confirm
+4. Corre también [`supabase/migration_003_staff_assignments.sql`](./supabase/migration_003_staff_assignments.sql).
+   Esto crea la tabla de fechas asignadas (varias por persona) y quita el
+   campo viejo de una sola fecha.
+5. Ve a **Authentication → Sign In / Providers → Email** y **apaga "Confirm
    email"**. Es obligatorio: las cuentas del equipo usan un correo técnico
    que no es real, así que nunca podrían confirmarse por correo.
-5. Ve a **Authentication → Users → Add user** y crea **un solo usuario para
+6. Ve a **Authentication → Users → Add user** y crea **un solo usuario para
    ti** (el dueño), con tu correo y una contraseña. Copia su **User UID** (lo
    verás en la lista de usuarios). A tu compañero **no** lo crees aquí — eso
    se hace desde la app en el paso 4 más abajo.
-6. Vuelve a **SQL Editor** y da de alta tu perfil de dueño, reemplazando el
+7. Vuelve a **SQL Editor** y da de alta tu perfil de dueño, reemplazando el
    UUID por el que copiaste:
 
    ```sql
@@ -53,7 +61,7 @@ Hay 2 tipos de cuenta:
      values ('UUID-DEL-DUEÑO', 'owner', 'Tu nombre');
    ```
 
-7. Ve a **Project Settings → API** y copia:
+8. Ve a **Project Settings → API** y copia:
    - **Project URL** → será `VITE_SUPABASE_URL`
    - **anon public key** → será `VITE_SUPABASE_ANON_KEY`
 
@@ -76,18 +84,23 @@ npm run dev
 Abre la URL que te muestre Vite (normalmente `http://localhost:5173`) e
 inicia sesión con cualquiera de los 2 usuarios que creaste.
 
-## 4. Dar de alta a tu equipo y asignarle un día
+## 4. Dar de alta a tu equipo y asignarle días
 
 Inicia sesión como dueño y toca el ícono de calendario ("Tu equipo") en la
 barra superior:
 
 1. La primera vez verás un formulario: **Nombre + PIN de 4 dígitos** (lo
    escribes dos veces para confirmarlo). Al guardar, se crea la cuenta.
-2. Después verás el campo **Fecha asignada** — elige la fecha que le toca
-   capturar a tu compañero. La app calcula sola a qué mes/semana/día
-   corresponde esa fecha.
+2. Después verás la lista de **fechas asignadas** (puede estar vacía) con un
+   botón para **agregar** una fecha nueva y un ícono de bote de basura para
+   **quitar** cualquiera ya asignada. Puedes asignarle tantos días como
+   quieras, de cualquier mes.
 3. Tu compañero entra desde la pantalla de inicio, con "Soy del equipo,
-   tengo un PIN" → toca su nombre → teclea su PIN.
+   tengo un PIN" → toca su nombre → teclea su PIN → si tiene más de un día
+   asignado, elige cuál va a capturar (puede cambiar de día con el enlace
+   "Cambiar día" arriba de la captura).
+4. Si quitas una fecha, esa persona pierde acceso a ese día en cuestión de
+   segundos, sin que tenga que cerrar sesión.
 
 ## 5. Desplegar en Vercel
 
@@ -112,6 +125,7 @@ src/
     Login.tsx
     CortesApp.tsx vista principal (dueño y staff)
 supabase/
-  schema.sql                    tablas y políticas RLS base
-  migration_002_staff_pin.sql   tabla de directorio para el login por PIN
+  schema.sql                        tablas y políticas RLS base
+  migration_002_staff_pin.sql       tabla de directorio para el login por PIN
+  migration_003_staff_assignments.sql  fechas asignadas (varias por persona)
 ```

@@ -76,5 +76,10 @@ export interface Profile {
   role: Role;
   display_name: string | null;
   owner_id: string | null;
-  assigned_date: string | null; // ISO date (YYYY-MM-DD), staff only
+}
+
+export interface StaffAssignment {
+  id: string;
+  staff_id: string;
+  assigned_date: string; // ISO date (YYYY-MM-DD)
 }

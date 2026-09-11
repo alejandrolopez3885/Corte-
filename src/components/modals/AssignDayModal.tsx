@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
+import { Trash2 } from "lucide-react";
 import { Sheet, Field, NumInput } from "../ui";
 import { supabase } from "../../lib/supabaseClient";
-import { locateDate } from "../../lib/dataModel";
+import { formatAssignedDate } from "../../lib/dataModel";
+import { addAssignment, listAssignments, removeAssignment } from "../../lib/staffAssignments";
 import { createStaffAccount, PIN_LENGTH } from "../../lib/staffAccounts";
-import type { Profile } from "../../lib/types";
+import type { Profile, StaffAssignment } from "../../lib/types";
 
 export function AssignDayModal({ onClose, ownerId }: { onClose: () => void; ownerId: string }) {
   const [staff, setStaff] = useState<Profile | null>(null);
@@ -33,7 +35,7 @@ export function AssignDayModal({ onClose, ownerId }: { onClose: () => void; owne
       {status === "loading" && <p className="hint">Cargando…</p>}
       {status === "error" && <p className="hint">No se pudo cargar la información del equipo.</p>}
       {status === "none" && <CreateStaffForm ownerId={ownerId} onCreated={load} />}
-      {status === "ready" && staff && <AssignDateForm staff={staff} onChanged={load} />}
+      {status === "ready" && staff && <AssignmentsManager staff={staff} />}
     </Sheet>
   );
 }
@@ -99,43 +101,88 @@ function CreateStaffForm({ ownerId, onCreated }: { ownerId: string; onCreated: (
   );
 }
 
-function AssignDateForm({ staff, onChanged }: { staff: Profile; onChanged: () => void }) {
-  const [date, setDate] = useState(staff.assigned_date || "");
+function AssignmentsManager({ staff }: { staff: Profile }) {
+  const [assignments, setAssignments] = useState<StaffAssignment[] | null>(null);
+  const [loadError, setLoadError] = useState(false);
+  const [newDate, setNewDate] = useState("");
+  const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
-  async function save() {
-    setSaving(true);
-    const { error } = await supabase
-      .from("profiles")
-      .update({ assigned_date: date || null })
-      .eq("id", staff.id);
-    setSaving(false);
-    if (!error) onChanged();
+  useEffect(() => {
+    refresh();
+  }, [staff.id]);
+
+  async function refresh() {
+    try {
+      setAssignments(await listAssignments(staff.id));
+    } catch {
+      setLoadError(true);
+    }
   }
 
-  const location = date ? locateDate(date) : null;
+  async function add() {
+    setError(null);
+    if (!newDate) return;
+    if (assignments?.some((a) => a.assigned_date === newDate)) {
+      setError("Esa fecha ya está asignada.");
+      return;
+    }
+    setSaving(true);
+    try {
+      await addAssignment(staff.id, newDate);
+      setNewDate("");
+      await refresh();
+    } catch {
+      setError("No se pudo asignar esa fecha.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function remove(assignmentId: string) {
+    setError(null);
+    setSaving(true);
+    try {
+      await removeAssignment(assignmentId);
+      await refresh();
+    } catch {
+      setError("No se pudo quitar esa fecha.");
+    } finally {
+      setSaving(false);
+    }
+  }
 
   return (
     <>
       <p className="hint">
-        <strong>{staff.display_name}</strong> solo puede ver y capturar el corte del día que le asignes aquí.
+        <strong>{staff.display_name}</strong> solo puede ver y capturar el corte de los días que le asignes aquí. Al quitar una
+        fecha, pierde acceso a ese día de inmediato.
       </p>
-      <Field label="Fecha asignada">
-        <input type="date" className="date-input" value={date} onChange={(e) => setDate(e.target.value)} />
-      </Field>
-      {location && (
-        <p className="hint">
-          Corresponde a {location.dayName}, semana {location.weekIndex + 1} del mes {location.monthKey}.
-        </p>
+      {loadError && <p className="hint">No se pudo cargar sus fechas asignadas.</p>}
+      {error && <div className="auth-error">{error}</div>}
+
+      {assignments && assignments.length > 0 && (
+        <div className="catalog-list">
+          {assignments.map((a) => (
+            <div key={a.id} className="catalog-row">
+              <strong>{formatAssignedDate(a.assigned_date)}</strong>
+              <button className="icon-btn" disabled={saving} onClick={() => remove(a.id)} aria-label="Quitar">
+                <Trash2 size={16} />
+              </button>
+            </div>
+          ))}
+        </div>
       )}
-      <button className="btn-primary" disabled={saving} onClick={save}>
-        {saving ? "Guardando…" : "Guardar asignación"}
+      {assignments && assignments.length === 0 && !loadError && <p className="hint">Aún no le has asignado ningún día.</p>}
+
+      <div className="field-row">
+        <Field label="Agregar fecha">
+          <input type="date" className="date-input" value={newDate} onChange={(e) => setNewDate(e.target.value)} />
+        </Field>
+      </div>
+      <button className="btn-primary" disabled={!newDate || saving} onClick={add}>
+        {saving ? "Guardando…" : "Agregar día"}
       </button>
-      {date && (
-        <button className="link-btn" onClick={() => setDate("")}>
-          Quitar asignación
-        </button>
-      )}
     </>
   );
 }
