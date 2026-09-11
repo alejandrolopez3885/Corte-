@@ -34,7 +34,10 @@ export function GastosSummaryModal({
           <strong>{money(g.totalPendiente)}</strong>
         </div>
       </div>
-      <p className="hint">Toca "Confirmar" para marcarlo como ingresado, y elige su categoría en cada gasto.</p>
+      <p className="hint">
+        Elige la categoría de cada gasto antes de confirmarlo. Una vez ingresado, la categoría queda bloqueada — para cambiarla,
+        vuelve a marcarlo como pendiente.
+      </p>
 
       <div className="gastos-days">
         {g.perDay.map((d) => (
@@ -57,6 +60,7 @@ export function GastosSummaryModal({
                       <select
                         className="categoria-select"
                         value={item.categoria || ""}
+                        disabled={item.estado === "ingresado"}
                         onChange={(e) => onSetCategoria(d.day, item.id, e.target.value as GastoCategoria | "")}
                       >
                         <option value="">Sin categoría</option>
@@ -66,7 +70,12 @@ export function GastosSummaryModal({
                           </option>
                         ))}
                       </select>
-                      <button type="button" className={`estado-chip ${item.estado}`} onClick={() => onToggleEstado(d.day, item.id)}>
+                      <button
+                        type="button"
+                        className={`estado-chip ${item.estado}`}
+                        disabled={item.estado === "pendiente" && !item.categoria}
+                        onClick={() => onToggleEstado(d.day, item.id)}
+                      >
                         {item.estado === "pendiente" ? (
                           "Confirmar"
                         ) : (
@@ -76,6 +85,9 @@ export function GastosSummaryModal({
                         )}
                       </button>
                     </div>
+                    {item.estado === "pendiente" && !item.categoria && (
+                      <p className="hint gasto-row-hint">Elige una categoría para poder confirmarlo.</p>
+                    )}
                   </div>
                 ))}
               </div>

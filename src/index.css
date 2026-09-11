@@ -244,6 +244,9 @@ body {
   flex: 1; min-width: 0; border: 1px solid var(--border); background: var(--surface);
   color: var(--ink); border-radius: 10px; padding: 8px 10px; font-size: 13px; font-family: inherit;
 }
+.categoria-select:disabled { opacity: 0.6; }
+.estado-chip:disabled { opacity: 0.45; cursor: not-allowed; }
+.gasto-row-hint { margin: -2px 0 0; }
 
 .catalog-list { display: flex; flex-direction: column; gap: 8px; }
 .catalog-row {
