@@ -36,6 +36,8 @@ export type GastoCategoria =
   | "retiro"
   | "mantenimiento"
   | "comida_empleado"
+  | "envios"
+  | "cancelaciones"
   | "otro";
 
 export const GASTO_CATEGORIAS: { value: GastoCategoria; label: string }[] = [
@@ -45,6 +47,8 @@ export const GASTO_CATEGORIAS: { value: GastoCategoria; label: string }[] = [
   { value: "retiro", label: "Retiro" },
   { value: "mantenimiento", label: "Mantenimiento" },
   { value: "comida_empleado", label: "Comida empleado" },
+  { value: "envios", label: "Envíos" },
+  { value: "cancelaciones", label: "Cancelaciones" },
   { value: "otro", label: "Otro" },
 ];
 
