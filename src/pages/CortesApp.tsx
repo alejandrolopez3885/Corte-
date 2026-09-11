@@ -1,23 +1,27 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Plus, Settings2, Users, Receipt, ArrowLeftRight, CircleDot, Circle, Pencil,
-  Smartphone, BarChart3, CalendarDays, LogOut,
+  Smartphone, BarChart3, CalendarDays, LogOut, Truck,
 } from "lucide-react";
 import { useAuth } from "../lib/auth.tsx";
 import { useAppData } from "../lib/useAppData";
-import { buildMonth, formatAssignedDate, locateDate, money, round2, sumFromText, uid } from "../lib/dataModel";
+import { buildMonth, dayFacturas, formatAssignedDate, locateDate, money, round2, sumFromText, uid } from "../lib/dataModel";
 import { useStaffAssignments } from "../lib/staffAssignments";
 import { DAYS, DAY_SHORT } from "../lib/types";
-import type { DayData, DayName, Gasto, GastoCategoria, MeseroCatalogEntry, MeseroCut, Profile, Transferencia, WeekData } from "../lib/types";
+import type {
+  DayData, DayName, FacturaProveedor, Gasto, GastoCategoria, MeseroCatalogEntry, MeseroCut, Profile, Transferencia, WeekData,
+} from "../lib/types";
 import { Empty } from "../components/ui";
 import { MonthModal } from "../components/modals/MonthModal";
 import { MeseroModal, type MeseroFormValues } from "../components/modals/MeseroModal";
 import { GastoModal, type GastoFormValues } from "../components/modals/GastoModal";
 import { TransferModal, type TransferFormValues } from "../components/modals/TransferModal";
+import { FacturaModal, type FacturaFormValues } from "../components/modals/FacturaModal";
 import { CatalogModal } from "../components/modals/CatalogModal";
 import { AppsModal } from "../components/modals/AppsModal";
 import { WeekSummaryModal } from "../components/modals/WeekSummaryModal";
 import { GastosSummaryModal } from "../components/modals/GastosSummaryModal";
+import { FacturasSummaryModal } from "../components/modals/FacturasSummaryModal";
 import { AssignDayModal } from "../components/modals/AssignDayModal";
 
 type ModalState =
@@ -25,9 +29,11 @@ type ModalState =
   | { type: "mesero"; editing?: MeseroCut }
   | { type: "gasto"; editing?: Gasto }
   | { type: "transfer"; editing?: Transferencia }
+  | { type: "factura"; editing?: FacturaProveedor }
   | { type: "apps" }
   | { type: "weekSummary" }
   | { type: "gastosSummary" }
+  | { type: "facturasSummary" }
   | { type: "catalog" }
   | { type: "assignDay" }
   | null;
@@ -47,6 +53,19 @@ export default function CortesApp({ profile }: { profile: Profile }) {
   const ownerInitialized = useRef(false);
   const locatedForDate = useRef<string | null>(null);
   const { assignments, status: assignmentsStatus } = useStaffAssignments(isOwner ? null : profile.id);
+
+  const proveedorSuggestions = useMemo(() => {
+    if (!data) return [];
+    const set = new Set<string>();
+    Object.values(data.months).forEach((month) => {
+      month.weeks.forEach((week) => {
+        DAYS.forEach((d) => {
+          dayFacturas(week.days[d]).forEach((f) => set.add(f.proveedor));
+        });
+      });
+    });
+    return Array.from(set).sort();
+  }, [data]);
 
   // Dueño: al cargar, ubica el mes más reciente.
   useEffect(() => {
@@ -354,6 +373,46 @@ export default function CortesApp({ profile }: { profile: Profile }) {
     setModal(null);
   }
 
+  function saveFactura(form: FacturaFormValues, editingId?: string) {
+    updateDay((d) => {
+      const facturas = d.facturas || (d.facturas = []);
+      if (editingId) {
+        const i = facturas.findIndex((f) => f.id === editingId);
+        if (i >= 0) facturas[i] = { ...facturas[i], proveedor: form.proveedor, total: parseFloat(form.total) || 0 };
+      } else {
+        facturas.push({
+          id: uid(),
+          proveedor: form.proveedor,
+          total: parseFloat(form.total) || 0,
+          estado: "pendiente",
+          categoria: "operacion",
+        });
+      }
+    });
+    setModal(null);
+  }
+
+  function deleteFactura(id: string) {
+    updateDay((d) => {
+      d.facturas = (d.facturas || []).filter((f) => f.id !== id);
+    });
+    setModal(null);
+  }
+
+  function toggleFacturaEstado(id: string) {
+    updateDay((d) => {
+      const f = (d.facturas || []).find((x) => x.id === id);
+      if (f) f.estado = f.estado === "pendiente" ? "ingresado" : "pendiente";
+    });
+  }
+
+  function toggleFacturaEstadoInWeek(dayName: DayName, id: string) {
+    updateWeek((w) => {
+      const f = (w.days[dayName].facturas || []).find((x) => x.id === id);
+      if (f) f.estado = f.estado === "pendiente" ? "ingresado" : "pendiente";
+    });
+  }
+
   function saveVentaApps(rawValue: string) {
     updateDay((d) => {
       d.ventaApps = sumFromText(rawValue);
@@ -465,6 +524,9 @@ export default function CortesApp({ profile }: { profile: Profile }) {
               </button>
               <button className="icon-btn" onClick={() => setModal({ type: "gastosSummary" })} aria-label="Resumen de gastos">
                 <Receipt size={18} />
+              </button>
+              <button className="icon-btn" onClick={() => setModal({ type: "facturasSummary" })} aria-label="Resumen de facturas">
+                <Truck size={18} />
               </button>
             </div>
           ) : (
@@ -586,7 +648,11 @@ export default function CortesApp({ profile }: { profile: Profile }) {
                         </div>
                         {g.origen === "mesero" && <span className="card-tag">Desde corte de {g.meseroNombre}</span>}
                       </button>
-                      <button className={`estado-chip ${g.estado}`} onClick={() => toggleGastoEstado(g.id)}>
+                      <button
+                        className={`estado-chip ${g.estado}`}
+                        disabled={g.estado === "pendiente" && !g.categoria}
+                        onClick={() => toggleGastoEstado(g.id)}
+                      >
                         {g.estado === "pendiente" ? "Confirmar" : "Ingresado"}
                       </button>
                     </div>
@@ -616,6 +682,39 @@ export default function CortesApp({ profile }: { profile: Profile }) {
                       </div>
                       {t.origen === "mesero" && <span className="card-tag">Desde su corte</span>}
                     </button>
+                  ))}
+                </div>
+              )}
+            </section>
+
+            <section className="block">
+              <div className="block-head">
+                <h2>
+                  <Truck size={17} /> Facturas de proveedores
+                </h2>
+                <button className="icon-btn accent" onClick={() => setModal({ type: "factura" })}>
+                  <Plus size={18} />
+                </button>
+              </div>
+              {dayFacturas(day).length === 0 ? (
+                <Empty
+                  icon={<Truck size={26} strokeWidth={1.3} />}
+                  text="Sin facturas de proveedores este día. No afecta tu efectivo."
+                />
+              ) : (
+                <div className="card-list">
+                  {dayFacturas(day).map((f) => (
+                    <div key={f.id} className="card gasto-card">
+                      <button className="gasto-main" onClick={() => setModal({ type: "factura", editing: f })}>
+                        <div className="card-top">
+                          <span className="card-name">{f.proveedor}</span>
+                          <span className="card-total">{money(f.total)}</span>
+                        </div>
+                      </button>
+                      <button className={`estado-chip ${f.estado}`} onClick={() => toggleFacturaEstado(f.id)}>
+                        {f.estado === "pendiente" ? "Confirmar" : "Ingresada"}
+                      </button>
+                    </div>
                   ))}
                 </div>
               )}
@@ -652,6 +751,15 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           catalog={data.meseros}
         />
       )}
+      {modal?.type === "factura" && (
+        <FacturaModal
+          onClose={() => setModal(null)}
+          onSave={saveFactura}
+          onDelete={modal.editing ? () => deleteFactura((modal.editing as FacturaProveedor).id) : undefined}
+          editing={modal.editing}
+          proveedorSuggestions={proveedorSuggestions}
+        />
+      )}
       {modal?.type === "apps" && day && <AppsModal onClose={() => setModal(null)} onSave={saveVentaApps} value={day.ventaApps || 0} />}
       {modal?.type === "weekSummary" && month && (
         <WeekSummaryModal
@@ -668,6 +776,14 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           weekLabel={`Gastos · Semana ${activeWeek + 1} · ${month.label}`}
           onToggleEstado={toggleGastoEstadoInWeek}
           onSetCategoria={setGastoCategoriaInWeek}
+        />
+      )}
+      {modal?.type === "facturasSummary" && month && (
+        <FacturasSummaryModal
+          onClose={() => setModal(null)}
+          week={month.weeks[activeWeek]}
+          weekLabel={`Facturas · Semana ${activeWeek + 1} · ${month.label}`}
+          onToggleEstado={toggleFacturaEstadoInWeek}
         />
       )}
       {modal?.type === "catalog" && (

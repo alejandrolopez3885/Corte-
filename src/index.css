@@ -248,6 +248,10 @@ body {
 .categoria-select:disabled { opacity: 0.6; }
 .estado-chip:disabled { opacity: 0.45; cursor: not-allowed; }
 .gasto-row-hint { margin: -2px 0 0; }
+.categoria-badge {
+  display: inline-flex; align-items: center; padding: 6px 10px; border-radius: 100px;
+  background: var(--surface-alt); color: var(--ink-soft); font-size: 12px; font-weight: 500;
+}
 
 .catalog-list { display: flex; flex-direction: column; gap: 8px; }
 .catalog-row {

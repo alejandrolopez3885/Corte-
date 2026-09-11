@@ -71,10 +71,22 @@ export interface Transferencia {
   meseroCutId?: string;
 }
 
+// Facturas/notas de proveedores pagadas por transferencia — no son efectivo,
+// no afectan ningún total de caja. Categoría fija (no editable) para que
+// desde ya queden listas para un futuro análisis por categoría.
+export interface FacturaProveedor {
+  id: string;
+  proveedor: string;
+  total: number;
+  estado: GastoEstado;
+  categoria: "operacion";
+}
+
 export interface DayData {
   meseros: MeseroCut[];
   gastos: Gasto[];
   transferencias: Transferencia[];
+  facturas: FacturaProveedor[];
   ventaApps: number;
 }
 

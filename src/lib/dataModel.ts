@@ -1,4 +1,4 @@
-import { DAYS, type AppData, type DayData, type DayName, type MeseroCut, type MonthData, type WeekData } from "./types";
+import { DAYS, type AppData, type DayData, type DayName, type FacturaProveedor, type MeseroCut, type MonthData, type WeekData } from "./types";
 
 export const uid = (): string => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 
@@ -29,7 +29,12 @@ export function propinaLabel(m: MeseroCut): string {
 }
 
 export function emptyDay(): DayData {
-  return { meseros: [], gastos: [], transferencias: [], ventaApps: 0 };
+  return { meseros: [], gastos: [], transferencias: [], facturas: [], ventaApps: 0 };
+}
+
+// Días guardados antes de que existiera esta sección no tienen `facturas`.
+export function dayFacturas(day: DayData): FacturaProveedor[] {
+  return day.facturas || [];
 }
 
 export function buildMonth(monthKey: string): MonthData {
@@ -80,6 +85,29 @@ export function computeWeekGastos(week: WeekData) {
       totalMonto += g.total;
       if (g.estado === "ingresado") { totalIngresado += g.total; countIngresado += 1; }
       else { totalPendiente += g.total; countPendiente += 1; }
+    });
+    return { day: d, items, dayTotal: round2(dayTotal) };
+  });
+  return {
+    perDay,
+    totalMonto: round2(totalMonto),
+    totalIngresado: round2(totalIngresado),
+    totalPendiente: round2(totalPendiente),
+    countIngresado,
+    countPendiente,
+    countTotal: countIngresado + countPendiente,
+  };
+}
+
+export function computeWeekFacturas(week: WeekData) {
+  let totalMonto = 0, totalIngresado = 0, totalPendiente = 0, countIngresado = 0, countPendiente = 0;
+  const perDay = DAYS.map((d) => {
+    const items = dayFacturas(week.days[d]);
+    const dayTotal = items.reduce((s, f) => s + f.total, 0);
+    items.forEach((f) => {
+      totalMonto += f.total;
+      if (f.estado === "ingresado") { totalIngresado += f.total; countIngresado += 1; }
+      else { totalPendiente += f.total; countPendiente += 1; }
     });
     return { day: d, items, dayTotal: round2(dayTotal) };
   });
