@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "./supabaseClient";
-import { defaultData } from "./dataModel";
+import { defaultData, migrateAppData } from "./dataModel";
 import type { AppData, Profile } from "./types";
 
 export type SaveState = "idle" | "saving" | "saved" | "error";
@@ -37,7 +37,17 @@ export function useAppData(profile: Profile | null) {
       }
 
       if (row) {
-        setData(row.data as AppData);
+        const { data: migrated, changed } = migrateAppData(row.data as AppData);
+        setData(migrated);
+        if (changed) {
+          supabase
+            .from("app_data")
+            .update({ data: migrated, updated_at: new Date().toISOString() })
+            .eq("owner_id", targetOwnerId)
+            .then(({ error: migrationError }) => {
+              if (migrationError) console.error("No se pudo guardar la migración de datos", migrationError);
+            });
+        }
       } else {
         const fresh = defaultData();
         const { error: insertError } = await supabase

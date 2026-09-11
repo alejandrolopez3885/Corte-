@@ -71,13 +71,21 @@ export interface Transferencia {
   meseroCutId?: string;
 }
 
+export interface ProveedorCatalogEntry {
+  id: string;
+  nombre: string;
+}
+
 // Facturas/notas de proveedores pagadas por transferencia — no son efectivo,
-// no afectan ningún total de caja. Categoría fija (no editable) para que
-// desde ya queden listas para un futuro análisis por categoría.
+// no afectan ningún total de caja, y se administran aparte del corte diario
+// (no viven dentro de un mes/semana/día). Categoría fija (no editable) para
+// que desde ya queden listas para un futuro análisis por categoría.
 export interface FacturaProveedor {
   id: string;
-  proveedor: string;
+  proveedorId: string;
+  numero: string;
   total: number;
+  fecha: string; // ISO date (YYYY-MM-DD)
   estado: GastoEstado;
   categoria: "operacion";
 }
@@ -86,7 +94,6 @@ export interface DayData {
   meseros: MeseroCut[];
   gastos: Gasto[];
   transferencias: Transferencia[];
-  facturas: FacturaProveedor[];
   ventaApps: number;
 }
 
@@ -102,6 +109,8 @@ export interface MonthData {
 
 export interface AppData {
   meseros: MeseroCatalogEntry[];
+  proveedores: ProveedorCatalogEntry[];
+  facturas: FacturaProveedor[];
   months: Record<string, MonthData>;
 }
 

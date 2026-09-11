@@ -2,10 +2,13 @@
 
 App para llevar el corte de caja diario de un restaurante: por mesero (venta,
 tarjetas, propina, gastos y transferencias), organizado por mes → semana →
-día, con resúmenes semanales y conciliación de efectivo. También lleva un
-control aparte de **facturas de proveedores pagadas por transferencia**
-(proveedor + total, pendiente/ingresada, categoría fija "Operación") — no
-afecta el efectivo ni ningún total de caja.
+día, con resúmenes semanales y conciliación de efectivo. También tiene una
+sección aparte, **Proveedores** (ícono de camión en la barra superior), para
+llevar el control de **facturas pagadas por transferencia** — proveedor
+(de una lista que tú administras ahí mismo), número de factura, total y
+fecha, con estado pendiente/ingresada y categoría fija "Operación". Vive
+totalmente separada del corte diario: no afecta el efectivo ni ningún total
+de caja.
 
 - **Frontend**: React + Vite + TypeScript.
 - **Backend**: Supabase (Auth + Postgres).

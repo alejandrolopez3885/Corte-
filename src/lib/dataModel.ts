@@ -29,12 +29,7 @@ export function propinaLabel(m: MeseroCut): string {
 }
 
 export function emptyDay(): DayData {
-  return { meseros: [], gastos: [], transferencias: [], facturas: [], ventaApps: 0 };
-}
-
-// Días guardados antes de que existiera esta sección no tienen `facturas`.
-export function dayFacturas(day: DayData): FacturaProveedor[] {
-  return day.facturas || [];
+  return { meseros: [], gastos: [], transferencias: [], ventaApps: 0 };
 }
 
 export function buildMonth(monthKey: string): MonthData {
@@ -47,7 +42,76 @@ export function buildMonth(monthKey: string): MonthData {
 }
 
 export function defaultData(): AppData {
-  return { meseros: [], months: {} };
+  return { meseros: [], proveedores: [], facturas: [], months: {} };
+}
+
+// Repara datos guardados antes de que existieran `proveedores`/`facturas`, y
+// migra las facturas que en una versión anterior vivían dentro de cada día
+// (day.facturas) hacia la lista plana de nivel superior. Nunca se pierden
+// datos ya capturados. Devuelve `changed: true` solo si hubo algo que migrar
+// o normalizar, para no reescribir el registro sin necesidad.
+export function migrateAppData(raw: AppData): { data: AppData; changed: boolean } {
+  let changed = false;
+  const data: AppData = { ...raw };
+
+  if (!data.proveedores) {
+    data.proveedores = [];
+    changed = true;
+  }
+  if (!data.facturas) {
+    data.facturas = [];
+    changed = true;
+  }
+
+  const proveedores = [...data.proveedores];
+  const facturas = [...data.facturas];
+
+  function proveedorIdFor(nombre: string): string {
+    const existing = proveedores.find((p) => p.nombre.trim().toLowerCase() === nombre.trim().toLowerCase());
+    if (existing) return existing.id;
+    const entry = { id: uid(), nombre: nombre.trim() };
+    proveedores.push(entry);
+    return entry.id;
+  }
+
+  Object.entries(data.months).forEach(([monthKey, month]) => {
+    month.weeks.forEach((week, weekIndex) => {
+      DAYS.forEach((dayName) => {
+        const day = week.days[dayName] as DayData & { facturas?: unknown[] };
+        const legacy = day.facturas as
+          | { id: string; proveedor: string; total: number; estado: "pendiente" | "ingresado" }[]
+          | undefined;
+        if (!legacy || legacy.length === 0) return;
+        legacy.forEach((f) => {
+          facturas.push({
+            id: f.id,
+            proveedorId: proveedorIdFor(f.proveedor),
+            numero: "",
+            total: f.total,
+            fecha: approximateDateForLocation(monthKey, weekIndex, dayName),
+            estado: f.estado,
+            categoria: "operacion",
+          });
+        });
+        delete day.facturas;
+        changed = true;
+      });
+    });
+  });
+
+  data.proveedores = proveedores;
+  data.facturas = facturas;
+  return { data, changed };
+}
+
+// Solo para migrar facturas que antes vivían en un día del corte: aproxima
+// una fecha real a partir de mes/semana/día usando la misma convención de
+// locateDate (semana 1 = días 1-7, semana 2 = 8-14, ...).
+function approximateDateForLocation(monthKey: string, weekIndex: number, dayName: DayName): string {
+  const [y, m] = monthKey.split("-").map(Number);
+  const daysInMonth = new Date(y, m, 0).getDate();
+  const dayOfMonth = Math.min(weekIndex * 7 + 1 + DAYS.indexOf(dayName), daysInMonth);
+  return `${y}-${String(m).padStart(2, "0")}-${String(dayOfMonth).padStart(2, "0")}`;
 }
 
 export interface DateLocation {
@@ -99,20 +163,14 @@ export function computeWeekGastos(week: WeekData) {
   };
 }
 
-export function computeWeekFacturas(week: WeekData) {
+export function computeFacturasSummary(facturas: FacturaProveedor[]) {
   let totalMonto = 0, totalIngresado = 0, totalPendiente = 0, countIngresado = 0, countPendiente = 0;
-  const perDay = DAYS.map((d) => {
-    const items = dayFacturas(week.days[d]);
-    const dayTotal = items.reduce((s, f) => s + f.total, 0);
-    items.forEach((f) => {
-      totalMonto += f.total;
-      if (f.estado === "ingresado") { totalIngresado += f.total; countIngresado += 1; }
-      else { totalPendiente += f.total; countPendiente += 1; }
-    });
-    return { day: d, items, dayTotal: round2(dayTotal) };
+  facturas.forEach((f) => {
+    totalMonto += f.total;
+    if (f.estado === "ingresado") { totalIngresado += f.total; countIngresado += 1; }
+    else { totalPendiente += f.total; countPendiente += 1; }
   });
   return {
-    perDay,
     totalMonto: round2(totalMonto),
     totalIngresado: round2(totalIngresado),
     totalPendiente: round2(totalPendiente),
@@ -120,6 +178,11 @@ export function computeWeekFacturas(week: WeekData) {
     countPendiente,
     countTotal: countIngresado + countPendiente,
   };
+}
+
+export function formatShortDate(dateStr: string): string {
+  const date = new Date(`${dateStr}T00:00:00`);
+  return date.toLocaleDateString("es-MX", { day: "numeric", month: "short" });
 }
 
 export function computeWeekSummary(week: WeekData) {
