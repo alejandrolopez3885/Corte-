@@ -1,18 +1,21 @@
 import { Check } from "lucide-react";
 import { Sheet } from "../ui";
 import { computeWeekGastos, money } from "../../lib/dataModel";
-import type { DayName, WeekData } from "../../lib/types";
+import { GASTO_CATEGORIAS } from "../../lib/types";
+import type { DayName, GastoCategoria, WeekData } from "../../lib/types";
 
 export function GastosSummaryModal({
   onClose,
   week,
   weekLabel,
   onToggleEstado,
+  onSetCategoria,
 }: {
   onClose: () => void;
   week: WeekData;
   weekLabel: string;
   onToggleEstado: (dayName: DayName, id: string) => void;
+  onSetCategoria: (dayName: DayName, id: string, categoria: GastoCategoria | "") => void;
 }) {
   const g = computeWeekGastos(week);
   return (
@@ -31,7 +34,7 @@ export function GastosSummaryModal({
           <strong>{money(g.totalPendiente)}</strong>
         </div>
       </div>
-      <p className="hint">Toca "Confirmar" en cualquier gasto para marcarlo como ingresado.</p>
+      <p className="hint">Toca "Confirmar" para marcarlo como ingresado, y elige su categoría en cada gasto.</p>
 
       <div className="gastos-days">
         {g.perDay.map((d) => (
@@ -45,18 +48,34 @@ export function GastosSummaryModal({
             ) : (
               <div className="gasto-existing-list">
                 {d.items.map((item) => (
-                  <div key={item.id} className="gasto-existing-row">
-                    <span className="gasto-existing-concepto">{item.concepto}</span>
-                    <span className="gasto-existing-monto">{money(item.total)}</span>
-                    <button type="button" className={`estado-chip ${item.estado}`} onClick={() => onToggleEstado(d.day, item.id)}>
-                      {item.estado === "pendiente" ? (
-                        "Confirmar"
-                      ) : (
-                        <>
-                          <Check size={13} /> Ingresado
-                        </>
-                      )}
-                    </button>
+                  <div key={item.id} className="gasto-existing-row gasto-row-classify">
+                    <div className="gasto-row-main">
+                      <span className="gasto-existing-concepto">{item.concepto}</span>
+                      <span className="gasto-existing-monto">{money(item.total)}</span>
+                    </div>
+                    <div className="gasto-row-controls">
+                      <select
+                        className="categoria-select"
+                        value={item.categoria || ""}
+                        onChange={(e) => onSetCategoria(d.day, item.id, e.target.value as GastoCategoria | "")}
+                      >
+                        <option value="">Sin categoría</option>
+                        {GASTO_CATEGORIAS.map((c) => (
+                          <option key={c.value} value={c.value}>
+                            {c.label}
+                          </option>
+                        ))}
+                      </select>
+                      <button type="button" className={`estado-chip ${item.estado}`} onClick={() => onToggleEstado(d.day, item.id)}>
+                        {item.estado === "pendiente" ? (
+                          "Confirmar"
+                        ) : (
+                          <>
+                            <Check size={13} /> Ingresado
+                          </>
+                        )}
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>

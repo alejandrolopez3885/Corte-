@@ -237,6 +237,14 @@ body {
 .gasto-existing-concepto { flex: 1; }
 .gasto-existing-monto { font-weight: 600; }
 
+.gasto-row-classify { flex-direction: column; align-items: stretch; gap: 8px; }
+.gasto-row-main { display: flex; justify-content: space-between; gap: 10px; }
+.gasto-row-controls { display: flex; gap: 8px; align-items: center; }
+.categoria-select {
+  flex: 1; min-width: 0; border: 1px solid var(--border); background: var(--surface);
+  color: var(--ink); border-radius: 10px; padding: 8px 10px; font-size: 13px; font-family: inherit;
+}
+
 .catalog-list { display: flex; flex-direction: column; gap: 8px; }
 .catalog-row {
   display: flex; justify-content: space-between; align-items: center;

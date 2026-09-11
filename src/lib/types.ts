@@ -29,6 +29,25 @@ export interface MeseroCut {
 export type GastoEstado = "pendiente" | "ingresado";
 export type GastoOrigen = "mesero" | "manual";
 
+export type GastoCategoria =
+  | "operacion"
+  | "nomina"
+  | "cortesia"
+  | "retiro"
+  | "mantenimiento"
+  | "comida_empleado"
+  | "otro";
+
+export const GASTO_CATEGORIAS: { value: GastoCategoria; label: string }[] = [
+  { value: "operacion", label: "Operación" },
+  { value: "nomina", label: "Nómina" },
+  { value: "cortesia", label: "Cortesía" },
+  { value: "retiro", label: "Retiro" },
+  { value: "mantenimiento", label: "Mantenimiento" },
+  { value: "comida_empleado", label: "Comida empleado" },
+  { value: "otro", label: "Otro" },
+];
+
 export interface Gasto {
   id: string;
   concepto: string;
@@ -37,6 +56,7 @@ export interface Gasto {
   origen: GastoOrigen;
   meseroNombre?: string;
   meseroCutId?: string;
+  categoria?: GastoCategoria;
 }
 
 export interface Transferencia {

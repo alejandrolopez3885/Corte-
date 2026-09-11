@@ -8,7 +8,7 @@ import { useAppData } from "../lib/useAppData";
 import { buildMonth, formatAssignedDate, locateDate, money, round2, sumFromText, uid } from "../lib/dataModel";
 import { useStaffAssignments } from "../lib/staffAssignments";
 import { DAYS, DAY_SHORT } from "../lib/types";
-import type { DayData, DayName, Gasto, MeseroCatalogEntry, MeseroCut, Profile, Transferencia, WeekData } from "../lib/types";
+import type { DayData, DayName, Gasto, GastoCategoria, MeseroCatalogEntry, MeseroCut, Profile, Transferencia, WeekData } from "../lib/types";
 import { Empty } from "../components/ui";
 import { MonthModal } from "../components/modals/MonthModal";
 import { MeseroModal, type MeseroFormValues } from "../components/modals/MeseroModal";
@@ -312,6 +312,13 @@ export default function CortesApp({ profile }: { profile: Profile }) {
     updateWeek((w) => {
       const g = w.days[dayName].gastos.find((x) => x.id === id);
       if (g) g.estado = g.estado === "pendiente" ? "ingresado" : "pendiente";
+    });
+  }
+
+  function setGastoCategoriaInWeek(dayName: DayName, id: string, categoria: GastoCategoria | "") {
+    updateWeek((w) => {
+      const g = w.days[dayName].gastos.find((x) => x.id === id);
+      if (g) g.categoria = categoria || undefined;
     });
   }
 
@@ -653,6 +660,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           week={month.weeks[activeWeek]}
           weekLabel={`Gastos · Semana ${activeWeek + 1} · ${month.label}`}
           onToggleEstado={toggleGastoEstadoInWeek}
+          onSetCategoria={setGastoCategoriaInWeek}
         />
       )}
       {modal?.type === "catalog" && (
