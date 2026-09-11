@@ -1,7 +1,16 @@
 import { useState, type FormEvent } from "react";
 import { supabase } from "../lib/supabaseClient";
+import PinLogin from "./PinLogin";
 
 export default function Login() {
+  const [mode, setMode] = useState<"owner" | "pin">("owner");
+
+  if (mode === "pin") return <PinLogin onBack={() => setMode("owner")} />;
+
+  return <OwnerLogin onSwitchToPin={() => setMode("pin")} />;
+}
+
+function OwnerLogin({ onSwitchToPin }: { onSwitchToPin: () => void }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -46,6 +55,9 @@ export default function Login() {
         </label>
         <button className="btn-primary" type="submit" disabled={loading}>
           {loading ? "Entrando…" : "Entrar"}
+        </button>
+        <button type="button" className="link-btn" style={{ textAlign: "center" }} onClick={onSwitchToPin}>
+          Soy del equipo, tengo un PIN
         </button>
       </form>
     </div>

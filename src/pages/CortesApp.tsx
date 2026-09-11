@@ -313,7 +313,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           {saveState === "error" && <span className="save-badge error">No se guardó</span>}
           {saveState === "saving" && <span className="save-badge">Guardando…</span>}
           {isOwner && (
-            <button className="icon-btn" onClick={() => setModal({ type: "assignDay" })} aria-label="Asignar día al equipo">
+            <button className="icon-btn" onClick={() => setModal({ type: "assignDay" })} aria-label="Tu equipo">
               <CalendarDays size={19} />
             </button>
           )}

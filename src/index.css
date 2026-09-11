@@ -257,6 +257,26 @@ body {
 .auth-subtitle { color: var(--ink-soft); font-size: 13.5px; margin: -8px 0 4px; }
 .auth-error { color: var(--bad); background: var(--bad-soft); border-radius: 10px; padding: 10px 12px; font-size: 13px; }
 
+.staff-name-grid { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+.staff-name-btn {
+  border: 1px solid var(--border); background: var(--surface); color: var(--ink);
+  padding: 16px 18px; border-radius: 14px; font-size: 16px; font-weight: 500; cursor: pointer; text-align: left;
+}
+.staff-name-btn:active { background: var(--surface-alt); }
+
+.pin-dots { display: flex; gap: 14px; justify-content: center; margin: 8px 0 4px; }
+.pin-dot { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--accent); background: transparent; }
+.pin-dot.filled { background: var(--accent); }
+
+.pin-keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 4px; }
+.pin-key {
+  border: 1px solid var(--border); background: var(--surface); color: var(--ink);
+  font-size: 20px; font-weight: 500; border-radius: 14px; padding: 16px 0;
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
+}
+.pin-key:active { background: var(--surface-alt); }
+.pin-key:disabled { opacity: 0.5; }
+
 /* ---- Staff restricted view ---- */
 .staff-banner {
   margin: 4px 20px 0; background: var(--accent-soft); color: var(--accent); border-radius: 14px;
