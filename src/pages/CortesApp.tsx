@@ -292,7 +292,14 @@ export default function CortesApp({ profile }: { profile: Profile }) {
 
   function saveGasto(form: GastoFormValues, editingId?: string) {
     updateDay((d) => {
-      const entry: Gasto = { id: editingId || uid(), concepto: form.concepto, total: parseFloat(form.total) || 0, estado: form.estado, origen: "manual" };
+      const entry: Gasto = {
+        id: editingId || uid(),
+        concepto: form.concepto,
+        total: parseFloat(form.total) || 0,
+        estado: form.estado,
+        origen: "manual",
+        categoria: form.categoria || undefined,
+      };
       if (editingId) {
         const i = d.gastos.findIndex((g) => g.id === editingId);
         d.gastos[i] = { ...d.gastos[i], ...entry };

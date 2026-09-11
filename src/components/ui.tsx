@@ -95,13 +95,20 @@ export function Toggle({
   checked,
   onChange,
   label,
+  disabled,
 }: {
   checked: boolean;
   onChange: (v: boolean) => void;
   label: string;
+  disabled?: boolean;
 }) {
   return (
-    <button type="button" className={`toggle ${checked ? "on" : ""}`} onClick={() => onChange(!checked)}>
+    <button
+      type="button"
+      className={`toggle ${checked ? "on" : ""}`}
+      disabled={disabled}
+      onClick={() => onChange(!checked)}
+    >
       <span className="toggle-knob" />
       <span className="toggle-label">{label}</span>
     </button>
