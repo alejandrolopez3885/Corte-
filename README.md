@@ -10,24 +10,32 @@ sí). Así todo el corte (chips de día, encabezados, tablas) siempre muestra
 la fecha real (día, mes y año) en vez de solo el nombre del día — y si una
 semana se asoma al mes anterior o siguiente, se muestra tal cual, con su
 fecha exacta. También tiene una
-sección aparte, **Proveedores** (ícono de camión en la barra superior), para
-llevar el control de **facturas pagadas por transferencia** — proveedor
-(de una lista que tú administras ahí mismo), número de factura, total y
-fecha, con estado pendiente/ingresada y categoría fija "Operación". Vive
-totalmente separada del corte diario: no afecta el efectivo ni ningún total
-de caja.
+sección aparte, **Proveedores** (dentro de "Negocio" en la navegación de
+abajo), para llevar el control de **facturas pagadas por transferencia** —
+proveedor (de una lista que tú administras ahí mismo), número de factura,
+total y fecha, con estado pendiente/ingresada y categoría fija "Operación".
+Vive totalmente separada del corte diario: no afecta el efectivo ni ningún
+total de caja.
 
 - **Frontend**: React + Vite + TypeScript.
 - **Backend**: Supabase (Auth + Postgres).
 - **Hosting sugerido**: Vercel.
+
+La vista del dueño se organiza en 3 secciones, accesibles desde la barra de
+navegación de abajo:
+
+- **Corte**: la pantalla principal — mes, semana, día, meseros, gastos,
+  transferencias, ventas de apps y sus resúmenes.
+- **Equipo**: dar de alta a tu personal y asignarle días.
+- **Negocio**: catálogo de meseros y la sección de Proveedores.
 
 Hay 2 tipos de cuenta:
 
 - **Dueño (`owner`)**: acceso completo — todos los meses, semanas y días,
   catálogo de meseros, resúmenes. Inicia sesión con correo y contraseña.
 - **Staff (`staff`)**: solo puede capturar el corte de **los días que el
-  dueño le asigne** (una o varias fechas, desde el ícono de calendario en la
-  barra superior). El dueño da de alta a esta persona **desde la misma app**
+  dueño le asigne** (una o varias fechas, desde la sección "Equipo"). El
+  dueño da de alta a esta persona **desde la misma app**
   (nombre + PIN de 4 dígitos, sin correo) — no hace falta crearla en el
   dashboard de Supabase. Esa persona entra desde "Soy del equipo, tengo un
   PIN" en la pantalla de inicio, elige su nombre y teclea su PIN; si tiene
@@ -106,8 +114,10 @@ inicia sesión con cualquiera de los 2 usuarios que creaste.
 
 ## 4. Dar de alta a tu equipo y asignarle días
 
-Inicia sesión como dueño y toca el ícono de calendario ("Tu equipo") en la
-barra superior:
+Inicia sesión como dueño y toca **Equipo** en la barra de navegación de abajo
+(la app del dueño se organiza en 3 secciones: **Corte** para capturar y ver
+resúmenes, **Equipo** para tu personal, y **Negocio** para catálogos como
+meseros y proveedores):
 
 1. La primera vez verás un formulario: **Nombre + PIN de 4 dígitos** (lo
    escribes dos veces para confirmarlo). Al guardar, se crea la cuenta.

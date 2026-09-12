@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import {
   Plus, Settings2, Users, Receipt, ArrowLeftRight, CircleDot, Circle, Pencil,
-  Smartphone, BarChart3, CalendarDays, LogOut, Truck, Trash2,
+  Smartphone, BarChart3, LogOut, Truck, Trash2, Home, Store,
 } from "lucide-react";
 import { useAuth } from "../lib/auth.tsx";
 import { useAppData } from "../lib/useAppData";
@@ -22,8 +22,8 @@ import { CatalogModal } from "../components/modals/CatalogModal";
 import { AppsModal } from "../components/modals/AppsModal";
 import { WeekSummaryModal } from "../components/modals/WeekSummaryModal";
 import { GastosSummaryModal } from "../components/modals/GastosSummaryModal";
-import { AssignDayModal } from "../components/modals/AssignDayModal";
 import { DeleteMonthModal } from "../components/modals/DeleteMonthModal";
+import { TeamPanel } from "../components/panels/TeamPanel";
 
 type ModalState =
   | { type: "month" }
@@ -35,9 +35,10 @@ type ModalState =
   | { type: "gastosSummary" }
   | { type: "proveedores" }
   | { type: "catalog" }
-  | { type: "assignDay" }
   | { type: "deleteMonth"; monthKey: string }
   | null;
+
+type OwnerTab = "corte" | "equipo" | "negocio";
 
 export default function CortesApp({ profile }: { profile: Profile }) {
   const { signOut } = useAuth();
@@ -48,6 +49,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
   const [activeMonth, setActiveMonth] = useState<string | null>(null);
   const [activeWeek, setActiveWeek] = useState(0);
   const [activeDay, setActiveDay] = useState<DayName>("Lunes");
+  const [activeTab, setActiveTab] = useState<OwnerTab>("corte");
   const [modal, setModal] = useState<ModalState>(null);
   const [selectedAssignedDate, setSelectedAssignedDate] = useState<string | null>(null);
 
@@ -491,276 +493,310 @@ export default function CortesApp({ profile }: { profile: Profile }) {
     : null;
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell ${isOwner ? "with-bottom-nav" : ""}`}>
       <header className="topbar">
         <div className="brand">
           <span className="brand-mark">Cortes</span>
-          {month && <span className="brand-month">{month.label}</span>}
+          {isOwner && activeTab === "corte" && month && <span className="brand-month">{month.label}</span>}
           {!isOwner && <span className="brand-role">Acceso por día asignado</span>}
         </div>
         <div className="topbar-actions">
           {saveState === "error" && <span className="save-badge error">No se guardó</span>}
           {saveState === "saving" && <span className="save-badge">Guardando…</span>}
-          {isOwner && (
-            <button className="icon-btn" onClick={() => setModal({ type: "assignDay" })} aria-label="Tu equipo">
-              <CalendarDays size={19} />
-            </button>
-          )}
-          {isOwner && (
-            <button className="icon-btn" onClick={() => setModal({ type: "catalog" })} aria-label="Meseros">
-              <Settings2 size={19} />
-            </button>
-          )}
-          {isOwner && (
-            <button className="icon-btn" onClick={() => setModal({ type: "proveedores" })} aria-label="Proveedores">
-              <Truck size={19} />
-            </button>
-          )}
-          {isOwner && (
-            <button className="pill-btn" onClick={() => setModal({ type: "month" })}>
-              <Plus size={16} /> Mes
-            </button>
-          )}
           <button className="icon-btn" onClick={signOut} aria-label="Cerrar sesión">
             <LogOut size={18} />
           </button>
         </div>
       </header>
 
-      {isOwner && monthKeys.length > 1 && (
-        <nav className="month-scroll">
-          {monthKeys.map((mk) => (
-            <div key={mk} className={`month-chip ${mk === activeMonth ? "active" : ""}`}>
-              <button
-                className="month-chip-label"
-                onClick={() => {
-                  setActiveMonth(mk);
-                  setActiveWeek(0);
-                  setActiveDay("Lunes");
-                }}
-              >
-                {data.months[mk].label}
-              </button>
-              <button className="month-chip-delete" onClick={() => setModal({ type: "deleteMonth", monthKey: mk })} aria-label={`Eliminar ${data.months[mk].label}`}>
-                <Trash2 size={13} />
-              </button>
-            </div>
-          ))}
-        </nav>
-      )}
+      {isOwner && activeTab === "equipo" && <TeamPanel ownerId={profile.id} />}
 
-      {!month || !day ? (
-        isOwner ? (
-          <div className="onboarding">
-            <Empty
-              icon={<Receipt size={34} strokeWidth={1.3} />}
-              text="Aún no tienes ningún mes registrado. Agrega el mes actual para empezar a capturar tus cortes."
-            />
-            <button className="btn-primary" onClick={() => setModal({ type: "month" })}>
-              <Plus size={17} /> Agregar mi primer mes
+      {isOwner && activeTab === "negocio" && (
+        <div className="page-section">
+          <h2 className="page-title">Negocio</h2>
+          <div className="menu-list">
+            <button className="menu-item" onClick={() => setModal({ type: "catalog" })}>
+              <span className="menu-item-icon">
+                <Settings2 size={20} />
+              </span>
+              <span className="menu-item-text">
+                <strong>Meseros</strong>
+                <span>Catálogo de meseros para el corte</span>
+              </span>
+            </button>
+            <button className="menu-item" onClick={() => setModal({ type: "proveedores" })}>
+              <span className="menu-item-icon">
+                <Truck size={20} />
+              </span>
+              <span className="menu-item-text">
+                <strong>Proveedores</strong>
+                <span>Catálogo y facturas por transferencia</span>
+              </span>
             </button>
           </div>
-        ) : (
-          <div className="full-page-msg">Preparando tu día…</div>
-        )
-      ) : (
+        </div>
+      )}
+
+      {(!isOwner || activeTab === "corte") && (
         <>
-          {isOwner ? (
-            <>
-              <div className="week-bar">
-                <nav className="week-tabs">
-                  {month.weeks.map((_, i) => (
-                    <button
-                      key={i}
-                      className={`week-tab ${i === activeWeek ? "active" : ""}`}
-                      onClick={() => {
-                        setActiveWeek(i);
-                        setActiveDay("Lunes");
-                      }}
-                    >
-                      Semana {i + 1}
-                    </button>
-                  ))}
-                </nav>
-                <button className="icon-btn" onClick={() => setModal({ type: "weekSummary" })} aria-label="Resumen semanal">
-                  <BarChart3 size={18} />
+        {isOwner && monthKeys.length > 0 && (
+          <nav className="month-scroll">
+            {monthKeys.map((mk) => (
+              <div key={mk} className={`month-chip ${mk === activeMonth ? "active" : ""}`}>
+                <button
+                  className="month-chip-label"
+                  onClick={() => {
+                    setActiveMonth(mk);
+                    setActiveWeek(0);
+                    setActiveDay("Lunes");
+                  }}
+                >
+                  {data.months[mk].label}
                 </button>
-                <button className="icon-btn" onClick={() => setModal({ type: "gastosSummary" })} aria-label="Resumen de gastos">
-                  <Receipt size={18} />
+                <button className="month-chip-delete" onClick={() => setModal({ type: "deleteMonth", monthKey: mk })} aria-label={`Eliminar ${data.months[mk].label}`}>
+                  <Trash2 size={13} />
                 </button>
               </div>
-              {weekStartDate && <p className="week-range-hint">{formatWeekRange(weekStartDate)}</p>}
-            </>
-          ) : (
-            <div className="staff-banner">
-              <span>Capturando el corte de {selectedAssignedDate && formatAssignedDate(selectedAssignedDate)}</span>
-              {assignments && assignments.length > 1 && (
-                <button className="link-btn" onClick={() => setSelectedAssignedDate(null)}>
-                  Cambiar día
-                </button>
-              )}
+            ))}
+            <button className="month-chip-add" onClick={() => setModal({ type: "month" })} aria-label="Agregar mes">
+              <Plus size={16} />
+            </button>
+          </nav>
+        )}
+
+        {!month || !day ? (
+          isOwner ? (
+            <div className="onboarding">
+              <Empty
+                icon={<Receipt size={34} strokeWidth={1.3} />}
+                text="Aún no tienes ningún mes registrado. Agrega el mes actual para empezar a capturar tus cortes."
+              />
+              <button className="btn-primary" onClick={() => setModal({ type: "month" })}>
+                <Plus size={17} /> Agregar mi primer mes
+              </button>
             </div>
-          )}
-
-          {isOwner && week && month && activeMonth && (
-            <nav className="day-scroll">
-              {DAYS.map((d) => {
-                const hasData = week.days[d].meseros.length > 0;
-                const dDate = dateForDay(activeMonth, activeWeek, month, d);
-                return (
-                  <button key={d} className={`day-chip ${d === activeDay ? "active" : ""}`} onClick={() => setActiveDay(d)}>
-                    {hasData ? <CircleDot size={9} /> : <Circle size={9} />}
-                    {DAY_SHORT[d]} <span className="day-chip-date">{formatDayNumber(dDate)}</span>
-                  </button>
-                );
-              })}
-            </nav>
-          )}
-
-          {isOwner && activeDayDate && <p className="active-day-date">{formatLongDayDate(activeDayDate)}</p>}
-
-          {totals && (
-            <section className="summary">
-              <div className="summary-item highlight">
-                <span>Venta total</span>
-                <strong>{money(totals.ventaTotal)}</strong>
-              </div>
-              <div className="summary-item">
-                <span>Venta local</span>
-                <strong>{money(totals.ventaLocal)}</strong>
-              </div>
-              <div className="summary-item">
-                <span>Venta apps</span>
-                <strong>{money(totals.ventaApps)}</strong>
-              </div>
-              <div className="summary-item highlight">
-                <span>Tarjetas</span>
-                <strong>{money(totals.tarjetas)}</strong>
-              </div>
-              <div className="summary-item highlight">
-                <span>Transferencias</span>
-                <strong>{money(totals.transferencias)}</strong>
-              </div>
-              <div className="summary-item">
-                <span>Propinas</span>
-                <strong>{money(totals.propina)}</strong>
-              </div>
-              <div className="summary-item">
-                <span>Gastos</span>
-                <strong>{money(totals.gastos)}</strong>
-              </div>
-              <div className="summary-item highlight" style={{ gridColumn: "1 / -1" }}>
-                <span>
-                  Efectivo a entregar <em>(sin propinas)</em>
-                </span>
-                <strong>{money(totals.efectivo)}</strong>
-              </div>
-            </section>
-          )}
-
-          <button className="apps-row" onClick={() => setModal({ type: "apps" })}>
-            <span className="apps-row-label">
-              <Smartphone size={15} /> Ventas de apps <em>(no suma al efectivo)</em>
-            </span>
-            <span className="apps-row-value">
-              {money(day.ventaApps || 0)} <Pencil size={13} />
-            </span>
-          </button>
-
-          <main className="content">
-            <section className="block">
-              <div className="block-head">
-                <h2>
-                  <Users size={17} /> Meseros
-                </h2>
-                <button className="icon-btn accent" onClick={() => setModal({ type: "mesero" })}>
-                  <Plus size={18} />
-                </button>
-              </div>
-              {day.meseros.length === 0 ? (
-                <Empty icon={<Users size={26} strokeWidth={1.3} />} text="Sin cortes capturados este día. Toca + para agregar el primero." />
-              ) : (
-                <div className="card-list">
-                  {day.meseros.map((m) => (
-                    <button key={m.id} className="card mesero-card" onClick={() => setModal({ type: "mesero", editing: m })}>
-                      <div className="card-top">
-                        <span className="card-name">{m.nombre}</span>
-                        <span className="card-total">{money(m.total)}</span>
-                      </div>
-                      <div className="card-sub">
-                        <span>Venta {money(m.venta)}</span>
-                        <span>Tarjetas {money(m.tarjetas)}</span>
-                        {m.transferencia > 0 && <span>Transferencia {money(m.transferencia)}</span>}
-                        {m.gastosTotal > 0 && <span>Gastos {money(m.gastosTotal)}</span>}
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </section>
-
-            <section className="block">
-              <div className="block-head">
-                <h2>
-                  <Receipt size={17} /> Gastos
-                </h2>
-                <button className="icon-btn accent" onClick={() => setModal({ type: "gasto" })}>
-                  <Plus size={18} />
-                </button>
-              </div>
-              {day.gastos.length === 0 ? (
-                <Empty icon={<Receipt size={26} strokeWidth={1.3} />} text="No hay gastos registrados este día." />
-              ) : (
-                <div className="card-list">
-                  {day.gastos.map((g) => (
-                    <div key={g.id} className="card gasto-card">
-                      <button className="gasto-main" onClick={() => setModal({ type: "gasto", editing: g })}>
-                        <div className="card-top">
-                          <span className="card-name">{g.concepto}</span>
-                          <span className="card-total">{money(g.total)}</span>
-                        </div>
-                        {g.origen === "mesero" && <span className="card-tag">Desde corte de {g.meseroNombre}</span>}
-                      </button>
+          ) : (
+            <div className="full-page-msg">Preparando tu día…</div>
+          )
+        ) : (
+          <>
+            {isOwner ? (
+              <>
+                <div className="week-bar">
+                  <nav className="week-tabs">
+                    {month.weeks.map((_, i) => (
                       <button
-                        className={`estado-chip ${g.estado}`}
-                        disabled={g.estado === "pendiente" && !g.categoria}
-                        onClick={() => toggleGastoEstado(g.id)}
+                        key={i}
+                        className={`week-tab ${i === activeWeek ? "active" : ""}`}
+                        onClick={() => {
+                          setActiveWeek(i);
+                          setActiveDay("Lunes");
+                        }}
                       >
-                        {g.estado === "pendiente" ? "Confirmar" : "Ingresado"}
+                        Semana {i + 1}
                       </button>
-                    </div>
-                  ))}
+                    ))}
+                  </nav>
+                  <button className="icon-btn" onClick={() => setModal({ type: "weekSummary" })} aria-label="Resumen semanal">
+                    <BarChart3 size={18} />
+                  </button>
+                  <button className="icon-btn" onClick={() => setModal({ type: "gastosSummary" })} aria-label="Resumen de gastos">
+                    <Receipt size={18} />
+                  </button>
                 </div>
-              )}
-            </section>
-
-            <section className="block">
-              <div className="block-head">
-                <h2>
-                  <ArrowLeftRight size={17} /> Transferencias
-                </h2>
-                <button className="icon-btn accent" onClick={() => setModal({ type: "transfer" })}>
-                  <Plus size={18} />
-                </button>
+                {weekStartDate && <p className="week-range-hint">{formatWeekRange(weekStartDate)}</p>}
+              </>
+            ) : (
+              <div className="staff-banner">
+                <span>Capturando el corte de {selectedAssignedDate && formatAssignedDate(selectedAssignedDate)}</span>
+                {assignments && assignments.length > 1 && (
+                  <button className="link-btn" onClick={() => setSelectedAssignedDate(null)}>
+                    Cambiar día
+                  </button>
+                )}
               </div>
-              {day.transferencias.length === 0 ? (
-                <Empty icon={<ArrowLeftRight size={26} strokeWidth={1.3} />} text="No hay transferencias registradas este día." />
-              ) : (
-                <div className="card-list">
-                  {day.transferencias.map((t) => (
-                    <button key={t.id} className="card" onClick={() => setModal({ type: "transfer", editing: t })}>
-                      <div className="card-top">
-                        <span className="card-name">{t.persona}</span>
-                        <span className="card-total">{money(t.total)}</span>
-                      </div>
-                      {t.origen === "mesero" && <span className="card-tag">Desde su corte</span>}
+            )}
+
+            {isOwner && week && month && activeMonth && (
+              <nav className="day-scroll">
+                {DAYS.map((d) => {
+                  const hasData = week.days[d].meseros.length > 0;
+                  const dDate = dateForDay(activeMonth, activeWeek, month, d);
+                  return (
+                    <button key={d} className={`day-chip ${d === activeDay ? "active" : ""}`} onClick={() => setActiveDay(d)}>
+                      {hasData ? <CircleDot size={9} /> : <Circle size={9} />}
+                      {DAY_SHORT[d]} <span className="day-chip-date">{formatDayNumber(dDate)}</span>
                     </button>
-                  ))}
+                  );
+                })}
+              </nav>
+            )}
+
+            {isOwner && activeDayDate && <p className="active-day-date">{formatLongDayDate(activeDayDate)}</p>}
+
+            {totals && (
+              <section className="summary">
+                <div className="summary-item highlight">
+                  <span>Venta total</span>
+                  <strong>{money(totals.ventaTotal)}</strong>
                 </div>
-              )}
-            </section>
-          </main>
-        </>
+                <div className="summary-item">
+                  <span>Venta local</span>
+                  <strong>{money(totals.ventaLocal)}</strong>
+                </div>
+                <div className="summary-item">
+                  <span>Venta apps</span>
+                  <strong>{money(totals.ventaApps)}</strong>
+                </div>
+                <div className="summary-item highlight">
+                  <span>Tarjetas</span>
+                  <strong>{money(totals.tarjetas)}</strong>
+                </div>
+                <div className="summary-item highlight">
+                  <span>Transferencias</span>
+                  <strong>{money(totals.transferencias)}</strong>
+                </div>
+                <div className="summary-item">
+                  <span>Propinas</span>
+                  <strong>{money(totals.propina)}</strong>
+                </div>
+                <div className="summary-item">
+                  <span>Gastos</span>
+                  <strong>{money(totals.gastos)}</strong>
+                </div>
+                <div className="summary-item highlight" style={{ gridColumn: "1 / -1" }}>
+                  <span>
+                    Efectivo a entregar <em>(sin propinas)</em>
+                  </span>
+                  <strong>{money(totals.efectivo)}</strong>
+                </div>
+              </section>
+            )}
+
+            <button className="apps-row" onClick={() => setModal({ type: "apps" })}>
+              <span className="apps-row-label">
+                <Smartphone size={15} /> Ventas de apps <em>(no suma al efectivo)</em>
+              </span>
+              <span className="apps-row-value">
+                {money(day.ventaApps || 0)} <Pencil size={13} />
+              </span>
+            </button>
+
+            <main className="content">
+              <section className="block">
+                <div className="block-head">
+                  <h2>
+                    <Users size={17} /> Meseros
+                  </h2>
+                  <button className="icon-btn accent" onClick={() => setModal({ type: "mesero" })}>
+                    <Plus size={18} />
+                  </button>
+                </div>
+                {day.meseros.length === 0 ? (
+                  <Empty icon={<Users size={26} strokeWidth={1.3} />} text="Sin cortes capturados este día. Toca + para agregar el primero." />
+                ) : (
+                  <div className="card-list">
+                    {day.meseros.map((m) => (
+                      <button key={m.id} className="card mesero-card" onClick={() => setModal({ type: "mesero", editing: m })}>
+                        <div className="card-top">
+                          <span className="card-name">{m.nombre}</span>
+                          <span className="card-total">{money(m.total)}</span>
+                        </div>
+                        <div className="card-sub">
+                          <span>Venta {money(m.venta)}</span>
+                          <span>Tarjetas {money(m.tarjetas)}</span>
+                          {m.transferencia > 0 && <span>Transferencia {money(m.transferencia)}</span>}
+                          {m.gastosTotal > 0 && <span>Gastos {money(m.gastosTotal)}</span>}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </section>
+
+              <section className="block">
+                <div className="block-head">
+                  <h2>
+                    <Receipt size={17} /> Gastos
+                  </h2>
+                  <button className="icon-btn accent" onClick={() => setModal({ type: "gasto" })}>
+                    <Plus size={18} />
+                  </button>
+                </div>
+                {day.gastos.length === 0 ? (
+                  <Empty icon={<Receipt size={26} strokeWidth={1.3} />} text="No hay gastos registrados este día." />
+                ) : (
+                  <div className="card-list">
+                    {day.gastos.map((g) => (
+                      <div key={g.id} className="card gasto-card">
+                        <button className="gasto-main" onClick={() => setModal({ type: "gasto", editing: g })}>
+                          <div className="card-top">
+                            <span className="card-name">{g.concepto}</span>
+                            <span className="card-total">{money(g.total)}</span>
+                          </div>
+                          {g.origen === "mesero" && <span className="card-tag">Desde corte de {g.meseroNombre}</span>}
+                        </button>
+                        <button
+                          className={`estado-chip ${g.estado}`}
+                          disabled={g.estado === "pendiente" && !g.categoria}
+                          onClick={() => toggleGastoEstado(g.id)}
+                        >
+                          {g.estado === "pendiente" ? "Confirmar" : "Ingresado"}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </section>
+
+              <section className="block">
+                <div className="block-head">
+                  <h2>
+                    <ArrowLeftRight size={17} /> Transferencias
+                  </h2>
+                  <button className="icon-btn accent" onClick={() => setModal({ type: "transfer" })}>
+                    <Plus size={18} />
+                  </button>
+                </div>
+                {day.transferencias.length === 0 ? (
+                  <Empty icon={<ArrowLeftRight size={26} strokeWidth={1.3} />} text="No hay transferencias registradas este día." />
+                ) : (
+                  <div className="card-list">
+                    {day.transferencias.map((t) => (
+                      <button key={t.id} className="card" onClick={() => setModal({ type: "transfer", editing: t })}>
+                        <div className="card-top">
+                          <span className="card-name">{t.persona}</span>
+                          <span className="card-total">{money(t.total)}</span>
+                        </div>
+                        {t.origen === "mesero" && <span className="card-tag">Desde su corte</span>}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </section>
+            </main>
+          </>
+        )}
+      </>
+      )}
+
+      {isOwner && (
+        <nav className="bottom-nav">
+          <div className="bottom-nav-inner">
+            <button className={`bottom-nav-item ${activeTab === "corte" ? "active" : ""}`} onClick={() => setActiveTab("corte")}>
+              <Home size={20} />
+              <span>Corte</span>
+            </button>
+            <button className={`bottom-nav-item ${activeTab === "equipo" ? "active" : ""}`} onClick={() => setActiveTab("equipo")}>
+              <Users size={20} />
+              <span>Equipo</span>
+            </button>
+            <button className={`bottom-nav-item ${activeTab === "negocio" ? "active" : ""}`} onClick={() => setActiveTab("negocio")}>
+              <Store size={20} />
+              <span>Negocio</span>
+            </button>
+          </div>
+        </nav>
       )}
 
       {modal?.type === "month" && <MonthModal onClose={() => setModal(null)} onSave={addMonth} existing={monthKeys} />}
@@ -831,7 +867,6 @@ export default function CortesApp({ profile }: { profile: Profile }) {
       {modal?.type === "catalog" && (
         <CatalogModal onClose={() => setModal(null)} meseros={data.meseros} onSave={upsertMesero} onRemove={removeMeseroFromCatalog} />
       )}
-      {modal?.type === "assignDay" && <AssignDayModal onClose={() => setModal(null)} ownerId={profile.id} />}
       {modal?.type === "deleteMonth" && (
         <DeleteMonthModal
           onClose={() => setModal(null)}
