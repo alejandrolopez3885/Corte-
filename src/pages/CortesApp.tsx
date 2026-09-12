@@ -183,8 +183,8 @@ export default function CortesApp({ profile }: { profile: Profile }) {
   const month = activeMonth ? data.months[activeMonth] : null;
   const day: DayData | null = month ? month.weeks[activeWeek].days[activeDay] : null;
   const week = month ? month.weeks[activeWeek] : null;
-  const weekStartDate = activeMonth && week ? resolveWeekStartDate(activeMonth, activeWeek, week) : null;
-  const activeDayDate = activeMonth && week ? dateForDay(activeMonth, activeWeek, week, activeDay) : null;
+  const weekStartDate = activeMonth && month ? resolveWeekStartDate(activeMonth, activeWeek, month) : null;
+  const activeDayDate = activeMonth && month ? dateForDay(activeMonth, activeWeek, month, activeDay) : null;
 
   function updateDay(mutator: (d: DayData) => void) {
     if (!data || !activeMonth) return;
@@ -208,10 +208,14 @@ export default function CortesApp({ profile }: { profile: Profile }) {
     });
   }
 
+  // dateStr es la fecha corregida de la semana que se está viendo
+  // (activeWeek) — se traduce a la fecha ancla de la Semana 1, para que
+  // todo el mes se recorra junto y las semanas no se desalineen entre sí.
   function saveWeekStartDate(dateStr: string) {
-    updateWeek((w) => {
-      w.startDate = dateStr;
-    });
+    if (!data || !activeMonth) return;
+    const next = structuredClone(data);
+    next.months[activeMonth].week1StartDate = addDaysIso(dateStr, -activeWeek * 7);
+    persist(next);
   }
 
   function addMonth(monthKey: string) {
@@ -575,11 +579,11 @@ export default function CortesApp({ profile }: { profile: Profile }) {
             </div>
           )}
 
-          {isOwner && week && activeMonth && (
+          {isOwner && week && month && activeMonth && (
             <nav className="day-scroll">
               {DAYS.map((d) => {
                 const hasData = week.days[d].meseros.length > 0;
-                const dDate = dateForDay(activeMonth, activeWeek, week, d);
+                const dDate = dateForDay(activeMonth, activeWeek, month, d);
                 return (
                   <button key={d} className={`day-chip ${d === activeDay ? "active" : ""}`} onClick={() => setActiveDay(d)}>
                     {hasData ? <CircleDot size={9} /> : <Circle size={9} />}
@@ -761,6 +765,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
         <WeekSummaryModal
           onClose={() => setModal(null)}
           week={month.weeks[activeWeek]}
+          month={month}
           weekLabel={`Semana ${activeWeek + 1} · ${month.label}`}
           monthKey={activeMonth}
           weekIndex={activeWeek}
@@ -772,6 +777,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
         <GastosSummaryModal
           onClose={() => setModal(null)}
           week={month.weeks[activeWeek]}
+          month={month}
           weekLabel={`Gastos · Semana ${activeWeek + 1} · ${month.label}`}
           monthKey={activeMonth}
           weekIndex={activeWeek}

@@ -66,12 +66,13 @@ export function defaultWeekStartDate(monthKey: string, weekIndex: number): strin
   return addDaysIso(week1Start, weekIndex * 7);
 }
 
-export function resolveWeekStartDate(monthKey: string, weekIndex: number, week: WeekData): string {
-  return week.startDate || defaultWeekStartDate(monthKey, weekIndex);
+export function resolveWeekStartDate(monthKey: string, weekIndex: number, month: MonthData): string {
+  const week1Start = month.week1StartDate || defaultWeekStartDate(monthKey, 0);
+  return addDaysIso(week1Start, weekIndex * 7);
 }
 
-export function dateForDay(monthKey: string, weekIndex: number, week: WeekData, dayName: DayName): string {
-  return addDaysIso(resolveWeekStartDate(monthKey, weekIndex, week), DAYS.indexOf(dayName));
+export function dateForDay(monthKey: string, weekIndex: number, month: MonthData, dayName: DayName): string {
+  return addDaysIso(resolveWeekStartDate(monthKey, weekIndex, month), DAYS.indexOf(dayName));
 }
 
 // "7" — solo el número de día, para chips angostos.
@@ -110,12 +111,14 @@ export function formatWeekRange(startDate: string): string {
 export function buildMonth(monthKey: string, week1Start?: string): MonthData {
   const [y, m] = monthKey.split("-").map(Number);
   const label = new Date(y, m - 1, 1).toLocaleDateString("es-MX", { month: "long", year: "numeric" });
-  const anchor = week1Start || defaultWeekStartDate(monthKey, 0);
-  const weeks: WeekData[] = Array.from({ length: 4 }, (_, weekIndex) => ({
+  const weeks: WeekData[] = Array.from({ length: 4 }, () => ({
     days: Object.fromEntries(DAYS.map((d) => [d, emptyDay()])) as Record<DayName, DayData>,
-    startDate: addDaysIso(anchor, weekIndex * 7),
   }));
-  return { label: label.charAt(0).toUpperCase() + label.slice(1), weeks };
+  return {
+    label: label.charAt(0).toUpperCase() + label.slice(1),
+    weeks,
+    week1StartDate: week1Start || defaultWeekStartDate(monthKey, 0),
+  };
 }
 
 export function defaultData(): AppData {
@@ -152,6 +155,25 @@ export function migrateAppData(raw: AppData): { data: AppData; changed: boolean 
   }
 
   Object.entries(data.months).forEach(([monthKey, month]) => {
+    // Migra la fecha ancla por semana (diseño anterior, de muy corta vida)
+    // a la fecha ancla única por mes.
+    if (!month.week1StartDate) {
+      const weekWithLegacyDate = month.weeks
+        .map((w, i) => ({ w: w as WeekData & { startDate?: string }, i }))
+        .find(({ w }) => w.startDate);
+      if (weekWithLegacyDate) {
+        month.week1StartDate = addDaysIso(weekWithLegacyDate.w.startDate as string, -weekWithLegacyDate.i * 7);
+        changed = true;
+      }
+    }
+    month.weeks.forEach((week) => {
+      const legacyStartDate = (week as WeekData & { startDate?: string }).startDate;
+      if (legacyStartDate !== undefined) {
+        delete (week as WeekData & { startDate?: string }).startDate;
+        changed = true;
+      }
+    });
+
     month.weeks.forEach((week, weekIndex) => {
       DAYS.forEach((dayName) => {
         const day = week.days[dayName] as DayData & { facturas?: unknown[] };

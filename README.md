@@ -2,11 +2,14 @@
 
 App para llevar el corte de caja diario de un restaurante: por mesero (venta,
 tarjetas, propina, gastos y transferencias), organizado por mes → semana →
-día, con resúmenes semanales y conciliación de efectivo. Cada semana está
-anclada a una fecha real (el Lunes) — calculada sola al crear el mes, pero
-corregible desde el resumen semanal — así todo el corte (chips de día,
-encabezados, tablas) siempre muestra la fecha real (día, mes y año) en vez
-de solo el nombre del día, evitando confusiones. También tiene una
+día, con resúmenes semanales y conciliación de efectivo. Cada mes tiene una
+sola fecha ancla real (el Lunes de la Semana 1) — calculada sola al crear el
+mes, pero corregible desde el resumen semanal — a partir de la cual se
+calculan las 4 semanas (siempre +7/+14/+21 días, nunca se desalinean entre
+sí). Así todo el corte (chips de día, encabezados, tablas) siempre muestra
+la fecha real (día, mes y año) en vez de solo el nombre del día — y si una
+semana se asoma al mes anterior o siguiente, se muestra tal cual, con su
+fecha exacta. También tiene una
 sección aparte, **Proveedores** (ícono de camión en la barra superior), para
 llevar el control de **facturas pagadas por transferencia** — proveedor
 (de una lista que tú administras ahí mismo), número de factura, total y

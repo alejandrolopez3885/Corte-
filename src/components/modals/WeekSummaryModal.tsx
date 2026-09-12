@@ -2,11 +2,12 @@ import { useState } from "react";
 import { Sheet, Field, SumInput } from "../ui";
 import { computeWeekSummary, dateForDay, formatShortDayDate, formatWeekRange, money, resolveWeekStartDate, round2, sumFromText } from "../../lib/dataModel";
 import { DAY_SHORT } from "../../lib/types";
-import type { WeekData } from "../../lib/types";
+import type { MonthData, WeekData } from "../../lib/types";
 
 export function WeekSummaryModal({
   onClose,
   week,
+  month,
   weekLabel,
   monthKey,
   weekIndex,
@@ -15,6 +16,7 @@ export function WeekSummaryModal({
 }: {
   onClose: () => void;
   week: WeekData;
+  month: MonthData;
   weekLabel: string;
   monthKey: string;
   weekIndex: number;
@@ -23,7 +25,7 @@ export function WeekSummaryModal({
 }) {
   const s = computeWeekSummary(week);
   const [realText, setRealText] = useState(s.efectivoReal != null ? String(s.efectivoReal) : "");
-  const startDate = resolveWeekStartDate(monthKey, weekIndex, week);
+  const startDate = resolveWeekStartDate(monthKey, weekIndex, month);
   const [dateDraft, setDateDraft] = useState(startDate);
 
   function commitReal() {
@@ -45,10 +47,13 @@ export function WeekSummaryModal({
         </Field>
         {dateDraft !== startDate ? (
           <button className="btn-primary" onClick={() => onSaveStartDate(dateDraft)}>
-            Corregir fecha de esta semana
+            Corregir y recorrer todo el mes
           </button>
         ) : (
-          <p className="hint">{formatWeekRange(startDate)}. Corrígela solo si no coincide con tu corte real.</p>
+          <p className="hint">
+            {formatWeekRange(startDate)}. Si la corriges, las demás semanas del mes se recorren junto con ella (siempre quedan
+            de Lunes a Domingo, aunque se asomen a otro mes).
+          </p>
         )}
       </div>
 
@@ -115,7 +120,7 @@ export function WeekSummaryModal({
           {s.perDay.map((r) => (
             <div className="week-table-row" key={r.day}>
               <span>
-                {DAY_SHORT[r.day]} <em>{formatShortDayDate(dateForDay(monthKey, weekIndex, week, r.day))}</em>
+                {DAY_SHORT[r.day]} <em>{formatShortDayDate(dateForDay(monthKey, weekIndex, month, r.day))}</em>
               </span>
               <span>{money(r.venta)}</span>
               <span>{money(r.tarjetas)}</span>
