@@ -150,8 +150,8 @@ body {
 .diff-box.over { background: var(--accent-soft); color: var(--accent); }
 .diff-box.under { background: var(--bad-soft); color: var(--bad); }
 .week-table { margin-top: 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow-x: auto; }
-.week-table-inner { min-width: 660px; }
-.week-table-row { display: grid; grid-template-columns: 72px repeat(6, 1fr); gap: 6px; padding: 10px 14px; font-size: 12px; border-top: 1px solid var(--border); }
+.week-table-inner { min-width: 860px; }
+.week-table-row { display: grid; grid-template-columns: 72px repeat(8, 1fr); gap: 6px; padding: 10px 14px; font-size: 12px; border-top: 1px solid var(--border); }
 .week-table-row:first-child { border-top: none; }
 .week-table-head { color: var(--ink-soft); font-size: 11px; background: var(--surface-alt); }
 .week-table-row span:not(:first-child) { text-align: right; }

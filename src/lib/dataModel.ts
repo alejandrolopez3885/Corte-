@@ -315,7 +315,9 @@ export function computeWeekSummary(week: WeekData) {
 
     return {
       day: d,
-      venta: round2(dVentaMeseros + dApps),
+      ventaLocal: round2(dVentaMeseros),
+      ventaApps: round2(dApps),
+      ventaTotal: round2(dVentaMeseros + dApps),
       tarjetas: round2(dTarjetas),
       transferencias: round2(dTransfer),
       gastos: round2(dGastos),
@@ -325,6 +327,8 @@ export function computeWeekSummary(week: WeekData) {
   });
   return {
     perDay,
+    ventaLocal: round2(ventaMeseros),
+    ventaApps: round2(ventaApps),
     ventaTotal: round2(ventaMeseros + ventaApps),
     tarjetas: round2(tarjetas),
     transferencias: round2(transferencias),

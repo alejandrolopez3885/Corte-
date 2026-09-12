@@ -473,11 +473,14 @@ export default function CortesApp({ profile }: { profile: Profile }) {
   const totals = day
     ? (() => {
         const ventaMeseros = day.meseros.reduce((s, m) => s + m.venta, 0);
+        const ventaApps = day.ventaApps || 0;
         const tarjetas = day.meseros.reduce((s, m) => s + m.tarjetas, 0);
         const transferencias = day.transferencias.reduce((s, t) => s + t.total, 0);
         const gastos = day.gastos.reduce((s, g) => s + g.total, 0);
         return {
-          venta: round2(ventaMeseros + (day.ventaApps || 0)),
+          ventaLocal: round2(ventaMeseros),
+          ventaApps: round2(ventaApps),
+          ventaTotal: round2(ventaMeseros + ventaApps),
           tarjetas,
           transferencias,
           gastos,
@@ -619,8 +622,16 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           {totals && (
             <section className="summary">
               <div className="summary-item">
-                <span>Venta</span>
-                <strong>{money(totals.venta)}</strong>
+                <span>Venta local</span>
+                <strong>{money(totals.ventaLocal)}</strong>
+              </div>
+              <div className="summary-item">
+                <span>Venta apps</span>
+                <strong>{money(totals.ventaApps)}</strong>
+              </div>
+              <div className="summary-item">
+                <span>Venta total</span>
+                <strong>{money(totals.ventaTotal)}</strong>
               </div>
               <div className="summary-item">
                 <span>Tarjetas</span>
