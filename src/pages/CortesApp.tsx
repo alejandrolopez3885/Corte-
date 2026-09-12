@@ -621,6 +621,10 @@ export default function CortesApp({ profile }: { profile: Profile }) {
 
           {totals && (
             <section className="summary">
+              <div className="summary-item highlight">
+                <span>Venta total</span>
+                <strong>{money(totals.ventaTotal)}</strong>
+              </div>
               <div className="summary-item">
                 <span>Venta local</span>
                 <strong>{money(totals.ventaLocal)}</strong>
@@ -629,15 +633,11 @@ export default function CortesApp({ profile }: { profile: Profile }) {
                 <span>Venta apps</span>
                 <strong>{money(totals.ventaApps)}</strong>
               </div>
-              <div className="summary-item">
-                <span>Venta total</span>
-                <strong>{money(totals.ventaTotal)}</strong>
-              </div>
-              <div className="summary-item">
+              <div className="summary-item highlight">
                 <span>Tarjetas</span>
                 <strong>{money(totals.tarjetas)}</strong>
               </div>
-              <div className="summary-item">
+              <div className="summary-item highlight">
                 <span>Transferencias</span>
                 <strong>{money(totals.transferencias)}</strong>
               </div>

@@ -58,6 +58,10 @@ export function WeekSummaryModal({
       </div>
 
       <div className="summary-grid-modal">
+        <div className="summary-item highlight">
+          <span>Venta total</span>
+          <strong>{money(s.ventaTotal)}</strong>
+        </div>
         <div className="summary-item">
           <span>Venta local</span>
           <strong>{money(s.ventaLocal)}</strong>
@@ -66,15 +70,11 @@ export function WeekSummaryModal({
           <span>Venta apps</span>
           <strong>{money(s.ventaApps)}</strong>
         </div>
-        <div className="summary-item">
-          <span>Venta total</span>
-          <strong>{money(s.ventaTotal)}</strong>
-        </div>
-        <div className="summary-item">
+        <div className="summary-item highlight">
           <span>Total tarjetas</span>
           <strong>{money(s.tarjetas)}</strong>
         </div>
-        <div className="summary-item">
+        <div className="summary-item highlight">
           <span>Total transferencias</span>
           <strong>{money(s.transferencias)}</strong>
         </div>
@@ -118,9 +118,9 @@ export function WeekSummaryModal({
         <div className="week-table-inner">
           <div className="week-table-row week-table-head">
             <span>Día</span>
+            <span>Venta total</span>
             <span>Venta local</span>
             <span>Venta apps</span>
-            <span>Venta total</span>
             <span>Tarjetas</span>
             <span>Transf.</span>
             <span>Gastos</span>
@@ -132,9 +132,9 @@ export function WeekSummaryModal({
               <span>
                 {DAY_SHORT[r.day]} <em>{formatShortDayDate(dateForDay(monthKey, weekIndex, month, r.day))}</em>
               </span>
+              <span>{money(r.ventaTotal)}</span>
               <span>{money(r.ventaLocal)}</span>
               <span>{money(r.ventaApps)}</span>
-              <span>{money(r.ventaTotal)}</span>
               <span>{money(r.tarjetas)}</span>
               <span>{money(r.transferencias)}</span>
               <span>{money(r.gastos)}</span>
@@ -144,9 +144,9 @@ export function WeekSummaryModal({
           ))}
           <div className="week-table-row week-table-total">
             <span>Total</span>
+            <span>{money(s.ventaTotal)}</span>
             <span>{money(s.ventaLocal)}</span>
             <span>{money(s.ventaApps)}</span>
-            <span>{money(s.ventaTotal)}</span>
             <span>{money(s.tarjetas)}</span>
             <span>{money(s.transferencias)}</span>
             <span>{money(s.gastos)}</span>
