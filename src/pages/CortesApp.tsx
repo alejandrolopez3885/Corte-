@@ -5,7 +5,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../lib/auth.tsx";
 import { useAppData } from "../lib/useAppData";
-import { buildMonth, formatAssignedDate, locateDate, money, round2, sumFromText, uid } from "../lib/dataModel";
+import { buildMonth, formatAssignedDate, money, resolveAssignmentLocation, round2, sumFromText, uid } from "../lib/dataModel";
 import { useStaffAssignments } from "../lib/staffAssignments";
 import { DAYS, DAY_SHORT } from "../lib/types";
 import type { DayData, DayName, Gasto, GastoCategoria, MeseroCatalogEntry, MeseroCut, Profile, ProveedorCatalogEntry, Transferencia, WeekData } from "../lib/types";
@@ -60,11 +60,14 @@ export default function CortesApp({ profile }: { profile: Profile }) {
   }, [data, isOwner]);
 
   // Staff: cuando elige un día de su lista, lo ubica en mes/semana/día.
+  // La semana usa la que el dueño eligió al asignar (las pestañas "Semana N"
+  // del corte son manuales, no siempre coinciden con un cálculo por fecha).
   useEffect(() => {
     if (!data || isOwner || !selectedAssignedDate) return;
     if (locatedForDate.current === selectedAssignedDate) return;
     locatedForDate.current = selectedAssignedDate;
-    const loc = locateDate(selectedAssignedDate);
+    const assignment = assignments?.find((a) => a.assigned_date === selectedAssignedDate);
+    const loc = resolveAssignmentLocation(selectedAssignedDate, assignment?.week_index);
     setActiveMonth(loc.monthKey);
     setActiveWeek(loc.weekIndex);
     setActiveDay(loc.dayName);
@@ -73,7 +76,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
       next.months[loc.monthKey] = buildMonth(loc.monthKey);
       persist(next);
     }
-  }, [data, isOwner, selectedAssignedDate, persist]);
+  }, [data, isOwner, selectedAssignedDate, assignments, persist]);
 
   if (status === "loading" || !data) {
     return (

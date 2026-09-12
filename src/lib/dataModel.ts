@@ -134,6 +134,19 @@ export function locateDate(dateStr: string): DateLocation {
   return { monthKey, weekIndex, dayName };
 }
 
+// El mes y el día de la semana de una fecha siempre son inequívocos, pero la
+// semana ("Semana 1/2/3/4") es una pestaña manual del corte — no siempre
+// coincide con el cálculo automático por fecha. Si la asignación ya trae su
+// propia semana guardada (elegida por el dueño), se usa esa; si no (datos
+// viejos), se usa el cálculo automático como respaldo.
+export function resolveAssignmentLocation(dateStr: string, weekIndexOverride: number | null | undefined): DateLocation {
+  const loc = locateDate(dateStr);
+  if (weekIndexOverride !== null && weekIndexOverride !== undefined) {
+    return { ...loc, weekIndex: weekIndexOverride };
+  }
+  return loc;
+}
+
 export function formatAssignedDate(dateStr: string): string {
   const date = new Date(`${dateStr}T00:00:00`);
   const label = date.toLocaleDateString("es-MX", { weekday: "long", day: "numeric", month: "long" });

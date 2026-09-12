@@ -52,14 +52,18 @@ Hay 2 tipos de cuenta:
 4. Corre también [`supabase/migration_003_staff_assignments.sql`](./supabase/migration_003_staff_assignments.sql).
    Esto crea la tabla de fechas asignadas (varias por persona) y quita el
    campo viejo de una sola fecha.
-5. Ve a **Authentication → Sign In / Providers → Email** y **apaga "Confirm
+5. Corre también [`supabase/migration_004_assignment_week.sql`](./supabase/migration_004_assignment_week.sql).
+   Agrega el campo para elegir a mano en qué "Semana N" de tu corte cae cada
+   fecha asignada (ver sección 4 más abajo — importante, evita que la app
+   adivine mal la semana).
+6. Ve a **Authentication → Sign In / Providers → Email** y **apaga "Confirm
    email"**. Es obligatorio: las cuentas del equipo usan un correo técnico
    que no es real, así que nunca podrían confirmarse por correo.
-6. Ve a **Authentication → Users → Add user** y crea **un solo usuario para
+7. Ve a **Authentication → Users → Add user** y crea **un solo usuario para
    ti** (el dueño), con tu correo y una contraseña. Copia su **User UID** (lo
    verás en la lista de usuarios). A tu compañero **no** lo crees aquí — eso
    se hace desde la app en el paso 4 más abajo.
-7. Vuelve a **SQL Editor** y da de alta tu perfil de dueño, reemplazando el
+8. Vuelve a **SQL Editor** y da de alta tu perfil de dueño, reemplazando el
    UUID por el que copiaste:
 
    ```sql
@@ -67,7 +71,7 @@ Hay 2 tipos de cuenta:
      values ('UUID-DEL-DUEÑO', 'owner', 'Tu nombre');
    ```
 
-8. Ve a **Project Settings → API** y copia:
+9. Ve a **Project Settings → API** y copia:
    - **Project URL** → será `VITE_SUPABASE_URL`
    - **anon public key** → será `VITE_SUPABASE_ANON_KEY`
 
@@ -101,6 +105,13 @@ barra superior:
    botón para **agregar** una fecha nueva y un ícono de bote de basura para
    **quitar** cualquiera ya asignada. Puedes asignarle tantos días como
    quieras, de cualquier mes.
+
+   Al elegir la fecha, la app te sugiere una semana ("Semana 1/2/3/4"), pero
+   **revísala y corrígela si hace falta**: las pestañas de semana de tu
+   corte son manuales (dependen de cuándo empezaste a capturar ese mes, no
+   de un cálculo fijo por fecha), así que la sugerencia puede no coincidir
+   con la semana donde tú ya tienes (o vas a tener) capturado ese día. Elige
+   la que corresponda a tu propio corte.
 3. Tu compañero entra desde la pantalla de inicio, con "Soy del equipo,
    tengo un PIN" → toca su nombre → teclea su PIN → si tiene más de un día
    asignado, elige cuál va a capturar (puede cambiar de día con el enlace

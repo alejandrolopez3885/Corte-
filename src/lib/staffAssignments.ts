@@ -7,15 +7,17 @@ const POLL_INTERVAL_MS = 20000;
 export async function listAssignments(staffId: string): Promise<StaffAssignment[]> {
   const { data, error } = await supabase
     .from("staff_assignments")
-    .select("id, staff_id, assigned_date")
+    .select("id, staff_id, assigned_date, week_index")
     .eq("staff_id", staffId)
     .order("assigned_date", { ascending: true });
   if (error) throw error;
   return data as StaffAssignment[];
 }
 
-export async function addAssignment(staffId: string, date: string): Promise<void> {
-  const { error } = await supabase.from("staff_assignments").insert({ staff_id: staffId, assigned_date: date });
+export async function addAssignment(staffId: string, date: string, weekIndex: number): Promise<void> {
+  const { error } = await supabase
+    .from("staff_assignments")
+    .insert({ staff_id: staffId, assigned_date: date, week_index: weekIndex });
   if (error) throw error;
 }
 

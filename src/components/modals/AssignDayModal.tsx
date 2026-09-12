@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Trash2 } from "lucide-react";
 import { Sheet, Field, NumInput } from "../ui";
 import { supabase } from "../../lib/supabaseClient";
-import { formatAssignedDate } from "../../lib/dataModel";
+import { formatAssignedDate, locateDate } from "../../lib/dataModel";
 import { addAssignment, listAssignments, removeAssignment } from "../../lib/staffAssignments";
 import { createStaffAccount, PIN_LENGTH } from "../../lib/staffAccounts";
 import type { Profile, StaffAssignment } from "../../lib/types";
@@ -105,12 +105,21 @@ function AssignmentsManager({ staff }: { staff: Profile }) {
   const [assignments, setAssignments] = useState<StaffAssignment[] | null>(null);
   const [loadError, setLoadError] = useState(false);
   const [newDate, setNewDate] = useState("");
+  const [weekIndex, setWeekIndex] = useState(0);
+  const [weekTouched, setWeekTouched] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     refresh();
   }, [staff.id]);
+
+  // Sugerencia automática de semana al elegir fecha — el dueño la confirma o
+  // la corrige, porque las pestañas "Semana N" del corte son manuales.
+  useEffect(() => {
+    if (!newDate || weekTouched) return;
+    setWeekIndex(locateDate(newDate).weekIndex);
+  }, [newDate, weekTouched]);
 
   async function refresh() {
     try {
@@ -129,8 +138,10 @@ function AssignmentsManager({ staff }: { staff: Profile }) {
     }
     setSaving(true);
     try {
-      await addAssignment(staff.id, newDate);
+      await addAssignment(staff.id, newDate, weekIndex);
       setNewDate("");
+      setWeekIndex(0);
+      setWeekTouched(false);
       await refresh();
     } catch {
       setError("No se pudo asignar esa fecha.");
@@ -165,7 +176,10 @@ function AssignmentsManager({ staff }: { staff: Profile }) {
         <div className="catalog-list">
           {assignments.map((a) => (
             <div key={a.id} className="catalog-row">
-              <strong>{formatAssignedDate(a.assigned_date)}</strong>
+              <div>
+                <strong>{formatAssignedDate(a.assigned_date)}</strong>
+                <span>Semana {(a.week_index ?? locateDate(a.assigned_date).weekIndex) + 1} de tu corte</span>
+              </div>
               <button className="icon-btn" disabled={saving} onClick={() => remove(a.id)} aria-label="Quitar">
                 <Trash2 size={16} />
               </button>
@@ -180,6 +194,28 @@ function AssignmentsManager({ staff }: { staff: Profile }) {
           <input type="date" className="date-input" value={newDate} onChange={(e) => setNewDate(e.target.value)} />
         </Field>
       </div>
+      {newDate && (
+        <Field label="¿En qué semana de tu corte cae esta fecha?">
+          <select
+            className="text-input"
+            value={weekIndex}
+            onChange={(e) => {
+              setWeekIndex(Number(e.target.value));
+              setWeekTouched(true);
+            }}
+          >
+            {[0, 1, 2, 3].map((i) => (
+              <option key={i} value={i}>
+                Semana {i + 1}
+              </option>
+            ))}
+          </select>
+          <p className="hint">
+            Las semanas de tu corte son manuales — revisa en qué pestaña ("Semana 1", "Semana 2"...) ya tienes o vas a tener
+            capturado este día, y elígela aquí.
+          </p>
+        </Field>
+      )}
       <button className="btn-primary" disabled={!newDate || saving} onClick={add}>
         {saving ? "Guardando…" : "Agregar día"}
       </button>

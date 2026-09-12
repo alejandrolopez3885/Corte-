@@ -127,4 +127,9 @@ export interface StaffAssignment {
   id: string;
   staff_id: string;
   assigned_date: string; // ISO date (YYYY-MM-DD)
+  // A qué pestaña "Semana N" del corte corresponde (0-3). Lo elige el dueño
+  // al asignar, porque las semanas del corte son manuales y no siempre
+  // coinciden con un cálculo automático por fecha. Nulo en asignaciones
+  // guardadas antes de que existiera este campo.
+  week_index: number | null;
 }
