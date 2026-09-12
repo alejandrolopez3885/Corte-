@@ -56,14 +56,17 @@ Hay 2 tipos de cuenta:
    Agrega el campo para elegir a mano en qué "Semana N" de tu corte cae cada
    fecha asignada (ver sección 4 más abajo — importante, evita que la app
    adivine mal la semana).
-6. Ve a **Authentication → Sign In / Providers → Email** y **apaga "Confirm
+6. Corre también [`supabase/migration_005_realtime.sql`](./supabase/migration_005_realtime.sql).
+   Habilita que los cambios se reflejen solos en todos los dispositivos
+   conectados, sin recargar la página (ver sección 5 más abajo).
+7. Ve a **Authentication → Sign In / Providers → Email** y **apaga "Confirm
    email"**. Es obligatorio: las cuentas del equipo usan un correo técnico
    que no es real, así que nunca podrían confirmarse por correo.
-7. Ve a **Authentication → Users → Add user** y crea **un solo usuario para
+8. Ve a **Authentication → Users → Add user** y crea **un solo usuario para
    ti** (el dueño), con tu correo y una contraseña. Copia su **User UID** (lo
    verás en la lista de usuarios). A tu compañero **no** lo crees aquí — eso
    se hace desde la app en el paso 4 más abajo.
-8. Vuelve a **SQL Editor** y da de alta tu perfil de dueño, reemplazando el
+9. Vuelve a **SQL Editor** y da de alta tu perfil de dueño, reemplazando el
    UUID por el que copiaste:
 
    ```sql
@@ -71,7 +74,7 @@ Hay 2 tipos de cuenta:
      values ('UUID-DEL-DUEÑO', 'owner', 'Tu nombre');
    ```
 
-9. Ve a **Project Settings → API** y copia:
+10. Ve a **Project Settings → API** y copia:
    - **Project URL** → será `VITE_SUPABASE_URL`
    - **anon public key** → será `VITE_SUPABASE_ANON_KEY`
 
@@ -119,7 +122,16 @@ barra superior:
 4. Si quitas una fecha, esa persona pierde acceso a ese día en cuestión de
    segundos, sin que tenga que cerrar sesión.
 
-## 5. Desplegar en Vercel
+## 5. Sincronización en vivo
+
+Con `migration_005_realtime.sql` corrido, los cambios se reflejan solos en
+todos los dispositivos que tengan la app abierta — si tú editas un corte
+desde tu iPad, tu compañero lo ve aparecer en su celular sin recargar (y
+viceversa). Si por algún motivo la conexión en vivo se cae, la app sigue
+guardando normal; solo tardarías en ver el cambio de otro dispositivo hasta
+que recargues.
+
+## 6. Desplegar en Vercel
 
 1. Sube este repositorio a GitHub (ya está conectado si vienes de Claude
    Code).
@@ -145,4 +157,6 @@ supabase/
   schema.sql                        tablas y políticas RLS base
   migration_002_staff_pin.sql       tabla de directorio para el login por PIN
   migration_003_staff_assignments.sql  fechas asignadas (varias por persona)
+  migration_004_assignment_week.sql    semana elegida a mano por asignación
+  migration_005_realtime.sql           activa la sincronización en vivo
 ```

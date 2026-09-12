@@ -26,9 +26,10 @@ export async function removeAssignment(assignmentId: string): Promise<void> {
   if (error) throw error;
 }
 
-// Usado por la vista del staff: mantiene la lista de sus días asignados
-// al día, revisando periódicamente mientras la app está abierta — así, si
-// el dueño le quita un día, deja de tener acceso sin necesidad de recargar.
+// Usado por la vista del staff: mantiene la lista de sus días asignados al
+// día. Los cambios en vivo (Supabase Realtime) hacen que una asignación o
+// una revocación del dueño se reflejen de inmediato; el sondeo cada 20s
+// sigue como respaldo por si la conexión en vivo se cae.
 export function useStaffAssignments(staffId: string | null) {
   const [assignments, setAssignments] = useState<StaffAssignment[] | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
@@ -49,6 +50,21 @@ export function useStaffAssignments(staffId: string | null) {
     refresh();
     const interval = setInterval(refresh, POLL_INTERVAL_MS);
     return () => clearInterval(interval);
+  }, [staffId, refresh]);
+
+  useEffect(() => {
+    if (!staffId) return;
+    const channel = supabase
+      .channel(`staff_assignments-${staffId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "staff_assignments", filter: `staff_id=eq.${staffId}` },
+        () => refresh()
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [staffId, refresh]);
 
   return { assignments, status, refresh };

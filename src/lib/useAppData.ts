@@ -15,6 +15,10 @@ export function useAppData(profile: Profile | null) {
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Mientras un guardado propio está en curso, ignoramos cambios en vivo que
+  // lleguen de otros dispositivos — el nuestro los va a sobrescribir en
+  // cuanto termine, y aplicar el remoto a medias solo causaría un parpadeo.
+  const pendingWrite = useRef<AppData | null>(null);
   const targetOwnerId = profile ? ownerIdFor(profile) : null;
 
   useEffect(() => {
@@ -67,17 +71,39 @@ export function useAppData(profile: Profile | null) {
     };
   }, [targetOwnerId]);
 
+  // Cambios en vivo: si tú o tu compañero editan desde otro dispositivo,
+  // esta pestaña recibe el cambio automáticamente, sin recargar.
+  useEffect(() => {
+    if (!targetOwnerId) return;
+    const channel = supabase
+      .channel(`app_data-${targetOwnerId}`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "app_data", filter: `owner_id=eq.${targetOwnerId}` },
+        (payload) => {
+          if (pendingWrite.current) return;
+          setData(payload.new.data as AppData);
+        }
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [targetOwnerId]);
+
   const persist = useCallback(
     (next: AppData) => {
       setData(next);
       if (!targetOwnerId) return;
       if (saveTimer.current) clearTimeout(saveTimer.current);
+      pendingWrite.current = next;
       setSaveState("saving");
       saveTimer.current = setTimeout(async () => {
         const { error } = await supabase
           .from("app_data")
           .update({ data: next, updated_at: new Date().toISOString() })
           .eq("owner_id", targetOwnerId);
+        pendingWrite.current = null;
         setSaveState(error ? "error" : "saved");
         if (error) console.error("No se pudo guardar", error);
       }, 400);
