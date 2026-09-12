@@ -5,7 +5,10 @@ import {
 } from "lucide-react";
 import { useAuth } from "../lib/auth.tsx";
 import { useAppData } from "../lib/useAppData";
-import { buildMonth, formatAssignedDate, money, resolveAssignmentLocation, round2, sumFromText, uid } from "../lib/dataModel";
+import {
+  buildMonth, dateForDay, formatAssignedDate, formatDayNumber, formatLongDayDate, formatWeekRange,
+  money, resolveAssignmentLocation, resolveWeekStartDate, round2, sumFromText, uid,
+} from "../lib/dataModel";
 import { useStaffAssignments } from "../lib/staffAssignments";
 import { DAYS, DAY_SHORT } from "../lib/types";
 import type { DayData, DayName, Gasto, GastoCategoria, MeseroCatalogEntry, MeseroCut, Profile, ProveedorCatalogEntry, Transferencia, WeekData } from "../lib/types";
@@ -174,6 +177,9 @@ export default function CortesApp({ profile }: { profile: Profile }) {
   const monthKeys = Object.keys(data.months).sort();
   const month = activeMonth ? data.months[activeMonth] : null;
   const day: DayData | null = month ? month.weeks[activeWeek].days[activeDay] : null;
+  const week = month ? month.weeks[activeWeek] : null;
+  const weekStartDate = activeMonth && week ? resolveWeekStartDate(activeMonth, activeWeek, week) : null;
+  const activeDayDate = activeMonth && week ? dateForDay(activeMonth, activeWeek, week, activeDay) : null;
 
   function updateDay(mutator: (d: DayData) => void) {
     if (!data || !activeMonth) return;
@@ -194,6 +200,12 @@ export default function CortesApp({ profile }: { profile: Profile }) {
   function saveEfectivoReal(rawValue: string) {
     updateWeek((w) => {
       w.efectivoReal = sumFromText(rawValue);
+    });
+  }
+
+  function saveWeekStartDate(dateStr: string) {
+    updateWeek((w) => {
+      w.startDate = dateStr;
     });
   }
 
@@ -517,28 +529,31 @@ export default function CortesApp({ profile }: { profile: Profile }) {
       ) : (
         <>
           {isOwner ? (
-            <div className="week-bar">
-              <nav className="week-tabs">
-                {month.weeks.map((_, i) => (
-                  <button
-                    key={i}
-                    className={`week-tab ${i === activeWeek ? "active" : ""}`}
-                    onClick={() => {
-                      setActiveWeek(i);
-                      setActiveDay("Lunes");
-                    }}
-                  >
-                    Semana {i + 1}
-                  </button>
-                ))}
-              </nav>
-              <button className="icon-btn" onClick={() => setModal({ type: "weekSummary" })} aria-label="Resumen semanal">
-                <BarChart3 size={18} />
-              </button>
-              <button className="icon-btn" onClick={() => setModal({ type: "gastosSummary" })} aria-label="Resumen de gastos">
-                <Receipt size={18} />
-              </button>
-            </div>
+            <>
+              <div className="week-bar">
+                <nav className="week-tabs">
+                  {month.weeks.map((_, i) => (
+                    <button
+                      key={i}
+                      className={`week-tab ${i === activeWeek ? "active" : ""}`}
+                      onClick={() => {
+                        setActiveWeek(i);
+                        setActiveDay("Lunes");
+                      }}
+                    >
+                      Semana {i + 1}
+                    </button>
+                  ))}
+                </nav>
+                <button className="icon-btn" onClick={() => setModal({ type: "weekSummary" })} aria-label="Resumen semanal">
+                  <BarChart3 size={18} />
+                </button>
+                <button className="icon-btn" onClick={() => setModal({ type: "gastosSummary" })} aria-label="Resumen de gastos">
+                  <Receipt size={18} />
+                </button>
+              </div>
+              {weekStartDate && <p className="week-range-hint">{formatWeekRange(weekStartDate)}</p>}
+            </>
           ) : (
             <div className="staff-banner">
               <span>Capturando el corte de {selectedAssignedDate && formatAssignedDate(selectedAssignedDate)}</span>
@@ -550,19 +565,22 @@ export default function CortesApp({ profile }: { profile: Profile }) {
             </div>
           )}
 
-          {isOwner && (
+          {isOwner && week && activeMonth && (
             <nav className="day-scroll">
               {DAYS.map((d) => {
-                const hasData = month.weeks[activeWeek].days[d].meseros.length > 0;
+                const hasData = week.days[d].meseros.length > 0;
+                const dDate = dateForDay(activeMonth, activeWeek, week, d);
                 return (
                   <button key={d} className={`day-chip ${d === activeDay ? "active" : ""}`} onClick={() => setActiveDay(d)}>
                     {hasData ? <CircleDot size={9} /> : <Circle size={9} />}
-                    {DAY_SHORT[d]}
+                    {DAY_SHORT[d]} <span className="day-chip-date">{formatDayNumber(dDate)}</span>
                   </button>
                 );
               })}
             </nav>
           )}
+
+          {isOwner && activeDayDate && <p className="active-day-date">{formatLongDayDate(activeDayDate)}</p>}
 
           {totals && (
             <section className="summary">
@@ -729,19 +747,24 @@ export default function CortesApp({ profile }: { profile: Profile }) {
         />
       )}
       {modal?.type === "apps" && day && <AppsModal onClose={() => setModal(null)} onSave={saveVentaApps} value={day.ventaApps || 0} />}
-      {modal?.type === "weekSummary" && month && (
+      {modal?.type === "weekSummary" && month && activeMonth && (
         <WeekSummaryModal
           onClose={() => setModal(null)}
           week={month.weeks[activeWeek]}
           weekLabel={`Semana ${activeWeek + 1} · ${month.label}`}
+          monthKey={activeMonth}
+          weekIndex={activeWeek}
           onSaveEfectivoReal={saveEfectivoReal}
+          onSaveStartDate={saveWeekStartDate}
         />
       )}
-      {modal?.type === "gastosSummary" && month && (
+      {modal?.type === "gastosSummary" && month && activeMonth && (
         <GastosSummaryModal
           onClose={() => setModal(null)}
           week={month.weeks[activeWeek]}
           weekLabel={`Gastos · Semana ${activeWeek + 1} · ${month.label}`}
+          monthKey={activeMonth}
+          weekIndex={activeWeek}
           onToggleEstado={toggleGastoEstadoInWeek}
           onSetCategoria={setGastoCategoriaInWeek}
         />

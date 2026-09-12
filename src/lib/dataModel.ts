@@ -32,11 +32,78 @@ export function emptyDay(): DayData {
   return { meseros: [], gastos: [], transferencias: [], ventaApps: 0 };
 }
 
+// --- Fechas reales por semana/día -------------------------------------
+// Cada semana ancla su Lunes a una fecha real (editable). Por default, la
+// semana 1 empieza en el lunes que cae en o antes del día 1 del mes, y las
+// siguientes 3 semanas avanzan de 7 en 7 días — así cada semana es siempre
+// un Lunes-a-Domingo real, aunque la primera se asome al mes anterior.
+
+export function addDaysIso(dateStr: string, days: number): string {
+  const date = new Date(`${dateStr}T00:00:00`);
+  date.setDate(date.getDate() + days);
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+function mondayOnOrBefore(dateStr: string): string {
+  const date = new Date(`${dateStr}T00:00:00`);
+  const jsDay = date.getDay(); // 0=Domingo..6=Sábado
+  const offset = (jsDay + 6) % 7; // días desde el Lunes anterior (0 si ya es Lunes)
+  return addDaysIso(dateStr, -offset);
+}
+
+export function defaultWeekStartDate(monthKey: string, weekIndex: number): string {
+  const [y, m] = monthKey.split("-").map(Number);
+  const firstOfMonth = `${y}-${String(m).padStart(2, "0")}-01`;
+  const week1Start = mondayOnOrBefore(firstOfMonth);
+  return addDaysIso(week1Start, weekIndex * 7);
+}
+
+export function resolveWeekStartDate(monthKey: string, weekIndex: number, week: WeekData): string {
+  return week.startDate || defaultWeekStartDate(monthKey, weekIndex);
+}
+
+export function dateForDay(monthKey: string, weekIndex: number, week: WeekData, dayName: DayName): string {
+  return addDaysIso(resolveWeekStartDate(monthKey, weekIndex, week), DAYS.indexOf(dayName));
+}
+
+// "7" — solo el número de día, para chips angostos.
+export function formatDayNumber(dateStr: string): string {
+  return String(new Date(`${dateStr}T00:00:00`).getDate());
+}
+
+// "7 sep" — para chips y tablas compactas.
+export function formatShortDayDate(dateStr: string): string {
+  const date = new Date(`${dateStr}T00:00:00`);
+  return date.toLocaleDateString("es-MX", { day: "numeric", month: "short" }).replace(".", "");
+}
+
+// "Lunes 7 de septiembre de 2026" — para encabezados.
+export function formatLongDayDate(dateStr: string): string {
+  const date = new Date(`${dateStr}T00:00:00`);
+  const label = date.toLocaleDateString("es-MX", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  return label.charAt(0).toUpperCase() + label.slice(1);
+}
+
+// "1 – 7 sep" — para mostrar junto a la pestaña de cada semana.
+export function formatWeekRange(startDate: string): string {
+  const end = addDaysIso(startDate, 6);
+  const startD = new Date(`${startDate}T00:00:00`);
+  const endD = new Date(`${end}T00:00:00`);
+  const sameMonth = startD.getMonth() === endD.getMonth();
+  const startLabel = startD.toLocaleDateString("es-MX", { day: "numeric", month: sameMonth ? undefined : "short" });
+  const endLabel = endD.toLocaleDateString("es-MX", { day: "numeric", month: "short" });
+  return `${startLabel} – ${endLabel}`;
+}
+
 export function buildMonth(monthKey: string): MonthData {
   const [y, m] = monthKey.split("-").map(Number);
   const label = new Date(y, m - 1, 1).toLocaleDateString("es-MX", { month: "long", year: "numeric" });
-  const weeks: WeekData[] = Array.from({ length: 4 }, () => ({
+  const weeks: WeekData[] = Array.from({ length: 4 }, (_, weekIndex) => ({
     days: Object.fromEntries(DAYS.map((d) => [d, emptyDay()])) as Record<DayName, DayData>,
+    startDate: defaultWeekStartDate(monthKey, weekIndex),
   }));
   return { label: label.charAt(0).toUpperCase() + label.slice(1), weeks };
 }

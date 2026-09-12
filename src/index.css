@@ -87,6 +87,11 @@ body {
 }
 .day-chip svg { opacity: 0.6; }
 .day-chip.active svg { opacity: 1; }
+.day-chip-date { opacity: 0.65; font-size: 12px; font-variant-numeric: tabular-nums; }
+.day-chip.active .day-chip-date { opacity: 0.85; }
+
+.week-range-hint { margin: -6px 20px 12px; font-size: 12.5px; color: var(--ink-soft); }
+.active-day-date { margin: -4px 20px 14px; font-size: 13px; color: var(--ink-soft); font-weight: 500; }
 
 .summary {
   margin: 4px 20px 18px; background: var(--surface); border: 1px solid var(--border);
@@ -120,16 +125,18 @@ body {
 .diff-box.over { background: var(--accent-soft); color: var(--accent); }
 .diff-box.under { background: var(--bad-soft); color: var(--bad); }
 .week-table { margin-top: 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow-x: auto; }
-.week-table-inner { min-width: 620px; }
-.week-table-row { display: grid; grid-template-columns: 52px repeat(6, 1fr); gap: 6px; padding: 10px 14px; font-size: 12px; border-top: 1px solid var(--border); }
+.week-table-inner { min-width: 660px; }
+.week-table-row { display: grid; grid-template-columns: 72px repeat(6, 1fr); gap: 6px; padding: 10px 14px; font-size: 12px; border-top: 1px solid var(--border); }
 .week-table-row:first-child { border-top: none; }
 .week-table-head { color: var(--ink-soft); font-size: 11px; background: var(--surface-alt); }
 .week-table-row span:not(:first-child) { text-align: right; }
+.week-table-row span em { font-style: normal; opacity: 0.65; font-size: 0.9em; margin-left: 3px; }
 .week-table-total { font-weight: 600; background: var(--surface-alt); border-top: 2px solid var(--border); }
 
 .gastos-days { display: flex; flex-direction: column; gap: 16px; margin-top: 16px; }
 .gastos-day-block { display: flex; flex-direction: column; gap: 8px; }
 .gastos-day-head { display: flex; justify-content: space-between; align-items: baseline; font-family: 'Fraunces', serif; font-size: 15px; font-weight: 600; }
+.gastos-day-head em { font-style: normal; font-family: inherit; font-weight: 400; opacity: 0.6; font-size: 0.8em; margin-left: 4px; }
 .week-total-row {
   display: flex; justify-content: space-between; align-items: center; margin-top: 18px;
   background: var(--accent-soft); color: var(--accent); border-radius: 14px; padding: 14px 18px;

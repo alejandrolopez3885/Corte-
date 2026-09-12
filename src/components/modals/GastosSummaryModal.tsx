@@ -1,6 +1,6 @@
 import { Check } from "lucide-react";
 import { Sheet } from "../ui";
-import { computeWeekGastos, money } from "../../lib/dataModel";
+import { computeWeekGastos, dateForDay, formatShortDayDate, money } from "../../lib/dataModel";
 import { GASTO_CATEGORIAS } from "../../lib/types";
 import type { DayName, GastoCategoria, WeekData } from "../../lib/types";
 
@@ -8,12 +8,16 @@ export function GastosSummaryModal({
   onClose,
   week,
   weekLabel,
+  monthKey,
+  weekIndex,
   onToggleEstado,
   onSetCategoria,
 }: {
   onClose: () => void;
   week: WeekData;
   weekLabel: string;
+  monthKey: string;
+  weekIndex: number;
   onToggleEstado: (dayName: DayName, id: string) => void;
   onSetCategoria: (dayName: DayName, id: string, categoria: GastoCategoria | "") => void;
 }) {
@@ -43,7 +47,9 @@ export function GastosSummaryModal({
         {g.perDay.map((d) => (
           <div key={d.day} className="gastos-day-block">
             <div className="gastos-day-head">
-              <span>{d.day}</span>
+              <span>
+                {d.day} <em>{formatShortDayDate(dateForDay(monthKey, weekIndex, week, d.day))}</em>
+              </span>
               <strong>{money(d.dayTotal)}</strong>
             </div>
             {d.items.length === 0 ? (

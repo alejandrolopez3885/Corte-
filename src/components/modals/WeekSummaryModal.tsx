@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Sheet, Field, SumInput } from "../ui";
-import { computeWeekSummary, money, round2, sumFromText } from "../../lib/dataModel";
+import { computeWeekSummary, dateForDay, formatShortDayDate, formatWeekRange, money, resolveWeekStartDate, round2, sumFromText } from "../../lib/dataModel";
 import { DAY_SHORT } from "../../lib/types";
 import type { WeekData } from "../../lib/types";
 
@@ -8,15 +8,23 @@ export function WeekSummaryModal({
   onClose,
   week,
   weekLabel,
+  monthKey,
+  weekIndex,
   onSaveEfectivoReal,
+  onSaveStartDate,
 }: {
   onClose: () => void;
   week: WeekData;
   weekLabel: string;
+  monthKey: string;
+  weekIndex: number;
   onSaveEfectivoReal: (rawValue: string) => void;
+  onSaveStartDate: (dateStr: string) => void;
 }) {
   const s = computeWeekSummary(week);
   const [realText, setRealText] = useState(s.efectivoReal != null ? String(s.efectivoReal) : "");
+  const startDate = resolveWeekStartDate(monthKey, weekIndex, week);
+  const [dateDraft, setDateDraft] = useState(startDate);
 
   function commitReal() {
     const sum = sumFromText(realText);
@@ -31,6 +39,19 @@ export function WeekSummaryModal({
 
   return (
     <Sheet title={weekLabel} onClose={onClose}>
+      <div className="real-cash">
+        <Field label="Esta semana empieza el (Lunes)">
+          <input type="date" className="date-input" value={dateDraft} onChange={(e) => setDateDraft(e.target.value)} />
+        </Field>
+        {dateDraft !== startDate ? (
+          <button className="btn-primary" onClick={() => onSaveStartDate(dateDraft)}>
+            Corregir fecha de esta semana
+          </button>
+        ) : (
+          <p className="hint">{formatWeekRange(startDate)}. Corrígela solo si no coincide con tu corte real.</p>
+        )}
+      </div>
+
       <div className="summary-grid-modal">
         <div className="summary-item">
           <span>Venta total</span>
@@ -93,7 +114,9 @@ export function WeekSummaryModal({
           </div>
           {s.perDay.map((r) => (
             <div className="week-table-row" key={r.day}>
-              <span>{DAY_SHORT[r.day]}</span>
+              <span>
+                {DAY_SHORT[r.day]} <em>{formatShortDayDate(dateForDay(monthKey, weekIndex, week, r.day))}</em>
+              </span>
               <span>{money(r.venta)}</span>
               <span>{money(r.tarjetas)}</span>
               <span>{money(r.transferencias)}</span>

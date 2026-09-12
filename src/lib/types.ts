@@ -100,6 +100,10 @@ export interface DayData {
 export interface WeekData {
   days: Record<DayName, DayData>;
   efectivoReal?: number | null;
+  // Fecha real (ISO) del Lunes de esta semana. Se calcula sola al crear el
+  // mes, pero es editable — así cada día del corte puede mostrar su fecha
+  // real exacta en vez de una que la app adivinó.
+  startDate?: string;
 }
 
 export interface MonthData {
