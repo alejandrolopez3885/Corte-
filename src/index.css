@@ -77,16 +77,41 @@ body {
 .week-tabs { flex: 1; min-width: 0; padding: 0; }
 .week-bar .icon-btn { flex-shrink: 0; }
 .month-scroll::-webkit-scrollbar, .day-scroll::-webkit-scrollbar { display: none; }
-.month-chip, .week-tab, .day-chip {
+.week-tab, .day-chip {
   flex-shrink: 0; border: 1px solid var(--border); background: var(--surface);
   color: var(--ink-soft); padding: 9px 16px; border-radius: 100px; font-size: 14px; cursor: pointer;
   display: flex; align-items: center; gap: 6px;
 }
-.month-chip.active, .week-tab.active, .day-chip.active {
+.week-tab.active, .day-chip.active {
   background: var(--ink); color: white; border-color: var(--ink);
 }
 .day-chip svg { opacity: 0.6; }
 .day-chip.active svg { opacity: 1; }
+
+.month-chip {
+  flex-shrink: 0; border: 1px solid var(--border); background: var(--surface);
+  border-radius: 100px; display: flex; align-items: center; padding: 0;
+}
+.month-chip.active { background: var(--ink); border-color: var(--ink); }
+.month-chip-label {
+  border: none; background: none; color: var(--ink-soft); padding: 9px 6px 9px 16px;
+  font-size: 14px; cursor: pointer; border-radius: 100px 0 0 100px;
+}
+.month-chip.active .month-chip-label { color: white; }
+.month-chip-delete {
+  border: none; background: none; color: var(--ink-soft); opacity: 0.5;
+  padding: 9px 14px 9px 4px; cursor: pointer; display: flex; align-items: center;
+  border-radius: 0 100px 100px 0;
+}
+.month-chip.active .month-chip-delete { color: white; opacity: 0.7; }
+.month-chip-delete:active { opacity: 1; }
+
+.btn-danger {
+  background: var(--bad); color: white; border: none; border-radius: 100px;
+  padding: 13px 20px; font-size: 15px; font-weight: 600; width: 100%;
+  display: flex; align-items: center; justify-content: center; gap: 7px; cursor: pointer;
+  margin-bottom: 4px;
+}
 .day-chip-date { opacity: 0.65; font-size: 12px; font-variant-numeric: tabular-nums; }
 .day-chip.active .day-chip-date { opacity: 0.85; }
 

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import {
   Plus, Settings2, Users, Receipt, ArrowLeftRight, CircleDot, Circle, Pencil,
-  Smartphone, BarChart3, CalendarDays, LogOut, Truck,
+  Smartphone, BarChart3, CalendarDays, LogOut, Truck, Trash2,
 } from "lucide-react";
 import { useAuth } from "../lib/auth.tsx";
 import { useAppData } from "../lib/useAppData";
@@ -23,6 +23,7 @@ import { AppsModal } from "../components/modals/AppsModal";
 import { WeekSummaryModal } from "../components/modals/WeekSummaryModal";
 import { GastosSummaryModal } from "../components/modals/GastosSummaryModal";
 import { AssignDayModal } from "../components/modals/AssignDayModal";
+import { DeleteMonthModal } from "../components/modals/DeleteMonthModal";
 
 type ModalState =
   | { type: "month" }
@@ -35,6 +36,7 @@ type ModalState =
   | { type: "proveedores" }
   | { type: "catalog" }
   | { type: "assignDay" }
+  | { type: "deleteMonth"; monthKey: string }
   | null;
 
 export default function CortesApp({ profile }: { profile: Profile }) {
@@ -238,6 +240,20 @@ export default function CortesApp({ profile }: { profile: Profile }) {
     setActiveMonth(monthKey);
     setActiveWeek(0);
     setActiveDay("Lunes");
+    setModal(null);
+  }
+
+  function deleteMonth(monthKey: string) {
+    if (!data) return;
+    const next = structuredClone(data);
+    delete next.months[monthKey];
+    persist(next);
+    if (activeMonth === monthKey) {
+      const remaining = Object.keys(next.months).sort();
+      setActiveMonth(remaining[remaining.length - 1] || null);
+      setActiveWeek(0);
+      setActiveDay("Lunes");
+    }
     setModal(null);
   }
 
@@ -511,17 +527,21 @@ export default function CortesApp({ profile }: { profile: Profile }) {
       {isOwner && monthKeys.length > 1 && (
         <nav className="month-scroll">
           {monthKeys.map((mk) => (
-            <button
-              key={mk}
-              className={`month-chip ${mk === activeMonth ? "active" : ""}`}
-              onClick={() => {
-                setActiveMonth(mk);
-                setActiveWeek(0);
-                setActiveDay("Lunes");
-              }}
-            >
-              {data.months[mk].label}
-            </button>
+            <div key={mk} className={`month-chip ${mk === activeMonth ? "active" : ""}`}>
+              <button
+                className="month-chip-label"
+                onClick={() => {
+                  setActiveMonth(mk);
+                  setActiveWeek(0);
+                  setActiveDay("Lunes");
+                }}
+              >
+                {data.months[mk].label}
+              </button>
+              <button className="month-chip-delete" onClick={() => setModal({ type: "deleteMonth", monthKey: mk })} aria-label={`Eliminar ${data.months[mk].label}`}>
+                <Trash2 size={13} />
+              </button>
+            </div>
           ))}
         </nav>
       )}
@@ -801,6 +821,13 @@ export default function CortesApp({ profile }: { profile: Profile }) {
         <CatalogModal onClose={() => setModal(null)} meseros={data.meseros} onSave={upsertMesero} onRemove={removeMeseroFromCatalog} />
       )}
       {modal?.type === "assignDay" && <AssignDayModal onClose={() => setModal(null)} ownerId={profile.id} />}
+      {modal?.type === "deleteMonth" && (
+        <DeleteMonthModal
+          onClose={() => setModal(null)}
+          onConfirm={() => deleteMonth(modal.monthKey)}
+          monthLabel={data.months[modal.monthKey]?.label || modal.monthKey}
+        />
+      )}
     </div>
   );
 }
