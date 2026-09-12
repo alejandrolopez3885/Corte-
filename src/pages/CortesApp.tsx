@@ -6,8 +6,8 @@ import {
 import { useAuth } from "../lib/auth.tsx";
 import { useAppData } from "../lib/useAppData";
 import {
-  buildMonth, dateForDay, formatAssignedDate, formatDayNumber, formatLongDayDate, formatWeekRange,
-  money, resolveAssignmentLocation, resolveWeekStartDate, round2, sumFromText, uid,
+  addDaysIso, buildMonth, dateForDay, formatAssignedDate, formatDayNumber, formatLongDayDate, formatWeekRange,
+  mondayOnOrBefore, money, resolveAssignmentLocation, resolveWeekStartDate, round2, sumFromText, todayIso, uid,
 } from "../lib/dataModel";
 import { useStaffAssignments } from "../lib/staffAssignments";
 import { DAYS, DAY_SHORT } from "../lib/types";
@@ -76,7 +76,12 @@ export default function CortesApp({ profile }: { profile: Profile }) {
     setActiveDay(loc.dayName);
     if (!data.months[loc.monthKey]) {
       const next = structuredClone(data);
-      next.months[loc.monthKey] = buildMonth(loc.monthKey);
+      // Ancla la semana 1 del mes nuevo a partir de esta fecha real y la
+      // semana que ya se eligió, para que las fechas mostradas coincidan
+      // con la asignación (no con el default por día-del-mes).
+      const mondayOfAssignedWeek = addDaysIso(selectedAssignedDate, -DAYS.indexOf(loc.dayName));
+      const week1Start = addDaysIso(mondayOfAssignedWeek, -loc.weekIndex * 7);
+      next.months[loc.monthKey] = buildMonth(loc.monthKey, week1Start);
       persist(next);
     }
   }, [data, isOwner, selectedAssignedDate, assignments, persist]);
@@ -219,7 +224,12 @@ export default function CortesApp({ profile }: { profile: Profile }) {
       return;
     }
     const next = structuredClone(data);
-    next.months[monthKey] = buildMonth(monthKey);
+    // Si el mes que agregas es el mes real de hoy, ancla la semana 1 a la
+    // semana real de hoy — es más confiable que asumir que empezaste el
+    // día 1 del mes, sobre todo si arrancas a mitad de mes.
+    const today = todayIso();
+    const week1Start = today.slice(0, 7) === monthKey ? mondayOnOrBefore(today) : undefined;
+    next.months[monthKey] = buildMonth(monthKey, week1Start);
     persist(next);
     setActiveMonth(monthKey);
     setActiveWeek(0);

@@ -47,11 +47,16 @@ export function addDaysIso(dateStr: string, days: number): string {
   return `${y}-${m}-${d}`;
 }
 
-function mondayOnOrBefore(dateStr: string): string {
+export function mondayOnOrBefore(dateStr: string): string {
   const date = new Date(`${dateStr}T00:00:00`);
   const jsDay = date.getDay(); // 0=Domingo..6=Sábado
   const offset = (jsDay + 6) % 7; // días desde el Lunes anterior (0 si ya es Lunes)
   return addDaysIso(dateStr, -offset);
+}
+
+export function todayIso(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
 export function defaultWeekStartDate(monthKey: string, weekIndex: number): string {
@@ -98,12 +103,17 @@ export function formatWeekRange(startDate: string): string {
   return `${startLabel} – ${endLabel}`;
 }
 
-export function buildMonth(monthKey: string): MonthData {
+// week1Start: fecha real (Lunes) donde debe empezar la semana 1, cuando ya
+// se conoce (ej. hoy, si apenas estás empezando a usar el mes; o la fecha
+// real de una asignación de staff). Si no se da, usa el default por
+// día-del-mes (menos confiable si empiezas a capturar a media semana/mes).
+export function buildMonth(monthKey: string, week1Start?: string): MonthData {
   const [y, m] = monthKey.split("-").map(Number);
   const label = new Date(y, m - 1, 1).toLocaleDateString("es-MX", { month: "long", year: "numeric" });
+  const anchor = week1Start || defaultWeekStartDate(monthKey, 0);
   const weeks: WeekData[] = Array.from({ length: 4 }, (_, weekIndex) => ({
     days: Object.fromEntries(DAYS.map((d) => [d, emptyDay()])) as Record<DayName, DayData>,
-    startDate: defaultWeekStartDate(monthKey, weekIndex),
+    startDate: addDaysIso(anchor, weekIndex * 7),
   }));
   return { label: label.charAt(0).toUpperCase() + label.slice(1), weeks };
 }
