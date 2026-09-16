@@ -97,9 +97,22 @@ export interface DayData {
   ventaApps: number;
 }
 
+// Control de gastos que los proveedores dan a crédito, pagados después por
+// transferencia — solo informativo: no afecta el efectivo a entregar ni
+// ningún total de caja del corte. Se lleva por semana, igual que
+// `efectivoReal`.
+export interface CreditoProveedores {
+  operativos: number;
+  fijos: number;
+  comisionDidi: number;
+  comisionUber: number;
+  comisionRappi: number;
+}
+
 export interface WeekData {
   days: Record<DayName, DayData>;
   efectivoReal?: number | null;
+  creditoProveedores?: CreditoProveedores;
 }
 
 export interface MonthData {

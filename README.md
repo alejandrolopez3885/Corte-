@@ -11,11 +11,11 @@ la fecha real (día, mes y año) en vez de solo el nombre del día — y si una
 semana se asoma al mes anterior o siguiente, se muestra tal cual, con su
 fecha exacta. También tiene una
 sección aparte, **Proveedores** (dentro de "Negocio" en la navegación de
-abajo), para llevar el control de **facturas pagadas por transferencia** —
-proveedor (de una lista que tú administras ahí mismo), número de factura,
-total y fecha, con estado pendiente/ingresada y categoría fija "Operación".
-Vive totalmente separada del corte diario: no afecta el efectivo ni ningún
-total de caja.
+abajo), para llevar el control de **gastos que los proveedores dan a
+crédito y pagas después por transferencia** — 5 totales fijos por semana:
+gastos operativos en transferencia, gastos fijos, comisión DIDI, comisión
+UBER y comisión RAPPI. Vive totalmente separada del corte diario: es solo
+informativo, no afecta el efectivo ni ningún total de caja.
 
 - **Frontend**: React + Vite + TypeScript.
 - **Backend**: Supabase (Auth + Postgres).

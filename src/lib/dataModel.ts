@@ -1,4 +1,4 @@
-import { DAYS, type AppData, type DayData, type DayName, type FacturaProveedor, type MeseroCut, type MonthData, type WeekData } from "./types";
+import { DAYS, type AppData, type DayData, type DayName, type MeseroCut, type MonthData, type WeekData } from "./types";
 
 export const uid = (): string => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 
@@ -273,28 +273,6 @@ export function computeWeekGastos(week: WeekData) {
     countPendiente,
     countTotal: countIngresado + countPendiente,
   };
-}
-
-export function computeFacturasSummary(facturas: FacturaProveedor[]) {
-  let totalMonto = 0, totalIngresado = 0, totalPendiente = 0, countIngresado = 0, countPendiente = 0;
-  facturas.forEach((f) => {
-    totalMonto += f.total;
-    if (f.estado === "ingresado") { totalIngresado += f.total; countIngresado += 1; }
-    else { totalPendiente += f.total; countPendiente += 1; }
-  });
-  return {
-    totalMonto: round2(totalMonto),
-    totalIngresado: round2(totalIngresado),
-    totalPendiente: round2(totalPendiente),
-    countIngresado,
-    countPendiente,
-    countTotal: countIngresado + countPendiente,
-  };
-}
-
-export function formatShortDate(dateStr: string): string {
-  const date = new Date(`${dateStr}T00:00:00`);
-  return date.toLocaleDateString("es-MX", { day: "numeric", month: "short" });
 }
 
 export function computeWeekSummary(week: WeekData) {

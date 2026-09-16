@@ -11,13 +11,13 @@ import {
 } from "../lib/dataModel";
 import { useStaffAssignments } from "../lib/staffAssignments";
 import { DAYS, DAY_SHORT } from "../lib/types";
-import type { DayData, DayName, Gasto, GastoCategoria, MeseroCatalogEntry, MeseroCut, Profile, ProveedorCatalogEntry, Transferencia, WeekData } from "../lib/types";
+import type { CreditoProveedores, DayData, DayName, Gasto, GastoCategoria, MeseroCatalogEntry, MeseroCut, Profile, Transferencia, WeekData } from "../lib/types";
 import { Empty } from "../components/ui";
 import { MonthModal } from "../components/modals/MonthModal";
 import { MeseroModal, type MeseroFormValues } from "../components/modals/MeseroModal";
 import { GastoModal, type GastoFormValues } from "../components/modals/GastoModal";
 import { TransferModal, type TransferFormValues } from "../components/modals/TransferModal";
-import { ProveedoresModal, type FacturaFormValues } from "../components/modals/ProveedoresModal";
+import { CreditoProveedoresModal } from "../components/modals/CreditoProveedoresModal";
 import { CatalogModal } from "../components/modals/CatalogModal";
 import { AppsModal } from "../components/modals/AppsModal";
 import { WeekSummaryModal } from "../components/modals/WeekSummaryModal";
@@ -33,7 +33,7 @@ type ModalState =
   | { type: "apps" }
   | { type: "weekSummary" }
   | { type: "gastosSummary" }
-  | { type: "proveedores" }
+  | { type: "creditoProveedores" }
   | { type: "catalog" }
   | { type: "deleteMonth"; monthKey: string }
   | null;
@@ -403,65 +403,13 @@ export default function CortesApp({ profile }: { profile: Profile }) {
     setModal(null);
   }
 
-  // Las facturas de proveedores y su catálogo viven a nivel del negocio, no
-  // dentro de un mes/semana/día — se administran solo desde la sección
-  // "Proveedores".
-  function saveFactura(form: FacturaFormValues, editingId?: string) {
+  // Control (solo informativo) de gastos que los proveedores dan a crédito,
+  // pagados después por transferencia — vive por semana, igual que
+  // efectivoReal, pero no afecta ningún total de caja del corte.
+  function saveCreditoProveedores(monthKey: string, weekIndex: number, values: CreditoProveedores) {
     if (!data) return;
     const next = structuredClone(data);
-    if (editingId) {
-      const i = next.facturas.findIndex((f) => f.id === editingId);
-      if (i >= 0) {
-        next.facturas[i] = {
-          ...next.facturas[i],
-          proveedorId: form.proveedorId,
-          numero: form.numero,
-          total: parseFloat(form.total) || 0,
-          fecha: form.fecha,
-        };
-      }
-    } else {
-      next.facturas.push({
-        id: uid(),
-        proveedorId: form.proveedorId,
-        numero: form.numero,
-        total: parseFloat(form.total) || 0,
-        fecha: form.fecha,
-        estado: "pendiente",
-        categoria: "operacion",
-      });
-    }
-    persist(next);
-  }
-
-  function deleteFactura(id: string) {
-    if (!data) return;
-    const next = structuredClone(data);
-    next.facturas = next.facturas.filter((f) => f.id !== id);
-    persist(next);
-  }
-
-  function toggleFacturaEstado(id: string) {
-    if (!data) return;
-    const next = structuredClone(data);
-    const f = next.facturas.find((x) => x.id === id);
-    if (f) f.estado = f.estado === "pendiente" ? "ingresado" : "pendiente";
-    persist(next);
-  }
-
-  function upsertProveedor(entry: ProveedorCatalogEntry) {
-    if (!data) return;
-    const next = structuredClone(data);
-    const idx = next.proveedores.findIndex((p) => p.id === entry.id);
-    if (idx >= 0) next.proveedores[idx] = entry;
-    else next.proveedores.push(entry);
-    persist(next);
-  }
-
-  function removeProveedorFromCatalog(id: string) {
-    if (!data) return;
-    const next = structuredClone(data);
-    next.proveedores = next.proveedores.filter((p) => p.id !== id);
+    next.months[monthKey].weeks[weekIndex].creditoProveedores = values;
     persist(next);
   }
 
@@ -524,13 +472,21 @@ export default function CortesApp({ profile }: { profile: Profile }) {
                 <span>Catálogo de meseros para el corte</span>
               </span>
             </button>
-            <button className="menu-item" onClick={() => setModal({ type: "proveedores" })}>
+            <button
+              className="menu-item"
+              disabled={monthKeys.length === 0}
+              onClick={() => setModal({ type: "creditoProveedores" })}
+            >
               <span className="menu-item-icon">
                 <Truck size={20} />
               </span>
               <span className="menu-item-text">
                 <strong>Proveedores</strong>
-                <span>Catálogo y facturas por transferencia</span>
+                <span>
+                  {monthKeys.length === 0
+                    ? "Agrega un mes desde Corte para empezar a usar esto"
+                    : "Gastos a crédito pagados por transferencia"}
+                </span>
               </span>
             </button>
           </div>
@@ -852,16 +808,14 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           onSetCategoria={setGastoCategoriaInWeek}
         />
       )}
-      {modal?.type === "proveedores" && (
-        <ProveedoresModal
+      {modal?.type === "creditoProveedores" && monthKeys.length > 0 && (
+        <CreditoProveedoresModal
           onClose={() => setModal(null)}
-          facturas={data.facturas}
-          proveedores={data.proveedores}
-          onSaveFactura={saveFactura}
-          onDeleteFactura={deleteFactura}
-          onToggleEstado={toggleFacturaEstado}
-          onSaveProveedor={upsertProveedor}
-          onRemoveProveedor={removeProveedorFromCatalog}
+          months={data.months}
+          monthKeys={monthKeys}
+          initialMonthKey={activeMonth && data.months[activeMonth] ? activeMonth : monthKeys[monthKeys.length - 1]}
+          initialWeekIndex={activeWeek}
+          onSave={saveCreditoProveedores}
         />
       )}
       {modal?.type === "catalog" && (

@@ -304,6 +304,7 @@ body {
   background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
   padding: 14px 16px; cursor: pointer;
 }
+.menu-item:disabled { opacity: 0.55; cursor: not-allowed; }
 .menu-item-icon {
   flex-shrink: 0; width: 38px; height: 38px; border-radius: 11px;
   background: var(--accent-soft); color: var(--accent);
