@@ -327,6 +327,14 @@ export function computeWeekSummary(week: WeekData) {
 // empleado, envíos, cancelaciones, otro, o sin categoría) se desglosan
 // cada una en su propia línea, para que la Utilidad reste todo lo
 // gastado con total transparencia de en qué se fue cada peso.
+//
+// La nómina en efectivo (gastos del día categorizados "Nómina", p.ej.
+// adelantos) ya queda incluida dentro del total de nómina que el dueño
+// captura a mano — no son dos gastos distintos, es el mismo gasto visto
+// parcialmente. Por eso esa categoría se sigue mostrando en el desglose
+// (para ver cuánto de la nómina ya se pagó en efectivo), pero no se resta
+// una segunda vez en la Utilidad: ahí solo cuenta el total capturado a
+// mano, tal como se capturó.
 export function computeDashboardReport(week: WeekData) {
   const { ventaTotal } = computeWeekSummary(week);
 
@@ -362,9 +370,15 @@ export function computeDashboardReport(week: WeekData) {
     { key: "sin_categoria", label: "Sin categoría", total: otrosPorCategoria.sin_categoria || 0 },
   ].map((c) => ({ ...c, pct: pct(c.total) }));
 
-  const otrosTotal = round2(otrosCategorias.reduce((s, c) => s + c.total, 0));
+  // Para la Utilidad no se suma la nómina en efectivo aparte — ya está
+  // dentro del total que el dueño capturó a mano.
+  const otrosTotalSinNomina = round2(
+    otrosCategorias.filter((c) => c.key !== "nomina").reduce((s, c) => s + c.total, 0)
+  );
 
-  const totalGastos = round2(gastosOperativos + gastosFijos + comisionDidi + comisionUber + comisionRappi + otrosTotal + nomina);
+  const totalGastos = round2(
+    gastosOperativos + gastosFijos + comisionDidi + comisionUber + comisionRappi + otrosTotalSinNomina + nomina
+  );
   const utilidad = round2(ventaTotal - totalGastos);
 
   return {
