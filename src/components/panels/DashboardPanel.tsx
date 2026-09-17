@@ -25,6 +25,7 @@ export function DashboardPanel({
   const [weekIndex, setWeekIndex] = useState(initialWeekIndex);
   const [nominaText, setNominaText] = useState("");
   const [showComisiones, setShowComisiones] = useState(false);
+  const [showGastosOperativos, setShowGastosOperativos] = useState(false);
   const [expandedCategorias, setExpandedCategorias] = useState<Set<string>>(new Set());
 
   function toggleCategoria(key: string) {
@@ -102,11 +103,26 @@ export function DashboardPanel({
           <span className="report-row-pct">100%</span>
           <strong className="report-row-amount">{money(report.ventaTotal)}</strong>
         </div>
-        <div className="report-row">
+        <button type="button" className="report-row report-row-toggle" onClick={() => setShowGastosOperativos((v) => !v)}>
           <span className="report-row-label">Gastos operativos</span>
           <span className="report-row-pct">{report.pct.gastosOperativos}%</span>
           <strong className="report-row-amount">{money(report.gastosOperativos)}</strong>
-        </div>
+          {showGastosOperativos ? <ChevronUp size={16} className="report-row-chevron" /> : <ChevronDown size={16} className="report-row-chevron" />}
+        </button>
+        {showGastosOperativos && (
+          <>
+            <div className="report-row report-row-sub">
+              <span className="report-row-label">Gastos en efectivo</span>
+              <span className="report-row-pct">{report.pct.gastosOperativosEfectivo}%</span>
+              <strong className="report-row-amount">{money(report.gastosOperativosEfectivo)}</strong>
+            </div>
+            <div className="report-row report-row-sub">
+              <span className="report-row-label">Gastos en transferencia</span>
+              <span className="report-row-pct">{report.pct.gastosOperativosTransferencia}%</span>
+              <strong className="report-row-amount">{money(report.gastosOperativosTransferencia)}</strong>
+            </div>
+          </>
+        )}
         <div className="report-row">
           <span className="report-row-label">Gastos fijos</span>
           <span className="report-row-pct">{report.pct.gastosFijos}%</span>

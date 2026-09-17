@@ -359,7 +359,9 @@ export function computeDashboardReport(week: WeekData) {
   });
 
   const credito = week.creditoProveedores;
-  const gastosOperativos = round2(operacionEfectivo + (credito?.operativos || 0));
+  const gastosOperativosEfectivo = round2(operacionEfectivo);
+  const gastosOperativosTransferencia = round2(credito?.operativos || 0);
+  const gastosOperativos = round2(gastosOperativosEfectivo + gastosOperativosTransferencia);
   const gastosFijos = round2(credito?.fijos || 0);
   const comisionDidi = round2(credito?.comisionDidi || 0);
   const comisionUber = round2(credito?.comisionUber || 0);
@@ -398,6 +400,8 @@ export function computeDashboardReport(week: WeekData) {
   return {
     ventaTotal,
     gastosOperativos,
+    gastosOperativosEfectivo,
+    gastosOperativosTransferencia,
     gastosFijos,
     comisionesApps,
     comisionDidi,
@@ -410,6 +414,8 @@ export function computeDashboardReport(week: WeekData) {
     pct: {
       ventaTotal: 100,
       gastosOperativos: pct(gastosOperativos),
+      gastosOperativosEfectivo: pct(gastosOperativosEfectivo),
+      gastosOperativosTransferencia: pct(gastosOperativosTransferencia),
       gastosFijos: pct(gastosFijos),
       comisionesApps: pct(comisionesApps),
       comisionDidi: pct(comisionDidi),
