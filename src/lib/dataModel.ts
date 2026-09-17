@@ -335,8 +335,13 @@ export function computeWeekSummary(week: WeekData) {
 // (para ver cuánto de la nómina ya se pagó en efectivo), pero no se resta
 // una segunda vez en la Utilidad: ahí solo cuenta el total capturado a
 // mano, tal como se capturó.
+// Comisión bancaria estándar que cobra la terminal por cada venta con
+// tarjeta — se calcula sobre el total de tarjetas de la semana.
+const COMISION_TARJETAS_TASA = 0.03;
+
 export function computeDashboardReport(week: WeekData) {
-  const { ventaTotal } = computeWeekSummary(week);
+  const { ventaTotal, tarjetas } = computeWeekSummary(week);
+  const comisionTarjetas = round2(tarjetas * COMISION_TARJETAS_TASA);
 
   let operacionEfectivo = 0;
   const otrosPorCategoria: Partial<Record<GastoCategoria | "sin_categoria", number>> = {};
@@ -385,7 +390,9 @@ export function computeDashboardReport(week: WeekData) {
     otrosCategorias.filter((c) => c.key !== "nomina").reduce((s, c) => s + c.total, 0)
   );
 
-  const totalGastos = round2(gastosOperativos + gastosFijos + comisionesApps + otrosTotalSinNomina + nomina);
+  const totalGastos = round2(
+    gastosOperativos + gastosFijos + comisionesApps + comisionTarjetas + otrosTotalSinNomina + nomina
+  );
   const utilidad = round2(ventaTotal - totalGastos);
 
   return {
@@ -396,6 +403,7 @@ export function computeDashboardReport(week: WeekData) {
     comisionDidi,
     comisionUber,
     comisionRappi,
+    comisionTarjetas,
     otrosCategorias,
     nomina,
     utilidad,
@@ -407,6 +415,7 @@ export function computeDashboardReport(week: WeekData) {
       comisionDidi: pct(comisionDidi),
       comisionUber: pct(comisionUber),
       comisionRappi: pct(comisionRappi),
+      comisionTarjetas: pct(comisionTarjetas),
       nomina: pct(nomina),
       utilidad: pct(utilidad),
     },

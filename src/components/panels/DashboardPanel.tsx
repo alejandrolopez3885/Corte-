@@ -137,6 +137,13 @@ export function DashboardPanel({
             </div>
           </>
         )}
+        <div className="report-row">
+          <span className="report-row-label">
+            Comisión bancaria <em>(3% de tarjetas)</em>
+          </span>
+          <span className="report-row-pct">{report.pct.comisionTarjetas}%</span>
+          <strong className="report-row-amount">{money(report.comisionTarjetas)}</strong>
+        </div>
         {report.otrosCategorias.map((c) => {
           if (!EXPANDABLE_CATEGORIAS.has(c.key)) {
             return (
