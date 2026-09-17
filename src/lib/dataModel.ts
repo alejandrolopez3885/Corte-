@@ -357,6 +357,7 @@ export function computeDashboardReport(week: WeekData) {
   const comisionDidi = round2(credito?.comisionDidi || 0);
   const comisionUber = round2(credito?.comisionUber || 0);
   const comisionRappi = round2(credito?.comisionRappi || 0);
+  const comisionesApps = round2(comisionDidi + comisionUber + comisionRappi);
   const nomina = round2(week.nominaManual || 0);
 
   const pct = (n: number) => (ventaTotal > 0 ? round2((n / ventaTotal) * 100) : 0);
@@ -376,15 +377,14 @@ export function computeDashboardReport(week: WeekData) {
     otrosCategorias.filter((c) => c.key !== "nomina").reduce((s, c) => s + c.total, 0)
   );
 
-  const totalGastos = round2(
-    gastosOperativos + gastosFijos + comisionDidi + comisionUber + comisionRappi + otrosTotalSinNomina + nomina
-  );
+  const totalGastos = round2(gastosOperativos + gastosFijos + comisionesApps + otrosTotalSinNomina + nomina);
   const utilidad = round2(ventaTotal - totalGastos);
 
   return {
     ventaTotal,
     gastosOperativos,
     gastosFijos,
+    comisionesApps,
     comisionDidi,
     comisionUber,
     comisionRappi,
@@ -395,6 +395,7 @@ export function computeDashboardReport(week: WeekData) {
       ventaTotal: 100,
       gastosOperativos: pct(gastosOperativos),
       gastosFijos: pct(gastosFijos),
+      comisionesApps: pct(comisionesApps),
       comisionDidi: pct(comisionDidi),
       comisionUber: pct(comisionUber),
       comisionRappi: pct(comisionRappi),

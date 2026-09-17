@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import { Field, SumInput } from "../ui";
 import { computeDashboardReport, formatWeekRange, money, resolveWeekStartDate, sumFromText } from "../../lib/dataModel";
 import type { MonthData } from "../../lib/types";
@@ -19,6 +20,7 @@ export function DashboardPanel({
   const [monthKey, setMonthKey] = useState(initialMonthKey);
   const [weekIndex, setWeekIndex] = useState(initialWeekIndex);
   const [nominaText, setNominaText] = useState("");
+  const [showComisiones, setShowComisiones] = useState(false);
 
   const month = months[monthKey];
   const week = month?.weeks[weekIndex];
@@ -96,21 +98,31 @@ export function DashboardPanel({
           <span className="report-row-pct">{report.pct.gastosFijos}%</span>
           <strong className="report-row-amount">{money(report.gastosFijos)}</strong>
         </div>
-        <div className="report-row">
-          <span className="report-row-label">Comisión DIDI</span>
-          <span className="report-row-pct">{report.pct.comisionDidi}%</span>
-          <strong className="report-row-amount">{money(report.comisionDidi)}</strong>
-        </div>
-        <div className="report-row">
-          <span className="report-row-label">Comisión UBER</span>
-          <span className="report-row-pct">{report.pct.comisionUber}%</span>
-          <strong className="report-row-amount">{money(report.comisionUber)}</strong>
-        </div>
-        <div className="report-row">
-          <span className="report-row-label">Comisión RAPPI</span>
-          <span className="report-row-pct">{report.pct.comisionRappi}%</span>
-          <strong className="report-row-amount">{money(report.comisionRappi)}</strong>
-        </div>
+        <button type="button" className="report-row report-row-toggle" onClick={() => setShowComisiones((v) => !v)}>
+          <span className="report-row-label">Comisiones de apps</span>
+          <span className="report-row-pct">{report.pct.comisionesApps}%</span>
+          <strong className="report-row-amount">{money(report.comisionesApps)}</strong>
+          {showComisiones ? <ChevronUp size={16} className="report-row-chevron" /> : <ChevronDown size={16} className="report-row-chevron" />}
+        </button>
+        {showComisiones && (
+          <>
+            <div className="report-row report-row-sub">
+              <span className="report-row-label">Comisión DIDI</span>
+              <span className="report-row-pct">{report.pct.comisionDidi}%</span>
+              <strong className="report-row-amount">{money(report.comisionDidi)}</strong>
+            </div>
+            <div className="report-row report-row-sub">
+              <span className="report-row-label">Comisión UBER</span>
+              <span className="report-row-pct">{report.pct.comisionUber}%</span>
+              <strong className="report-row-amount">{money(report.comisionUber)}</strong>
+            </div>
+            <div className="report-row report-row-sub">
+              <span className="report-row-label">Comisión RAPPI</span>
+              <span className="report-row-pct">{report.pct.comisionRappi}%</span>
+              <strong className="report-row-amount">{money(report.comisionRappi)}</strong>
+            </div>
+          </>
+        )}
         {report.otrosCategorias.map((c) => (
           <div className="report-row" key={c.key}>
             <span className="report-row-label">{c.label}</span>

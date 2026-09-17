@@ -346,6 +346,14 @@ body {
 .report-row.total.negative { background: var(--bad-soft); }
 .report-row.total.negative .report-row-amount { color: var(--bad); }
 
+.report-row-toggle {
+  border: none; background: none; margin: 0; width: 100%; font: inherit; color: inherit; text-align: left; cursor: pointer;
+}
+.report-row-chevron { flex-shrink: 0; color: var(--ink-soft); }
+.report-row-sub { background: var(--surface-alt); padding-left: 30px; }
+.report-row-sub .report-row-label { font-size: 12.5px; }
+.report-row-sub .report-row-amount { font-size: 14px; font-weight: 500; }
+
 /* ---- Navegación inferior (solo dueño) ---- */
 .app-shell.with-bottom-nav { padding-bottom: 66px; }
 .bottom-nav {
