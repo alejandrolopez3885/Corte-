@@ -353,6 +353,7 @@ body {
 .report-row-sub { background: var(--surface-alt); padding-left: 30px; }
 .report-row-sub .report-row-label { font-size: 12.5px; }
 .report-row-sub .report-row-amount { font-size: 14px; font-weight: 500; }
+.report-row-sub-empty { background: var(--surface-alt); padding: 12px 16px 12px 30px; margin: 0; }
 
 /* ---- Navegación inferior (solo dueño) ---- */
 .app-shell.with-bottom-nav { padding-bottom: 66px; }

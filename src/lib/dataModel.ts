@@ -340,6 +340,7 @@ export function computeDashboardReport(week: WeekData) {
 
   let operacionEfectivo = 0;
   const otrosPorCategoria: Partial<Record<GastoCategoria | "sin_categoria", number>> = {};
+  const otrosItemsPorCategoria: Partial<Record<GastoCategoria | "sin_categoria", { concepto: string; total: number }[]>> = {};
   DAYS.forEach((d) => {
     week.days[d].gastos.forEach((g) => {
       if (g.categoria === "operacion") {
@@ -347,6 +348,7 @@ export function computeDashboardReport(week: WeekData) {
       } else {
         const key = g.categoria || "sin_categoria";
         otrosPorCategoria[key] = round2((otrosPorCategoria[key] || 0) + g.total);
+        (otrosItemsPorCategoria[key] ||= []).push({ concepto: g.concepto, total: g.total });
       }
     });
   });
@@ -367,8 +369,14 @@ export function computeDashboardReport(week: WeekData) {
       key: c.value as string,
       label: c.value === "nomina" ? "Nómina (gastos en efectivo)" : c.label,
       total: otrosPorCategoria[c.value] || 0,
+      items: otrosItemsPorCategoria[c.value] || [],
     })),
-    { key: "sin_categoria", label: "Sin categoría", total: otrosPorCategoria.sin_categoria || 0 },
+    {
+      key: "sin_categoria",
+      label: "Sin categoría",
+      total: otrosPorCategoria.sin_categoria || 0,
+      items: otrosItemsPorCategoria.sin_categoria || [],
+    },
   ].map((c) => ({ ...c, pct: pct(c.total) }));
 
   // Para la Utilidad no se suma la nómina en efectivo aparte — ya está

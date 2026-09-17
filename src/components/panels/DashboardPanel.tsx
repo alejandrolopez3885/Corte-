@@ -4,6 +4,10 @@ import { Field, SumInput } from "../ui";
 import { computeDashboardReport, formatWeekRange, money, resolveWeekStartDate, sumFromText } from "../../lib/dataModel";
 import type { MonthData } from "../../lib/types";
 
+// Categorías donde además del total conviene ver el detalle de cada gasto
+// que lo compone (concepto por concepto), porque agrupan cosas variadas.
+const EXPANDABLE_CATEGORIAS = new Set(["otro", "mantenimiento"]);
+
 export function DashboardPanel({
   months,
   monthKeys,
@@ -21,6 +25,16 @@ export function DashboardPanel({
   const [weekIndex, setWeekIndex] = useState(initialWeekIndex);
   const [nominaText, setNominaText] = useState("");
   const [showComisiones, setShowComisiones] = useState(false);
+  const [expandedCategorias, setExpandedCategorias] = useState<Set<string>>(new Set());
+
+  function toggleCategoria(key: string) {
+    setExpandedCategorias((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
 
   const month = months[monthKey];
   const week = month?.weeks[weekIndex];
@@ -123,13 +137,39 @@ export function DashboardPanel({
             </div>
           </>
         )}
-        {report.otrosCategorias.map((c) => (
-          <div className="report-row" key={c.key}>
-            <span className="report-row-label">{c.label}</span>
-            <span className="report-row-pct">{c.pct}%</span>
-            <strong className="report-row-amount">{money(c.total)}</strong>
-          </div>
-        ))}
+        {report.otrosCategorias.map((c) => {
+          if (!EXPANDABLE_CATEGORIAS.has(c.key)) {
+            return (
+              <div className="report-row" key={c.key}>
+                <span className="report-row-label">{c.label}</span>
+                <span className="report-row-pct">{c.pct}%</span>
+                <strong className="report-row-amount">{money(c.total)}</strong>
+              </div>
+            );
+          }
+          const expanded = expandedCategorias.has(c.key);
+          return (
+            <div key={c.key}>
+              <button type="button" className="report-row report-row-toggle" onClick={() => toggleCategoria(c.key)}>
+                <span className="report-row-label">{c.label}</span>
+                <span className="report-row-pct">{c.pct}%</span>
+                <strong className="report-row-amount">{money(c.total)}</strong>
+                {expanded ? <ChevronUp size={16} className="report-row-chevron" /> : <ChevronDown size={16} className="report-row-chevron" />}
+              </button>
+              {expanded &&
+                (c.items.length === 0 ? (
+                  <p className="report-row-sub-empty hint">Sin gastos de {c.label.toLowerCase()} esta semana.</p>
+                ) : (
+                  c.items.map((item, i) => (
+                    <div className="report-row report-row-sub" key={i}>
+                      <span className="report-row-label">{item.concepto}</span>
+                      <strong className="report-row-amount">{money(item.total)}</strong>
+                    </div>
+                  ))
+                ))}
+            </div>
+          );
+        })}
         <div className="report-row">
           <span className="report-row-label">Nómina</span>
           <span className="report-row-pct">{report.pct.nomina}%</span>
