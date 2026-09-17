@@ -31,10 +31,12 @@ navegación de abajo:
 - **Dashboard**: reporte de resultados de la semana, solo para leer (con
   porcentajes sobre la venta total): Venta total, Gastos operativos (suma
   los de efectivo categorizados como Operación más los de Proveedores),
-  Gastos fijos, las 3 comisiones de apps, Otros gastos en efectivo (el
-  resto de categorías) y Nómina — hasta que exista un generador de nómina,
-  esta última se captura a mano ahí mismo — y al final la Utilidad
-  (Venta total menos todo lo anterior).
+  Gastos fijos, las 3 comisiones de apps, el resto de categorías de gastos
+  en efectivo desglosadas una por una (Nómina, Cortesía, Retiro,
+  Mantenimiento, Comida empleado, Envíos, Cancelaciones, Otro, Sin
+  categoría) y Nómina — hasta que exista un generador de nómina, esta
+  última se captura a mano ahí mismo — y al final la Utilidad (Venta total
+  menos todo lo anterior).
 
 Hay 2 tipos de cuenta:
 

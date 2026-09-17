@@ -111,13 +111,13 @@ export function DashboardPanel({
           <span className="report-row-pct">{report.pct.comisionRappi}%</span>
           <strong className="report-row-amount">{money(report.comisionRappi)}</strong>
         </div>
-        <div className="report-row">
-          <span className="report-row-label">
-            Otros gastos en efectivo <em>(cortesía, retiro, mantenimiento, comida empleado, envíos, cancelaciones, otro)</em>
-          </span>
-          <span className="report-row-pct">{report.pct.otrosGastosEfectivo}%</span>
-          <strong className="report-row-amount">{money(report.otrosGastosEfectivo)}</strong>
-        </div>
+        {report.otrosCategorias.map((c) => (
+          <div className="report-row" key={c.key}>
+            <span className="report-row-label">{c.label}</span>
+            <span className="report-row-pct">{c.pct}%</span>
+            <strong className="report-row-amount">{money(c.total)}</strong>
+          </div>
+        ))}
         <div className="report-row">
           <span className="report-row-label">Nómina</span>
           <span className="report-row-pct">{report.pct.nomina}%</span>

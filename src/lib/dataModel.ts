@@ -1,4 +1,4 @@
-import { DAYS, type AppData, type DayData, type DayName, type MeseroCut, type MonthData, type WeekData } from "./types";
+import { DAYS, GASTO_CATEGORIAS, type AppData, type DayData, type DayName, type GastoCategoria, type MeseroCut, type MonthData, type WeekData } from "./types";
 
 export const uid = (): string => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 
@@ -324,18 +324,22 @@ export function computeWeekSummary(week: WeekData) {
 // son el mismo concepto, solo con distinta forma de pago. Gastos fijos y
 // las 3 comisiones de apps vienen tal cual de Proveedores. El resto de
 // categorías en efectivo (cortesía, retiro, mantenimiento, comida
-// empleado, envíos, cancelaciones, otro, o sin categoría) se agrupan en
-// "Otros gastos en efectivo" para que la Utilidad reste todo lo gastado,
-// no solo lo que tiene su propia línea en el reporte.
+// empleado, envíos, cancelaciones, otro, o sin categoría) se desglosan
+// cada una en su propia línea, para que la Utilidad reste todo lo
+// gastado con total transparencia de en qué se fue cada peso.
 export function computeDashboardReport(week: WeekData) {
   const { ventaTotal } = computeWeekSummary(week);
 
   let operacionEfectivo = 0;
-  let otrosGastosEfectivo = 0;
+  const otrosPorCategoria: Partial<Record<GastoCategoria | "sin_categoria", number>> = {};
   DAYS.forEach((d) => {
     week.days[d].gastos.forEach((g) => {
-      if (g.categoria === "operacion") operacionEfectivo += g.total;
-      else otrosGastosEfectivo += g.total;
+      if (g.categoria === "operacion") {
+        operacionEfectivo += g.total;
+      } else {
+        const key = g.categoria || "sin_categoria";
+        otrosPorCategoria[key] = round2((otrosPorCategoria[key] || 0) + g.total);
+      }
     });
   });
 
@@ -346,14 +350,22 @@ export function computeDashboardReport(week: WeekData) {
   const comisionUber = round2(credito?.comisionUber || 0);
   const comisionRappi = round2(credito?.comisionRappi || 0);
   const nomina = round2(week.nominaManual || 0);
-  otrosGastosEfectivo = round2(otrosGastosEfectivo);
-
-  const totalGastos = round2(
-    gastosOperativos + gastosFijos + comisionDidi + comisionUber + comisionRappi + otrosGastosEfectivo + nomina
-  );
-  const utilidad = round2(ventaTotal - totalGastos);
 
   const pct = (n: number) => (ventaTotal > 0 ? round2((n / ventaTotal) * 100) : 0);
+
+  const otrosCategorias = [
+    ...GASTO_CATEGORIAS.filter((c) => c.value !== "operacion").map((c) => ({
+      key: c.value as string,
+      label: c.value === "nomina" ? "Nómina (gastos en efectivo)" : c.label,
+      total: otrosPorCategoria[c.value] || 0,
+    })),
+    { key: "sin_categoria", label: "Sin categoría", total: otrosPorCategoria.sin_categoria || 0 },
+  ].map((c) => ({ ...c, pct: pct(c.total) }));
+
+  const otrosTotal = round2(otrosCategorias.reduce((s, c) => s + c.total, 0));
+
+  const totalGastos = round2(gastosOperativos + gastosFijos + comisionDidi + comisionUber + comisionRappi + otrosTotal + nomina);
+  const utilidad = round2(ventaTotal - totalGastos);
 
   return {
     ventaTotal,
@@ -362,7 +374,7 @@ export function computeDashboardReport(week: WeekData) {
     comisionDidi,
     comisionUber,
     comisionRappi,
-    otrosGastosEfectivo,
+    otrosCategorias,
     nomina,
     utilidad,
     pct: {
@@ -372,7 +384,6 @@ export function computeDashboardReport(week: WeekData) {
       comisionDidi: pct(comisionDidi),
       comisionUber: pct(comisionUber),
       comisionRappi: pct(comisionRappi),
-      otrosGastosEfectivo: pct(otrosGastosEfectivo),
       nomina: pct(nomina),
       utilidad: pct(utilidad),
     },
