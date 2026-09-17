@@ -113,6 +113,9 @@ export interface WeekData {
   days: Record<DayName, DayData>;
   efectivoReal?: number | null;
   creditoProveedores?: CreditoProveedores;
+  // Total de nómina de la semana, capturado a mano por el dueño (por ahora
+  // no hay generador de nómina, así que no se deriva de nada más).
+  nominaManual?: number;
 }
 
 export interface MonthData {

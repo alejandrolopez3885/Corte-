@@ -320,6 +320,32 @@ body {
   display: flex; align-items: center; justify-content: center; cursor: pointer;
 }
 
+/* ---- Reporte del Dashboard ---- */
+.report-list {
+  display: flex; flex-direction: column; background: var(--surface);
+  border: 1px solid var(--border); border-radius: 14px; overflow: hidden;
+}
+.report-row {
+  display: flex; align-items: center; gap: 10px; padding: 12px 16px;
+  border-top: 1px solid var(--border);
+}
+.report-row:first-child { border-top: none; }
+.report-row-label { flex: 1; font-size: 13.5px; color: var(--ink-soft); }
+.report-row-label em { font-style: normal; opacity: 0.75; font-size: 0.88em; display: block; margin-top: 2px; }
+.report-row-pct {
+  flex-shrink: 0; width: 42px; text-align: right; font-size: 12px;
+  color: var(--ink-soft); font-variant-numeric: tabular-nums;
+}
+.report-row-amount {
+  flex-shrink: 0; min-width: 92px; text-align: right; font-size: 15px;
+  font-weight: 600; font-variant-numeric: tabular-nums;
+}
+.report-row.total { background: var(--accent-soft); }
+.report-row.total .report-row-label { color: var(--ink); font-weight: 600; }
+.report-row.total .report-row-amount { color: var(--accent); font-size: 17px; }
+.report-row.total.negative { background: var(--bad-soft); }
+.report-row.total.negative .report-row-amount { color: var(--bad); }
+
 /* ---- Navegación inferior (solo dueño) ---- */
 .app-shell.with-bottom-nav { padding-bottom: 66px; }
 .bottom-nav {

@@ -316,3 +316,65 @@ export function computeWeekSummary(week: WeekData) {
     efectivoReal: week.efectivoReal ?? null,
   };
 }
+
+// Reporte de resultados de la semana: solo lectura (salvo Nómina, que por
+// ahora se captura a mano porque no existe todavía un generador de nómina).
+// "Gastos operativos" junta los gastos en efectivo categorizados como
+// Operación con los gastos operativos en transferencia de Proveedores —
+// son el mismo concepto, solo con distinta forma de pago. Gastos fijos y
+// las 3 comisiones de apps vienen tal cual de Proveedores. El resto de
+// categorías en efectivo (cortesía, retiro, mantenimiento, comida
+// empleado, envíos, cancelaciones, otro, o sin categoría) se agrupan en
+// "Otros gastos en efectivo" para que la Utilidad reste todo lo gastado,
+// no solo lo que tiene su propia línea en el reporte.
+export function computeDashboardReport(week: WeekData) {
+  const { ventaTotal } = computeWeekSummary(week);
+
+  let operacionEfectivo = 0;
+  let otrosGastosEfectivo = 0;
+  DAYS.forEach((d) => {
+    week.days[d].gastos.forEach((g) => {
+      if (g.categoria === "operacion") operacionEfectivo += g.total;
+      else otrosGastosEfectivo += g.total;
+    });
+  });
+
+  const credito = week.creditoProveedores;
+  const gastosOperativos = round2(operacionEfectivo + (credito?.operativos || 0));
+  const gastosFijos = round2(credito?.fijos || 0);
+  const comisionDidi = round2(credito?.comisionDidi || 0);
+  const comisionUber = round2(credito?.comisionUber || 0);
+  const comisionRappi = round2(credito?.comisionRappi || 0);
+  const nomina = round2(week.nominaManual || 0);
+  otrosGastosEfectivo = round2(otrosGastosEfectivo);
+
+  const totalGastos = round2(
+    gastosOperativos + gastosFijos + comisionDidi + comisionUber + comisionRappi + otrosGastosEfectivo + nomina
+  );
+  const utilidad = round2(ventaTotal - totalGastos);
+
+  const pct = (n: number) => (ventaTotal > 0 ? round2((n / ventaTotal) * 100) : 0);
+
+  return {
+    ventaTotal,
+    gastosOperativos,
+    gastosFijos,
+    comisionDidi,
+    comisionUber,
+    comisionRappi,
+    otrosGastosEfectivo,
+    nomina,
+    utilidad,
+    pct: {
+      ventaTotal: 100,
+      gastosOperativos: pct(gastosOperativos),
+      gastosFijos: pct(gastosFijos),
+      comisionDidi: pct(comisionDidi),
+      comisionUber: pct(comisionUber),
+      comisionRappi: pct(comisionRappi),
+      otrosGastosEfectivo: pct(otrosGastosEfectivo),
+      nomina: pct(nomina),
+      utilidad: pct(utilidad),
+    },
+  };
+}

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import {
   Plus, Settings2, Users, Receipt, ArrowLeftRight, CircleDot, Circle, Pencil,
-  Smartphone, BarChart3, LogOut, Truck, Trash2, Home, Store,
+  Smartphone, BarChart3, LogOut, Truck, Trash2, Home, Store, LayoutDashboard,
 } from "lucide-react";
 import { useAuth } from "../lib/auth.tsx";
 import { useAppData } from "../lib/useAppData";
@@ -24,6 +24,7 @@ import { WeekSummaryModal } from "../components/modals/WeekSummaryModal";
 import { GastosSummaryModal } from "../components/modals/GastosSummaryModal";
 import { DeleteMonthModal } from "../components/modals/DeleteMonthModal";
 import { TeamPanel } from "../components/panels/TeamPanel";
+import { DashboardPanel } from "../components/panels/DashboardPanel";
 
 type ModalState =
   | { type: "month" }
@@ -38,7 +39,7 @@ type ModalState =
   | { type: "deleteMonth"; monthKey: string }
   | null;
 
-type OwnerTab = "corte" | "equipo" | "negocio";
+type OwnerTab = "corte" | "equipo" | "negocio" | "dashboard";
 
 export default function CortesApp({ profile }: { profile: Profile }) {
   const { signOut } = useAuth();
@@ -413,6 +414,15 @@ export default function CortesApp({ profile }: { profile: Profile }) {
     persist(next);
   }
 
+  // Nómina del reporte del Dashboard — capturada a mano por ahora, sin
+  // generador de nómina todavía.
+  function saveNominaManual(monthKey: string, weekIndex: number, value: number) {
+    if (!data) return;
+    const next = structuredClone(data);
+    next.months[monthKey].weeks[weekIndex].nominaManual = value;
+    persist(next);
+  }
+
   function saveVentaApps(rawValue: string) {
     updateDay((d) => {
       d.ventaApps = sumFromText(rawValue);
@@ -491,6 +501,23 @@ export default function CortesApp({ profile }: { profile: Profile }) {
             </button>
           </div>
         </div>
+      )}
+
+      {isOwner && activeTab === "dashboard" && (
+        monthKeys.length > 0 ? (
+          <DashboardPanel
+            months={data.months}
+            monthKeys={monthKeys}
+            initialMonthKey={activeMonth && data.months[activeMonth] ? activeMonth : monthKeys[monthKeys.length - 1]}
+            initialWeekIndex={activeWeek}
+            onSaveNomina={saveNominaManual}
+          />
+        ) : (
+          <div className="page-section">
+            <h2 className="page-title">Dashboard</h2>
+            <p className="hint">Agrega un mes desde Corte para empezar a ver tu reporte de resultados.</p>
+          </div>
+        )
       )}
 
       {(!isOwner || activeTab === "corte") && (
@@ -750,6 +777,10 @@ export default function CortesApp({ profile }: { profile: Profile }) {
             <button className={`bottom-nav-item ${activeTab === "negocio" ? "active" : ""}`} onClick={() => setActiveTab("negocio")}>
               <Store size={20} />
               <span>Negocio</span>
+            </button>
+            <button className={`bottom-nav-item ${activeTab === "dashboard" ? "active" : ""}`} onClick={() => setActiveTab("dashboard")}>
+              <LayoutDashboard size={20} />
+              <span>Dashboard</span>
             </button>
           </div>
         </nav>

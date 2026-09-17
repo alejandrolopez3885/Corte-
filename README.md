@@ -21,13 +21,20 @@ informativo, no afecta el efectivo ni ningún total de caja.
 - **Backend**: Supabase (Auth + Postgres).
 - **Hosting sugerido**: Vercel.
 
-La vista del dueño se organiza en 3 secciones, accesibles desde la barra de
+La vista del dueño se organiza en 4 secciones, accesibles desde la barra de
 navegación de abajo:
 
 - **Corte**: la pantalla principal — mes, semana, día, meseros, gastos,
   transferencias, ventas de apps y sus resúmenes.
 - **Equipo**: dar de alta a tu personal y asignarle días.
 - **Negocio**: catálogo de meseros y la sección de Proveedores.
+- **Dashboard**: reporte de resultados de la semana, solo para leer (con
+  porcentajes sobre la venta total): Venta total, Gastos operativos (suma
+  los de efectivo categorizados como Operación más los de Proveedores),
+  Gastos fijos, las 3 comisiones de apps, Otros gastos en efectivo (el
+  resto de categorías) y Nómina — hasta que exista un generador de nómina,
+  esta última se captura a mano ahí mismo — y al final la Utilidad
+  (Venta total menos todo lo anterior).
 
 Hay 2 tipos de cuenta:
 
