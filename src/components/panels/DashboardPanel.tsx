@@ -6,7 +6,7 @@ import type { MonthData } from "../../lib/types";
 
 // Categorías donde además del total conviene ver el detalle de cada gasto
 // que lo compone (concepto por concepto), porque agrupan cosas variadas.
-const EXPANDABLE_CATEGORIAS = new Set(["otro", "mantenimiento"]);
+const EXPANDABLE_CATEGORIAS = new Set(["otro", "mantenimiento", "nomina"]);
 
 export function DashboardPanel({
   months,
