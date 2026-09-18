@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 import { Trash2 } from "lucide-react";
-import { Field, NumInput } from "../ui";
+import { Sheet, Field, NumInput } from "../ui";
 import { supabase } from "../../lib/supabaseClient";
 import { formatAssignedDate, locateDate, todayIso } from "../../lib/dataModel";
 import { addAssignment, listAssignments, removeAssignment } from "../../lib/staffAssignments";
 import { createStaffAccount, PIN_LENGTH } from "../../lib/staffAccounts";
 import type { Profile, StaffAssignment } from "../../lib/types";
 
-export function TeamPanel({ ownerId }: { ownerId: string }) {
+export function TeamModal({ onClose, ownerId }: { onClose: () => void; ownerId: string }) {
   const [staff, setStaff] = useState<Profile | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "error" | "none">("loading");
 
@@ -31,13 +31,12 @@ export function TeamPanel({ ownerId }: { ownerId: string }) {
   }
 
   return (
-    <div className="page-section">
-      <h2 className="page-title">Tu equipo</h2>
+    <Sheet title="Tu equipo" onClose={onClose}>
       {status === "loading" && <p className="hint">Cargando…</p>}
       {status === "error" && <p className="hint">No se pudo cargar la información del equipo.</p>}
       {status === "none" && <CreateStaffForm ownerId={ownerId} onCreated={load} />}
       {status === "ready" && staff && <AssignmentsManager staff={staff} />}
-    </div>
+    </Sheet>
   );
 }
 

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import {
   Plus, Settings2, Users, Receipt, ArrowLeftRight, CircleDot, Circle, Pencil,
-  Smartphone, BarChart3, LogOut, Truck, Trash2, Home, Store, LayoutDashboard,
+  Smartphone, BarChart3, LogOut, Truck, Trash2, Home, Store, LayoutDashboard, Contact,
 } from "lucide-react";
 import { useAuth } from "../lib/auth.tsx";
 import { useAppData } from "../lib/useAppData";
@@ -24,8 +24,8 @@ import { AppsModal } from "../components/modals/AppsModal";
 import { WeekSummaryModal } from "../components/modals/WeekSummaryModal";
 import { GastosSummaryModal } from "../components/modals/GastosSummaryModal";
 import { DeleteMonthModal } from "../components/modals/DeleteMonthModal";
-import { TeamPanel } from "../components/panels/TeamPanel";
-import { EmpleadosPanel } from "../components/panels/EmpleadosPanel";
+import { TeamModal } from "../components/modals/TeamModal";
+import { EmpleadosModal } from "../components/modals/EmpleadosModal";
 import { DashboardPanel } from "../components/panels/DashboardPanel";
 
 type ModalState =
@@ -38,6 +38,8 @@ type ModalState =
   | { type: "gastosSummary" }
   | { type: "creditoProveedores" }
   | { type: "catalog" }
+  | { type: "team" }
+  | { type: "personal" }
   | { type: "deleteMonth"; monthKey: string }
   | null;
 
@@ -514,10 +516,29 @@ export default function CortesApp({ profile }: { profile: Profile }) {
       </header>
 
       {isOwner && activeTab === "equipo" && (
-        <>
-          <TeamPanel ownerId={profile.id} />
-          <EmpleadosPanel empleados={data.empleados} onSave={upsertEmpleado} onRemove={removeEmpleado} />
-        </>
+        <div className="page-section">
+          <h2 className="page-title">Equipo</h2>
+          <div className="menu-list">
+            <button className="menu-item" onClick={() => setModal({ type: "team" })}>
+              <span className="menu-item-icon">
+                <Users size={20} />
+              </span>
+              <span className="menu-item-text">
+                <strong>Tu equipo</strong>
+                <span>Cuenta con PIN y días asignados</span>
+              </span>
+            </button>
+            <button className="menu-item" onClick={() => setModal({ type: "personal" })}>
+              <span className="menu-item-icon">
+                <Contact size={20} />
+              </span>
+              <span className="menu-item-text">
+                <strong>Personal</strong>
+                <span>Lista de tu personal</span>
+              </span>
+            </button>
+          </div>
+        </div>
       )}
 
       {isOwner && activeTab === "negocio" && (
@@ -923,6 +944,10 @@ export default function CortesApp({ profile }: { profile: Profile }) {
       )}
       {modal?.type === "catalog" && (
         <CatalogModal onClose={() => setModal(null)} meseros={data.meseros} onSave={upsertMesero} onRemove={removeMeseroFromCatalog} />
+      )}
+      {modal?.type === "team" && <TeamModal onClose={() => setModal(null)} ownerId={profile.id} />}
+      {modal?.type === "personal" && (
+        <EmpleadosModal onClose={() => setModal(null)} empleados={data.empleados} onSave={upsertEmpleado} onRemove={removeEmpleado} />
       )}
       {modal?.type === "deleteMonth" && (
         <DeleteMonthModal
