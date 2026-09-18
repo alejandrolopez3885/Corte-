@@ -229,6 +229,11 @@ body {
   padding: 13px 14px; font-size: 16px; font-family: inherit; color: var(--ink); width: 100%;
 }
 .num-input { font-variant-numeric: tabular-nums; }
+.readonly-value {
+  border: 1px solid var(--border); background: var(--surface-alt); border-radius: 12px;
+  padding: 13px 14px; font-size: 16px; font-family: inherit; color: var(--ink-soft); width: 100%;
+  font-variant-numeric: tabular-nums; font-weight: 600; box-sizing: border-box;
+}
 
 .toggle { display: flex; align-items: center; gap: 10px; background: none; border: none; padding: 4px 0; cursor: pointer; }
 .toggle-knob {

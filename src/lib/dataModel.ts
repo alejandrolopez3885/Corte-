@@ -336,12 +336,18 @@ export function computeWeekSummary(week: WeekData) {
 // una segunda vez en la Utilidad: ahí solo cuenta el total capturado a
 // mano, tal como se capturó.
 // Comisión bancaria estándar que cobra la terminal por cada venta con
-// tarjeta — se calcula sobre el total de tarjetas de la semana.
+// tarjeta — se calcula sobre el total de tarjetas de la semana. No es
+// editable en ningún lado; siempre se deriva de las tarjetas ya
+// capturadas en el corte.
 const COMISION_TARJETAS_TASA = 0.03;
 
+export function computeComisionTarjetas(week: WeekData): number {
+  return round2(computeWeekSummary(week).tarjetas * COMISION_TARJETAS_TASA);
+}
+
 export function computeDashboardReport(week: WeekData) {
-  const { ventaTotal, tarjetas } = computeWeekSummary(week);
-  const comisionTarjetas = round2(tarjetas * COMISION_TARJETAS_TASA);
+  const { ventaTotal } = computeWeekSummary(week);
+  const comisionTarjetas = computeComisionTarjetas(week);
 
   let operacionEfectivo = 0;
   const otrosPorCategoria: Partial<Record<GastoCategoria | "sin_categoria", number>> = {};

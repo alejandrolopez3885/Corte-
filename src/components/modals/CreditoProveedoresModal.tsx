@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Sheet, Field, SumInput } from "../ui";
-import { formatWeekRange, money, resolveWeekStartDate, round2, sumFromText } from "../../lib/dataModel";
+import { computeComisionTarjetas, formatWeekRange, money, resolveWeekStartDate, round2, sumFromText } from "../../lib/dataModel";
 import type { CreditoProveedores, MonthData } from "../../lib/types";
 
 export function CreditoProveedoresModal({
@@ -37,10 +37,17 @@ export function CreditoProveedoresModal({
   }, [monthKey, weekIndex, months]);
 
   const month = months[monthKey];
+  const week = month?.weeks[weekIndex];
   const weekStartDate = month ? resolveWeekStartDate(monthKey, weekIndex, month) : null;
+  const comisionBancaria = week ? computeComisionTarjetas(week) : 0;
 
   const total = round2(
-    sumFromText(operativos) + sumFromText(fijos) + sumFromText(comisionDidi) + sumFromText(comisionUber) + sumFromText(comisionRappi)
+    sumFromText(operativos) +
+      sumFromText(fijos) +
+      sumFromText(comisionDidi) +
+      sumFromText(comisionUber) +
+      sumFromText(comisionRappi) +
+      comisionBancaria
   );
 
   function save() {
@@ -104,6 +111,9 @@ export function CreditoProveedoresModal({
       </Field>
       <Field label="Comisión RAPPI">
         <SumInput value={comisionRappi} onChange={setComisionRappi} placeholder="0.00" />
+      </Field>
+      <Field label="Comisión bancaria (3% de tarjetas, no editable)">
+        <div className="readonly-value">{money(comisionBancaria)}</div>
       </Field>
 
       <div className="summary-item highlight" style={{ gridColumn: "1 / -1" }}>
