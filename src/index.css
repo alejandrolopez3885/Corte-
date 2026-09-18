@@ -298,6 +298,7 @@ body {
 }
 .catalog-row div { display: flex; flex-direction: column; gap: 2px; }
 .catalog-row span { font-size: 12px; color: var(--ink-soft); }
+.catalog-row-button { width: 100%; text-align: left; cursor: pointer; font: inherit; color: inherit; }
 
 /* ---- Secciones de nivel superior (Equipo, Negocio) ---- */
 .page-section { padding: 6px 20px 60px; display: flex; flex-direction: column; gap: 14px; }
@@ -463,5 +464,21 @@ body {
   padding: 12px 14px; font-size: 14px; font-weight: 500; cursor: pointer;
 }
 
-.horario-celda-value { text-align: center; padding: 6px 0 2px; }
-.horario-celda-value strong { font-family: 'Fraunces', serif; font-size: 22px; }
+/* ---- Nómina ---- */
+.nomina-emp {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+  padding: 12px 14px; display: flex; flex-direction: column; gap: 8px;
+}
+.nomina-emp-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.nomina-emp-head strong { font-size: 14.5px; }
+.nomina-emp-total { font-family: 'Fraunces', serif; font-size: 18px; color: var(--accent); }
+.nomina-emp-sub { font-size: 12px; color: var(--ink-soft); margin: -4px 0 0; }
+.nomina-dias { display: flex; gap: 6px; overflow-x: auto; margin: 0 -14px; padding: 0 14px; }
+.nomina-dia {
+  flex-shrink: 0; min-width: 56px; background: var(--surface-alt); border-radius: 9px;
+  padding: 6px 4px; text-align: center;
+}
+.nomina-dia.cero { opacity: 0.45; }
+.nomina-dia-label { font-size: 10px; color: var(--ink-soft); font-weight: 600; text-transform: uppercase; }
+.nomina-dia-valor { font-size: 12px; font-weight: 600; margin: 3px 0 1px; min-height: 14px; }
+.nomina-dia-monto { font-size: 11px; color: var(--ink-soft); }

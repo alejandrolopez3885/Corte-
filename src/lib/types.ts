@@ -13,10 +13,13 @@ export interface MeseroCatalogEntry {
 }
 
 // Lista de personal, separada del catálogo de meseros (ese es para el
-// corte). Por ahora solo nombre — a futuro, base para horarios y nómina.
+// corte). sueldoDiario es la base para calcular la nómina a partir de
+// Horarios — el sueldo semanal completo (6 días trabajados + 1 de
+// descanso pagado) siempre es sueldoDiario × 7.
 export interface EmpleadoEntry {
   id: string;
   nombre: string;
+  sueldoDiario?: number;
 }
 
 // Valores rápidos para una celda de horario — el resto de las celdas
@@ -52,6 +55,26 @@ export interface HorarioSemana {
 
 export interface HorarioMonthData {
   weeks: (HorarioSemana | null)[];
+}
+
+// Nómina calculada de un empleado en una semana, a partir de su horario
+// y su sueldo diario — ver computeNominaFila/computeNominaSemana.
+export interface NominaDia {
+  day: DayName;
+  valor: string;
+  multiplicador: number;
+  monto: number;
+}
+
+export interface NominaEmpleadoSemana {
+  empleadoId: string;
+  nombre: string;
+  areaNombre: string;
+  sueldoDiario: number;
+  dias: NominaDia[];
+  diasTrabajados: number;
+  offPagado: boolean;
+  total: number;
 }
 
 export interface MeseroCut {
@@ -155,9 +178,6 @@ export interface WeekData {
   days: Record<DayName, DayData>;
   efectivoReal?: number | null;
   creditoProveedores?: CreditoProveedores;
-  // Total de nómina de la semana, capturado a mano por el dueño (por ahora
-  // no hay generador de nómina, así que no se deriva de nada más).
-  nominaManual?: number;
 }
 
 export interface MonthData {

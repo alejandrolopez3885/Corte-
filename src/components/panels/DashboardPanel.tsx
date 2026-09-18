@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
-import { Field, SumInput } from "../ui";
-import { computeDashboardReport, formatWeekRange, money, resolveWeekStartDate, sumFromText } from "../../lib/dataModel";
-import type { MonthData } from "../../lib/types";
+import { Field } from "../ui";
+import { computeDashboardReport, computeNominaTotalSemana, formatWeekRange, money, resolveWeekStartDate } from "../../lib/dataModel";
+import type { EmpleadoEntry, HorarioMonthData, MonthData } from "../../lib/types";
 
 // Categorías donde además del total conviene ver el detalle de cada gasto
 // que lo compone (concepto por concepto), porque agrupan cosas variadas.
@@ -13,17 +13,20 @@ export function DashboardPanel({
   monthKeys,
   initialMonthKey,
   initialWeekIndex,
-  onSaveNomina,
+  empleados,
+  horarios,
+  onGoToNomina,
 }: {
   months: Record<string, MonthData>;
   monthKeys: string[];
   initialMonthKey: string;
   initialWeekIndex: number;
-  onSaveNomina: (monthKey: string, weekIndex: number, value: number) => void;
+  empleados: EmpleadoEntry[];
+  horarios: Record<string, HorarioMonthData>;
+  onGoToNomina: () => void;
 }) {
   const [monthKey, setMonthKey] = useState(initialMonthKey);
   const [weekIndex, setWeekIndex] = useState(initialWeekIndex);
-  const [nominaText, setNominaText] = useState("");
   const [showComisiones, setShowComisiones] = useState(false);
   const [showGastosOperativos, setShowGastosOperativos] = useState(false);
   const [expandedCategorias, setExpandedCategorias] = useState<Set<string>>(new Set());
@@ -40,25 +43,19 @@ export function DashboardPanel({
   const month = months[monthKey];
   const week = month?.weeks[weekIndex];
 
-  useEffect(() => {
-    setNominaText(week?.nominaManual ? String(week.nominaManual) : "");
-  }, [monthKey, weekIndex, week?.nominaManual]);
-
   if (!month || !week) return null;
 
   const weekStartDate = resolveWeekStartDate(monthKey, weekIndex, month);
-  const report = computeDashboardReport(week);
-
-  function commitNomina() {
-    onSaveNomina(monthKey, weekIndex, sumFromText(nominaText));
-  }
+  const semana = horarios[monthKey]?.weeks?.[weekIndex] ?? null;
+  const nominaCalculada = computeNominaTotalSemana(semana, empleados);
+  const report = computeDashboardReport(week, nominaCalculada);
 
   return (
     <div className="page-section">
       <h2 className="page-title">Dashboard</h2>
       <p className="hint">
-        Reporte de resultados de la semana — solo para leer. Lo único capturable aquí es Nómina, porque todavía no hay un
-        generador de nómina; todo lo demás viene de lo que ya registraste en Corte y Proveedores.
+        Reporte de resultados de la semana — solo para leer. Nómina se calcula sola a partir de Horarios y el sueldo diario de
+        cada quien en Personal; todo lo demás viene de lo que ya registraste en Corte y Proveedores.
       </p>
 
       <div className="field-row">
@@ -89,13 +86,6 @@ export function DashboardPanel({
         </Field>
       </div>
       <p className="hint">{formatWeekRange(weekStartDate)}</p>
-
-      <Field label="Nómina de la semana">
-        <SumInput value={nominaText} onChange={setNominaText} placeholder="0.00" />
-      </Field>
-      <button className="link-btn" onClick={commitNomina}>
-        Guardar nómina
-      </button>
 
       <div className="report-list">
         <div className="report-row">
@@ -204,6 +194,9 @@ export function DashboardPanel({
           <strong className="report-row-amount">{money(report.utilidad)}</strong>
         </div>
       </div>
+      <button className="link-btn" onClick={onGoToNomina}>
+        Ver desglose en Nómina
+      </button>
     </div>
   );
 }

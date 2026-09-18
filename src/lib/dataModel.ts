@@ -1,4 +1,4 @@
-import { DAYS, GASTO_CATEGORIAS, HORARIO_AREAS_FIJAS, type AppData, type DayData, type DayName, type GastoCategoria, type HorarioMonthData, type HorarioSemana, type MeseroCut, type MonthData, type WeekData } from "./types";
+import { DAYS, GASTO_CATEGORIAS, HORARIO_AREAS_FIJAS, type AppData, type DayData, type DayName, type EmpleadoEntry, type GastoCategoria, type HorarioFila, type HorarioMonthData, type HorarioSemana, type MeseroCut, type MonthData, type NominaDia, type NominaEmpleadoSemana, type WeekData } from "./types";
 
 export const uid = (): string => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 
@@ -427,7 +427,54 @@ export function findPreviousHorarioSemana(
   return null;
 }
 
-export function computeDashboardReport(week: WeekData) {
+// --- Nómina calculada a partir de Horarios ------------------------------
+// El sueldo diario captura la base; el sueldo semanal completo (6 días
+// trabajados + 1 de descanso pagado) siempre es sueldoDiario × 7. Cada
+// día del horario paga distinto: Z paga doble, O/X o cualquier hora
+// capturada pagan 1x, y OFF solo paga 1x si esa semana ya se trabajaron
+// los otros 6 días — si se trabajaron 5 o menos, el descanso no se paga.
+// Una celda sin capturar no se paga y tampoco cuenta como día trabajado.
+export function computeNominaFila(
+  fila: HorarioFila,
+  sueldoDiario: number
+): { dias: NominaDia[]; diasTrabajados: number; offPagado: boolean; total: number } {
+  const diasTrabajados = DAYS.filter((d) => {
+    const v = fila.valores[d];
+    return !!v && v !== "OFF";
+  }).length;
+  const offPagado = diasTrabajados >= 6;
+  let total = 0;
+  const dias: NominaDia[] = DAYS.map((d) => {
+    const valor = fila.valores[d] || "";
+    let multiplicador = 0;
+    if (valor === "Z") multiplicador = 2;
+    else if (valor === "OFF") multiplicador = offPagado ? 1 : 0;
+    else if (valor) multiplicador = 1;
+    const monto = round2(sueldoDiario * multiplicador);
+    total += monto;
+    return { day: d, valor, multiplicador, monto };
+  });
+  return { dias, diasTrabajados, offPagado, total: round2(total) };
+}
+
+export function computeNominaSemana(semana: HorarioSemana | null, empleados: EmpleadoEntry[]): NominaEmpleadoSemana[] {
+  if (!semana) return [];
+  const result: NominaEmpleadoSemana[] = [];
+  semana.areas.forEach((area) => {
+    area.filas.forEach((fila) => {
+      const sueldoDiario = empleados.find((e) => e.id === fila.empleadoId)?.sueldoDiario || 0;
+      const { dias, diasTrabajados, offPagado, total } = computeNominaFila(fila, sueldoDiario);
+      result.push({ empleadoId: fila.empleadoId, nombre: fila.nombre, areaNombre: area.nombre, sueldoDiario, dias, diasTrabajados, offPagado, total });
+    });
+  });
+  return result;
+}
+
+export function computeNominaTotalSemana(semana: HorarioSemana | null, empleados: EmpleadoEntry[]): number {
+  return round2(computeNominaSemana(semana, empleados).reduce((s, e) => s + e.total, 0));
+}
+
+export function computeDashboardReport(week: WeekData, nominaCalculada: number) {
   const { ventaTotal } = computeWeekSummary(week);
   const comisionTarjetas = computeComisionTarjetas(week);
 
@@ -455,7 +502,7 @@ export function computeDashboardReport(week: WeekData) {
   const comisionUber = round2(credito?.comisionUber || 0);
   const comisionRappi = round2(credito?.comisionRappi || 0);
   const comisionesApps = round2(comisionDidi + comisionUber + comisionRappi);
-  const nomina = round2(week.nominaManual || 0);
+  const nomina = round2(nominaCalculada);
 
   const pct = (n: number) => (ventaTotal > 0 ? round2((n / ventaTotal) * 100) : 0);
 

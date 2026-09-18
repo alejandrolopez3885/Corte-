@@ -1,17 +1,18 @@
-import { ArrowLeft, Plus, Trash2, UsersRound } from "lucide-react";
+import { ArrowLeft, Plus, UsersRound } from "lucide-react";
 import { Empty } from "../ui";
+import { money } from "../../lib/dataModel";
 import type { EmpleadoEntry } from "../../lib/types";
 
 export function EmpleadosPanel({
   onBack,
   onAdd,
+  onEdit,
   empleados,
-  onRemove,
 }: {
   onBack: () => void;
   onAdd: () => void;
+  onEdit: (entry: EmpleadoEntry) => void;
   empleados: EmpleadoEntry[];
-  onRemove: (id: string) => void;
 }) {
   return (
     <div className="page-section">
@@ -25,8 +26,8 @@ export function EmpleadosPanel({
         </button>
       </div>
       <p className="hint">
-        Lista de tu personal — por ahora solo el nombre. Es independiente del catálogo de meseros (ese es para el corte). Más
-        adelante aquí mismo vas a poder armar horarios y nómina para cada quien.
+        Lista de tu personal, independiente del catálogo de meseros (ese es para el corte). Toca a alguien para editar su
+        nombre o sueldo diario.
       </p>
 
       {empleados.length === 0 ? (
@@ -34,12 +35,12 @@ export function EmpleadosPanel({
       ) : (
         <div className="catalog-list">
           {empleados.map((e) => (
-            <div key={e.id} className="catalog-row">
-              <strong>{e.nombre}</strong>
-              <button className="icon-btn" onClick={() => onRemove(e.id)} aria-label={`Quitar a ${e.nombre}`}>
-                <Trash2 size={16} />
-              </button>
-            </div>
+            <button key={e.id} className="catalog-row catalog-row-button" onClick={() => onEdit(e)}>
+              <div>
+                <strong>{e.nombre}</strong>
+                <span>{e.sueldoDiario ? `${money(e.sueldoDiario)} / día` : "Sin sueldo diario capturado"}</span>
+              </div>
+            </button>
           ))}
         </div>
       )}

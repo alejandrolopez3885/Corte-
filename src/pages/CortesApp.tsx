@@ -42,7 +42,7 @@ type ModalState =
   | { type: "creditoProveedores" }
   | { type: "catalog" }
   | { type: "team" }
-  | { type: "empleado" }
+  | { type: "empleado"; editing?: EmpleadoEntry }
   | { type: "deleteMonth"; monthKey: string }
   | null;
 
@@ -322,6 +322,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
     const next = structuredClone(data);
     next.empleados = next.empleados.filter((e) => e.id !== id);
     persist(next);
+    setModal(null);
   }
 
   function saveMeseroCut(form: MeseroFormValues, editingId?: string) {
@@ -468,15 +469,6 @@ export default function CortesApp({ profile }: { profile: Profile }) {
     persist(next);
   }
 
-  // Nómina del reporte del Dashboard — capturada a mano por ahora, sin
-  // generador de nómina todavía.
-  function saveNominaManual(monthKey: string, weekIndex: number, value: number) {
-    if (!data) return;
-    const next = structuredClone(data);
-    next.months[monthKey].weeks[weekIndex].nominaManual = value;
-    persist(next);
-  }
-
   // Horario de una semana — usa las mismas semanas (mes/índice) que Corte,
   // pero vive aparte porque no afecta ningún total de caja.
   function saveHorarioSemana(monthKey: string, weekIndex: number, semana: HorarioSemana) {
@@ -568,7 +560,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
               </span>
               <span className="menu-item-text">
                 <strong>Nómina</strong>
-                <span>Próximamente</span>
+                <span>Calculada sola a partir de Horarios</span>
               </span>
             </button>
           </div>
@@ -579,7 +571,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
         <EmpleadosPanel
           empleados={data.empleados}
           onAdd={() => setModal({ type: "empleado" })}
-          onRemove={removeEmpleado}
+          onEdit={(entry) => setModal({ type: "empleado", editing: entry })}
           onBack={() => setEquipoView("menu")}
         />
       )}
@@ -597,7 +589,18 @@ export default function CortesApp({ profile }: { profile: Profile }) {
         />
       )}
 
-      {isOwner && activeTab === "equipo" && equipoView === "nomina" && <NominaPanel onBack={() => setEquipoView("menu")} />}
+      {isOwner && activeTab === "equipo" && equipoView === "nomina" && (
+        <NominaPanel
+          onBack={() => setEquipoView("menu")}
+          months={data.months}
+          monthKeys={monthKeys}
+          initialMonthKey={mostRecentMonthKey as string}
+          initialWeekIndex={mostRecentWeekIdx}
+          empleados={data.empleados}
+          horarios={data.horarios}
+          onGoToHorarios={() => setEquipoView("horarios")}
+        />
+      )}
 
       {isOwner && activeTab === "negocio" && (
         <div className="page-section">
@@ -661,7 +664,12 @@ export default function CortesApp({ profile }: { profile: Profile }) {
             monthKeys={monthKeys}
             initialMonthKey={mostRecentMonthKey as string}
             initialWeekIndex={mostRecentWeekIdx}
-            onSaveNomina={saveNominaManual}
+            empleados={data.empleados}
+            horarios={data.horarios}
+            onGoToNomina={() => {
+              setActiveTab("equipo");
+              setEquipoView("nomina");
+            }}
           />
         ) : (
           <div className="page-section">
@@ -1004,7 +1012,14 @@ export default function CortesApp({ profile }: { profile: Profile }) {
         <CatalogModal onClose={() => setModal(null)} meseros={data.meseros} onSave={upsertMesero} onRemove={removeMeseroFromCatalog} />
       )}
       {modal?.type === "team" && <TeamModal onClose={() => setModal(null)} ownerId={profile.id} />}
-      {modal?.type === "empleado" && <EmpleadoModal onClose={() => setModal(null)} onSave={upsertEmpleado} />}
+      {modal?.type === "empleado" && (
+        <EmpleadoModal
+          onClose={() => setModal(null)}
+          onSave={upsertEmpleado}
+          onDelete={modal.editing ? () => removeEmpleado((modal.editing as EmpleadoEntry).id) : undefined}
+          editing={modal.editing}
+        />
+      )}
       {modal?.type === "deleteMonth" && (
         <DeleteMonthModal
           onClose={() => setModal(null)}

@@ -29,16 +29,20 @@ navegación de abajo:
   transferencias, ventas de apps y sus resúmenes.
 - **Equipo**: menú con 4 opciones — "Tu equipo" (dar de alta a quien te
   apoya con PIN y asignarle días, como modal), y como páginas propias
-  "Personal" (la lista de tu personal; por ahora solo nombre — se agrega
-  con un botón "+" en vez de tener el formulario siempre abierto),
-  "Horarios" (arma el horario semanal en dos áreas fijas, PISO y COCINA
-  — no se pueden crear, renombrar ni borrar áreas — usando las mismas
-  semanas de Corte; cada celda día/empleado admite valores rápidos de un
-  toque u hora libre, y al abrir una semana nueva se precarga con la
-  última semana capturada para solo ajustar lo que cambió) y "Nómina"
-  (aún vacía, en blanco a propósito para cuando se construya). Personal
-  no es lo mismo que el catálogo de meseros de Negocio, que es solo para
-  el corte.
+  "Personal" (la lista de tu personal — nombre y sueldo diario; se agrega
+  con un botón "+" en vez de tener el formulario siempre abierto, y tocar
+  a alguien lo abre para editar o eliminar), "Horarios" (arma el horario
+  semanal en dos áreas fijas, PISO y COCINA — no se pueden crear, renombrar
+  ni borrar áreas — usando las mismas semanas de Corte; un toque en la
+  celda cicla OFF → O → X → Z, y al llegar a Z se abre un modal para
+  capturar una hora de entrada en su lugar; al abrir una semana nueva se
+  precarga con la última semana capturada para solo ajustar lo que cambió)
+  y "Nómina" (calculada sola a partir de Horarios y el sueldo diario de
+  cada quien: Z paga doble, O/X y cualquier hora capturada pagan 1x, y el
+  descanso OFF solo se paga si esa semana se trabajaron los otros 6 días —
+  el sueldo semanal completo, sueldo diario × 7, solo se alcanza así).
+  Personal no es lo mismo que el catálogo de meseros de Negocio, que es
+  solo para el corte.
 - **Negocio**: catálogo de meseros y, agrupadas bajo "Control de gastos",
   Control de gastos en efectivo y Control de gastos en transferencia.
 - **Dashboard**: reporte de resultados de la semana, solo para leer (con
@@ -47,9 +51,9 @@ navegación de abajo:
   Gastos fijos, las 3 comisiones de apps, el resto de categorías de gastos
   en efectivo desglosadas una por una (Nómina, Cortesía, Retiro,
   Mantenimiento, Comida empleado, Envíos, Cancelaciones, Otro, Sin
-  categoría) y Nómina — hasta que exista un generador de nómina, esta
-  última se captura a mano ahí mismo — y al final la Utilidad (Venta total
-  menos todo lo anterior).
+  categoría) y Nómina (la calculada en Equipo > Nómina para esa misma
+  semana, con un link directo al desglose) — y al final la Utilidad (Venta
+  total menos todo lo anterior).
 
 Hay 2 tipos de cuenta:
 
