@@ -1,31 +1,69 @@
+import { useState } from "react";
 import { Check } from "lucide-react";
-import { Sheet } from "../ui";
-import { computeWeekGastos, dateForDay, formatShortDayDate, money } from "../../lib/dataModel";
+import { Sheet, Field } from "../ui";
+import { computeWeekGastos, dateForDay, formatShortDayDate, formatWeekRange, money, resolveWeekStartDate } from "../../lib/dataModel";
 import { GASTO_CATEGORIAS } from "../../lib/types";
-import type { DayName, GastoCategoria, MonthData, WeekData } from "../../lib/types";
+import type { DayName, GastoCategoria, MonthData } from "../../lib/types";
 
 export function GastosSummaryModal({
   onClose,
-  week,
-  month,
-  weekLabel,
-  monthKey,
-  weekIndex,
+  months,
+  monthKeys,
+  initialMonthKey,
+  initialWeekIndex,
   onToggleEstado,
   onSetCategoria,
 }: {
   onClose: () => void;
-  week: WeekData;
-  month: MonthData;
-  weekLabel: string;
-  monthKey: string;
-  weekIndex: number;
-  onToggleEstado: (dayName: DayName, id: string) => void;
-  onSetCategoria: (dayName: DayName, id: string, categoria: GastoCategoria | "") => void;
+  months: Record<string, MonthData>;
+  monthKeys: string[];
+  initialMonthKey: string;
+  initialWeekIndex: number;
+  onToggleEstado: (monthKey: string, weekIndex: number, dayName: DayName, id: string) => void;
+  onSetCategoria: (monthKey: string, weekIndex: number, dayName: DayName, id: string, categoria: GastoCategoria | "") => void;
 }) {
+  const [monthKey, setMonthKey] = useState(initialMonthKey);
+  const [weekIndex, setWeekIndex] = useState(initialWeekIndex);
+
+  const month = months[monthKey];
+  const week = month?.weeks[weekIndex];
+
+  if (!month || !week) return null;
+
+  const weekStartDate = resolveWeekStartDate(monthKey, weekIndex, month);
   const g = computeWeekGastos(week);
+
   return (
-    <Sheet title={weekLabel} onClose={onClose}>
+    <Sheet title="Control de gastos en efectivo" onClose={onClose}>
+      <div className="field-row">
+        <Field label="Mes">
+          <select
+            className="text-input"
+            value={monthKey}
+            onChange={(e) => {
+              setMonthKey(e.target.value);
+              setWeekIndex(0);
+            }}
+          >
+            {monthKeys.map((mk) => (
+              <option key={mk} value={mk}>
+                {months[mk].label}
+              </option>
+            ))}
+          </select>
+        </Field>
+        <Field label="Semana">
+          <select className="text-input" value={weekIndex} onChange={(e) => setWeekIndex(Number(e.target.value))}>
+            {[0, 1, 2, 3].map((i) => (
+              <option key={i} value={i}>
+                Semana {i + 1}
+              </option>
+            ))}
+          </select>
+        </Field>
+      </div>
+      <p className="hint">{formatWeekRange(weekStartDate)}</p>
+
       <div className="summary-grid-modal">
         <div className="summary-item highlight" style={{ gridColumn: "1 / -1" }}>
           <span>Total de gastos ({g.countTotal})</span>
@@ -69,7 +107,7 @@ export function GastosSummaryModal({
                         className="categoria-select"
                         value={item.categoria || ""}
                         disabled={item.estado === "ingresado"}
-                        onChange={(e) => onSetCategoria(d.day, item.id, e.target.value as GastoCategoria | "")}
+                        onChange={(e) => onSetCategoria(monthKey, weekIndex, d.day, item.id, e.target.value as GastoCategoria | "")}
                       >
                         <option value="">Sin categoría</option>
                         {GASTO_CATEGORIAS.map((c) => (
@@ -82,7 +120,7 @@ export function GastosSummaryModal({
                         type="button"
                         className={`estado-chip ${item.estado}`}
                         disabled={item.estado === "pendiente" && !item.categoria}
-                        onClick={() => onToggleEstado(d.day, item.id)}
+                        onClick={() => onToggleEstado(monthKey, weekIndex, d.day, item.id)}
                       >
                         {item.estado === "pendiente" ? (
                           "Confirmar"

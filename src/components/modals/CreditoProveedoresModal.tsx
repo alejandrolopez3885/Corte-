@@ -55,7 +55,7 @@ export function CreditoProveedoresModal({
   }
 
   return (
-    <Sheet title="Gastos de proveedores a crédito" onClose={onClose}>
+    <Sheet title="Control de gastos en transferencia" onClose={onClose}>
       <p className="hint">
         Control de los gastos que tus proveedores te dan a crédito y pagas después por transferencia. Es solo informativo — no
         afecta el efectivo a entregar ni ningún total de caja del corte.

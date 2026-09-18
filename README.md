@@ -9,13 +9,14 @@ calculan las 4 semanas (siempre +7/+14/+21 días, nunca se desalinean entre
 sí). Así todo el corte (chips de día, encabezados, tablas) siempre muestra
 la fecha real (día, mes y año) en vez de solo el nombre del día — y si una
 semana se asoma al mes anterior o siguiente, se muestra tal cual, con su
-fecha exacta. También tiene una
-sección aparte, **Proveedores** (dentro de "Negocio" en la navegación de
-abajo), para llevar el control de **gastos que los proveedores dan a
-crédito y pagas después por transferencia** — 5 totales fijos por semana:
-gastos operativos en transferencia, gastos fijos, comisión DIDI, comisión
-UBER y comisión RAPPI. Vive totalmente separada del corte diario: es solo
-informativo, no afecta el efectivo ni ningún total de caja.
+fecha exacta. También tiene, dentro de "Negocio" → "Control de gastos", dos
+pantallas de solo control (cada una con su propio selector de mes/semana):
+**Control de gastos en efectivo** (los gastos ya categorizados que capturas
+en el corte diario) y **Control de gastos en transferencia** — 5 totales
+fijos por semana: gastos operativos en transferencia, gastos fijos,
+comisión DIDI, comisión UBER y comisión RAPPI. Esta última vive totalmente
+separada del corte diario: es solo informativa, no afecta el efectivo ni
+ningún total de caja.
 
 - **Frontend**: React + Vite + TypeScript.
 - **Backend**: Supabase (Auth + Postgres).
@@ -27,10 +28,11 @@ navegación de abajo:
 - **Corte**: la pantalla principal — mes, semana, día, meseros, gastos,
   transferencias, ventas de apps y sus resúmenes.
 - **Equipo**: dar de alta a tu personal y asignarle días.
-- **Negocio**: catálogo de meseros y la sección de Proveedores.
+- **Negocio**: catálogo de meseros y, agrupadas bajo "Control de gastos",
+  Control de gastos en efectivo y Control de gastos en transferencia.
 - **Dashboard**: reporte de resultados de la semana, solo para leer (con
   porcentajes sobre la venta total): Venta total, Gastos operativos (suma
-  los de efectivo categorizados como Operación más los de Proveedores),
+  los de efectivo categorizados como Operación más los de transferencia),
   Gastos fijos, las 3 comisiones de apps, el resto de categorías de gastos
   en efectivo desglosadas una por una (Nómina, Cortesía, Retiro,
   Mantenimiento, Comida empleado, Envíos, Cancelaciones, Otro, Sin

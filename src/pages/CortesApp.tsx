@@ -365,18 +365,24 @@ export default function CortesApp({ profile }: { profile: Profile }) {
     });
   }
 
-  function toggleGastoEstadoInWeek(dayName: DayName, id: string) {
-    updateWeek((w) => {
-      const g = w.days[dayName].gastos.find((x) => x.id === id);
-      if (g) g.estado = g.estado === "pendiente" ? "ingresado" : "pendiente";
-    });
+  // Estas dos toman monthKey/weekIndex explícitos (en vez de usar
+  // updateWeek, que depende de la semana activa en la pestaña Corte)
+  // porque "Control de gastos en efectivo" ahora también se abre desde
+  // Negocio, con su propio selector de mes/semana.
+  function toggleGastoEstadoInWeek(monthKey: string, weekIndex: number, dayName: DayName, id: string) {
+    if (!data) return;
+    const next = structuredClone(data);
+    const g = next.months[monthKey].weeks[weekIndex].days[dayName].gastos.find((x) => x.id === id);
+    if (g) g.estado = g.estado === "pendiente" ? "ingresado" : "pendiente";
+    persist(next);
   }
 
-  function setGastoCategoriaInWeek(dayName: DayName, id: string, categoria: GastoCategoria | "") {
-    updateWeek((w) => {
-      const g = w.days[dayName].gastos.find((x) => x.id === id);
-      if (g) g.categoria = categoria || undefined;
-    });
+  function setGastoCategoriaInWeek(monthKey: string, weekIndex: number, dayName: DayName, id: string, categoria: GastoCategoria | "") {
+    if (!data) return;
+    const next = structuredClone(data);
+    const g = next.months[monthKey].weeks[weekIndex].days[dayName].gastos.find((x) => x.id === id);
+    if (g) g.categoria = categoria || undefined;
+    persist(next);
   }
 
   function deleteGasto(id: string) {
@@ -482,6 +488,27 @@ export default function CortesApp({ profile }: { profile: Profile }) {
                 <span>Catálogo de meseros para el corte</span>
               </span>
             </button>
+          </div>
+
+          <h3 className="menu-subtitle">Control de gastos</h3>
+          <div className="menu-list">
+            <button
+              className="menu-item"
+              disabled={monthKeys.length === 0}
+              onClick={() => setModal({ type: "gastosSummary" })}
+            >
+              <span className="menu-item-icon">
+                <Receipt size={20} />
+              </span>
+              <span className="menu-item-text">
+                <strong>Control de gastos en efectivo</strong>
+                <span>
+                  {monthKeys.length === 0
+                    ? "Agrega un mes desde Corte para empezar a usar esto"
+                    : "Gastos de la semana capturados en el corte"}
+                </span>
+              </span>
+            </button>
             <button
               className="menu-item"
               disabled={monthKeys.length === 0}
@@ -491,7 +518,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
                 <Truck size={20} />
               </span>
               <span className="menu-item-text">
-                <strong>Proveedores</strong>
+                <strong>Control de gastos en transferencia</strong>
                 <span>
                   {monthKeys.length === 0
                     ? "Agrega un mes desde Corte para empezar a usar esto"
@@ -827,14 +854,13 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           onSaveStartDate={saveWeekStartDate}
         />
       )}
-      {modal?.type === "gastosSummary" && month && activeMonth && (
+      {modal?.type === "gastosSummary" && monthKeys.length > 0 && (
         <GastosSummaryModal
           onClose={() => setModal(null)}
-          week={month.weeks[activeWeek]}
-          month={month}
-          weekLabel={`Gastos · Semana ${activeWeek + 1} · ${month.label}`}
-          monthKey={activeMonth}
-          weekIndex={activeWeek}
+          months={data.months}
+          monthKeys={monthKeys}
+          initialMonthKey={activeMonth && data.months[activeMonth] ? activeMonth : monthKeys[monthKeys.length - 1]}
+          initialWeekIndex={activeWeek}
           onToggleEstado={toggleGastoEstadoInWeek}
           onSetCategoria={setGastoCategoriaInWeek}
         />
