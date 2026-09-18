@@ -12,7 +12,7 @@ import {
 } from "../lib/dataModel";
 import { useStaffAssignments } from "../lib/staffAssignments";
 import { DAYS, DAY_SHORT } from "../lib/types";
-import type { CreditoProveedores, DayData, DayName, EmpleadoEntry, Gasto, GastoCategoria, MeseroCatalogEntry, MeseroCut, Profile, Transferencia, WeekData } from "../lib/types";
+import type { CreditoProveedores, DayData, DayName, EmpleadoEntry, Gasto, GastoCategoria, HorarioSemana, MeseroCatalogEntry, MeseroCut, Profile, Transferencia, WeekData } from "../lib/types";
 import { Empty } from "../components/ui";
 import { MonthModal } from "../components/modals/MonthModal";
 import { MeseroModal, type MeseroFormValues } from "../components/modals/MeseroModal";
@@ -477,6 +477,16 @@ export default function CortesApp({ profile }: { profile: Profile }) {
     persist(next);
   }
 
+  // Horario de una semana — usa las mismas semanas (mes/índice) que Corte,
+  // pero vive aparte porque no afecta ningún total de caja.
+  function saveHorarioSemana(monthKey: string, weekIndex: number, semana: HorarioSemana) {
+    if (!data) return;
+    const next = structuredClone(data);
+    if (!next.horarios[monthKey]) next.horarios[monthKey] = { weeks: [null, null, null, null] };
+    next.horarios[monthKey].weeks[weekIndex] = semana;
+    persist(next);
+  }
+
   function saveVentaApps(rawValue: string) {
     updateDay((d) => {
       d.ventaApps = sumFromText(rawValue);
@@ -549,7 +559,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
               </span>
               <span className="menu-item-text">
                 <strong>Horarios</strong>
-                <span>Próximamente</span>
+                <span>Arma el horario semanal de tu personal</span>
               </span>
             </button>
             <button className="menu-item" onClick={() => setEquipoView("nomina")}>
@@ -574,7 +584,18 @@ export default function CortesApp({ profile }: { profile: Profile }) {
         />
       )}
 
-      {isOwner && activeTab === "equipo" && equipoView === "horarios" && <HorariosPanel onBack={() => setEquipoView("menu")} />}
+      {isOwner && activeTab === "equipo" && equipoView === "horarios" && (
+        <HorariosPanel
+          onBack={() => setEquipoView("menu")}
+          months={data.months}
+          monthKeys={monthKeys}
+          initialMonthKey={mostRecentMonthKey as string}
+          initialWeekIndex={mostRecentWeekIdx}
+          empleados={data.empleados}
+          horarios={data.horarios}
+          onSaveSemana={saveHorarioSemana}
+        />
+      )}
 
       {isOwner && activeTab === "equipo" && equipoView === "nomina" && <NominaPanel onBack={() => setEquipoView("menu")} />}
 

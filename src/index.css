@@ -429,3 +429,39 @@ body {
 @media (min-width: 700px) {
   .summary { grid-template-columns: repeat(4, 1fr); }
 }
+
+/* ---- Horarios ---- */
+.horario-area {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+  padding: 14px; display: flex; flex-direction: column; gap: 10px;
+}
+.horario-area-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.horario-area-head h3 { font-size: 15px; margin: 0; }
+.horario-area-head .icon-btn { width: 32px; height: 32px; border-radius: 10px; flex-shrink: 0; }
+
+.horario-table-wrap { overflow-x: auto; margin: 0 -14px; padding: 0 14px; }
+.horario-table { border-collapse: collapse; width: 100%; }
+.horario-table th, .horario-table td { padding: 4px; text-align: center; }
+.horario-table th { font-size: 11px; color: var(--ink-soft); font-weight: 600; }
+.horario-table .horario-col-nombre {
+  text-align: left; position: sticky; left: 0; background: var(--surface);
+  font-size: 13px; font-weight: 500; white-space: nowrap; padding-right: 10px; max-width: 110px;
+  overflow: hidden; text-overflow: ellipsis;
+}
+.horario-cell {
+  width: 100%; min-width: 52px; border: 1px solid var(--border); border-radius: 9px;
+  background: var(--surface-alt); color: var(--ink); font-size: 12.5px; font-weight: 500;
+  padding: 8px 4px; cursor: pointer;
+}
+.horario-cell.filled { background: var(--accent-soft); color: var(--accent); }
+.horario-cell-empty-mark { color: var(--ink-soft); opacity: 0.5; }
+.horario-row-remove { flex-shrink: 0; width: 30px; height: 30px; }
+
+.horario-emp-list { display: flex; flex-direction: column; gap: 8px; }
+.horario-emp-item {
+  text-align: left; background: var(--surface-alt); border: 1px solid var(--border); border-radius: 12px;
+  padding: 12px 14px; font-size: 14px; font-weight: 500; cursor: pointer;
+}
+
+.horario-celda-value { text-align: center; padding: 6px 0 2px; }
+.horario-celda-value strong { font-family: 'Fraunces', serif; font-size: 22px; }

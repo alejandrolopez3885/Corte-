@@ -29,10 +29,15 @@ navegación de abajo:
   transferencias, ventas de apps y sus resúmenes.
 - **Equipo**: menú con 4 opciones — "Tu equipo" (dar de alta a quien te
   apoya con PIN y asignarle días, como modal), y como páginas propias
-  "Personal" (la lista de tu personal; por ahora solo nombre), y
-  "Horarios" y "Nómina" (aún vacías, en blanco a propósito para
-  cuando se construyan). Personal no es lo mismo que el catálogo de
-  meseros de Negocio, que es solo para el corte.
+  "Personal" (la lista de tu personal; por ahora solo nombre — se agrega
+  con un botón "+" en vez de tener el formulario siempre abierto),
+  "Horarios" (arma el horario semanal por área — Piso, Cocina, etc. —
+  usando las mismas semanas de Corte; cada celda día/empleado admite
+  valores rápidos de un toque u hora libre, y al abrir una semana nueva se
+  precarga con la última semana capturada para solo ajustar lo que
+  cambió) y "Nómina" (aún vacía, en blanco a propósito para cuando se
+  construya). Personal no es lo mismo que el catálogo de meseros de
+  Negocio, que es solo para el corte.
 - **Negocio**: catálogo de meseros y, agrupadas bajo "Control de gastos",
   Control de gastos en efectivo y Control de gastos en transferencia.
 - **Dashboard**: reporte de resultados de la semana, solo para leer (con

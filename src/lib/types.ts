@@ -19,6 +19,35 @@ export interface EmpleadoEntry {
   nombre: string;
 }
 
+// Valores rápidos para una celda de horario — el resto de las celdas
+// admite cualquier texto libre (p.ej. una hora de entrada).
+export const HORARIO_CHIPS = ["OFF", "O", "X", "Z"] as const;
+
+// Una fila de horario por empleado dentro de un área. `nombre` es una
+// foto del nombre al momento de agregarlo a la semana, para que el
+// historial no se rompa si después se borra ese empleado de Personal.
+export interface HorarioFila {
+  empleadoId: string;
+  nombre: string;
+  valores: Partial<Record<DayName, string>>;
+}
+
+// Un área/puesto (Piso, Cocina, ...) con su propia lista de empleados,
+// igual que en el Excel que se llevaba antes.
+export interface HorarioArea {
+  id: string;
+  nombre: string;
+  filas: HorarioFila[];
+}
+
+export interface HorarioSemana {
+  areas: HorarioArea[];
+}
+
+export interface HorarioMonthData {
+  weeks: (HorarioSemana | null)[];
+}
+
 export interface MeseroCut {
   id: string;
   meseroId: string;
@@ -141,6 +170,11 @@ export interface AppData {
   proveedores: ProveedorCatalogEntry[];
   facturas: FacturaProveedor[];
   months: Record<string, MonthData>;
+  // Horarios por semana, usando las mismas semanas (mes/índice) que Corte —
+  // así ambas secciones comparten la misma noción de "Semana N" sin
+  // duplicar la fecha ancla. Solo existe entrada para los meses/semanas
+  // donde ya se capturó algo.
+  horarios: Record<string, HorarioMonthData>;
 }
 
 export type Role = "owner" | "staff";

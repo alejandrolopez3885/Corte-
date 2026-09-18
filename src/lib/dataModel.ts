@@ -1,4 +1,4 @@
-import { DAYS, GASTO_CATEGORIAS, type AppData, type DayData, type DayName, type GastoCategoria, type MeseroCut, type MonthData, type WeekData } from "./types";
+import { DAYS, GASTO_CATEGORIAS, type AppData, type DayData, type DayName, type GastoCategoria, type HorarioMonthData, type HorarioSemana, type MeseroCut, type MonthData, type WeekData } from "./types";
 
 export const uid = (): string => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 
@@ -154,7 +154,7 @@ export function buildMonth(monthKey: string, week1Start?: string): MonthData {
 }
 
 export function defaultData(): AppData {
-  return { meseros: [], empleados: [], proveedores: [], facturas: [], months: {} };
+  return { meseros: [], empleados: [], proveedores: [], facturas: [], months: {}, horarios: {} };
 }
 
 // Repara datos guardados antes de que existieran `proveedores`/`facturas`, y
@@ -176,6 +176,10 @@ export function migrateAppData(raw: AppData): { data: AppData; changed: boolean 
   }
   if (!data.facturas) {
     data.facturas = [];
+    changed = true;
+  }
+  if (!data.horarios) {
+    data.horarios = {};
     changed = true;
   }
 
@@ -379,6 +383,39 @@ const COMISION_TARJETAS_TASA = 0.03;
 
 export function computeComisionTarjetas(week: WeekData): number {
   return round2(computeWeekSummary(week).tarjetas * COMISION_TARJETAS_TASA);
+}
+
+export function emptyHorarioSemana(): HorarioSemana {
+  return { areas: [] };
+}
+
+// Busca la semana de horario más reciente ya guardada antes de
+// (monthKey, weekIndex), recorriendo hacia atrás semana por semana (y mes
+// por mes si hace falta). Se usa para precargar áreas y personal en una
+// semana que todavía no tiene nada capturado, para que el dueño solo
+// ajuste lo que cambió en vez de armar todo desde cero cada semana. No
+// persiste nada por sí sola — el resultado solo se guarda de verdad en
+// cuanto el dueño hace el primer cambio sobre la semana actual.
+export function findPreviousHorarioSemana(
+  horarios: Record<string, HorarioMonthData>,
+  monthKeys: string[],
+  monthKey: string,
+  weekIndex: number
+): HorarioSemana | null {
+  const sorted = [...monthKeys].sort();
+  const idx = sorted.indexOf(monthKey);
+  if (idx === -1) return null;
+  for (let mi = idx; mi >= 0; mi--) {
+    const mk = sorted[mi];
+    const weeks = horarios[mk]?.weeks;
+    if (!weeks) continue;
+    const startWeek = mk === monthKey ? weekIndex - 1 : 3;
+    for (let wi = startWeek; wi >= 0; wi--) {
+      const semana = weeks[wi];
+      if (semana && semana.areas.length > 0) return structuredClone(semana);
+    }
+  }
+  return null;
 }
 
 export function computeDashboardReport(week: WeekData) {
