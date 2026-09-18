@@ -83,15 +83,32 @@ export function HorariosPanel({
     });
   }
 
+  // Un toque en la celda avanza el ciclo OFF → O → X → Z; al llegar a Z (o
+  // si la celda ya tiene una hora personalizada), abre el modal para
+  // capturar/editar esa hora en vez de seguir el ciclo.
+  function handleCellTap(areaId: string, empleadoId: string, nombre: string, day: DayName, currentValue: string) {
+    if (!currentValue) {
+      setCellValue(areaId, empleadoId, day, HORARIO_CHIPS[0]);
+      return;
+    }
+    const idx = (HORARIO_CHIPS as readonly string[]).indexOf(currentValue);
+    if (idx !== -1 && idx < HORARIO_CHIPS.length - 1) {
+      setCellValue(areaId, empleadoId, day, HORARIO_CHIPS[idx + 1]);
+      return;
+    }
+    setCellEditor({ areaId, empleadoId, nombre, day });
+  }
+
   const areaAddingTarget: HorarioArea | undefined = addingEmpleadoToArea
     ? semana.areas.find((a) => a.id === addingEmpleadoToArea)
     : undefined;
   const empleadosDisponibles = areaAddingTarget
     ? empleados.filter((e) => !areaAddingTarget.filas.some((f) => f.empleadoId === e.id))
     : [];
-  const cellValue = cellEditor
+  const cellValueRaw = cellEditor
     ? semana.areas.find((a) => a.id === cellEditor.areaId)?.filas.find((f) => f.empleadoId === cellEditor.empleadoId)?.valores[cellEditor.day] || ""
     : "";
+  const cellValueIsChip = (HORARIO_CHIPS as readonly string[]).includes(cellValueRaw);
 
   return (
     <div className="page-section">
@@ -165,7 +182,7 @@ export function HorariosPanel({
                             <button
                               type="button"
                               className={`horario-cell ${value ? "filled" : ""}`}
-                              onClick={() => setCellEditor({ areaId: area.id, empleadoId: fila.empleadoId, nombre: fila.nombre, day: d })}
+                              onClick={() => handleCellTap(area.id, fila.empleadoId, fila.nombre, d, value || "")}
                             >
                               {value || <span className="horario-cell-empty-mark">–</span>}
                             </button>
@@ -218,7 +235,8 @@ export function HorariosPanel({
         <CeldaModal
           nombre={cellEditor.nombre}
           day={cellEditor.day}
-          value={cellValue}
+          initialText={cellValueIsChip ? "" : cellValueRaw}
+          hasValue={!!cellValueRaw}
           onClose={() => setCellEditor(null)}
           onSave={(value) => {
             setCellValue(cellEditor.areaId, cellEditor.empleadoId, cellEditor.day, value);
@@ -233,41 +251,35 @@ export function HorariosPanel({
 function CeldaModal({
   nombre,
   day,
-  value,
+  initialText,
+  hasValue,
   onClose,
   onSave,
 }: {
   nombre: string;
   day: DayName;
-  value: string;
+  initialText: string;
+  hasValue: boolean;
   onClose: () => void;
   onSave: (value: string) => void;
 }) {
-  const [text, setText] = useState(value);
-  const isChip = (HORARIO_CHIPS as readonly string[]).includes(value);
+  const [text, setText] = useState(initialText);
 
   return (
     <Sheet title={`${nombre} · ${day}`} onClose={onClose}>
-      <div className="segmented">
-        {HORARIO_CHIPS.map((chip) => (
-          <button key={chip} type="button" className={value === chip ? "active" : ""} onClick={() => onSave(chip)}>
-            {chip}
-          </button>
-        ))}
-      </div>
-      <Field label="Hora u otro texto">
+      <Field label="Hora de entrada">
         <input
           className="text-input"
-          value={isChip ? "" : text}
+          value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder="Ej. 6:30 PM"
-          autoFocus={!isChip}
+          autoFocus
         />
       </Field>
-      <button className="btn-primary" onClick={() => onSave(text)}>
+      <button className="btn-primary" onClick={() => onSave(text)} disabled={!text.trim()}>
         Guardar
       </button>
-      {value && (
+      {hasValue && (
         <button className="link-btn" onClick={() => onSave("")}>
           Borrar celda
         </button>
