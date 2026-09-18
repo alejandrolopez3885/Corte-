@@ -1,4 +1,4 @@
-import { DAYS, GASTO_CATEGORIAS, type AppData, type DayData, type DayName, type GastoCategoria, type HorarioMonthData, type HorarioSemana, type MeseroCut, type MonthData, type WeekData } from "./types";
+import { DAYS, GASTO_CATEGORIAS, HORARIO_AREAS_FIJAS, type AppData, type DayData, type DayName, type GastoCategoria, type HorarioMonthData, type HorarioSemana, type MeseroCut, type MonthData, type WeekData } from "./types";
 
 export const uid = (): string => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 
@@ -385,8 +385,17 @@ export function computeComisionTarjetas(week: WeekData): number {
   return round2(computeWeekSummary(week).tarjetas * COMISION_TARJETAS_TASA);
 }
 
-export function emptyHorarioSemana(): HorarioSemana {
-  return { areas: [] };
+// Las áreas del horario son fijas (PISO y COCINA, no se crean ni se
+// borran) — esto arma siempre esas dos, tomando el personal ya
+// capturado si la semana (guardada o precargada de una anterior) ya
+// tenía algo con ese mismo id de área.
+export function normalizeHorarioSemana(semana: HorarioSemana | null): HorarioSemana {
+  return {
+    areas: HORARIO_AREAS_FIJAS.map((fixed) => {
+      const existing = semana?.areas.find((a) => a.id === fixed.id);
+      return { id: fixed.id, nombre: fixed.nombre, filas: existing?.filas ?? [] };
+    }),
+  };
 }
 
 // Busca la semana de horario más reciente ya guardada antes de

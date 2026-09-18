@@ -23,6 +23,12 @@ export interface EmpleadoEntry {
 // admite cualquier texto libre (p.ej. una hora de entrada).
 export const HORARIO_CHIPS = ["OFF", "O", "X", "Z"] as const;
 
+// Áreas fijas del horario — no se pueden crear, renombrar ni borrar.
+export const HORARIO_AREAS_FIJAS = [
+  { id: "piso", nombre: "PISO" },
+  { id: "cocina", nombre: "COCINA" },
+] as const;
+
 // Una fila de horario por empleado dentro de un área. `nombre` es una
 // foto del nombre al momento de agregarlo a la semana, para que el
 // historial no se rompa si después se borra ese empleado de Personal.

@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { ArrowLeft, Clock, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Clock, Trash2 } from "lucide-react";
 import { Empty, Field, Sheet } from "../ui";
-import { findPreviousHorarioSemana, formatWeekRange, resolveWeekStartDate, uid } from "../../lib/dataModel";
+import { findPreviousHorarioSemana, formatWeekRange, normalizeHorarioSemana, resolveWeekStartDate } from "../../lib/dataModel";
 import { DAYS, DAY_SHORT, HORARIO_CHIPS } from "../../lib/types";
 import type { DayName, EmpleadoEntry, HorarioArea, HorarioMonthData, HorarioSemana, MonthData } from "../../lib/types";
 
@@ -28,7 +28,6 @@ export function HorariosPanel({
 }) {
   const [monthKey, setMonthKey] = useState(initialMonthKey);
   const [weekIndex, setWeekIndex] = useState(initialWeekIndex);
-  const [addingArea, setAddingArea] = useState(false);
   const [addingEmpleadoToArea, setAddingEmpleadoToArea] = useState<string | null>(null);
   const [cellEditor, setCellEditor] = useState<CellTarget | null>(null);
 
@@ -49,20 +48,11 @@ export function HorariosPanel({
   const weekStartDate = resolveWeekStartDate(monthKey, weekIndex, month);
   const saved = horarios[monthKey]?.weeks?.[weekIndex] ?? null;
   const seeded = !saved ? findPreviousHorarioSemana(horarios, monthKeys, monthKey, weekIndex) : null;
-  const semana: HorarioSemana = saved ?? seeded ?? { areas: [] };
+  const semana: HorarioSemana = normalizeHorarioSemana(saved ?? seeded);
   const isDraft = !saved && !!seeded;
 
   function persist(next: HorarioSemana) {
     onSaveSemana(monthKey, weekIndex, next);
-  }
-
-  function addArea(nombre: string) {
-    persist({ areas: [...semana.areas, { id: uid(), nombre, filas: [] }] });
-    setAddingArea(false);
-  }
-
-  function removeArea(areaId: string) {
-    persist({ areas: semana.areas.filter((a) => a.id !== areaId) });
   }
 
   function addEmpleadoToArea(areaId: string, empleado: EmpleadoEntry) {
@@ -144,78 +134,65 @@ export function HorariosPanel({
         <p className="hint">Mostrando el mismo personal de la última semana capturada — ajusta lo que cambió; se guarda en cuanto edites algo.</p>
       )}
 
-      {semana.areas.length === 0 ? (
-        <Empty icon={<Clock size={26} strokeWidth={1.3} />} text="Aún no hay áreas esta semana. Agrega una para empezar a armar el horario." />
-      ) : (
-        semana.areas.map((area) => (
-          <div className="horario-area" key={area.id}>
-            <div className="horario-area-head">
-              <h3>{area.nombre}</h3>
-              <button className="icon-btn" onClick={() => removeArea(area.id)} aria-label={`Quitar área ${area.nombre}`}>
-                <Trash2 size={15} />
-              </button>
-            </div>
-
-            {area.filas.length === 0 ? (
-              <p className="hint">Sin personal todavía en esta área.</p>
-            ) : (
-              <div className="horario-table-wrap">
-                <table className="horario-table">
-                  <thead>
-                    <tr>
-                      <th className="horario-col-nombre">Nombre</th>
-                      {DAYS.map((d) => (
-                        <th key={d}>{DAY_SHORT[d]}</th>
-                      ))}
-                      <th></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {area.filas.map((fila) => (
-                      <tr key={fila.empleadoId}>
-                        <td className="horario-col-nombre">{fila.nombre}</td>
-                        {DAYS.map((d) => {
-                          const value = fila.valores[d];
-                          return (
-                            <td key={d}>
-                              <button
-                                type="button"
-                                className={`horario-cell ${value ? "filled" : ""}`}
-                                onClick={() => setCellEditor({ areaId: area.id, empleadoId: fila.empleadoId, nombre: fila.nombre, day: d })}
-                              >
-                                {value || <span className="horario-cell-empty-mark">–</span>}
-                              </button>
-                            </td>
-                          );
-                        })}
-                        <td>
-                          <button
-                            className="icon-btn horario-row-remove"
-                            onClick={() => removeFila(area.id, fila.empleadoId)}
-                            aria-label={`Quitar a ${fila.nombre} de ${area.nombre}`}
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-
-            <button className="link-btn" onClick={() => setAddingEmpleadoToArea(area.id)}>
-              + Agregar empleado a {area.nombre}
-            </button>
+      {semana.areas.map((area) => (
+        <div className="horario-area" key={area.id}>
+          <div className="horario-area-head">
+            <h3>{area.nombre}</h3>
           </div>
-        ))
-      )}
 
-      <button className="btn-primary" onClick={() => setAddingArea(true)}>
-        <Plus size={16} /> Agregar área
-      </button>
+          {area.filas.length === 0 ? (
+            <p className="hint">Sin personal todavía en esta área.</p>
+          ) : (
+            <div className="horario-table-wrap">
+              <table className="horario-table">
+                <thead>
+                  <tr>
+                    <th className="horario-col-nombre">Nombre</th>
+                    {DAYS.map((d) => (
+                      <th key={d}>{DAY_SHORT[d]}</th>
+                    ))}
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {area.filas.map((fila) => (
+                    <tr key={fila.empleadoId}>
+                      <td className="horario-col-nombre">{fila.nombre}</td>
+                      {DAYS.map((d) => {
+                        const value = fila.valores[d];
+                        return (
+                          <td key={d}>
+                            <button
+                              type="button"
+                              className={`horario-cell ${value ? "filled" : ""}`}
+                              onClick={() => setCellEditor({ areaId: area.id, empleadoId: fila.empleadoId, nombre: fila.nombre, day: d })}
+                            >
+                              {value || <span className="horario-cell-empty-mark">–</span>}
+                            </button>
+                          </td>
+                        );
+                      })}
+                      <td>
+                        <button
+                          className="icon-btn horario-row-remove"
+                          onClick={() => removeFila(area.id, fila.empleadoId)}
+                          aria-label={`Quitar a ${fila.nombre} de ${area.nombre}`}
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
 
-      {addingArea && <AreaModal onClose={() => setAddingArea(false)} onSave={addArea} />}
+          <button className="link-btn" onClick={() => setAddingEmpleadoToArea(area.id)}>
+            + Agregar empleado a {area.nombre}
+          </button>
+        </div>
+      ))}
 
       {addingEmpleadoToArea && areaAddingTarget && (
         <Sheet title={`Agregar a ${areaAddingTarget.nombre}`} onClose={() => setAddingEmpleadoToArea(null)}>
@@ -250,26 +227,6 @@ export function HorariosPanel({
         />
       )}
     </div>
-  );
-}
-
-function AreaModal({ onClose, onSave }: { onClose: () => void; onSave: (nombre: string) => void }) {
-  const [nombre, setNombre] = useState("");
-
-  function save() {
-    if (!nombre.trim()) return;
-    onSave(nombre.trim());
-  }
-
-  return (
-    <Sheet title="Nueva área" onClose={onClose}>
-      <Field label="Nombre">
-        <input className="text-input" value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Ej. Piso, Cocina" autoFocus />
-      </Field>
-      <button className="btn-primary" onClick={save} disabled={!nombre.trim()}>
-        Guardar
-      </button>
-    </Sheet>
   );
 }
 

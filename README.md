@@ -31,13 +31,14 @@ navegación de abajo:
   apoya con PIN y asignarle días, como modal), y como páginas propias
   "Personal" (la lista de tu personal; por ahora solo nombre — se agrega
   con un botón "+" en vez de tener el formulario siempre abierto),
-  "Horarios" (arma el horario semanal por área — Piso, Cocina, etc. —
-  usando las mismas semanas de Corte; cada celda día/empleado admite
-  valores rápidos de un toque u hora libre, y al abrir una semana nueva se
-  precarga con la última semana capturada para solo ajustar lo que
-  cambió) y "Nómina" (aún vacía, en blanco a propósito para cuando se
-  construya). Personal no es lo mismo que el catálogo de meseros de
-  Negocio, que es solo para el corte.
+  "Horarios" (arma el horario semanal en dos áreas fijas, PISO y COCINA
+  — no se pueden crear, renombrar ni borrar áreas — usando las mismas
+  semanas de Corte; cada celda día/empleado admite valores rápidos de un
+  toque u hora libre, y al abrir una semana nueva se precarga con la
+  última semana capturada para solo ajustar lo que cambió) y "Nómina"
+  (aún vacía, en blanco a propósito para cuando se construya). Personal
+  no es lo mismo que el catálogo de meseros de Negocio, que es solo para
+  el corte.
 - **Negocio**: catálogo de meseros y, agrupadas bajo "Control de gastos",
   Control de gastos en efectivo y Control de gastos en transferencia.
 - **Dashboard**: reporte de resultados de la semana, solo para leer (con
