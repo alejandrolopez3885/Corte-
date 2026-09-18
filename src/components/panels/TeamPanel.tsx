@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Trash2 } from "lucide-react";
 import { Field, NumInput } from "../ui";
 import { supabase } from "../../lib/supabaseClient";
-import { formatAssignedDate, locateDate } from "../../lib/dataModel";
+import { formatAssignedDate, locateDate, todayIso } from "../../lib/dataModel";
 import { addAssignment, listAssignments, removeAssignment } from "../../lib/staffAssignments";
 import { createStaffAccount, PIN_LENGTH } from "../../lib/staffAccounts";
 import type { Profile, StaffAssignment } from "../../lib/types";
@@ -105,7 +105,7 @@ function CreateStaffForm({ ownerId, onCreated }: { ownerId: string; onCreated: (
 function AssignmentsManager({ staff }: { staff: Profile }) {
   const [assignments, setAssignments] = useState<StaffAssignment[] | null>(null);
   const [loadError, setLoadError] = useState(false);
-  const [newDate, setNewDate] = useState("");
+  const [newDate, setNewDate] = useState(todayIso());
   const [weekIndex, setWeekIndex] = useState(0);
   const [weekTouched, setWeekTouched] = useState(false);
   const [error, setError] = useState<string | null>(null);

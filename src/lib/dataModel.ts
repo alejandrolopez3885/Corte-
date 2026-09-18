@@ -75,6 +75,38 @@ export function dateForDay(monthKey: string, weekIndex: number, month: MonthData
   return addDaysIso(resolveWeekStartDate(monthKey, weekIndex, month), DAYS.indexOf(dayName));
 }
 
+// Semana más reciente de un mes: la que contiene hoy, o si hoy queda fuera
+// de las 4 semanas, la más cercana (Semana 1 si el mes es futuro, Semana 4
+// si ya quedó en el pasado). Se usa para que cualquier selector de semana
+// en la app arranque siempre en la semana más relevante, sin que el dueño
+// tenga que buscarla.
+export function mostRecentWeekIndex(monthKey: string, month: MonthData): number {
+  const today = todayIso();
+  const week0Start = resolveWeekStartDate(monthKey, 0, month);
+  if (today < week0Start) return 0;
+  for (let i = 0; i < 4; i++) {
+    const start = resolveWeekStartDate(monthKey, i, month);
+    const end = addDaysIso(start, 6);
+    if (today >= start && today <= end) return i;
+  }
+  return 3;
+}
+
+// Día más reciente dentro de una semana ya elegida: hoy mismo si esa
+// semana lo incluye; si la semana es futura, Lunes (el primer día); si ya
+// pasó, Domingo (el más cercano a hoy).
+export function mostRecentDayInWeek(monthKey: string, weekIndex: number, month: MonthData): DayName {
+  const today = todayIso();
+  const weekStart = resolveWeekStartDate(monthKey, weekIndex, month);
+  const weekEnd = addDaysIso(weekStart, 6);
+  if (today < weekStart) return "Lunes";
+  if (today > weekEnd) return "Domingo";
+  for (const d of DAYS) {
+    if (dateForDay(monthKey, weekIndex, month, d) === today) return d;
+  }
+  return "Lunes";
+}
+
 // "7" — solo el número de día, para chips angostos.
 export function formatDayNumber(dateStr: string): string {
   return String(new Date(`${dateStr}T00:00:00`).getDate());

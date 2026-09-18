@@ -7,7 +7,8 @@ import { useAuth } from "../lib/auth.tsx";
 import { useAppData } from "../lib/useAppData";
 import {
   addDaysIso, buildMonth, dateForDay, formatAssignedDate, formatDayNumber, formatLongDayDate, formatWeekRange,
-  mondayOnOrBefore, money, resolveAssignmentLocation, resolveWeekStartDate, round2, sumFromText, todayIso, uid,
+  mondayOnOrBefore, money, mostRecentDayInWeek, mostRecentWeekIndex, resolveAssignmentLocation, resolveWeekStartDate,
+  round2, sumFromText, todayIso, uid,
 } from "../lib/dataModel";
 import { useStaffAssignments } from "../lib/staffAssignments";
 import { DAYS, DAY_SHORT } from "../lib/types";
@@ -58,12 +59,17 @@ export default function CortesApp({ profile }: { profile: Profile }) {
   const locatedForDate = useRef<string | null>(null);
   const { assignments, status: assignmentsStatus } = useStaffAssignments(isOwner ? null : profile.id);
 
-  // Dueño: al cargar, ubica el mes más reciente.
+  // Dueño: al cargar, ubica el mes/semana/día más reciente.
   useEffect(() => {
     if (!data || !isOwner || ownerInitialized.current) return;
     const monthKeys = Object.keys(data.months).sort();
     const last = monthKeys[monthKeys.length - 1];
-    if (last) setActiveMonth(last);
+    if (last) {
+      setActiveMonth(last);
+      const wi = mostRecentWeekIndex(last, data.months[last]);
+      setActiveWeek(wi);
+      setActiveDay(mostRecentDayInWeek(last, wi, data.months[last]));
+    }
     ownerInitialized.current = true;
   }, [data, isOwner]);
 
@@ -191,6 +197,12 @@ export default function CortesApp({ profile }: { profile: Profile }) {
   const weekStartDate = activeMonth && month ? resolveWeekStartDate(activeMonth, activeWeek, month) : null;
   const activeDayDate = activeMonth && month ? dateForDay(activeMonth, activeWeek, month, activeDay) : null;
 
+  // Mes/semana más reciente del negocio, sin depender de qué esté viendo
+  // el dueño en la pestaña Corte — para que Negocio y Dashboard siempre
+  // arranquen en la semana más relevante, aunque se hayan abierto directo.
+  const mostRecentMonthKey = monthKeys.length > 0 ? monthKeys[monthKeys.length - 1] : null;
+  const mostRecentWeekIdx = mostRecentMonthKey ? mostRecentWeekIndex(mostRecentMonthKey, data.months[mostRecentMonthKey]) : 0;
+
   function updateDay(mutator: (d: DayData) => void) {
     if (!data || !activeMonth) return;
     const next = structuredClone(data);
@@ -227,8 +239,9 @@ export default function CortesApp({ profile }: { profile: Profile }) {
     if (!data) return;
     if (data.months[monthKey]) {
       setActiveMonth(monthKey);
-      setActiveWeek(0);
-      setActiveDay("Lunes");
+      const wi = mostRecentWeekIndex(monthKey, data.months[monthKey]);
+      setActiveWeek(wi);
+      setActiveDay(mostRecentDayInWeek(monthKey, wi, data.months[monthKey]));
       setModal(null);
       return;
     }
@@ -241,8 +254,9 @@ export default function CortesApp({ profile }: { profile: Profile }) {
     next.months[monthKey] = buildMonth(monthKey, week1Start);
     persist(next);
     setActiveMonth(monthKey);
-    setActiveWeek(0);
-    setActiveDay("Lunes");
+    const wi = mostRecentWeekIndex(monthKey, next.months[monthKey]);
+    setActiveWeek(wi);
+    setActiveDay(mostRecentDayInWeek(monthKey, wi, next.months[monthKey]));
     setModal(null);
   }
 
@@ -253,9 +267,16 @@ export default function CortesApp({ profile }: { profile: Profile }) {
     persist(next);
     if (activeMonth === monthKey) {
       const remaining = Object.keys(next.months).sort();
-      setActiveMonth(remaining[remaining.length - 1] || null);
-      setActiveWeek(0);
-      setActiveDay("Lunes");
+      const newActive = remaining[remaining.length - 1] || null;
+      setActiveMonth(newActive);
+      if (newActive) {
+        const wi = mostRecentWeekIndex(newActive, next.months[newActive]);
+        setActiveWeek(wi);
+        setActiveDay(mostRecentDayInWeek(newActive, wi, next.months[newActive]));
+      } else {
+        setActiveWeek(0);
+        setActiveDay("Lunes");
+      }
     }
     setModal(null);
   }
@@ -535,8 +556,8 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           <DashboardPanel
             months={data.months}
             monthKeys={monthKeys}
-            initialMonthKey={activeMonth && data.months[activeMonth] ? activeMonth : monthKeys[monthKeys.length - 1]}
-            initialWeekIndex={activeWeek}
+            initialMonthKey={mostRecentMonthKey as string}
+            initialWeekIndex={mostRecentWeekIdx}
             onSaveNomina={saveNominaManual}
           />
         ) : (
@@ -557,8 +578,9 @@ export default function CortesApp({ profile }: { profile: Profile }) {
                   className="month-chip-label"
                   onClick={() => {
                     setActiveMonth(mk);
-                    setActiveWeek(0);
-                    setActiveDay("Lunes");
+                    const wi = mostRecentWeekIndex(mk, data.months[mk]);
+                    setActiveWeek(wi);
+                    setActiveDay(mostRecentDayInWeek(mk, wi, data.months[mk]));
                   }}
                 >
                   {data.months[mk].label}
@@ -600,7 +622,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
                         className={`week-tab ${i === activeWeek ? "active" : ""}`}
                         onClick={() => {
                           setActiveWeek(i);
-                          setActiveDay("Lunes");
+                          if (activeMonth) setActiveDay(mostRecentDayInWeek(activeMonth, i, month));
                         }}
                       >
                         Semana {i + 1}
@@ -859,8 +881,8 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           onClose={() => setModal(null)}
           months={data.months}
           monthKeys={monthKeys}
-          initialMonthKey={activeMonth && data.months[activeMonth] ? activeMonth : monthKeys[monthKeys.length - 1]}
-          initialWeekIndex={activeWeek}
+          initialMonthKey={mostRecentMonthKey as string}
+          initialWeekIndex={mostRecentWeekIdx}
           onToggleEstado={toggleGastoEstadoInWeek}
           onSetCategoria={setGastoCategoriaInWeek}
         />
@@ -870,8 +892,8 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           onClose={() => setModal(null)}
           months={data.months}
           monthKeys={monthKeys}
-          initialMonthKey={activeMonth && data.months[activeMonth] ? activeMonth : monthKeys[monthKeys.length - 1]}
-          initialWeekIndex={activeWeek}
+          initialMonthKey={mostRecentMonthKey as string}
+          initialWeekIndex={mostRecentWeekIdx}
           onSave={saveCreditoProveedores}
         />
       )}
