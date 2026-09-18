@@ -303,6 +303,7 @@ body {
 .page-section { padding: 6px 20px 60px; display: flex; flex-direction: column; gap: 14px; }
 .page-title { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 600; margin: 4px 0 0; }
 .back-link { display: flex; align-items: center; gap: 5px; margin: -4px 0 -6px; font-weight: 500; }
+.page-title-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .menu-subtitle { font-size: 13px; font-weight: 600; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.03em; margin: 4px 0 -6px; }
 
 .menu-list { display: flex; flex-direction: column; gap: 10px; }

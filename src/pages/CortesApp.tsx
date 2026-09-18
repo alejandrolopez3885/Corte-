@@ -25,6 +25,7 @@ import { WeekSummaryModal } from "../components/modals/WeekSummaryModal";
 import { GastosSummaryModal } from "../components/modals/GastosSummaryModal";
 import { DeleteMonthModal } from "../components/modals/DeleteMonthModal";
 import { TeamModal } from "../components/modals/TeamModal";
+import { EmpleadoModal } from "../components/modals/EmpleadoModal";
 import { DashboardPanel } from "../components/panels/DashboardPanel";
 import { EmpleadosPanel } from "../components/panels/EmpleadosPanel";
 import { HorariosPanel } from "../components/panels/HorariosPanel";
@@ -41,6 +42,7 @@ type ModalState =
   | { type: "creditoProveedores" }
   | { type: "catalog" }
   | { type: "team" }
+  | { type: "empleado" }
   | { type: "deleteMonth"; monthKey: string }
   | null;
 
@@ -566,7 +568,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
       {isOwner && activeTab === "equipo" && equipoView === "personal" && (
         <EmpleadosPanel
           empleados={data.empleados}
-          onSave={upsertEmpleado}
+          onAdd={() => setModal({ type: "empleado" })}
           onRemove={removeEmpleado}
           onBack={() => setEquipoView("menu")}
         />
@@ -981,6 +983,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
         <CatalogModal onClose={() => setModal(null)} meseros={data.meseros} onSave={upsertMesero} onRemove={removeMeseroFromCatalog} />
       )}
       {modal?.type === "team" && <TeamModal onClose={() => setModal(null)} ownerId={profile.id} />}
+      {modal?.type === "empleado" && <EmpleadoModal onClose={() => setModal(null)} onSave={upsertEmpleado} />}
       {modal?.type === "deleteMonth" && (
         <DeleteMonthModal
           onClose={() => setModal(null)}
