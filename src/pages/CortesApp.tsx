@@ -12,7 +12,7 @@ import {
 } from "../lib/dataModel";
 import { useStaffAssignments } from "../lib/staffAssignments";
 import { DAYS, DAY_SHORT } from "../lib/types";
-import type { CreditoProveedores, DayData, DayName, Gasto, GastoCategoria, MeseroCatalogEntry, MeseroCut, Profile, Transferencia, WeekData } from "../lib/types";
+import type { CreditoProveedores, DayData, DayName, EmpleadoEntry, Gasto, GastoCategoria, MeseroCatalogEntry, MeseroCut, Profile, Transferencia, WeekData } from "../lib/types";
 import { Empty } from "../components/ui";
 import { MonthModal } from "../components/modals/MonthModal";
 import { MeseroModal, type MeseroFormValues } from "../components/modals/MeseroModal";
@@ -25,6 +25,7 @@ import { WeekSummaryModal } from "../components/modals/WeekSummaryModal";
 import { GastosSummaryModal } from "../components/modals/GastosSummaryModal";
 import { DeleteMonthModal } from "../components/modals/DeleteMonthModal";
 import { TeamPanel } from "../components/panels/TeamPanel";
+import { EmpleadosPanel } from "../components/panels/EmpleadosPanel";
 import { DashboardPanel } from "../components/panels/DashboardPanel";
 
 type ModalState =
@@ -297,6 +298,24 @@ export default function CortesApp({ profile }: { profile: Profile }) {
     persist(next);
   }
 
+  // Lista de personal (Equipo) — separada del catálogo de meseros, que es
+  // solo para el corte.
+  function upsertEmpleado(entry: EmpleadoEntry) {
+    if (!data) return;
+    const next = structuredClone(data);
+    const idx = next.empleados.findIndex((e) => e.id === entry.id);
+    if (idx >= 0) next.empleados[idx] = entry;
+    else next.empleados.push(entry);
+    persist(next);
+  }
+
+  function removeEmpleado(id: string) {
+    if (!data) return;
+    const next = structuredClone(data);
+    next.empleados = next.empleados.filter((e) => e.id !== id);
+    persist(next);
+  }
+
   function saveMeseroCut(form: MeseroFormValues, editingId?: string) {
     updateDay((d) => {
       const venta = parseFloat(form.venta) || 0;
@@ -494,7 +513,12 @@ export default function CortesApp({ profile }: { profile: Profile }) {
         </div>
       </header>
 
-      {isOwner && activeTab === "equipo" && <TeamPanel ownerId={profile.id} />}
+      {isOwner && activeTab === "equipo" && (
+        <>
+          <TeamPanel ownerId={profile.id} />
+          <EmpleadosPanel empleados={data.empleados} onSave={upsertEmpleado} onRemove={removeEmpleado} />
+        </>
+      )}
 
       {isOwner && activeTab === "negocio" && (
         <div className="page-section">

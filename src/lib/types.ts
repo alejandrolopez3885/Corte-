@@ -12,6 +12,13 @@ export interface MeseroCatalogEntry {
   nombre: string;
 }
 
+// Lista de personal, separada del catálogo de meseros (ese es para el
+// corte). Por ahora solo nombre — a futuro, base para horarios y nómina.
+export interface EmpleadoEntry {
+  id: string;
+  nombre: string;
+}
+
 export interface MeseroCut {
   id: string;
   meseroId: string;
@@ -130,6 +137,7 @@ export interface MonthData {
 
 export interface AppData {
   meseros: MeseroCatalogEntry[];
+  empleados: EmpleadoEntry[];
   proveedores: ProveedorCatalogEntry[];
   facturas: FacturaProveedor[];
   months: Record<string, MonthData>;
