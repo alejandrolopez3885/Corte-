@@ -1,4 +1,4 @@
-import { DAYS, GASTO_CATEGORIAS, HORARIO_AREAS_FIJAS, type AppData, type DayData, type DayName, type EmpleadoEntry, type GastoCategoria, type HorarioFila, type HorarioMonthData, type HorarioSemana, type MeseroCut, type MonthData, type NominaDia, type NominaEmpleadoSemana, type WeekData } from "./types";
+import { DAYS, GASTO_CATEGORIAS, HORARIO_AREAS_FIJAS, type AppData, type DayData, type DayName, type EmpleadoEntry, type GastoCategoria, type HorarioFila, type HorarioMonthData, type HorarioSemana, type MeseroCut, type MonthData, type NominaDescuentosSemana, type NominaDia, type NominaEmpleadoSemana, type WeekData } from "./types";
 
 export const uid = (): string => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 
@@ -154,7 +154,7 @@ export function buildMonth(monthKey: string, week1Start?: string): MonthData {
 }
 
 export function defaultData(): AppData {
-  return { meseros: [], empleados: [], proveedores: [], facturas: [], months: {}, horarios: {} };
+  return { meseros: [], empleados: [], proveedores: [], facturas: [], months: {}, horarios: {}, nominaDescuentos: {} };
 }
 
 // Repara datos guardados antes de que existieran `proveedores`/`facturas`, y
@@ -180,6 +180,10 @@ export function migrateAppData(raw: AppData): { data: AppData; changed: boolean 
   }
   if (!data.horarios) {
     data.horarios = {};
+    changed = true;
+  }
+  if (!data.nominaDescuentos) {
+    data.nominaDescuentos = {};
     changed = true;
   }
 
@@ -457,21 +461,38 @@ export function computeNominaFila(
   return { dias, diasTrabajados, offPagado, total: round2(total) };
 }
 
-export function computeNominaSemana(semana: HorarioSemana | null, empleados: EmpleadoEntry[]): NominaEmpleadoSemana[] {
+// El Dashboard usa el total bruto (sin descuentos) para calcular la
+// Utilidad — por eso descuentosSemana es opcional aquí: computeNominaTotalSemana
+// no lo necesita para nada, solo la propia página de Nómina, donde sí
+// importa mostrar cuánto se le descontó a cada quien y cuánto le toca neto.
+export function computeNominaSemana(
+  semana: HorarioSemana | null,
+  empleados: EmpleadoEntry[],
+  descuentosSemana?: NominaDescuentosSemana | null
+): NominaEmpleadoSemana[] {
   if (!semana) return [];
   const result: NominaEmpleadoSemana[] = [];
   semana.areas.forEach((area) => {
     area.filas.forEach((fila) => {
       const sueldoDiario = empleados.find((e) => e.id === fila.empleadoId)?.sueldoDiario || 0;
-      const { dias, diasTrabajados, offPagado, total } = computeNominaFila(fila, sueldoDiario);
-      result.push({ empleadoId: fila.empleadoId, nombre: fila.nombre, areaNombre: area.nombre, sueldoDiario, dias, diasTrabajados, offPagado, total });
+      const { dias, diasTrabajados, offPagado, total: bruto } = computeNominaFila(fila, sueldoDiario);
+      const descuentos = (descuentosSemana?.descuentos || []).filter((d) => d.empleadoId === fila.empleadoId);
+      const totalDescuentos = round2(descuentos.reduce((s, d) => s + d.monto, 0));
+      const neto = round2(bruto - totalDescuentos);
+      result.push({
+        empleadoId: fila.empleadoId, nombre: fila.nombre, areaNombre: area.nombre, sueldoDiario,
+        dias, diasTrabajados, offPagado, bruto, descuentos, totalDescuentos, neto,
+      });
     });
   });
   return result;
 }
 
+// Total bruto de la semana (sin descuentos) — es lo que usa el Dashboard
+// para la Utilidad, por decisión explícita: refleja mejor el costo real
+// de nómina generado esa semana, independiente de cómo se acabe pagando.
 export function computeNominaTotalSemana(semana: HorarioSemana | null, empleados: EmpleadoEntry[]): number {
-  return round2(computeNominaSemana(semana, empleados).reduce((s, e) => s + e.total, 0));
+  return round2(computeNominaSemana(semana, empleados).reduce((s, e) => s + e.bruto, 0));
 }
 
 export function computeDashboardReport(week: WeekData, nominaCalculada: number) {

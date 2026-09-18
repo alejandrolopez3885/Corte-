@@ -482,3 +482,15 @@ body {
 .nomina-dia-label { font-size: 10px; color: var(--ink-soft); font-weight: 600; text-transform: uppercase; }
 .nomina-dia-valor { font-size: 12px; font-weight: 600; margin: 3px 0 1px; min-height: 14px; }
 .nomina-dia-monto { font-size: 11px; color: var(--ink-soft); }
+
+.nomina-descuentos {
+  display: flex; flex-direction: column; gap: 5px;
+  background: var(--surface-alt); border-radius: 10px; padding: 9px 11px;
+}
+.nomina-descuentos-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 12.5px; }
+.nomina-descuentos-row.bruto { color: var(--ink-soft); }
+.nomina-descuentos-row.neto { font-weight: 600; padding-top: 4px; border-top: 1px solid var(--border); }
+.nomina-descuentos-item { flex: 1; min-width: 0; color: var(--ink-soft); }
+.nomina-descuentos-item strong { color: var(--ink); font-weight: 500; }
+.nomina-descuentos-monto { flex-shrink: 0; font-variant-numeric: tabular-nums; }
+.nomina-descuentos-row .icon-btn { width: 26px; height: 26px; flex-shrink: 0; }

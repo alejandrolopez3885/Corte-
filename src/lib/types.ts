@@ -74,7 +74,39 @@ export interface NominaEmpleadoSemana {
   dias: NominaDia[];
   diasTrabajados: number;
   offPagado: boolean;
-  total: number;
+  bruto: number;
+  descuentos: NominaDescuento[];
+  totalDescuentos: number;
+  neto: number;
+}
+
+// Descuentos de nómina capturados a mano por empleado — tardanzas,
+// adelantos de efectivo durante la semana, comida, etc. Itemizados (no un
+// solo total por tipo) para poder consultarlos uno por uno después, y
+// guardados por semana igual que Horarios, para tener historial real.
+export type NominaDescuentoTipo = "tardanza" | "adelanto" | "comida" | "otro";
+
+export const NOMINA_DESCUENTO_TIPOS: { value: NominaDescuentoTipo; label: string }[] = [
+  { value: "tardanza", label: "Tardanza" },
+  { value: "adelanto", label: "Adelanto de efectivo" },
+  { value: "comida", label: "Comida" },
+  { value: "otro", label: "Otro" },
+];
+
+export interface NominaDescuento {
+  id: string;
+  empleadoId: string;
+  tipo: NominaDescuentoTipo;
+  concepto?: string;
+  monto: number;
+}
+
+export interface NominaDescuentosSemana {
+  descuentos: NominaDescuento[];
+}
+
+export interface NominaDescuentosMonthData {
+  weeks: (NominaDescuentosSemana | null)[];
 }
 
 export interface MeseroCut {
@@ -201,6 +233,8 @@ export interface AppData {
   // duplicar la fecha ancla. Solo existe entrada para los meses/semanas
   // donde ya se capturó algo.
   horarios: Record<string, HorarioMonthData>;
+  // Descuentos de nómina por semana (mismas semanas que Horarios).
+  nominaDescuentos: Record<string, NominaDescuentosMonthData>;
 }
 
 export type Role = "owner" | "staff";

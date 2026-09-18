@@ -40,9 +40,13 @@ navegación de abajo:
   y "Nómina" (calculada sola a partir de Horarios y el sueldo diario de
   cada quien: Z paga doble, O/X y cualquier hora capturada pagan 1x, y el
   descanso OFF solo se paga si esa semana se trabajaron los otros 6 días —
-  el sueldo semanal completo, sueldo diario × 7, solo se alcanza así).
-  Personal no es lo mismo que el catálogo de meseros de Negocio, que es
-  solo para el corte.
+  el sueldo semanal completo, sueldo diario × 7, solo se alcanza así. Ahí
+  mismo, por persona, se capturan descuentos itemizados — tardanza,
+  adelanto de efectivo, comida u otro, cada uno con su propio concepto y
+  monto — y la tarjeta de cada quien muestra bruto, cada descuento y el
+  neto a pagar; el total de la semana también se ve en bruto/descuentos/
+  neto). Personal no es lo mismo que el catálogo de meseros de Negocio,
+  que es solo para el corte.
 - **Negocio**: catálogo de meseros y, agrupadas bajo "Control de gastos",
   Control de gastos en efectivo y Control de gastos en transferencia.
 - **Dashboard**: reporte de resultados de la semana, solo para leer (con
@@ -51,8 +55,10 @@ navegación de abajo:
   Gastos fijos, las 3 comisiones de apps, el resto de categorías de gastos
   en efectivo desglosadas una por una (Nómina, Cortesía, Retiro,
   Mantenimiento, Comida empleado, Envíos, Cancelaciones, Otro, Sin
-  categoría) y Nómina (la calculada en Equipo > Nómina para esa misma
-  semana, con un link directo al desglose) — y al final la Utilidad (Venta
+  categoría) y Nómina (el total bruto calculado en Equipo > Nómina para
+  esa misma semana, sin restar los descuentos — así refleja mejor el
+  costo real de nómina generado —, con un link directo al desglose) — y
+  al final la Utilidad (Venta
   total menos todo lo anterior).
 
 Hay 2 tipos de cuenta:
