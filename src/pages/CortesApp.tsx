@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import {
   Plus, Settings2, Users, Receipt, ArrowLeftRight, CircleDot, Circle, Pencil,
-  Smartphone, BarChart3, LogOut, Truck, Trash2, Home, Store, LayoutDashboard, Contact,
+  Smartphone, BarChart3, LogOut, Truck, Trash2, Home, Store, LayoutDashboard, Contact, Clock, Wallet,
 } from "lucide-react";
 import { useAuth } from "../lib/auth.tsx";
 import { useAppData } from "../lib/useAppData";
@@ -25,8 +25,10 @@ import { WeekSummaryModal } from "../components/modals/WeekSummaryModal";
 import { GastosSummaryModal } from "../components/modals/GastosSummaryModal";
 import { DeleteMonthModal } from "../components/modals/DeleteMonthModal";
 import { TeamModal } from "../components/modals/TeamModal";
-import { EmpleadosModal } from "../components/modals/EmpleadosModal";
 import { DashboardPanel } from "../components/panels/DashboardPanel";
+import { EmpleadosPanel } from "../components/panels/EmpleadosPanel";
+import { HorariosPanel } from "../components/panels/HorariosPanel";
+import { NominaPanel } from "../components/panels/NominaPanel";
 
 type ModalState =
   | { type: "month" }
@@ -39,9 +41,10 @@ type ModalState =
   | { type: "creditoProveedores" }
   | { type: "catalog" }
   | { type: "team" }
-  | { type: "personal" }
   | { type: "deleteMonth"; monthKey: string }
   | null;
+
+type EquipoView = "menu" | "personal" | "horarios" | "nomina";
 
 type OwnerTab = "corte" | "equipo" | "negocio" | "dashboard";
 
@@ -55,6 +58,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
   const [activeWeek, setActiveWeek] = useState(0);
   const [activeDay, setActiveDay] = useState<DayName>("Lunes");
   const [activeTab, setActiveTab] = useState<OwnerTab>("corte");
+  const [equipoView, setEquipoView] = useState<EquipoView>("menu");
   const [modal, setModal] = useState<ModalState>(null);
   const [selectedAssignedDate, setSelectedAssignedDate] = useState<string | null>(null);
 
@@ -515,7 +519,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
         </div>
       </header>
 
-      {isOwner && activeTab === "equipo" && (
+      {isOwner && activeTab === "equipo" && equipoView === "menu" && (
         <div className="page-section">
           <h2 className="page-title">Equipo</h2>
           <div className="menu-list">
@@ -528,7 +532,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
                 <span>Cuenta con PIN y días asignados</span>
               </span>
             </button>
-            <button className="menu-item" onClick={() => setModal({ type: "personal" })}>
+            <button className="menu-item" onClick={() => setEquipoView("personal")}>
               <span className="menu-item-icon">
                 <Contact size={20} />
               </span>
@@ -537,9 +541,40 @@ export default function CortesApp({ profile }: { profile: Profile }) {
                 <span>Lista de tu personal</span>
               </span>
             </button>
+            <button className="menu-item" onClick={() => setEquipoView("horarios")}>
+              <span className="menu-item-icon">
+                <Clock size={20} />
+              </span>
+              <span className="menu-item-text">
+                <strong>Horarios</strong>
+                <span>Próximamente</span>
+              </span>
+            </button>
+            <button className="menu-item" onClick={() => setEquipoView("nomina")}>
+              <span className="menu-item-icon">
+                <Wallet size={20} />
+              </span>
+              <span className="menu-item-text">
+                <strong>Nómina</strong>
+                <span>Próximamente</span>
+              </span>
+            </button>
           </div>
         </div>
       )}
+
+      {isOwner && activeTab === "equipo" && equipoView === "personal" && (
+        <EmpleadosPanel
+          empleados={data.empleados}
+          onSave={upsertEmpleado}
+          onRemove={removeEmpleado}
+          onBack={() => setEquipoView("menu")}
+        />
+      )}
+
+      {isOwner && activeTab === "equipo" && equipoView === "horarios" && <HorariosPanel onBack={() => setEquipoView("menu")} />}
+
+      {isOwner && activeTab === "equipo" && equipoView === "nomina" && <NominaPanel onBack={() => setEquipoView("menu")} />}
 
       {isOwner && activeTab === "negocio" && (
         <div className="page-section">
@@ -946,9 +981,6 @@ export default function CortesApp({ profile }: { profile: Profile }) {
         <CatalogModal onClose={() => setModal(null)} meseros={data.meseros} onSave={upsertMesero} onRemove={removeMeseroFromCatalog} />
       )}
       {modal?.type === "team" && <TeamModal onClose={() => setModal(null)} ownerId={profile.id} />}
-      {modal?.type === "personal" && (
-        <EmpleadosModal onClose={() => setModal(null)} empleados={data.empleados} onSave={upsertEmpleado} onRemove={removeEmpleado} />
-      )}
       {modal?.type === "deleteMonth" && (
         <DeleteMonthModal
           onClose={() => setModal(null)}

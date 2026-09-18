@@ -1,16 +1,16 @@
 import { useState } from "react";
-import { Trash2 } from "lucide-react";
-import { Sheet, Field } from "../ui";
+import { ArrowLeft, Trash2 } from "lucide-react";
+import { Field } from "../ui";
 import { uid } from "../../lib/dataModel";
 import type { EmpleadoEntry } from "../../lib/types";
 
-export function EmpleadosModal({
-  onClose,
+export function EmpleadosPanel({
+  onBack,
   empleados,
   onSave,
   onRemove,
 }: {
-  onClose: () => void;
+  onBack: () => void;
   empleados: EmpleadoEntry[];
   onSave: (entry: EmpleadoEntry) => void;
   onRemove: (id: string) => void;
@@ -24,7 +24,11 @@ export function EmpleadosModal({
   }
 
   return (
-    <Sheet title="Personal" onClose={onClose}>
+    <div className="page-section">
+      <button className="link-btn back-link" onClick={onBack}>
+        <ArrowLeft size={15} /> Equipo
+      </button>
+      <h2 className="page-title">Personal</h2>
       <p className="hint">
         Lista de tu personal — por ahora solo el nombre. Es independiente del catálogo de meseros (ese es para el corte). Más
         adelante aquí mismo vas a poder armar horarios y nómina para cada quien.
@@ -55,6 +59,6 @@ export function EmpleadosModal({
       <button className="btn-primary" onClick={add} disabled={!nombre.trim()}>
         Agregar a la lista
       </button>
-    </Sheet>
+    </div>
   );
 }

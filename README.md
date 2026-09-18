@@ -27,11 +27,12 @@ navegación de abajo:
 
 - **Corte**: la pantalla principal — mes, semana, día, meseros, gastos,
   transferencias, ventas de apps y sus resúmenes.
-- **Equipo**: menú con dos opciones — "Tu equipo" (dar de alta a quien
-  te apoya con PIN y asignarle días) y "Personal" (la lista de tu
-  personal; por ahora solo nombre, a futuro base para horarios y
-  nómina). No es lo mismo que el catálogo de meseros de Negocio, que es
-  solo para el corte.
+- **Equipo**: menú con 4 opciones — "Tu equipo" (dar de alta a quien te
+  apoya con PIN y asignarle días, como modal), y como páginas propias
+  "Personal" (la lista de tu personal; por ahora solo nombre), y
+  "Horarios" y "Nómina" (aún vacías, en blanco a propósito para
+  cuando se construyan). Personal no es lo mismo que el catálogo de
+  meseros de Negocio, que es solo para el corte.
 - **Negocio**: catálogo de meseros y, agrupadas bajo "Control de gastos",
   Control de gastos en efectivo y Control de gastos en transferencia.
 - **Dashboard**: reporte de resultados de la semana, solo para leer (con
