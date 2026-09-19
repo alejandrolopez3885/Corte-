@@ -23,7 +23,9 @@ ningún total de caja.
 - **Hosting sugerido**: Vercel.
 
 La vista del dueño se organiza en 4 secciones, accesibles desde la barra de
-navegación de abajo:
+navegación de abajo — tocar una pestaña siempre regresa al inicio de esa
+sección, aunque ya estés adentro de una de sus páginas (ej. tocar "Equipo"
+estando en Nómina te regresa al menú de Equipo):
 
 - **Corte**: la pantalla principal — mes, semana, día, meseros, gastos,
   transferencias, ventas de apps y sus resúmenes.
@@ -45,8 +47,13 @@ navegación de abajo:
   adelanto de efectivo, comida u otro, cada uno con su propio concepto y
   monto — y la tarjeta de cada quien muestra bruto, cada descuento y el
   neto a pagar; el total de la semana también se ve en bruto/descuentos/
-  neto). Personal no es lo mismo que el catálogo de meseros de Negocio,
-  que es solo para el corte.
+  neto. Un gasto del corte diario categorizado "Nómina" o "Comida
+  empleado" también se puede vincular a un empleado de Personal — por
+  ejemplo, un adelanto que sale del corte de otra persona —, y ese gasto
+  aparece solo como descuento en la nómina del empleado elegido, marcado
+  "Corte" y sin poder borrarse desde ahí — se edita o se quita desde el
+  gasto mismo en Corte). Personal no es lo mismo que el catálogo de
+  meseros de Negocio, que es solo para el corte.
 - **Negocio**: catálogo de meseros y, agrupadas bajo "Control de gastos",
   Control de gastos en efectivo y Control de gastos en transferencia.
 - **Dashboard**: reporte de resultados de la semana, solo para leer (con

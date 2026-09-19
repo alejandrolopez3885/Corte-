@@ -212,6 +212,14 @@ export default function CortesApp({ profile }: { profile: Profile }) {
   const mostRecentMonthKey = monthKeys.length > 0 ? monthKeys[monthKeys.length - 1] : null;
   const mostRecentWeekIdx = mostRecentMonthKey ? mostRecentWeekIndex(mostRecentMonthKey, data.months[mostRecentMonthKey]) : 0;
 
+  // Ir a una pestaña siempre regresa al inicio de esa sección — así tocar
+  // "Equipo" de nuevo mientras ya estás en Nómina/Horarios/Personal es un
+  // segundo camino para volver al menú de Equipo, no se queda atorado ahí.
+  function goToTab(tab: OwnerTab) {
+    setActiveTab(tab);
+    setEquipoView("menu");
+  }
+
   function updateDay(mutator: (d: DayData) => void) {
     if (!data || !activeMonth) return;
     const next = structuredClone(data);
@@ -391,6 +399,10 @@ export default function CortesApp({ profile }: { profile: Profile }) {
 
   function saveGasto(form: GastoFormValues, editingId?: string) {
     updateDay((d) => {
+      // empleadoId solo aplica a categorías que representan dinero
+      // dado/gastado en un empleado (Nómina = adelanto, Comida empleado) —
+      // si la categoría cambió a otra cosa, se limpia solo.
+      const ligableAEmpleado = form.categoria === "nomina" || form.categoria === "comida_empleado";
       const entry: Gasto = {
         id: editingId || uid(),
         concepto: form.concepto,
@@ -398,6 +410,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
         estado: form.estado,
         origen: "manual",
         categoria: form.categoria || undefined,
+        empleadoId: ligableAEmpleado ? form.empleadoId || undefined : undefined,
       };
       if (editingId) {
         const i = d.gastos.findIndex((g) => g.id === editingId);
@@ -891,6 +904,11 @@ export default function CortesApp({ profile }: { profile: Profile }) {
                             <span className="card-total">{money(g.total)}</span>
                           </div>
                           {g.origen === "mesero" && <span className="card-tag">Desde corte de {g.meseroNombre}</span>}
+                          {g.empleadoId && (
+                            <span className="card-tag">
+                              Descuento a {data.empleados.find((e) => e.id === g.empleadoId)?.nombre || "empleado eliminado"}
+                            </span>
+                          )}
                         </button>
                         <button
                           className={`estado-chip ${g.estado}`}
@@ -939,19 +957,19 @@ export default function CortesApp({ profile }: { profile: Profile }) {
       {isOwner && (
         <nav className="bottom-nav">
           <div className="bottom-nav-inner">
-            <button className={`bottom-nav-item ${activeTab === "corte" ? "active" : ""}`} onClick={() => setActiveTab("corte")}>
+            <button className={`bottom-nav-item ${activeTab === "corte" ? "active" : ""}`} onClick={() => goToTab("corte")}>
               <Home size={20} />
               <span>Corte</span>
             </button>
-            <button className={`bottom-nav-item ${activeTab === "equipo" ? "active" : ""}`} onClick={() => setActiveTab("equipo")}>
+            <button className={`bottom-nav-item ${activeTab === "equipo" ? "active" : ""}`} onClick={() => goToTab("equipo")}>
               <Users size={20} />
               <span>Equipo</span>
             </button>
-            <button className={`bottom-nav-item ${activeTab === "negocio" ? "active" : ""}`} onClick={() => setActiveTab("negocio")}>
+            <button className={`bottom-nav-item ${activeTab === "negocio" ? "active" : ""}`} onClick={() => goToTab("negocio")}>
               <Store size={20} />
               <span>Negocio</span>
             </button>
-            <button className={`bottom-nav-item ${activeTab === "dashboard" ? "active" : ""}`} onClick={() => setActiveTab("dashboard")}>
+            <button className={`bottom-nav-item ${activeTab === "dashboard" ? "active" : ""}`} onClick={() => goToTab("dashboard")}>
               <LayoutDashboard size={20} />
               <span>Dashboard</span>
             </button>
@@ -976,6 +994,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           onSave={saveGasto}
           onDelete={modal.editing ? () => deleteGasto((modal.editing as Gasto).id) : undefined}
           editing={modal.editing}
+          empleados={data.empleados}
         />
       )}
       {modal?.type === "transfer" && (

@@ -494,3 +494,8 @@ body {
 .nomina-descuentos-item strong { color: var(--ink); font-weight: 500; }
 .nomina-descuentos-monto { flex-shrink: 0; font-variant-numeric: tabular-nums; }
 .nomina-descuentos-row .icon-btn { width: 26px; height: 26px; flex-shrink: 0; }
+.nomina-descuentos-row .icon-btn-spacer { width: 26px; height: 26px; flex-shrink: 0; }
+.nomina-descuentos-tag {
+  display: inline-block; margin-left: 5px; font-size: 10px; font-weight: 600; text-transform: uppercase;
+  color: var(--ink-soft); background: var(--surface); border-radius: 100px; padding: 1px 6px; vertical-align: middle;
+}

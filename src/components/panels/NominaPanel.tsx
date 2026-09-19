@@ -54,9 +54,10 @@ export function NominaPanel({
   }
 
   const weekStartDate = resolveWeekStartDate(monthKey, weekIndex, month);
+  const week = month.weeks[weekIndex];
   const semana = horarios[monthKey]?.weeks?.[weekIndex] ?? null;
   const descuentosSemana = nominaDescuentos[monthKey]?.weeks?.[weekIndex] ?? null;
-  const reporte = computeNominaSemana(semana, empleados, descuentosSemana);
+  const reporte = computeNominaSemana(semana, empleados, descuentosSemana, week);
 
   const totalBruto = reporte.reduce((s, e) => s + e.bruto, 0);
   const totalDescuentos = reporte.reduce((s, e) => s + e.totalDescuentos, 0);
@@ -163,11 +164,16 @@ export function NominaPanel({
                       <span className="nomina-descuentos-item">
                         <strong>{NOMINA_DESCUENTO_TIPOS.find((t) => t.value === d.tipo)?.label}</strong>
                         {d.concepto ? ` · ${d.concepto}` : ""}
+                        {d.origen === "corte" && <span className="nomina-descuentos-tag">Corte</span>}
                       </span>
                       <span className="nomina-descuentos-monto">-{money(d.monto)}</span>
-                      <button className="icon-btn" onClick={() => removeDescuento(d.id)} aria-label="Quitar descuento">
-                        <Trash2 size={13} />
-                      </button>
+                      {d.origen === "corte" ? (
+                        <span className="icon-btn-spacer" />
+                      ) : (
+                        <button className="icon-btn" onClick={() => removeDescuento(d.id)} aria-label="Quitar descuento">
+                          <Trash2 size={13} />
+                        </button>
+                      )}
                     </div>
                   ))}
                   <div className="nomina-descuentos-row neto">

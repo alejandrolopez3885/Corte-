@@ -1,4 +1,4 @@
-import { DAYS, GASTO_CATEGORIAS, HORARIO_AREAS_FIJAS, type AppData, type DayData, type DayName, type EmpleadoEntry, type GastoCategoria, type HorarioFila, type HorarioMonthData, type HorarioSemana, type MeseroCut, type MonthData, type NominaDescuentosSemana, type NominaDia, type NominaEmpleadoSemana, type WeekData } from "./types";
+import { DAYS, GASTO_CATEGORIAS, HORARIO_AREAS_FIJAS, type AppData, type DayData, type DayName, type EmpleadoEntry, type GastoCategoria, type HorarioFila, type HorarioMonthData, type HorarioSemana, type MeseroCut, type MonthData, type NominaDescuento, type NominaDescuentosSemana, type NominaDia, type NominaEmpleadoSemana, type WeekData } from "./types";
 
 export const uid = (): string => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 
@@ -462,13 +462,23 @@ export function computeNominaFila(
 }
 
 // El Dashboard usa el total bruto (sin descuentos) para calcular la
-// Utilidad — por eso descuentosSemana es opcional aquí: computeNominaTotalSemana
-// no lo necesita para nada, solo la propia página de Nómina, donde sí
-// importa mostrar cuánto se le descontó a cada quien y cuánto le toca neto.
+// Utilidad — por eso descuentosSemana/week son opcionales aquí:
+// computeNominaTotalSemana no los necesita para nada, solo la propia
+// página de Nómina, donde sí importa mostrar cuánto se le descontó a cada
+// quien y cuánto le toca neto.
+//
+// Además de los descuentos capturados a mano, cualquier gasto del corte
+// diario de esa semana categorizado "Nómina" (adelanto) o "Comida
+// empleado" y vinculado a este empleado se suma también como descuento
+// "del corte" — así un adelanto que se le dio a Aldair del dinero de otro
+// corte se refleja solo en su nómina, sin capturarlo dos veces. Estos se
+// derivan en vivo del gasto (nunca se guardan aparte), así que si el
+// gasto se edita o se borra en Corte, el descuento cambia con él.
 export function computeNominaSemana(
   semana: HorarioSemana | null,
   empleados: EmpleadoEntry[],
-  descuentosSemana?: NominaDescuentosSemana | null
+  descuentosSemana?: NominaDescuentosSemana | null,
+  week?: WeekData | null
 ): NominaEmpleadoSemana[] {
   if (!semana) return [];
   const result: NominaEmpleadoSemana[] = [];
@@ -476,7 +486,26 @@ export function computeNominaSemana(
     area.filas.forEach((fila) => {
       const sueldoDiario = empleados.find((e) => e.id === fila.empleadoId)?.sueldoDiario || 0;
       const { dias, diasTrabajados, offPagado, total: bruto } = computeNominaFila(fila, sueldoDiario);
-      const descuentos = (descuentosSemana?.descuentos || []).filter((d) => d.empleadoId === fila.empleadoId);
+
+      const delCorte: NominaDescuento[] = [];
+      if (week) {
+        DAYS.forEach((dayName) => {
+          week.days[dayName].gastos.forEach((g) => {
+            if (g.empleadoId !== fila.empleadoId) return;
+            if (g.categoria !== "nomina" && g.categoria !== "comida_empleado") return;
+            delCorte.push({
+              id: `gasto-${g.id}`,
+              empleadoId: fila.empleadoId,
+              tipo: g.categoria === "comida_empleado" ? "comida" : "adelanto",
+              concepto: `${g.concepto} · ${dayName}`,
+              monto: g.total,
+              origen: "corte",
+            });
+          });
+        });
+      }
+      const manuales = (descuentosSemana?.descuentos || []).filter((d) => d.empleadoId === fila.empleadoId);
+      const descuentos = [...delCorte, ...manuales];
       const totalDescuentos = round2(descuentos.reduce((s, d) => s + d.monto, 0));
       const neto = round2(bruto - totalDescuentos);
       result.push({

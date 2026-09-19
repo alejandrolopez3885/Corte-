@@ -99,6 +99,11 @@ export interface NominaDescuento {
   tipo: NominaDescuentoTipo;
   concepto?: string;
   monto: number;
+  // "corte" = derivado en vivo de un gasto del corte diario vinculado a
+  // este empleado (adelanto o comida) — no se guarda ni se borra aquí,
+  // se edita o elimina desde el gasto en Corte. Sin este campo (u
+  // "manual") es un descuento capturado a mano en la propia Nómina.
+  origen?: "manual" | "corte";
 }
 
 export interface NominaDescuentosSemana {
@@ -158,6 +163,10 @@ export interface Gasto {
   meseroNombre?: string;
   meseroCutId?: string;
   categoria?: GastoCategoria;
+  // A qué empleado de Personal se le descuenta este gasto de su nómina —
+  // solo aplica a categoría "nomina" (adelanto) o "comida_empleado". Se
+  // limpia solo si la categoría cambia a otra cosa.
+  empleadoId?: string;
 }
 
 export interface Transferencia {
