@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { Field } from "../ui";
-import { computeDashboardReport, computeNominaTotalSemana, formatWeekRange, money, resolveWeekStartDate } from "../../lib/dataModel";
+import { computeDashboardReport, computeNominaTotalHastaHoy, formatShortDayDate, formatWeekRange, money, resolveWeekStartDate, todayIso } from "../../lib/dataModel";
 import type { EmpleadoEntry, HorarioMonthData, MeseroCatalogEntry, MonthData } from "../../lib/types";
 
 // Categorías donde además del total conviene ver el detalle de cada gasto
@@ -51,7 +51,7 @@ export function DashboardPanel({
 
   const weekStartDate = resolveWeekStartDate(monthKey, weekIndex, month);
   const semana = horarios[monthKey]?.weeks?.[weekIndex] ?? null;
-  const nominaCalculada = computeNominaTotalSemana(semana, empleados);
+  const nominaCalculada = computeNominaTotalHastaHoy(monthKey, weekIndex, month, semana, empleados);
   const report = computeDashboardReport(week, nominaCalculada, meseros);
 
   return (
@@ -59,7 +59,8 @@ export function DashboardPanel({
       <h2 className="page-title">Dashboard</h2>
       <p className="hint">
         Reporte de resultados de la semana — solo para leer. Nómina se calcula sola a partir de Horarios y el sueldo diario de
-        cada quien en Personal; todo lo demás viene de lo que ya registraste en Corte y Proveedores.
+        cada quien en Personal, y muestra solo lo generado hasta hoy ({formatShortDayDate(todayIso())}) para que la Utilidad
+        refleje el estado real en tiempo real; todo lo demás viene de lo que ya registraste en Corte y Proveedores.
       </p>
 
       <div className="field-row">
@@ -188,7 +189,9 @@ export function DashboardPanel({
           );
         })}
         <div className="report-row">
-          <span className="report-row-label">Nómina</span>
+          <span className="report-row-label">
+            Nómina <em>(hasta hoy)</em>
+          </span>
           <span className="report-row-pct">{report.pct.nomina}%</span>
           <strong className="report-row-amount">{money(report.nomina)}</strong>
         </div>

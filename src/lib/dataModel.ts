@@ -461,11 +461,11 @@ export function computeNominaFila(
   return { dias, diasTrabajados, offPagado, total: round2(total) };
 }
 
-// El Dashboard usa el total bruto (sin descuentos) para calcular la
-// Utilidad — por eso descuentosSemana/week son opcionales aquí:
-// computeNominaTotalSemana no los necesita para nada, solo la propia
-// página de Nómina, donde sí importa mostrar cuánto se le descontó a cada
-// quien y cuánto le toca neto.
+// El Dashboard usa el bruto generado hasta hoy (sin descuentos) para
+// calcular la Utilidad en tiempo real — por eso descuentosSemana/week son
+// opcionales aquí: ni eso ni computeNominaTotalHastaHoy los necesitan,
+// solo la propia página de Nómina, donde sí importa mostrar cuánto se le
+// descontó a cada quien y cuánto le toca neto.
 //
 // Además de los descuentos capturados a mano, cualquier gasto del corte
 // diario de esa semana categorizado "Nómina" (adelanto) o "Comida
@@ -517,11 +517,42 @@ export function computeNominaSemana(
   return result;
 }
 
-// Total bruto de la semana (sin descuentos) — es lo que usa el Dashboard
-// para la Utilidad, por decisión explícita: refleja mejor el costo real
-// de nómina generado esa semana, independiente de cómo se acabe pagando.
-export function computeNominaTotalSemana(semana: HorarioSemana | null, empleados: EmpleadoEntry[]): number {
-  return round2(computeNominaSemana(semana, empleados).reduce((s, e) => s + e.bruto, 0));
+// Nómina bruta generada hasta hoy, por empleado: de los 7 días de la
+// semana, solo cuenta lo ganado en los que su fecha real (dateForDay) ya
+// pasó o es hoy — en una semana ya cerrada equivale al bruto completo; en
+// una futura, a $0. Se usa tanto en la propia página de Nómina (por
+// persona) como en el Dashboard (el total), para que ambas vean el mismo
+// número en tiempo real sin duplicar la lógica.
+export function computeNominaHastaHoyPorEmpleado(
+  monthKey: string,
+  weekIndex: number,
+  month: MonthData,
+  semana: HorarioSemana | null,
+  empleados: EmpleadoEntry[]
+): Record<string, number> {
+  const today = todayIso();
+  const result: Record<string, number> = {};
+  computeNominaSemana(semana, empleados).forEach((e) => {
+    result[e.empleadoId] = round2(
+      e.dias.filter((d) => dateForDay(monthKey, weekIndex, month, d.day) <= today).reduce((s, d) => s + d.monto, 0)
+    );
+  });
+  return result;
+}
+
+// Total bruto generado hasta hoy, sin descuentos — es lo que usa el
+// Dashboard para la Utilidad, por decisión explícita: así el reporte
+// refleja el estado real en tiempo real, sin adelantar el costo de días
+// que todavía no llegan.
+export function computeNominaTotalHastaHoy(
+  monthKey: string,
+  weekIndex: number,
+  month: MonthData,
+  semana: HorarioSemana | null,
+  empleados: EmpleadoEntry[]
+): number {
+  const porEmpleado = computeNominaHastaHoyPorEmpleado(monthKey, weekIndex, month, semana, empleados);
+  return round2(Object.values(porEmpleado).reduce((s, n) => s + n, 0));
 }
 
 export function computeDashboardReport(week: WeekData, nominaCalculada: number, meseros: MeseroCatalogEntry[]) {

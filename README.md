@@ -69,10 +69,10 @@ estando en Nómina te regresa al menú de Equipo):
   Mantenimiento, Comida empleado, Envíos, Cancelaciones — con su propio
   desglose por mesero, nombre y total de la semana, porque un gasto de
   Cancelaciones en Corte se le puede asignar a un mesero del catálogo —,
-  Otro, Sin categoría) y Nómina (el total bruto calculado en Equipo > Nómina para
-  esa misma semana, sin restar los descuentos — así refleja mejor el
-  costo real de nómina generado —, con un link directo al desglose) — y
-  al final la Utilidad (Venta
+  Otro, Sin categoría) y Nómina "(hasta hoy)" (el bruto de Equipo > Nómina
+  generado solo hasta hoy en esa semana — no la semana completa, para que
+  el reporte sea en tiempo real —, sin restar los descuentos, con un link
+  directo al desglose) — y al final la Utilidad (Venta
   total menos todo lo anterior).
 
 Hay 2 tipos de cuenta:
