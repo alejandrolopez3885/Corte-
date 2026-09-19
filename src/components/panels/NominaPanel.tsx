@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ArrowLeft, Trash2, Wallet } from "lucide-react";
 import { Empty, Field, Sheet, SumInput } from "../ui";
-import { computeNominaSemana, formatWeekRange, money, resolveWeekStartDate, sumFromText, uid } from "../../lib/dataModel";
+import { computeNominaSemana, dateForDay, formatShortDayDate, formatWeekRange, money, resolveWeekStartDate, round2, sumFromText, todayIso, uid } from "../../lib/dataModel";
 import { DAY_SHORT, NOMINA_DESCUENTO_TIPOS } from "../../lib/types";
 import type {
   EmpleadoEntry,
@@ -62,6 +62,19 @@ export function NominaPanel({
   const totalBruto = reporte.reduce((s, e) => s + e.bruto, 0);
   const totalDescuentos = reporte.reduce((s, e) => s + e.totalDescuentos, 0);
   const totalNeto = reporte.reduce((s, e) => s + e.neto, 0);
+
+  // Nómina generada hasta hoy: de los 7 días de la semana, solo cuenta lo
+  // ganado en los días cuya fecha ya pasó (o es hoy) — así en una semana en
+  // curso se ve cuánto se lleva acumulado sin esperar a que termine. En una
+  // semana ya terminada equivale al bruto completo; en una futura, a $0.
+  const today = todayIso();
+  const hastaHoyPorEmpleado: Record<string, number> = {};
+  reporte.forEach((e) => {
+    hastaHoyPorEmpleado[e.empleadoId] = round2(
+      e.dias.filter((d) => dateForDay(monthKey, weekIndex, month, d.day) <= today).reduce((s, d) => s + d.monto, 0)
+    );
+  });
+  const totalHastaHoy = round2(Object.values(hastaHoyPorEmpleado).reduce((s, n) => s + n, 0));
 
   function addDescuento(empleadoId: string, tipo: NominaDescuentoTipo, concepto: string, monto: number) {
     const current = descuentosSemana?.descuentos || [];
@@ -143,6 +156,10 @@ export function NominaPanel({
                   {e.offPagado ? " · descanso pagado" : ""}
                 </p>
               )}
+              <div className="nomina-hasta-hoy">
+                <span>Generada hasta hoy ({formatShortDayDate(today)})</span>
+                <strong>{money(hastaHoyPorEmpleado[e.empleadoId])}</strong>
+              </div>
               <div className="nomina-dias">
                 {e.dias.map((d) => (
                   <div className={`nomina-dia ${d.monto === 0 ? "cero" : ""}`} key={d.day}>
@@ -193,6 +210,10 @@ export function NominaPanel({
           ))}
 
           <div className="report-list">
+            <div className="report-row">
+              <span className="report-row-label">Generada hasta hoy ({formatShortDayDate(today)}, todo el personal)</span>
+              <strong className="report-row-amount">{money(totalHastaHoy)}</strong>
+            </div>
             <div className="report-row">
               <span className="report-row-label">Bruto de la semana</span>
               <strong className="report-row-amount">{money(totalBruto)}</strong>

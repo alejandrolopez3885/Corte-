@@ -52,8 +52,13 @@ estando en Nómina te regresa al menú de Equipo):
   ejemplo, un adelanto que sale del corte de otra persona —, y ese gasto
   aparece solo como descuento en la nómina del empleado elegido, marcado
   "Corte" y sin poder borrarse desde ahí — se edita o se quita desde el
-  gasto mismo en Corte). Personal no es lo mismo que el catálogo de
-  meseros de Negocio, que es solo para el corte.
+  gasto mismo en Corte. Cada quien también muestra "Generada hasta hoy",
+  el bruto acumulado solo de los días de esa semana cuya fecha ya pasó (o
+  es hoy) — útil para ver a media semana cuánta nómina llevas, sin esperar
+  a que termine; en una semana ya cerrada equivale al bruto completo, y en
+  una futura es $0 —, con su propio total para todo el personal). Personal
+  no es lo mismo que el catálogo de meseros de Negocio, que es solo para
+  el corte.
 - **Negocio**: catálogo de meseros y, agrupadas bajo "Control de gastos",
   Control de gastos en efectivo y Control de gastos en transferencia.
 - **Dashboard**: reporte de resultados de la semana, solo para leer (con
