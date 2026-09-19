@@ -399,10 +399,11 @@ export default function CortesApp({ profile }: { profile: Profile }) {
 
   function saveGasto(form: GastoFormValues, editingId?: string) {
     updateDay((d) => {
-      // empleadoId solo aplica a categorías que representan dinero
-      // dado/gastado en un empleado (Nómina = adelanto, Comida empleado) —
-      // si la categoría cambió a otra cosa, se limpia solo.
+      // empleadoId/meseroId solo aplican a las categorías que representan
+      // dinero dado/gastado en alguien específico — si la categoría cambió
+      // a otra cosa, se limpian solos.
       const ligableAEmpleado = form.categoria === "nomina" || form.categoria === "comida_empleado";
+      const ligableAMesero = form.categoria === "cancelaciones";
       const entry: Gasto = {
         id: editingId || uid(),
         concepto: form.concepto,
@@ -411,6 +412,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
         origen: "manual",
         categoria: form.categoria || undefined,
         empleadoId: ligableAEmpleado ? form.empleadoId || undefined : undefined,
+        meseroId: ligableAMesero ? form.meseroId || undefined : undefined,
       };
       if (editingId) {
         const i = d.gastos.findIndex((g) => g.id === editingId);
@@ -692,6 +694,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
             initialWeekIndex={mostRecentWeekIdx}
             empleados={data.empleados}
             horarios={data.horarios}
+            meseros={data.meseros}
             onGoToNomina={() => {
               setActiveTab("equipo");
               setEquipoView("nomina");
@@ -909,6 +912,11 @@ export default function CortesApp({ profile }: { profile: Profile }) {
                               Descuento a {data.empleados.find((e) => e.id === g.empleadoId)?.nombre || "empleado eliminado"}
                             </span>
                           )}
+                          {g.meseroId && (
+                            <span className="card-tag">
+                              Cancelación a {data.meseros.find((m) => m.id === g.meseroId)?.nombre || "mesero eliminado"}
+                            </span>
+                          )}
                         </button>
                         <button
                           className={`estado-chip ${g.estado}`}
@@ -995,6 +1003,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           onDelete={modal.editing ? () => deleteGasto((modal.editing as Gasto).id) : undefined}
           editing={modal.editing}
           empleados={data.empleados}
+          meseros={data.meseros}
         />
       )}
       {modal?.type === "transfer" && (

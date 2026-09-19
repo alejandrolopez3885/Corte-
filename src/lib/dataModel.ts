@@ -1,4 +1,4 @@
-import { DAYS, GASTO_CATEGORIAS, HORARIO_AREAS_FIJAS, type AppData, type DayData, type DayName, type EmpleadoEntry, type GastoCategoria, type HorarioFila, type HorarioMonthData, type HorarioSemana, type MeseroCut, type MonthData, type NominaDescuento, type NominaDescuentosSemana, type NominaDia, type NominaEmpleadoSemana, type WeekData } from "./types";
+import { DAYS, GASTO_CATEGORIAS, HORARIO_AREAS_FIJAS, type AppData, type DayData, type DayName, type EmpleadoEntry, type GastoCategoria, type HorarioFila, type HorarioMonthData, type HorarioSemana, type MeseroCatalogEntry, type MeseroCut, type MonthData, type NominaDescuento, type NominaDescuentosSemana, type NominaDia, type NominaEmpleadoSemana, type WeekData } from "./types";
 
 export const uid = (): string => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 
@@ -524,13 +524,17 @@ export function computeNominaTotalSemana(semana: HorarioSemana | null, empleados
   return round2(computeNominaSemana(semana, empleados).reduce((s, e) => s + e.bruto, 0));
 }
 
-export function computeDashboardReport(week: WeekData, nominaCalculada: number) {
+export function computeDashboardReport(week: WeekData, nominaCalculada: number, meseros: MeseroCatalogEntry[]) {
   const { ventaTotal } = computeWeekSummary(week);
   const comisionTarjetas = computeComisionTarjetas(week);
 
   let operacionEfectivo = 0;
   const otrosPorCategoria: Partial<Record<GastoCategoria | "sin_categoria", number>> = {};
   const otrosItemsPorCategoria: Partial<Record<GastoCategoria | "sin_categoria", { concepto: string; total: number }[]>> = {};
+  // Cancelaciones se desglosa distinto al resto: por mesero (nombre y
+  // total de la semana), no gasto por gasto — así se ve de un vistazo a
+  // quién se le canceló cuánto, sin importar cuántos gastos lo componen.
+  const cancelacionesPorMesero: Record<string, number> = {};
   DAYS.forEach((d) => {
     week.days[d].gastos.forEach((g) => {
       if (g.categoria === "operacion") {
@@ -538,10 +542,19 @@ export function computeDashboardReport(week: WeekData, nominaCalculada: number) 
       } else {
         const key = g.categoria || "sin_categoria";
         otrosPorCategoria[key] = round2((otrosPorCategoria[key] || 0) + g.total);
-        (otrosItemsPorCategoria[key] ||= []).push({ concepto: g.concepto, total: g.total });
+        if (g.categoria === "cancelaciones") {
+          const meseroKey = g.meseroId || "sin_asignar";
+          cancelacionesPorMesero[meseroKey] = round2((cancelacionesPorMesero[meseroKey] || 0) + g.total);
+        } else {
+          (otrosItemsPorCategoria[key] ||= []).push({ concepto: g.concepto, total: g.total });
+        }
       }
     });
   });
+  otrosItemsPorCategoria.cancelaciones = Object.entries(cancelacionesPorMesero).map(([meseroId, total]) => ({
+    concepto: meseroId === "sin_asignar" ? "Sin asignar" : meseros.find((m) => m.id === meseroId)?.nombre || "Mesero eliminado",
+    total,
+  }));
 
   const credito = week.creditoProveedores;
   const gastosOperativosEfectivo = round2(operacionEfectivo);

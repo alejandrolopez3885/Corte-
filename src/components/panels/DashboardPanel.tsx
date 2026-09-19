@@ -2,11 +2,13 @@ import { useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { Field } from "../ui";
 import { computeDashboardReport, computeNominaTotalSemana, formatWeekRange, money, resolveWeekStartDate } from "../../lib/dataModel";
-import type { EmpleadoEntry, HorarioMonthData, MonthData } from "../../lib/types";
+import type { EmpleadoEntry, HorarioMonthData, MeseroCatalogEntry, MonthData } from "../../lib/types";
 
 // Categorías donde además del total conviene ver el detalle de cada gasto
 // que lo compone (concepto por concepto), porque agrupan cosas variadas.
-const EXPANDABLE_CATEGORIAS = new Set(["otro", "mantenimiento", "nomina"]);
+// Cancelaciones también, pero ahí el desglose es por mesero (nombre y
+// total), no gasto por gasto — ver computeDashboardReport.
+const EXPANDABLE_CATEGORIAS = new Set(["otro", "mantenimiento", "nomina", "cancelaciones"]);
 
 export function DashboardPanel({
   months,
@@ -15,6 +17,7 @@ export function DashboardPanel({
   initialWeekIndex,
   empleados,
   horarios,
+  meseros,
   onGoToNomina,
 }: {
   months: Record<string, MonthData>;
@@ -23,6 +26,7 @@ export function DashboardPanel({
   initialWeekIndex: number;
   empleados: EmpleadoEntry[];
   horarios: Record<string, HorarioMonthData>;
+  meseros: MeseroCatalogEntry[];
   onGoToNomina: () => void;
 }) {
   const [monthKey, setMonthKey] = useState(initialMonthKey);
@@ -48,7 +52,7 @@ export function DashboardPanel({
   const weekStartDate = resolveWeekStartDate(monthKey, weekIndex, month);
   const semana = horarios[monthKey]?.weeks?.[weekIndex] ?? null;
   const nominaCalculada = computeNominaTotalSemana(semana, empleados);
-  const report = computeDashboardReport(week, nominaCalculada);
+  const report = computeDashboardReport(week, nominaCalculada, meseros);
 
   return (
     <div className="page-section">

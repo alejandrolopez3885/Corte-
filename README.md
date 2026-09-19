@@ -61,8 +61,10 @@ estando en Nómina te regresa al menú de Equipo):
   los de efectivo categorizados como Operación más los de transferencia),
   Gastos fijos, las 3 comisiones de apps, el resto de categorías de gastos
   en efectivo desglosadas una por una (Nómina, Cortesía, Retiro,
-  Mantenimiento, Comida empleado, Envíos, Cancelaciones, Otro, Sin
-  categoría) y Nómina (el total bruto calculado en Equipo > Nómina para
+  Mantenimiento, Comida empleado, Envíos, Cancelaciones — con su propio
+  desglose por mesero, nombre y total de la semana, porque un gasto de
+  Cancelaciones en Corte se le puede asignar a un mesero del catálogo —,
+  Otro, Sin categoría) y Nómina (el total bruto calculado en Equipo > Nómina para
   esa misma semana, sin restar los descuentos — así refleja mejor el
   costo real de nómina generado —, con un link directo al desglose) — y
   al final la Utilidad (Venta

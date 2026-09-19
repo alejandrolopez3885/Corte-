@@ -167,6 +167,11 @@ export interface Gasto {
   // solo aplica a categoría "nomina" (adelanto) o "comida_empleado". Se
   // limpia solo si la categoría cambia a otra cosa.
   empleadoId?: string;
+  // A qué mesero del catálogo se le asigna esta cancelación — solo aplica
+  // a categoría "cancelaciones". Distinto de meseroCutId (que liga un
+  // gasto al corte específico de un día, no al mesero como tal). Se
+  // limpia solo si la categoría cambia a otra cosa.
+  meseroId?: string;
 }
 
 export interface Transferencia {
