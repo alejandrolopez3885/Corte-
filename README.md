@@ -59,8 +59,17 @@ estando en Nómina te regresa al menú de Equipo):
   una futura es $0 —, con su propio total para todo el personal). Personal
   no es lo mismo que el catálogo de meseros de Negocio, que es solo para
   el corte.
-- **Negocio**: catálogo de meseros y, agrupadas bajo "Control de gastos",
-  Control de gastos en efectivo y Control de gastos en transferencia.
+- **Negocio**: catálogo de meseros; agrupadas bajo "Control de gastos",
+  Control de gastos en efectivo y Control de gastos en transferencia; y
+  bajo "Análisis", "Tendencias" — comparativo semana tras semana de todo
+  el historial capturado (sin importar el mes) con una proyección de
+  venta para la próxima semana (promedio ponderado de las últimas hasta 4
+  semanas, con más peso a las recientes, ajustado por la tendencia
+  promedio de esa ventana; con menos de 3 semanas de base se marca como
+  poco confiable), una cuadrícula de KPIs con su cambio semana a semana y
+  minigráfica (Venta total, Utilidad, Margen, Gastos totales, Nómina), una
+  gráfica de venta con la proyección marcada aparte, y una tabla detallada
+  por semana.
 - **Dashboard**: reporte de resultados de la semana, solo para leer (con
   porcentajes sobre la venta total): Venta total, Gastos operativos (suma
   los de efectivo categorizados como Operación más los de transferencia),

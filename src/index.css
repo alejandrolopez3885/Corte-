@@ -504,3 +504,53 @@ body {
   display: inline-block; margin-left: 5px; font-size: 10px; font-weight: 600; text-transform: uppercase;
   color: var(--ink-soft); background: var(--surface); border-radius: 100px; padding: 1px 6px; vertical-align: middle;
 }
+
+/* ---- Tendencias ---- */
+.tendencias-proyeccion {
+  background: var(--accent-soft); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 6px;
+}
+.tendencias-proyeccion-label { font-size: 12px; color: var(--accent); font-weight: 600; text-transform: uppercase; letter-spacing: 0.02em; }
+.tendencias-proyeccion-monto { font-family: 'Fraunces', serif; font-size: 30px; color: var(--accent); }
+.tendencias-proyeccion-sub { font-size: 12px; color: var(--ink-soft); line-height: 1.4; }
+.tendencias-proyeccion.poco-confiable { background: var(--warn-soft); }
+.tendencias-proyeccion.poco-confiable .tendencias-proyeccion-label,
+.tendencias-proyeccion.poco-confiable .tendencias-proyeccion-monto { color: var(--warn); }
+
+.tendencias-kpis { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.tendencias-kpi {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+  padding: 12px; display: flex; flex-direction: column; gap: 6px;
+}
+.tendencias-kpi-label { font-size: 11.5px; color: var(--ink-soft); font-weight: 600; }
+.tendencias-kpi-valor { font-family: 'Fraunces', serif; font-size: 19px; }
+.tendencias-kpi-change {
+  display: inline-flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 600;
+  width: fit-content; padding: 2px 7px; border-radius: 100px;
+}
+.tendencias-kpi-change.buena { color: var(--good); background: var(--good-soft); }
+.tendencias-kpi-change.mala { color: var(--bad); background: var(--bad-soft); }
+.tendencias-kpi .sparkline { width: 100%; height: 28px; display: block; }
+.sparkline-empty { height: 28px; }
+
+.tendencias-chart-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 14px; }
+.tendencias-chart-head { margin-bottom: 6px; font-size: 13.5px; }
+.tendencias-chart { width: 100%; height: 140px; display: block; }
+.tendencias-chart-legend { display: flex; gap: 14px; margin-top: 8px; font-size: 11.5px; color: var(--ink-soft); }
+.tendencias-chart-legend span { display: inline-flex; align-items: center; gap: 5px; }
+.tendencias-legend-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+
+.tendencias-table-wrap { overflow-x: auto; margin: 0 -20px; padding: 0 20px; }
+.tendencias-table { border-collapse: collapse; width: 100%; font-size: 12.5px; }
+.tendencias-table th {
+  text-align: right; font-size: 10.5px; color: var(--ink-soft); font-weight: 600; padding: 6px 8px; white-space: nowrap;
+}
+.tendencias-table th:first-child, .tendencias-table td:first-child { text-align: left; }
+.tendencias-table td {
+  text-align: right; padding: 8px; border-top: 1px solid var(--border); white-space: nowrap; font-variant-numeric: tabular-nums;
+}
+.tendencias-table tr:first-child td { font-weight: 600; background: var(--accent-soft); }
+.tendencias-table-chip {
+  display: inline-block; margin-left: 6px; font-size: 10px; font-weight: 600; padding: 1px 6px; border-radius: 100px;
+}
+.tendencias-table-chip.buena { color: var(--good); background: var(--good-soft); }
+.tendencias-table-chip.mala { color: var(--bad); background: var(--bad-soft); }

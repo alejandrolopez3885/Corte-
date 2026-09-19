@@ -1,4 +1,4 @@
-import { DAYS, GASTO_CATEGORIAS, HORARIO_AREAS_FIJAS, type AppData, type DayData, type DayName, type EmpleadoEntry, type GastoCategoria, type HorarioFila, type HorarioMonthData, type HorarioSemana, type MeseroCatalogEntry, type MeseroCut, type MonthData, type NominaDescuento, type NominaDescuentosSemana, type NominaDia, type NominaEmpleadoSemana, type WeekData } from "./types";
+import { DAYS, GASTO_CATEGORIAS, HORARIO_AREAS_FIJAS, type AppData, type DayData, type DayName, type EmpleadoEntry, type GastoCategoria, type HorarioFila, type HorarioMonthData, type HorarioSemana, type MeseroCatalogEntry, type MeseroCut, type MonthData, type NominaDescuento, type NominaDescuentosSemana, type NominaDia, type NominaEmpleadoSemana, type VentaProyeccion, type WeekData, type WeekTrendPoint } from "./types";
 
 export const uid = (): string => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 
@@ -655,4 +655,67 @@ export function computeDashboardReport(week: WeekData, nominaCalculada: number, 
       utilidad: pct(utilidad),
     },
   };
+}
+
+// --- Tendencias y proyección de venta (Negocio > Tendencias) -----------
+// Un resumen de salud del negocio por cada semana ya capturada (con
+// actividad real — venta o meseros — para no diluir la tendencia con
+// semanas vacías), en orden cronológico sin importar el mes, para poder
+// comparar semana tras semana y detectar tendencias reales. Reutiliza
+// exactamente el mismo cálculo que ya usan Dashboard y Nómina, así que
+// nunca se desincroniza de esas cifras.
+export function computeVentaTrend(
+  months: Record<string, MonthData>,
+  horarios: Record<string, HorarioMonthData>,
+  empleados: EmpleadoEntry[],
+  meseros: MeseroCatalogEntry[]
+): WeekTrendPoint[] {
+  const monthKeys = Object.keys(months).sort();
+  const points: WeekTrendPoint[] = [];
+  monthKeys.forEach((monthKey) => {
+    const month = months[monthKey];
+    for (let weekIndex = 0; weekIndex < 4; weekIndex++) {
+      const week = month.weeks[weekIndex];
+      const summary = computeWeekSummary(week);
+      const huboActividad = summary.ventaTotal > 0 || DAYS.some((d) => week.days[d].meseros.length > 0);
+      if (!huboActividad) continue;
+      const semana = horarios[monthKey]?.weeks?.[weekIndex] ?? null;
+      const nominaCalculada = computeNominaTotalHastaHoy(monthKey, weekIndex, month, semana, empleados);
+      const report = computeDashboardReport(week, nominaCalculada, meseros);
+      points.push({
+        monthKey,
+        weekIndex,
+        label: formatWeekRange(resolveWeekStartDate(monthKey, weekIndex, month)),
+        weekStartDate: resolveWeekStartDate(monthKey, weekIndex, month),
+        ventaTotal: report.ventaTotal,
+        gastoTotal: round2(report.ventaTotal - report.utilidad),
+        nomina: report.nomina,
+        utilidad: report.utilidad,
+        margenPct: report.pct.utilidad,
+      });
+    }
+  });
+  return points;
+}
+
+// Proyección de la venta de la próxima semana: promedio ponderado de las
+// últimas hasta 4 semanas (más peso a las más recientes) ajustado por la
+// tendencia semanal promedio de esa misma ventana (cuánto sube o baja en
+// promedio semana a semana). Con solo 1 semana de base no hay tendencia
+// que calcular, así que la proyección es esa misma semana, marcada como
+// poco confiable; con menos de 3 semanas también se marca poco confiable
+// — no hay suficiente historial para una tendencia estable.
+export function computeVentaProyeccion(puntos: WeekTrendPoint[]): VentaProyeccion | null {
+  if (puntos.length === 0) return null;
+  const ventana = puntos.slice(-4);
+  const n = ventana.length;
+  if (n === 1) {
+    return { monto: ventana[0].ventaTotal, confiable: false, semanasBase: 1, tendenciaSemanal: 0 };
+  }
+  const pesos = ventana.map((_, i) => i + 1);
+  const sumaPesos = pesos.reduce((s, p) => s + p, 0);
+  const promedioPonderado = ventana.reduce((s, p, i) => s + p.ventaTotal * pesos[i], 0) / sumaPesos;
+  const tendenciaSemanal = round2((ventana[n - 1].ventaTotal - ventana[0].ventaTotal) / (n - 1));
+  const monto = Math.max(0, round2(promedioPonderado + tendenciaSemanal));
+  return { monto, confiable: n >= 3, semanasBase: n, tendenciaSemanal };
 }

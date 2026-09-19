@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import {
   Plus, Settings2, Users, Receipt, ArrowLeftRight, CircleDot, Circle, Pencil,
-  Smartphone, BarChart3, LogOut, Truck, Trash2, Home, Store, LayoutDashboard, Contact, Clock, Wallet,
+  Smartphone, BarChart3, LogOut, Truck, Trash2, Home, Store, LayoutDashboard, Contact, Clock, Wallet, ChartLine,
 } from "lucide-react";
 import { useAuth } from "../lib/auth.tsx";
 import { useAppData } from "../lib/useAppData";
@@ -30,6 +30,7 @@ import { DashboardPanel } from "../components/panels/DashboardPanel";
 import { EmpleadosPanel } from "../components/panels/EmpleadosPanel";
 import { HorariosPanel } from "../components/panels/HorariosPanel";
 import { NominaPanel } from "../components/panels/NominaPanel";
+import { TendenciasPanel } from "../components/panels/TendenciasPanel";
 
 type ModalState =
   | { type: "month" }
@@ -48,6 +49,8 @@ type ModalState =
 
 type EquipoView = "menu" | "personal" | "horarios" | "nomina";
 
+type NegocioView = "menu" | "tendencias";
+
 type OwnerTab = "corte" | "equipo" | "negocio" | "dashboard";
 
 export default function CortesApp({ profile }: { profile: Profile }) {
@@ -61,6 +64,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
   const [activeDay, setActiveDay] = useState<DayName>("Lunes");
   const [activeTab, setActiveTab] = useState<OwnerTab>("corte");
   const [equipoView, setEquipoView] = useState<EquipoView>("menu");
+  const [negocioView, setNegocioView] = useState<NegocioView>("menu");
   const [modal, setModal] = useState<ModalState>(null);
   const [selectedAssignedDate, setSelectedAssignedDate] = useState<string | null>(null);
 
@@ -218,6 +222,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
   function goToTab(tab: OwnerTab) {
     setActiveTab(tab);
     setEquipoView("menu");
+    setNegocioView("menu");
   }
 
   function updateDay(mutator: (d: DayData) => void) {
@@ -630,7 +635,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
         />
       )}
 
-      {isOwner && activeTab === "negocio" && (
+      {isOwner && activeTab === "negocio" && negocioView === "menu" && (
         <div className="page-section">
           <h2 className="page-title">Negocio</h2>
           <div className="menu-list">
@@ -682,7 +687,30 @@ export default function CortesApp({ profile }: { profile: Profile }) {
               </span>
             </button>
           </div>
+
+          <h3 className="menu-subtitle">Análisis</h3>
+          <div className="menu-list">
+            <button className="menu-item" onClick={() => setNegocioView("tendencias")}>
+              <span className="menu-item-icon">
+                <ChartLine size={20} />
+              </span>
+              <span className="menu-item-text">
+                <strong>Tendencias</strong>
+                <span>Comparativo semanal y proyección de venta</span>
+              </span>
+            </button>
+          </div>
         </div>
+      )}
+
+      {isOwner && activeTab === "negocio" && negocioView === "tendencias" && (
+        <TendenciasPanel
+          onBack={() => setNegocioView("menu")}
+          months={data.months}
+          horarios={data.horarios}
+          empleados={data.empleados}
+          meseros={data.meseros}
+        />
       )}
 
       {isOwner && activeTab === "dashboard" && (

@@ -251,6 +251,31 @@ export interface AppData {
   nominaDescuentos: Record<string, NominaDescuentosMonthData>;
 }
 
+// Un punto de la tendencia semanal (Negocio > Tendencias) — un resumen de
+// salud del negocio por cada semana ya capturada (venta, gastos, nómina,
+// utilidad y margen), en orden cronológico, sin importar el mes.
+export interface WeekTrendPoint {
+  monthKey: string;
+  weekIndex: number;
+  label: string;
+  weekStartDate: string;
+  ventaTotal: number;
+  gastoTotal: number;
+  nomina: number;
+  utilidad: number;
+  margenPct: number;
+}
+
+// Proyección de venta de la próxima semana, calculada con un promedio
+// ponderado (más peso a las semanas recientes) ajustado por la tendencia
+// semanal promedio de la ventana usada — ver computeVentaProyeccion.
+export interface VentaProyeccion {
+  monto: number;
+  confiable: boolean;
+  semanasBase: number;
+  tendenciaSemanal: number;
+}
+
 export type Role = "owner" | "staff";
 
 export interface Profile {
