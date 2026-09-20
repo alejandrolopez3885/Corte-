@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   Plus, Settings2, Users, Receipt, ArrowLeftRight, CircleDot, Circle, Pencil,
   Smartphone, BarChart3, LogOut, Truck, Trash2, Home, Store, LayoutDashboard, Contact, Clock, Wallet, ChartLine, Martini, ChefHat,
-  ShoppingCart,
+  ShoppingCart, Handshake,
 } from "lucide-react";
 import { useAuth } from "../lib/auth.tsx";
 import { useAppData } from "../lib/useAppData";
@@ -21,6 +21,7 @@ import { GastoModal, type GastoFormValues } from "../components/modals/GastoModa
 import { TransferModal, type TransferFormValues } from "../components/modals/TransferModal";
 import { CreditoProveedoresModal } from "../components/modals/CreditoProveedoresModal";
 import { CatalogModal } from "../components/modals/CatalogModal";
+import { ProveedoresModal } from "../components/modals/ProveedoresModal";
 import { AppsModal } from "../components/modals/AppsModal";
 import { WeekSummaryModal } from "../components/modals/WeekSummaryModal";
 import { GastosSummaryModal } from "../components/modals/GastosSummaryModal";
@@ -46,6 +47,7 @@ type ModalState =
   | { type: "gastosSummary" }
   | { type: "creditoProveedores" }
   | { type: "catalog" }
+  | { type: "proveedores" }
   | { type: "team" }
   | { type: "empleado"; editing?: EmpleadoEntry }
   | { type: "deleteMonth"; monthKey: string }
@@ -563,6 +565,24 @@ export default function CortesApp({ profile }: { profile: Profile }) {
     persist(next);
   }
 
+  function addProveedor(entry: ProveedorCatalogEntry) {
+    if (!data) return;
+    const next = structuredClone(data);
+    next.proveedores.push(entry);
+    persist(next);
+  }
+
+  // Un proveedor con insumos asignados no se puede eliminar — Inventario y
+  // el Catálogo dependen de esa referencia, y cada semana ya guardada de
+  // Inventario se queda ligada a ese proveedor como historial.
+  function removeProveedor(id: string) {
+    if (!data) return;
+    if (data.insumos.some((i) => i.proveedorId === id)) return;
+    const next = structuredClone(data);
+    next.proveedores = next.proveedores.filter((p) => p.id !== id);
+    persist(next);
+  }
+
   function saveVentaApps(rawValue: string) {
     updateDay((d) => {
       d.ventaApps = sumFromText(rawValue);
@@ -699,6 +719,15 @@ export default function CortesApp({ profile }: { profile: Profile }) {
               <span className="menu-item-text">
                 <strong>Meseros</strong>
                 <span>Catálogo de meseros para el corte</span>
+              </span>
+            </button>
+            <button className="menu-item" onClick={() => setModal({ type: "proveedores" })}>
+              <span className="menu-item-icon">
+                <Handshake size={20} />
+              </span>
+              <span className="menu-item-text">
+                <strong>Proveedores</strong>
+                <span>Catálogo de proveedores de Bar y Cocina</span>
               </span>
             </button>
           </div>
@@ -848,7 +877,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           initialWeekIndex={mostRecentWeekIdx}
           inventarioSemanal={data.inventarioSemanal}
           onGuardarSemana={saveInventarioSemanal}
-          onToggleProveedorJueves={toggleProveedorJueves}
+          onEditarProveedores={() => setModal({ type: "proveedores" })}
         />
       )}
 
@@ -1218,6 +1247,16 @@ export default function CortesApp({ profile }: { profile: Profile }) {
       )}
       {modal?.type === "catalog" && (
         <CatalogModal onClose={() => setModal(null)} meseros={data.meseros} onSave={upsertMesero} onRemove={removeMeseroFromCatalog} />
+      )}
+      {modal?.type === "proveedores" && (
+        <ProveedoresModal
+          onClose={() => setModal(null)}
+          proveedores={data.proveedores}
+          insumos={data.insumos}
+          onSave={addProveedor}
+          onToggleJueves={toggleProveedorJueves}
+          onRemove={removeProveedor}
+        />
       )}
       {modal?.type === "team" && <TeamModal onClose={() => setModal(null)} ownerId={profile.id} />}
       {modal?.type === "empleado" && (

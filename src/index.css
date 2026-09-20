@@ -60,6 +60,7 @@ body {
   cursor: pointer;
 }
 .icon-btn.accent { background: var(--accent); color: white; border-color: var(--accent); }
+.icon-btn:disabled { opacity: 0.35; cursor: not-allowed; }
 .pill-btn {
   display: flex; align-items: center; gap: 6px;
   background: var(--ink); color: white; border: none;
@@ -302,6 +303,13 @@ body {
 .conteo-row { gap: 10px; }
 .conteo-row input.num-input { width: 88px; flex-shrink: 0; text-align: right; }
 .num-input:disabled { background: var(--surface-alt); color: var(--ink-soft); opacity: 0.85; }
+
+.proveedor-row {
+  display: flex; flex-direction: column; gap: 6px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 10px 14px;
+}
+.proveedor-row-top { display: flex; justify-content: space-between; align-items: center; }
+.proveedor-row-hint { margin: 0; font-size: 11px; color: var(--ink-soft); }
 
 .conteo-locked-banner {
   display: flex; align-items: center; justify-content: space-between; gap: 10px;

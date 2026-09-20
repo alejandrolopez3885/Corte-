@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ArrowLeft, Package } from "lucide-react";
-import { Empty, Field, NumInput, Sheet, Toggle } from "../ui";
+import { Empty, Field, NumInput } from "../ui";
 import { formatWeekRange, money, resolveWeekStartDate, sumFromText, todayIso } from "../../lib/dataModel";
 import type { InsumoEntry, InventarioSemanal, InventarioSemanalMonthData, MonthData, ProveedorCatalogEntry } from "../../lib/types";
 
@@ -20,7 +20,7 @@ export function InventarioSemanalPanel({
   initialWeekIndex,
   inventarioSemanal,
   onGuardarSemana,
-  onToggleProveedorJueves,
+  onEditarProveedores,
 }: {
   onBack: () => void;
   insumos: InsumoEntry[];
@@ -31,12 +31,11 @@ export function InventarioSemanalPanel({
   initialWeekIndex: number;
   inventarioSemanal: Record<string, InventarioSemanalMonthData>;
   onGuardarSemana: (monthKey: string, weekIndex: number, inventario: InventarioSemanal) => void;
-  onToggleProveedorJueves: (proveedorId: string, incluyeJueves: boolean) => void;
+  onEditarProveedores: () => void;
 }) {
   const [monthKey, setMonthKey] = useState(initialMonthKey);
   const [weekIndex, setWeekIndex] = useState(initialWeekIndex);
   const [modo, setModo] = useState<Modo>(() => (esHoyJueves() ? "jueves" : "completo"));
-  const [editandoProveedores, setEditandoProveedores] = useState(false);
 
   const month = months[monthKey] || null;
 
@@ -113,7 +112,7 @@ export function InventarioSemanalPanel({
           Pedido jueves
         </button>
       </div>
-      <button className="link-btn" onClick={() => setEditandoProveedores(true)}>
+      <button className="link-btn" onClick={onEditarProveedores}>
         Editar proveedores del jueves
       </button>
 
@@ -130,25 +129,6 @@ export function InventarioSemanalPanel({
         }
         onGuardarSemana={onGuardarSemana}
       />
-
-      {editandoProveedores && (
-        <Sheet title="Proveedores del jueves" onClose={() => setEditandoProveedores(false)}>
-          {proveedores.length === 0 ? (
-            <p className="hint">Aún no tienes proveedores. Se crean desde el Catálogo de Bar o Cocina al agregar un insumo.</p>
-          ) : (
-            <div className="horario-emp-list">
-              {proveedores.map((p) => (
-                <Toggle
-                  key={p.id}
-                  checked={!!p.incluyeJueves}
-                  onChange={(v) => onToggleProveedorJueves(p.id, v)}
-                  label={p.nombre}
-                />
-              ))}
-            </div>
-          )}
-        </Sheet>
-      )}
     </div>
   );
 }

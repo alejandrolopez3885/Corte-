@@ -59,7 +59,12 @@ estando en Nómina te regresa al menú de Equipo):
   una futura es $0 —, con su propio total para todo el personal). Personal
   no es lo mismo que el catálogo de meseros de Negocio, que es solo para
   el corte.
-- **Negocio**: catálogo de meseros; agrupadas bajo "Control de gastos",
+- **Negocio**: catálogo de meseros; catálogo de proveedores (nombre y la
+  marca de "también se pide los jueves" — el mismo proveedor que se elige
+  en el Catálogo de Bar/Cocina y que agrupa la lista en Inventario; no se
+  puede eliminar un proveedor mientras tenga algún insumo asignado, para
+  no perder esa referencia ni el historial ya guardado en Inventario);
+  agrupadas bajo "Control de gastos",
   Control de gastos en efectivo y Control de gastos en transferencia; y
   bajo "Análisis", "Tendencias" — comparativo semana tras semana de todo
   el historial capturado (sin importar el mes) con una proyección de
@@ -91,11 +96,11 @@ estando en Nómina te regresa al menú de Equipo):
   se usaba antes para esto), con los mismos filtros de Mes/Semana y un
   campo de cantidad por insumo. Un switch "Pedido completo" (domingo,
   cuenta todos los proveedores) / "Pedido jueves" (solo los proveedores
-  marcados con "también se pide los jueves" desde ahí mismo, sin
-  necesitar una pantalla de Proveedores aparte) decide qué insumos se
-  muestran. Cada cantidad se guarda sola al salir del campo, sin botón
-  "Guardar" ni bloqueo — igual que ya funcionan Horarios y los
-  descuentos de Nómina. El manejo de compras/pedidos en sí (qué se pidió,
+  marcados con "también se pide los jueves", editable desde ahí mismo con
+  un atajo al catálogo de Proveedores) decide qué insumos se muestran.
+  Cada cantidad se guarda sola al salir del campo, sin botón "Guardar" ni
+  bloqueo — igual que ya funcionan Horarios y los descuentos de Nómina.
+  El manejo de compras/pedidos en sí (qué se pidió,
   cuánto, si llegó) se deja para más adelante, aparte de esto.
 - **Dashboard**: reporte de resultados de la semana, solo para leer (con
   porcentajes sobre la venta total): Venta total, Gastos operativos (suma
