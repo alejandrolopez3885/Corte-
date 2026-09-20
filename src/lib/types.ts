@@ -209,11 +209,14 @@ export interface ProveedorCatalogEntry {
   incluyeJueves?: boolean;
 }
 
-// Catálogo de insumos de Bar/Cocina — el primer paso de Control de Bar y
-// Control de Cocina. Cada insumo puede ligarse a un proveedor (mismo
-// catálogo de arriba, para no duplicar proveedores entre secciones) y
-// marcarse de alta rotación para aparecer primero en el conteo diario.
-export type InsumoArea = "bar" | "cocina";
+// Catálogo de insumos de Bar/Cocina/General — el primer paso de Control de
+// Bar y Control de Cocina, y de Control General (desechables, limpieza y
+// demás insumos que gerencia maneja aparte, sin pertenecer a Bar ni a
+// Cocina). Cada insumo puede ligarse a un proveedor (mismo catálogo de
+// arriba, para no duplicar proveedores entre secciones) y marcarse de alta
+// rotación para aparecer primero en el conteo diario — General no tiene
+// conteo diario propio, así que esa marca no aplica ahí.
+export type InsumoArea = "bar" | "cocina" | "general";
 
 export interface InsumoEntry {
   id: string;

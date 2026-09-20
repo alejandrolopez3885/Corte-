@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   Plus, Settings2, Users, Receipt, ArrowLeftRight, CircleDot, Circle, Pencil,
   Smartphone, BarChart3, LogOut, Truck, Trash2, Home, Store, LayoutDashboard, Contact, Clock, Wallet, ChartLine, Martini, ChefHat,
-  ShoppingCart, Handshake,
+  ShoppingCart, Handshake, Boxes,
 } from "lucide-react";
 import { useAuth } from "../lib/auth.tsx";
 import { useAppData } from "../lib/useAppData";
@@ -35,6 +35,7 @@ import { NominaPanel } from "../components/panels/NominaPanel";
 import { TendenciasPanel } from "../components/panels/TendenciasPanel";
 import { ControlBarPanel } from "../components/panels/ControlBarPanel";
 import { ControlCocinaPanel } from "../components/panels/ControlCocinaPanel";
+import { InsumosPanel } from "../components/panels/InsumosPanel";
 import { InventarioSemanalPanel } from "../components/panels/InventarioSemanalPanel";
 
 type ModalState =
@@ -55,7 +56,7 @@ type ModalState =
 
 type EquipoView = "menu" | "personal" | "horarios" | "nomina";
 
-type NegocioView = "menu" | "tendencias" | "controlBar" | "controlCocina" | "pedidos";
+type NegocioView = "menu" | "tendencias" | "controlBar" | "controlCocina" | "controlGeneral" | "pedidos";
 
 type OwnerTab = "corte" | "equipo" | "negocio" | "dashboard";
 
@@ -828,6 +829,19 @@ export default function CortesApp({ profile }: { profile: Profile }) {
               </span>
             </button>
           </div>
+
+          <h3 className="menu-subtitle">General</h3>
+          <div className="menu-list">
+            <button className="menu-item" onClick={() => setNegocioView("controlGeneral")}>
+              <span className="menu-item-icon">
+                <Boxes size={20} />
+              </span>
+              <span className="menu-item-text">
+                <strong>Control General</strong>
+                <span>Desechables, limpieza y otros insumos que no son de Bar ni Cocina</span>
+              </span>
+            </button>
+          </div>
         </div>
       )}
 
@@ -870,6 +884,21 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           initialWeekIndex={mostRecentWeekIdx}
           conteosDiarios={data.conteosDiarios}
           onGuardarConteo={guardarConteoDiario}
+        />
+      )}
+
+      {isOwner && activeTab === "negocio" && negocioView === "controlGeneral" && (
+        <InsumosPanel
+          onBack={() => setNegocioView("menu")}
+          backLabel="Negocio"
+          area="general"
+          title="Control General"
+          emptyIcon={<Boxes size={26} strokeWidth={1.3} />}
+          emptyText="Aún no agregas insumos generales. Aquí van desechables, limpieza y lo que no sea de Bar ni Cocina."
+          insumos={data.insumos.filter((i) => i.area === "general")}
+          proveedores={data.proveedores}
+          onSaveInsumo={upsertInsumo}
+          onRemoveInsumo={removeInsumo}
         />
       )}
 

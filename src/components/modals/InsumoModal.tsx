@@ -103,11 +103,13 @@ export function InsumoModal({
           />
         </Field>
       )}
-      <Toggle
-        checked={altaRotacion}
-        onChange={setAltaRotacion}
-        label="Alta rotación (aparece primero en el conteo diario)"
-      />
+      {area !== "general" && (
+        <Toggle
+          checked={altaRotacion}
+          onChange={setAltaRotacion}
+          label="Alta rotación (aparece primero en el conteo diario)"
+        />
+      )}
       <button className="btn-primary" onClick={save} disabled={!nombre.trim()}>
         Guardar
       </button>

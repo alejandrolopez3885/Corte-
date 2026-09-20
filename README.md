@@ -104,8 +104,13 @@ estando en Nómina te regresa al menú de Equipo):
   unidad de medida es un selector con solo dos opciones, Kg o Pieza — en
   Cocina se elige libremente (Kg por default), y en Bar queda fijo en
   Pieza y el selector se ve bloqueado, porque ahí siempre se cuenta por
-  pieza; y bajo "Compras", "Inventario" — la lista de insumos de
-  Bar y Cocina agrupada por proveedor (reemplaza la hoja de cálculo que
+  pieza; bajo "General", "Control General" — mismo Catálogo (nombre,
+  unidad libre entre Kg/Pieza, precio, proveedor), pero sin Conteo diario
+  ni la marca de "alta rotación" (que no aplica sin conteo diario propio):
+  abre directo al catálogo, sin menú intermedio, porque es su única
+  función. Es para insumos que gerencia maneja aparte, sin ser de Bar ni
+  de Cocina — desechables, limpieza y similares; y bajo "Compras", "Inventario" — la lista de insumos de
+  Bar, Cocina y General agrupada por proveedor (reemplaza la hoja de cálculo que
   se usaba antes para esto), con los mismos filtros de Mes/Semana y un
   campo de cantidad por insumo. Un switch "Completo" (domingo, cuenta
   todos los proveedores) / "Jueves" (solo los proveedores marcados con
