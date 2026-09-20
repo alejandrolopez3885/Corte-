@@ -47,7 +47,11 @@ estando en Nómina te regresa al menú de Equipo):
   ni borrar áreas — usando las mismas semanas de Corte; un toque en la
   celda cicla OFF → O → X → Z, y al llegar a Z se abre un modal para
   capturar una hora de entrada en su lugar; al abrir una semana nueva se
-  precarga con la última semana capturada para solo ajustar lo que cambió)
+  precarga con la última semana capturada para solo ajustar lo que cambió,
+  pero ya no se guarda solo — hay un botón "Guardar horario" y, en cuanto
+  se guarda, la semana queda bloqueada para evitar ediciones accidentales,
+  igual que Conteo diario e Inventario, para tener un historial real por
+  semana)
   y "Nómina" (calculada sola a partir de Horarios y el sueldo diario de
   cada quien: Z paga doble, O/X y cualquier hora capturada pagan 1x, y el
   descanso OFF solo se paga si esa semana se trabajaron los otros 6 días —
@@ -70,7 +74,10 @@ estando en Nómina te regresa al menú de Equipo):
   con la nómina de esa semana sin descuentos, agrupada por área con
   subtotales y un total general al final, imitando la hoja de cálculo que
   se usaba antes para esto — pensado para compartirlo por WhatsApp con
-  quien paga. Personal
+  quien paga. Solo en esa imagen el número de semana es el de la semana
+  del año (ISO), no el "Semana 1"-"4" del mes que se usa en toda la app —
+  ej. la semana del 14 al 20 de septiembre se ve ahí como "Semana 38".
+  Personal
   sigue siendo una lista aparte del catálogo de Meseros — este es solo
   nombre, sin sueldo, para el corte.
 - **Negocio**: catálogo de proveedores (nombre y la

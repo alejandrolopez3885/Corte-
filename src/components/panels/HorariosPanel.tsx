@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowLeft, Clock, Trash2 } from "lucide-react";
+import { ArrowLeft, Clock, Trash2, TriangleAlert } from "lucide-react";
 import { Empty, Field, Sheet } from "../ui";
 import { findPreviousHorarioSemana, formatWeekRange, normalizeHorarioSemana, resolveWeekStartDate } from "../../lib/dataModel";
 import { DAYS, DAY_SHORT, HORARIO_CHIPS } from "../../lib/types";
@@ -28,8 +28,6 @@ export function HorariosPanel({
 }) {
   const [monthKey, setMonthKey] = useState(initialMonthKey);
   const [weekIndex, setWeekIndex] = useState(initialWeekIndex);
-  const [addingEmpleadoToArea, setAddingEmpleadoToArea] = useState<string | null>(null);
-  const [cellEditor, setCellEditor] = useState<CellTarget | null>(null);
 
   const month = months[monthKey];
 
@@ -48,67 +46,8 @@ export function HorariosPanel({
   const weekStartDate = resolveWeekStartDate(monthKey, weekIndex, month);
   const saved = horarios[monthKey]?.weeks?.[weekIndex] ?? null;
   const seeded = !saved ? findPreviousHorarioSemana(horarios, monthKeys, monthKey, weekIndex) : null;
-  const semana: HorarioSemana = normalizeHorarioSemana(saved ?? seeded);
-  const isDraft = !saved && !!seeded;
-
-  function persist(next: HorarioSemana) {
-    onSaveSemana(monthKey, weekIndex, next);
-  }
-
-  function addEmpleadoToArea(areaId: string, empleado: EmpleadoEntry) {
-    persist({
-      areas: semana.areas.map((a) =>
-        a.id === areaId ? { ...a, filas: [...a.filas, { empleadoId: empleado.id, nombre: empleado.nombre, valores: {} }] } : a
-      ),
-    });
-    setAddingEmpleadoToArea(null);
-  }
-
-  function removeFila(areaId: string, empleadoId: string) {
-    persist({
-      areas: semana.areas.map((a) => (a.id === areaId ? { ...a, filas: a.filas.filter((f) => f.empleadoId !== empleadoId) } : a)),
-    });
-  }
-
-  function setCellValue(areaId: string, empleadoId: string, day: DayName, value: string) {
-    persist({
-      areas: semana.areas.map((a) =>
-        a.id === areaId
-          ? {
-              ...a,
-              filas: a.filas.map((f) => (f.empleadoId === empleadoId ? { ...f, valores: { ...f.valores, [day]: value || undefined } } : f)),
-            }
-          : a
-      ),
-    });
-  }
-
-  // Un toque en la celda avanza el ciclo OFF → O → X → Z; al llegar a Z (o
-  // si la celda ya tiene una hora personalizada), abre el modal para
-  // capturar/editar esa hora en vez de seguir el ciclo.
-  function handleCellTap(areaId: string, empleadoId: string, nombre: string, day: DayName, currentValue: string) {
-    if (!currentValue) {
-      setCellValue(areaId, empleadoId, day, HORARIO_CHIPS[0]);
-      return;
-    }
-    const idx = (HORARIO_CHIPS as readonly string[]).indexOf(currentValue);
-    if (idx !== -1 && idx < HORARIO_CHIPS.length - 1) {
-      setCellValue(areaId, empleadoId, day, HORARIO_CHIPS[idx + 1]);
-      return;
-    }
-    setCellEditor({ areaId, empleadoId, nombre, day });
-  }
-
-  const areaAddingTarget: HorarioArea | undefined = addingEmpleadoToArea
-    ? semana.areas.find((a) => a.id === addingEmpleadoToArea)
-    : undefined;
-  const empleadosDisponibles = areaAddingTarget
-    ? empleados.filter((e) => !areaAddingTarget.filas.some((f) => f.empleadoId === e.id))
-    : [];
-  const cellValueRaw = cellEditor
-    ? semana.areas.find((a) => a.id === cellEditor.areaId)?.filas.find((f) => f.empleadoId === cellEditor.empleadoId)?.valores[cellEditor.day] || ""
-    : "";
-  const cellValueIsChip = (HORARIO_CHIPS as readonly string[]).includes(cellValueRaw);
+  const semanaInicial: HorarioSemana = normalizeHorarioSemana(saved ?? seeded);
+  const isDraftBase = !saved && !!seeded;
 
   return (
     <div className="page-section">
@@ -147,8 +86,119 @@ export function HorariosPanel({
       </div>
       <p className="hint">{formatWeekRange(weekStartDate)}</p>
 
-      {isDraft && (
-        <p className="hint">Mostrando el mismo personal de la última semana capturada — ajusta lo que cambió; se guarda en cuanto edites algo.</p>
+      <HorarioSemanaForm
+        key={`${monthKey}-${weekIndex}`}
+        monthKey={monthKey}
+        weekIndex={weekIndex}
+        semanaInicial={semanaInicial}
+        yaGuardada={!!saved}
+        isDraftBase={isDraftBase}
+        empleados={empleados}
+        onSaveSemana={onSaveSemana}
+      />
+    </div>
+  );
+}
+
+function HorarioSemanaForm({
+  monthKey,
+  weekIndex,
+  semanaInicial,
+  yaGuardada,
+  isDraftBase,
+  empleados,
+  onSaveSemana,
+}: {
+  monthKey: string;
+  weekIndex: number;
+  semanaInicial: HorarioSemana;
+  yaGuardada: boolean;
+  isDraftBase: boolean;
+  empleados: EmpleadoEntry[];
+  onSaveSemana: (monthKey: string, weekIndex: number, semana: HorarioSemana) => void;
+}) {
+  const [semana, setSemana] = useState(semanaInicial);
+  const [locked, setLocked] = useState(yaGuardada);
+  const [pidiendoConfirmacion, setPidiendoConfirmacion] = useState(false);
+  const [addingEmpleadoToArea, setAddingEmpleadoToArea] = useState<string | null>(null);
+  const [cellEditor, setCellEditor] = useState<CellTarget | null>(null);
+
+  function guardar() {
+    onSaveSemana(monthKey, weekIndex, semana);
+    setLocked(true);
+  }
+
+  function addEmpleadoToArea(areaId: string, empleado: EmpleadoEntry) {
+    setSemana((s) => ({
+      areas: s.areas.map((a) =>
+        a.id === areaId ? { ...a, filas: [...a.filas, { empleadoId: empleado.id, nombre: empleado.nombre, valores: {} }] } : a
+      ),
+    }));
+    setAddingEmpleadoToArea(null);
+  }
+
+  function removeFila(areaId: string, empleadoId: string) {
+    setSemana((s) => ({
+      areas: s.areas.map((a) => (a.id === areaId ? { ...a, filas: a.filas.filter((f) => f.empleadoId !== empleadoId) } : a)),
+    }));
+  }
+
+  function setCellValue(areaId: string, empleadoId: string, day: DayName, value: string) {
+    setSemana((s) => ({
+      areas: s.areas.map((a) =>
+        a.id === areaId
+          ? {
+              ...a,
+              filas: a.filas.map((f) => (f.empleadoId === empleadoId ? { ...f, valores: { ...f.valores, [day]: value || undefined } } : f)),
+            }
+          : a
+      ),
+    }));
+  }
+
+  // Un toque en la celda avanza el ciclo OFF → O → X → Z; al llegar a Z (o
+  // si la celda ya tiene una hora personalizada), abre el modal para
+  // capturar/editar esa hora en vez de seguir el ciclo.
+  function handleCellTap(areaId: string, empleadoId: string, nombre: string, day: DayName, currentValue: string) {
+    if (!currentValue) {
+      setCellValue(areaId, empleadoId, day, HORARIO_CHIPS[0]);
+      return;
+    }
+    const idx = (HORARIO_CHIPS as readonly string[]).indexOf(currentValue);
+    if (idx !== -1 && idx < HORARIO_CHIPS.length - 1) {
+      setCellValue(areaId, empleadoId, day, HORARIO_CHIPS[idx + 1]);
+      return;
+    }
+    setCellEditor({ areaId, empleadoId, nombre, day });
+  }
+
+  const areaAddingTarget: HorarioArea | undefined = addingEmpleadoToArea
+    ? semana.areas.find((a) => a.id === addingEmpleadoToArea)
+    : undefined;
+  const empleadosDisponibles = areaAddingTarget
+    ? empleados.filter((e) => !areaAddingTarget.filas.some((f) => f.empleadoId === e.id))
+    : [];
+  const cellValueRaw = cellEditor
+    ? semana.areas.find((a) => a.id === cellEditor.areaId)?.filas.find((f) => f.empleadoId === cellEditor.empleadoId)?.valores[cellEditor.day] || ""
+    : "";
+  const cellValueIsChip = (HORARIO_CHIPS as readonly string[]).includes(cellValueRaw);
+
+  return (
+    <>
+      {locked ? (
+        <div className="conteo-locked-banner">
+          <span>Este horario ya está guardado y los campos están bloqueados.</span>
+          <button className="link-btn" onClick={() => setPidiendoConfirmacion(true)}>
+            Editar
+          </button>
+        </div>
+      ) : (
+        isDraftBase && (
+          <p className="hint">
+            Se precargó el mismo personal de la última semana capturada — ajusta lo que cambió y toca "Guardar
+            horario" para dejar esta semana en el historial.
+          </p>
+        )
       )}
 
       {semana.areas.map((area) => (
@@ -183,6 +233,7 @@ export function HorariosPanel({
                               type="button"
                               className={`horario-cell ${value ? "filled" : ""}`}
                               onClick={() => handleCellTap(area.id, fila.empleadoId, fila.nombre, d, value || "")}
+                              disabled={locked}
                             >
                               {value || <span className="horario-cell-empty-mark">–</span>}
                             </button>
@@ -194,6 +245,7 @@ export function HorariosPanel({
                           className="icon-btn horario-row-remove"
                           onClick={() => removeFila(area.id, fila.empleadoId)}
                           aria-label={`Quitar a ${fila.nombre} de ${area.nombre}`}
+                          disabled={locked}
                         >
                           <Trash2 size={14} />
                         </button>
@@ -205,11 +257,15 @@ export function HorariosPanel({
             </div>
           )}
 
-          <button className="link-btn" onClick={() => setAddingEmpleadoToArea(area.id)}>
+          <button className="link-btn" onClick={() => setAddingEmpleadoToArea(area.id)} disabled={locked}>
             + Agregar empleado a {area.nombre}
           </button>
         </div>
       ))}
+
+      <button className="btn-primary" onClick={guardar} disabled={locked}>
+        Guardar horario
+      </button>
 
       {addingEmpleadoToArea && areaAddingTarget && (
         <Sheet title={`Agregar a ${areaAddingTarget.nombre}`} onClose={() => setAddingEmpleadoToArea(null)}>
@@ -244,7 +300,28 @@ export function HorariosPanel({
           }}
         />
       )}
-    </div>
+
+      {pidiendoConfirmacion && (
+        <Sheet title="Editar horario guardado" onClose={() => setPidiendoConfirmacion(false)}>
+          <p className="hint">
+            Este horario ya se guardó. No deberías editarlo salvo que estés seguro de que algo quedó mal — cambiarlo
+            afecta tanto el historial de Horarios como la Nómina ya calculada de esta semana.
+          </p>
+          <button
+            className="btn-warn"
+            onClick={() => {
+              setLocked(false);
+              setPidiendoConfirmacion(false);
+            }}
+          >
+            <TriangleAlert size={16} /> Sí, necesito editarlo
+          </button>
+          <button className="link-btn" onClick={() => setPidiendoConfirmacion(false)}>
+            Cancelar
+          </button>
+        </Sheet>
+      )}
+    </>
   );
 }
 

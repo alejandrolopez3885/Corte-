@@ -136,6 +136,16 @@ export function formatWeekRange(startDate: string): string {
   return `${startLabel} – ${endLabel}`;
 }
 
+// Semana del año (ISO 8601) que corresponde a una fecha — solo para
+// mostrarla en reportes exportados (ej. la imagen de Nómina), nunca en la
+// app misma: ahí siempre se navega por "Semana 1" a "4" dentro del mes.
+export function isoWeekNumber(dateIso: string): number {
+  const date = new Date(`${dateIso}T00:00:00`);
+  date.setDate(date.getDate() + 4 - (date.getDay() || 7));
+  const yearStart = new Date(date.getFullYear(), 0, 1);
+  return Math.ceil(((date.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
+}
+
 // week1Start: fecha real (Lunes) donde debe empezar la semana 1, cuando ya
 // se conoce (ej. hoy, si apenas estás empezando a usar el mes; o la fecha
 // real de una asignación de staff). Si no se da, usa el default por

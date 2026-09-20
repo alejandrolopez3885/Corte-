@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ArrowLeft, Download, Trash2, Wallet } from "lucide-react";
 import { Empty, Field, Sheet, SumInput } from "../ui";
-import { computeNominaHastaHoyPorEmpleado, computeNominaSemana, formatShortDayDate, formatWeekRange, money, resolveWeekStartDate, sumFromText, todayIso, uid } from "../../lib/dataModel";
+import { computeNominaHastaHoyPorEmpleado, computeNominaSemana, formatShortDayDate, formatWeekRange, isoWeekNumber, money, resolveWeekStartDate, sumFromText, todayIso, uid } from "../../lib/dataModel";
 import { downloadNominaImage } from "../../lib/nominaImage";
 import { DAY_SHORT, NOMINA_DESCUENTO_TIPOS } from "../../lib/types";
 import type {
@@ -139,7 +139,7 @@ export function NominaPanel({
             onClick={() =>
               downloadNominaImage(
                 reporte,
-                `Nómina · ${month.label} · Semana ${weekIndex + 1}`,
+                `Nómina · ${month.label} · Semana ${isoWeekNumber(weekStartDate)}`,
                 `${formatWeekRange(weekStartDate)} · Sueldo bruto, sin descuentos`
               )
             }

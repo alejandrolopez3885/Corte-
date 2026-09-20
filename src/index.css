@@ -480,6 +480,7 @@ body {
   padding: 8px 4px; cursor: pointer;
 }
 .horario-cell.filled { background: var(--accent-soft); color: var(--accent); }
+.horario-cell:disabled { opacity: 0.7; cursor: not-allowed; }
 .horario-cell-empty-mark { color: var(--ink-soft); opacity: 0.5; }
 .horario-row-remove { flex-shrink: 0; width: 30px; height: 30px; }
 
