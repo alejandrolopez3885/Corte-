@@ -98,14 +98,16 @@ estando en Nómina te regresa al menú de Equipo):
   pieza; y bajo "Compras", "Inventario" — la lista de insumos de
   Bar y Cocina agrupada por proveedor (reemplaza la hoja de cálculo que
   se usaba antes para esto), con los mismos filtros de Mes/Semana y un
-  campo de cantidad por insumo. Un switch "Pedido completo" (domingo,
-  cuenta todos los proveedores) / "Pedido jueves" (solo los proveedores
-  marcados con "también se pide los jueves", editable desde ahí mismo con
-  un atajo al catálogo de Proveedores) decide qué insumos se muestran.
-  Cada cantidad se guarda sola al salir del campo, sin botón "Guardar" ni
+  campo de cantidad por insumo. Un switch "Completo" (domingo, cuenta
+  todos los proveedores) / "Jueves" (solo los proveedores marcados con
+  "también se cuenta los jueves", editable desde ahí mismo con un atajo
+  al catálogo de Proveedores) decide qué insumos se muestran — se evita
+  a propósito la palabra "pedido" en esta pantalla, porque todavía es
+  solo un conteo de inventario, no un manejo real de pedidos. Cada
+  cantidad se guarda sola al salir del campo, sin botón "Guardar" ni
   bloqueo — igual que ya funcionan Horarios y los descuentos de Nómina.
   El manejo de compras/pedidos en sí (qué se pidió,
-  cuánto, si llegó) se deja para más adelante, aparte de esto.
+  cuánto, si llegó) se deja para más adelante, como una sección aparte.
 - **Dashboard**: reporte de resultados de la semana, solo para leer (con
   porcentajes sobre la venta total): Venta total, Gastos operativos (suma
   los de efectivo categorizados como Operación más los de transferencia),

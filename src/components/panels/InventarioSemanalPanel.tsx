@@ -106,10 +106,10 @@ export function InventarioSemanalPanel({
 
       <div className="segmented">
         <button type="button" className={modo === "completo" ? "active" : ""} onClick={() => setModo("completo")}>
-          Pedido completo
+          Completo
         </button>
         <button type="button" className={modo === "jueves" ? "active" : ""} onClick={() => setModo("jueves")}>
-          Pedido jueves
+          Jueves
         </button>
       </div>
       <button className="link-btn" onClick={onEditarProveedores}>
@@ -124,7 +124,7 @@ export function InventarioSemanalPanel({
         semana={semana}
         emptyText={
           modo === "jueves"
-            ? "Ningún proveedor está marcado para el pedido del jueves todavía. Márcalos con \"Editar proveedores del jueves\"."
+            ? "Ningún proveedor está marcado para el jueves todavía. Márcalos con \"Editar proveedores del jueves\"."
             : "Aún no tienes insumos en el catálogo de Bar o Cocina."
         }
         onGuardarSemana={onGuardarSemana}

@@ -53,7 +53,7 @@ export function ProveedoresModal({
               <Toggle
                 checked={!!p.incluyeJueves}
                 onChange={(v) => onToggleJueves(p.id, v)}
-                label="También se pide los jueves"
+                label="También se cuenta los jueves"
               />
               {enUso && <p className="proveedor-row-hint">Tiene insumos en el catálogo — no se puede eliminar.</p>}
             </div>
