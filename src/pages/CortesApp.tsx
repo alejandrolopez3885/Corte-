@@ -12,7 +12,7 @@ import {
 } from "../lib/dataModel";
 import { useStaffAssignments } from "../lib/staffAssignments";
 import { DAYS, DAY_SHORT } from "../lib/types";
-import type { CreditoProveedores, DayData, DayName, EmpleadoEntry, Gasto, GastoCategoria, HorarioSemana, MeseroCatalogEntry, MeseroCut, NominaDescuento, Profile, Transferencia, WeekData } from "../lib/types";
+import type { CreditoProveedores, DayData, DayName, EmpleadoEntry, Gasto, GastoCategoria, HorarioSemana, InsumoEntry, MeseroCatalogEntry, MeseroCut, NominaDescuento, Profile, ProveedorCatalogEntry, Transferencia, WeekData } from "../lib/types";
 import { Empty } from "../components/ui";
 import { MonthModal } from "../components/modals/MonthModal";
 import { MeseroModal, type MeseroFormValues } from "../components/modals/MeseroModal";
@@ -338,6 +338,31 @@ export default function CortesApp({ profile }: { profile: Profile }) {
     next.empleados = next.empleados.filter((e) => e.id !== id);
     persist(next);
     setModal(null);
+  }
+
+  // Catálogo de insumos de Bar/Cocina (Negocio > Control de Bar/Cocina) y
+  // el catálogo de proveedores que comparten — este último no tenía
+  // ninguna pantalla propia todavía, así que un insumo nuevo puede crear
+  // un proveedor al vuelo desde su mismo modal. Los dos van en el mismo
+  // structuredClone(data) + persist, para que crear el proveedor y
+  // guardar el insumo sea una sola escritura atómica (si fueran dos
+  // llamadas separadas, la segunda partiría de un `data` desactualizado y
+  // borraría el proveedor que acababa de crear la primera).
+  function upsertInsumo(entry: InsumoEntry, nuevoProveedor?: ProveedorCatalogEntry) {
+    if (!data) return;
+    const next = structuredClone(data);
+    if (nuevoProveedor) next.proveedores.push(nuevoProveedor);
+    const idx = next.insumos.findIndex((i) => i.id === entry.id);
+    if (idx >= 0) next.insumos[idx] = entry;
+    else next.insumos.push(entry);
+    persist(next);
+  }
+
+  function removeInsumo(id: string) {
+    if (!data) return;
+    const next = structuredClone(data);
+    next.insumos = next.insumos.filter((i) => i.id !== id);
+    persist(next);
   }
 
   function saveMeseroCut(form: MeseroFormValues, editingId?: string) {
@@ -742,11 +767,23 @@ export default function CortesApp({ profile }: { profile: Profile }) {
       )}
 
       {isOwner && activeTab === "negocio" && negocioView === "controlBar" && (
-        <ControlBarPanel onBack={() => setNegocioView("menu")} />
+        <ControlBarPanel
+          onBack={() => setNegocioView("menu")}
+          insumos={data.insumos}
+          proveedores={data.proveedores}
+          onSaveInsumo={upsertInsumo}
+          onRemoveInsumo={removeInsumo}
+        />
       )}
 
       {isOwner && activeTab === "negocio" && negocioView === "controlCocina" && (
-        <ControlCocinaPanel onBack={() => setNegocioView("menu")} />
+        <ControlCocinaPanel
+          onBack={() => setNegocioView("menu")}
+          insumos={data.insumos}
+          proveedores={data.proveedores}
+          onSaveInsumo={upsertInsumo}
+          onRemoveInsumo={removeInsumo}
+        />
       )}
 
       {isOwner && activeTab === "dashboard" && (

@@ -554,3 +554,9 @@ body {
 }
 .tendencias-table-chip.buena { color: var(--good); background: var(--good-soft); }
 .tendencias-table-chip.mala { color: var(--bad); background: var(--bad-soft); }
+
+/* ---- Grupos de insumos (Control de Bar/Cocina) ---- */
+.insumos-grupo { display: flex; flex-direction: column; gap: 8px; }
+.insumos-grupo-titulo {
+  font-size: 13px; font-weight: 600; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.03em; margin: 0;
+}

@@ -187,6 +187,21 @@ export interface ProveedorCatalogEntry {
   nombre: string;
 }
 
+// Catálogo de insumos de Bar/Cocina — el primer paso de Control de Bar y
+// Control de Cocina. Cada insumo puede ligarse a un proveedor (mismo
+// catálogo de arriba, para no duplicar proveedores entre secciones) y
+// marcarse de alta rotación para aparecer primero en el conteo diario.
+export type InsumoArea = "bar" | "cocina";
+
+export interface InsumoEntry {
+  id: string;
+  area: InsumoArea;
+  nombre: string;
+  unidad: string;
+  proveedorId?: string;
+  altaRotacion?: boolean;
+}
+
 // Facturas/notas de proveedores pagadas por transferencia — no son efectivo,
 // no afectan ningún total de caja, y se administran aparte del corte diario
 // (no viven dentro de un mes/semana/día). Categoría fija (no editable) para
@@ -249,6 +264,8 @@ export interface AppData {
   horarios: Record<string, HorarioMonthData>;
   // Descuentos de nómina por semana (mismas semanas que Horarios).
   nominaDescuentos: Record<string, NominaDescuentosMonthData>;
+  // Catálogo de insumos de Bar y Cocina (Negocio > Control de Bar/Cocina).
+  insumos: InsumoEntry[];
 }
 
 // Un punto de la tendencia semanal (Negocio > Tendencias) — un resumen de

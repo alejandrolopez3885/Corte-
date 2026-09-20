@@ -1,14 +1,31 @@
-import { ArrowLeft, ChefHat } from "lucide-react";
-import { Empty } from "../ui";
+import { ChefHat } from "lucide-react";
+import { InsumosPanel } from "./InsumosPanel";
+import type { InsumoEntry, ProveedorCatalogEntry } from "../../lib/types";
 
-export function ControlCocinaPanel({ onBack }: { onBack: () => void }) {
+export function ControlCocinaPanel({
+  onBack,
+  insumos,
+  proveedores,
+  onSaveInsumo,
+  onRemoveInsumo,
+}: {
+  onBack: () => void;
+  insumos: InsumoEntry[];
+  proveedores: ProveedorCatalogEntry[];
+  onSaveInsumo: (entry: InsumoEntry, nuevoProveedor?: ProveedorCatalogEntry) => void;
+  onRemoveInsumo: (id: string) => void;
+}) {
   return (
-    <div className="page-section">
-      <button className="link-btn back-link" onClick={onBack}>
-        <ArrowLeft size={15} /> Negocio
-      </button>
-      <h2 className="page-title">Control de Cocina</h2>
-      <Empty icon={<ChefHat size={26} strokeWidth={1.3} />} text="Próximamente vas a poder llevar el control de tu cocina aquí." />
-    </div>
+    <InsumosPanel
+      onBack={onBack}
+      area="cocina"
+      title="Control de Cocina"
+      emptyIcon={<ChefHat size={26} strokeWidth={1.3} />}
+      emptyText="Aún no agregas insumos de cocina. Empieza por proveedor, como Fracksa u otros."
+      insumos={insumos.filter((i) => i.area === "cocina")}
+      proveedores={proveedores}
+      onSaveInsumo={onSaveInsumo}
+      onRemoveInsumo={onRemoveInsumo}
+    />
   );
 }
