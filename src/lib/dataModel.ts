@@ -294,6 +294,37 @@ export function migrateAppData(raw: AppData): { data: AppData; changed: boolean 
 
   data.proveedores = proveedores;
   data.facturas = facturas;
+
+  // Insumos de verdura que el dueño ya llevaba en papel (proveedor
+  // "Verdura") — se siembran una sola vez si no existen ya en el catálogo
+  // de Cocina, por nombre, para no duplicarlos en cuentas donde ya se
+  // hayan dado de alta a mano.
+  const VERDURAS_A_SEMBRAR = [
+    "Zanahoria", "Jalapeño", "Tomate bola", "Cebolla blanca", "Cebolla morada",
+    "Papa blanca", "Tomatillo", "Cilantro", "Coliflor", "Piña", "Limón", "Naranja",
+  ];
+  const yaExisteVerdura = (nombre: string) =>
+    data.insumos.some((i) => i.area === "cocina" && i.nombre.trim().toLowerCase() === nombre.toLowerCase());
+  const verdurasFaltantes = VERDURAS_A_SEMBRAR.filter((n) => !yaExisteVerdura(n));
+  if (verdurasFaltantes.length > 0) {
+    let proveedorVerdura = data.proveedores.find((p) => p.nombre.trim().toLowerCase() === "verdura");
+    if (!proveedorVerdura) {
+      proveedorVerdura = { id: uid(), nombre: "Verdura" };
+      data.proveedores = [...data.proveedores, proveedorVerdura];
+    }
+    data.insumos = [
+      ...data.insumos,
+      ...verdurasFaltantes.map((nombre) => ({
+        id: uid(),
+        area: "cocina" as const,
+        nombre,
+        unidad: "kg",
+        proveedorId: proveedorVerdura.id,
+      })),
+    ];
+    changed = true;
+  }
+
   return { data, changed };
 }
 
