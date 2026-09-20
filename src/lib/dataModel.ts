@@ -154,7 +154,7 @@ export function buildMonth(monthKey: string, week1Start?: string): MonthData {
 }
 
 export function defaultData(): AppData {
-  return { meseros: [], empleados: [], proveedores: [], facturas: [], months: {}, horarios: {}, nominaDescuentos: {}, insumos: [] };
+  return { meseros: [], empleados: [], proveedores: [], facturas: [], months: {}, horarios: {}, nominaDescuentos: {}, insumos: [], conteosDiarios: {} };
 }
 
 // Repara datos guardados antes de que existieran `proveedores`/`facturas`, y
@@ -188,6 +188,10 @@ export function migrateAppData(raw: AppData): { data: AppData; changed: boolean 
   }
   if (!data.insumos) {
     data.insumos = [];
+    changed = true;
+  }
+  if (!data.conteosDiarios) {
+    data.conteosDiarios = {};
     changed = true;
   }
 

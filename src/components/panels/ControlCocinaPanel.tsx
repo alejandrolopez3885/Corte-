@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { ArrowLeft, ChefHat, Package } from "lucide-react";
+import { ArrowLeft, ChefHat, ClipboardList, Package } from "lucide-react";
 import { InsumosPanel } from "./InsumosPanel";
+import { ConteoDiarioPanel } from "./ConteoDiarioPanel";
 import type { InsumoEntry, ProveedorCatalogEntry } from "../../lib/types";
 
-type ControlCocinaView = "menu" | "catalogo";
+type ControlCocinaView = "menu" | "catalogo" | "conteo";
 
 export function ControlCocinaPanel({
   onBack,
@@ -11,14 +12,19 @@ export function ControlCocinaPanel({
   proveedores,
   onSaveInsumo,
   onRemoveInsumo,
+  conteoHoy,
+  onGuardarConteo,
 }: {
   onBack: () => void;
   insumos: InsumoEntry[];
   proveedores: ProveedorCatalogEntry[];
   onSaveInsumo: (entry: InsumoEntry, nuevoProveedor?: ProveedorCatalogEntry) => void;
   onRemoveInsumo: (id: string) => void;
+  conteoHoy: Record<string, number>;
+  onGuardarConteo: (fecha: string, valores: Record<string, number>) => void;
 }) {
   const [view, setView] = useState<ControlCocinaView>("menu");
+  const insumosCocina = insumos.filter((i) => i.area === "cocina");
 
   if (view === "catalogo") {
     return (
@@ -29,10 +35,24 @@ export function ControlCocinaPanel({
         title="Catálogo"
         emptyIcon={<ChefHat size={26} strokeWidth={1.3} />}
         emptyText="Aún no agregas insumos de cocina. Empieza por proveedor, como Fracksa u otros."
-        insumos={insumos.filter((i) => i.area === "cocina")}
+        insumos={insumosCocina}
         proveedores={proveedores}
         onSaveInsumo={onSaveInsumo}
         onRemoveInsumo={onRemoveInsumo}
+      />
+    );
+  }
+
+  if (view === "conteo") {
+    return (
+      <ConteoDiarioPanel
+        onBack={() => setView("menu")}
+        backLabel="Control de Cocina"
+        emptyIcon={<ChefHat size={26} strokeWidth={1.3} />}
+        emptyText="Aún no marcas insumos de cocina como alta rotación. Márcalos desde el Catálogo para que aparezcan aquí."
+        insumos={insumosCocina.filter((i) => i.altaRotacion)}
+        conteoHoy={conteoHoy}
+        onGuardar={onGuardarConteo}
       />
     );
   }
@@ -51,6 +71,15 @@ export function ControlCocinaPanel({
           <span className="menu-item-text">
             <strong>Catálogo</strong>
             <span>Productos, precio, unidad y proveedor</span>
+          </span>
+        </button>
+        <button className="menu-item" onClick={() => setView("conteo")}>
+          <span className="menu-item-icon">
+            <ClipboardList size={20} />
+          </span>
+          <span className="menu-item-text">
+            <strong>Conteo diario</strong>
+            <span>Captura de insumos de alta rotación</span>
           </span>
         </button>
       </div>

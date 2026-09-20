@@ -365,6 +365,13 @@ export default function CortesApp({ profile }: { profile: Profile }) {
     persist(next);
   }
 
+  function guardarConteoDiario(fecha: string, valores: Record<string, number>) {
+    if (!data) return;
+    const next = structuredClone(data);
+    next.conteosDiarios[fecha] = { ...(next.conteosDiarios[fecha] || {}), ...valores };
+    persist(next);
+  }
+
   function saveMeseroCut(form: MeseroFormValues, editingId?: string) {
     updateDay((d) => {
       const venta = parseFloat(form.venta) || 0;
@@ -783,6 +790,8 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           proveedores={data.proveedores}
           onSaveInsumo={upsertInsumo}
           onRemoveInsumo={removeInsumo}
+          conteoHoy={data.conteosDiarios[todayIso()] || {}}
+          onGuardarConteo={guardarConteoDiario}
         />
       )}
 

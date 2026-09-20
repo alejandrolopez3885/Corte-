@@ -77,8 +77,12 @@ estando en Nómina te regresa al menú de Equipo):
   proveedor opcional (el mismo catálogo de proveedores en ambas áreas, y
   se puede crear uno nuevo al vuelo desde el propio insumo), agrupados en
   la lista por proveedor, y una marca de "alta rotación" para el conteo
-  diario que se construirá después. El resto de Control de Bar/Cocina
-  (compras, conteo de inventario, costo de consumo) sigue pendiente.
+  diario. Control de Cocina ya tiene además la opción "Conteo diario":
+  lista solo los insumos de cocina marcados de alta rotación en el
+  catálogo, con un campo para capturar cuánto queda hoy de cada uno
+  (guardado por fecha real, así que cada día tiene su propio conteo y no
+  se pisa con el de ayer). El resto (compras, costo de consumo, Conteo
+  diario para Bar) sigue pendiente.
 - **Dashboard**: reporte de resultados de la semana, solo para leer (con
   porcentajes sobre la venta total): Venta total, Gastos operativos (suma
   los de efectivo categorizados como Operación más los de transferencia),

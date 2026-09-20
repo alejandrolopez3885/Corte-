@@ -267,6 +267,10 @@ export interface AppData {
   nominaDescuentos: Record<string, NominaDescuentosMonthData>;
   // Catálogo de insumos de Bar y Cocina (Negocio > Control de Bar/Cocina).
   insumos: InsumoEntry[];
+  // Conteo diario de insumos de alta rotación (Control de Bar/Cocina),
+  // mismo formato en ambas áreas: fecha real (ISO) -> insumoId -> cantidad.
+  // Solo existe entrada para las fechas donde ya se capturó algo.
+  conteosDiarios: Record<string, Record<string, number>>;
 }
 
 // Un punto de la tendencia semanal (Negocio > Tendencias) — un resumen de
