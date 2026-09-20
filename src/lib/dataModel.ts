@@ -312,6 +312,25 @@ export function migrateAppData(raw: AppData): { data: AppData; changed: boolean 
   ])) {
     changed = true;
   }
+  if (sembrarInsumosPorProveedor(data, "general", "pieza", "Postres", [
+    "Cheescake tortuga",
+  ])) {
+    changed = true;
+  }
+  if (sembrarInsumosPorProveedor(data, "general", "pieza", "Compras Johnster", [
+    "Rollos térmicos", "Fibras de esponja", "Cloro", "Encendedor de cocina",
+    "Cloro genérico", "Fabuloso genérico", "Desengrasante", "Windex",
+    "Fibras de alambre", "Escoba", "Recogedor", "Trapeador", "Rastrillo",
+    "Cubetas", "Trapos", "Cofias negras", "Malla para mingitorio",
+    "Papel sanitario", "Papel secante", "Sobre de nómina",
+  ])) {
+    changed = true;
+  }
+  if (sembrarInsumosPorProveedor(data, "general", "kg", "Compras Johnster", [
+    "Jabón arcoiris",
+  ])) {
+    changed = true;
+  }
 
   return { data, changed };
 }
