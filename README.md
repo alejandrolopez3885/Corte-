@@ -117,16 +117,19 @@ estando en Nómina te regresa al menú de Equipo):
   "también se cuenta los jueves", editable desde ahí mismo con un atajo
   al catálogo de Proveedores) decide qué insumos se muestran — se evita
   a propósito la palabra "pedido" en esta pantalla, porque todavía es
-  solo un conteo de inventario, no un manejo real de pedidos. Ya no se
+  solo un conteo de inventario, no un manejo real de pedidos. Debajo hay
+  otro filtro, "Todas/Bar/Cocina/General", para contar un área a la vez
+  sin tener que ver la lista completa. Ya no se
   guarda cada campo solo al salir de él: hay un botón "Guardar
-  inventario" para toda la semana, y en cuanto se guarda, los campos
-  quedan bloqueados para evitar ediciones accidentales — para corregir
-  hay que tocar "Editar", confirmar un aviso de que no debería
-  modificarse salvo que sea necesario, y recién ahí se desbloquea; igual
-  que ya funciona Conteo diario. El bloqueo es uno solo por semana
-  (compartido entre los modos Completo y Jueves, no uno por cada uno) —
-  y guardar desde el modo Jueves nunca borra lo ya capturado en Completo
-  para los proveedores que no se muestran en ese momento. El manejo de
+  inventario" para lo que esté visible en ese momento (semana + modo +
+  área), y en cuanto se guarda, esos campos quedan bloqueados para evitar
+  ediciones accidentales — para corregir hay que tocar "Editar", confirmar
+  un aviso de que no debería modificarse salvo que sea necesario, y recién
+  ahí se desbloquea; igual que ya funciona Conteo diario. El bloqueo es
+  por área dentro de la semana (compartido entre los modos Completo y
+  Jueves, pero independiente entre Bar/Cocina/General) — así guardar Bar
+  no bloquea Cocina ni General de la misma semana, y guardar cualquier
+  área nunca borra lo ya capturado en las demás. El manejo de
   compras/pedidos en sí (qué se pidió,
   cuánto, si llegó) se deja para más adelante, como una sección aparte.
 - **Dashboard**: reporte de resultados de la semana, solo para leer (con

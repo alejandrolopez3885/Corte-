@@ -2,9 +2,12 @@ import { useState } from "react";
 import { ArrowLeft, Package, TriangleAlert } from "lucide-react";
 import { Empty, Field, NumInput, Sheet } from "../ui";
 import { formatWeekRange, money, resolveWeekStartDate, sumFromText, todayIso } from "../../lib/dataModel";
-import type { InsumoEntry, InventarioFila, InventarioSemanal, InventarioSemanalMonthData, MonthData, ProveedorCatalogEntry } from "../../lib/types";
+import type { InsumoArea, InsumoEntry, InventarioFila, InventarioSemanal, InventarioSemanalMonthData, MonthData, ProveedorCatalogEntry } from "../../lib/types";
 
 type Modo = "completo" | "jueves";
+type AreaFiltro = "todas" | InsumoArea;
+
+const AREA_LABEL: Record<InsumoArea, string> = { bar: "Bar", cocina: "Cocina", general: "General" };
 
 function esHoyJueves(): boolean {
   return new Date(`${todayIso()}T00:00:00`).getDay() === 4;
@@ -36,6 +39,7 @@ export function InventarioSemanalPanel({
   const [monthKey, setMonthKey] = useState(initialMonthKey);
   const [weekIndex, setWeekIndex] = useState(initialWeekIndex);
   const [modo, setModo] = useState<Modo>(() => (esHoyJueves() ? "jueves" : "completo"));
+  const [areaFiltro, setAreaFiltro] = useState<AreaFiltro>("todas");
 
   const month = months[monthKey] || null;
 
@@ -54,14 +58,15 @@ export function InventarioSemanalPanel({
   const weekStartDate = resolveWeekStartDate(monthKey, weekIndex, month);
   const semana: InventarioSemanal = inventarioSemanal[monthKey]?.weeks?.[weekIndex] ?? { filas: {} };
 
+  const insumosDelArea = areaFiltro === "todas" ? insumos : insumos.filter((i) => i.area === areaFiltro);
   const proveedoresDelModo = modo === "completo" ? proveedores : proveedores.filter((p) => p.incluyeJueves);
   const grupos: { key: string; nombre: string; items: InsumoEntry[] }[] = [];
   proveedoresDelModo.forEach((p) => {
-    const items = insumos.filter((i) => i.proveedorId === p.id);
+    const items = insumosDelArea.filter((i) => i.proveedorId === p.id);
     if (items.length > 0) grupos.push({ key: p.id, nombre: p.nombre, items });
   });
   if (modo === "completo") {
-    const sinProveedor = insumos.filter((i) => !i.proveedorId);
+    const sinProveedor = insumosDelArea.filter((i) => !i.proveedorId);
     if (sinProveedor.length > 0) grupos.push({ key: "sin", nombre: "Sin proveedor", items: sinProveedor });
   }
 
@@ -116,8 +121,19 @@ export function InventarioSemanalPanel({
         Editar proveedores del jueves
       </button>
 
+      <div className="segmented">
+        <button type="button" className={areaFiltro === "todas" ? "active" : ""} onClick={() => setAreaFiltro("todas")}>
+          Todas
+        </button>
+        {(Object.keys(AREA_LABEL) as InsumoArea[]).map((a) => (
+          <button key={a} type="button" className={areaFiltro === a ? "active" : ""} onClick={() => setAreaFiltro(a)}>
+            {AREA_LABEL[a]}
+          </button>
+        ))}
+      </div>
+
       <InventarioSemanaForm
-        key={`${monthKey}-${weekIndex}`}
+        key={`${monthKey}-${weekIndex}-${areaFiltro}`}
         monthKey={monthKey}
         weekIndex={weekIndex}
         grupos={grupos}
@@ -125,7 +141,9 @@ export function InventarioSemanalPanel({
         emptyText={
           modo === "jueves"
             ? "Ningún proveedor está marcado para el jueves todavía. Márcalos con \"Editar proveedores del jueves\"."
-            : "Aún no tienes insumos en el catálogo de Bar o Cocina."
+            : areaFiltro === "todas"
+              ? "Aún no tienes insumos en el catálogo de Bar o Cocina."
+              : `Aún no tienes insumos en el catálogo de ${AREA_LABEL[areaFiltro]}.`
         }
         onGuardarSemana={onGuardarSemana}
       />
@@ -159,7 +177,12 @@ function InventarioSemanaForm({
     });
     return init;
   });
-  const [locked, setLocked] = useState(() => Object.keys(semana.filas).length > 0);
+  // Bloqueado solo si el área/proveedores visibles ahora ya tienen algo
+  // guardado — así contar un área nueva de la misma semana no queda
+  // bloqueado solo porque otra área ya se guardó antes.
+  const [locked, setLocked] = useState(() =>
+    grupos.some((g) => g.items.some((i) => i.id in semana.filas))
+  );
   const [pidiendoConfirmacion, setPidiendoConfirmacion] = useState(false);
 
   function guardar() {
