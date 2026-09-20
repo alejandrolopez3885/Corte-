@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { ArrowLeft, Circle, CircleDot, TriangleAlert } from "lucide-react";
 import { Empty, Field, NumInput, Sheet } from "../ui";
 import {
@@ -43,29 +43,10 @@ export function ConteoDiarioPanel({
   const [dayName, setDayName] = useState<DayName>(() =>
     months[initialMonthKey] ? mostRecentDayInWeek(initialMonthKey, initialWeekIndex, months[initialMonthKey]) : "Lunes"
   );
-  const [valores, setValores] = useState<Record<string, string>>({});
-  const [locked, setLocked] = useState(false);
-  const [pidiendoConfirmacion, setPidiendoConfirmacion] = useState(false);
 
   const month = months[monthKey] || null;
   const weekStartDate = month ? resolveWeekStartDate(monthKey, weekIndex, month) : null;
   const fecha = month ? dateForDay(monthKey, weekIndex, month, dayName) : null;
-
-  // Cada vez que se cambia de día se recarga lo ya guardado para esa
-  // fecha (si lo hay) y se bloquean los campos, para que reabrir un
-  // conteo pasado nunca lo deje editable "por accidente".
-  useEffect(() => {
-    if (!fecha) return;
-    const guardadoDelDia = conteosDiarios[fecha] || {};
-    const init: Record<string, string> = {};
-    insumos.forEach((i) => {
-      init[i.id] = guardadoDelDia[i.id] !== undefined ? String(guardadoDelDia[i.id]) : "";
-    });
-    setValores(init);
-    setLocked(Object.keys(guardadoDelDia).length > 0);
-    setPidiendoConfirmacion(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fecha]);
 
   if (monthKeys.length === 0 || !month || !fecha || !weekStartDate) {
     return (
@@ -83,16 +64,6 @@ export function ConteoDiarioPanel({
     setMonthKey(mk);
     setWeekIndex(wi);
     setDayName(mostRecentDayInWeek(mk, wi, months[mk]));
-  }
-
-  function guardar() {
-    if (!fecha) return;
-    const out: Record<string, number> = {};
-    insumos.forEach((i) => {
-      if (valores[i.id]?.trim()) out[i.id] = sumFromText(valores[i.id]);
-    });
-    onGuardar(fecha, out);
-    setLocked(true);
   }
 
   return (
@@ -141,36 +112,82 @@ export function ConteoDiarioPanel({
       {insumos.length === 0 ? (
         <Empty icon={emptyIcon} text={emptyText} />
       ) : (
-        <>
-          {locked && (
-            <div className="conteo-locked-banner">
-              <span>Este conteo ya está guardado y los campos están bloqueados.</span>
-              <button className="link-btn" onClick={() => setPidiendoConfirmacion(true)}>
-                Editar
-              </button>
-            </div>
-          )}
-          <div className="catalog-list">
-            {insumos.map((i) => (
-              <div key={i.id} className="catalog-row conteo-row">
-                <div>
-                  <strong>{i.nombre}</strong>
-                  <span>{i.unidad}</span>
-                </div>
-                <NumInput
-                  value={valores[i.id] ?? ""}
-                  onChange={(e) => setValores((v) => ({ ...v, [i.id]: e.target.value }))}
-                  placeholder="0"
-                  disabled={locked}
-                />
-              </div>
-            ))}
-          </div>
-          <button className="btn-primary" onClick={guardar} disabled={locked}>
-            Guardar conteo
-          </button>
-        </>
+        // key={fecha} fuerza a React a desmontar y volver a montar el
+        // formulario al cambiar de día, para que su estado (valores,
+        // bloqueo) siempre nazca de lo que ya está guardado para ESA
+        // fecha — nunca de un estado que quedó de otro día por un efecto
+        // que no alcanzó a sincronizar a tiempo.
+        <ConteoDiaForm
+          key={fecha}
+          fecha={fecha}
+          insumos={insumos}
+          guardadoDelDia={conteosDiarios[fecha] || {}}
+          onGuardar={onGuardar}
+        />
       )}
+    </div>
+  );
+}
+
+function ConteoDiaForm({
+  fecha,
+  insumos,
+  guardadoDelDia,
+  onGuardar,
+}: {
+  fecha: string;
+  insumos: InsumoEntry[];
+  guardadoDelDia: Record<string, number>;
+  onGuardar: (fecha: string, valores: Record<string, number>) => void;
+}) {
+  const [valores, setValores] = useState<Record<string, string>>(() => {
+    const init: Record<string, string> = {};
+    insumos.forEach((i) => {
+      init[i.id] = guardadoDelDia[i.id] !== undefined ? String(guardadoDelDia[i.id]) : "";
+    });
+    return init;
+  });
+  const [locked, setLocked] = useState(() => Object.keys(guardadoDelDia).length > 0);
+  const [pidiendoConfirmacion, setPidiendoConfirmacion] = useState(false);
+
+  function guardar() {
+    const out: Record<string, number> = {};
+    insumos.forEach((i) => {
+      if (valores[i.id]?.trim()) out[i.id] = sumFromText(valores[i.id]);
+    });
+    onGuardar(fecha, out);
+    setLocked(true);
+  }
+
+  return (
+    <>
+      {locked && (
+        <div className="conteo-locked-banner">
+          <span>Este conteo ya está guardado y los campos están bloqueados.</span>
+          <button className="link-btn" onClick={() => setPidiendoConfirmacion(true)}>
+            Editar
+          </button>
+        </div>
+      )}
+      <div className="catalog-list">
+        {insumos.map((i) => (
+          <div key={i.id} className="catalog-row conteo-row">
+            <div>
+              <strong>{i.nombre}</strong>
+              <span>{i.unidad}</span>
+            </div>
+            <NumInput
+              value={valores[i.id] ?? ""}
+              onChange={(e) => setValores((v) => ({ ...v, [i.id]: e.target.value }))}
+              placeholder="0"
+              disabled={locked}
+            />
+          </div>
+        ))}
+      </div>
+      <button className="btn-primary" onClick={guardar} disabled={locked}>
+        Guardar conteo
+      </button>
 
       {pidiendoConfirmacion && (
         <Sheet title="Editar conteo guardado" onClose={() => setPidiendoConfirmacion(false)}>
@@ -193,6 +210,6 @@ export function ConteoDiarioPanel({
           </button>
         </Sheet>
       )}
-    </div>
+    </>
   );
 }
