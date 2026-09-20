@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { ArrowLeft, Package } from "lucide-react";
-import { Empty, Field, NumInput } from "../ui";
+import { ArrowLeft, Package, TriangleAlert } from "lucide-react";
+import { Empty, Field, NumInput, Sheet } from "../ui";
 import { formatWeekRange, money, resolveWeekStartDate, sumFromText, todayIso } from "../../lib/dataModel";
-import type { InsumoEntry, InventarioSemanal, InventarioSemanalMonthData, MonthData, ProveedorCatalogEntry } from "../../lib/types";
+import type { InsumoEntry, InventarioFila, InventarioSemanal, InventarioSemanalMonthData, MonthData, ProveedorCatalogEntry } from "../../lib/types";
 
 type Modo = "completo" | "jueves";
 
@@ -148,22 +148,30 @@ function InventarioSemanaForm({
   emptyText: string;
   onGuardarSemana: (monthKey: string, weekIndex: number, inventario: InventarioSemanal) => void;
 }) {
+  // Se siembra de semana.filas completo (no solo de los grupos visibles
+  // del modo actual), para que cambiar entre Completo/Jueves sin cambiar
+  // de semana nunca muestre en blanco una cantidad que ya estaba guardada
+  // bajo el otro modo.
   const [textos, setTextos] = useState<Record<string, string>>(() => {
     const init: Record<string, string> = {};
-    grupos.forEach((g) =>
-      g.items.forEach((i) => {
-        const f = semana.filas[i.id];
-        init[i.id] = f?.cantidad !== undefined ? String(f.cantidad) : "";
-      })
-    );
+    Object.entries(semana.filas).forEach(([insumoId, fila]) => {
+      if (fila.cantidad !== undefined) init[insumoId] = String(fila.cantidad);
+    });
     return init;
   });
+  const [locked, setLocked] = useState(() => Object.keys(semana.filas).length > 0);
+  const [pidiendoConfirmacion, setPidiendoConfirmacion] = useState(false);
 
-  function commitCantidad(insumoId: string, valorTexto: string) {
-    setTextos((v) => ({ ...v, [insumoId]: valorTexto }));
-    const n = valorTexto.trim() ? sumFromText(valorTexto) : undefined;
-    const nextFilas = { ...semana.filas, [insumoId]: { cantidad: n } };
+  function guardar() {
+    const nextFilas: Record<string, InventarioFila> = { ...semana.filas };
+    grupos.forEach((g) =>
+      g.items.forEach((i) => {
+        const t = textos[i.id];
+        nextFilas[i.id] = { cantidad: t?.trim() ? sumFromText(t) : undefined };
+      })
+    );
     onGuardarSemana(monthKey, weekIndex, { ...semana, filas: nextFilas });
+    setLocked(true);
   }
 
   if (grupos.length === 0) {
@@ -172,6 +180,14 @@ function InventarioSemanaForm({
 
   return (
     <>
+      {locked && (
+        <div className="conteo-locked-banner">
+          <span>Este inventario ya está guardado y los campos están bloqueados.</span>
+          <button className="link-btn" onClick={() => setPidiendoConfirmacion(true)}>
+            Editar
+          </button>
+        </div>
+      )}
       {grupos.map((g) => (
         <div className="insumos-grupo" key={g.key}>
           <h3 className="insumos-grupo-titulo">{g.nombre}</h3>
@@ -187,14 +203,39 @@ function InventarioSemanaForm({
                 </div>
                 <NumInput
                   value={textos[i.id] ?? ""}
-                  onChange={(e) => commitCantidad(i.id, e.target.value)}
+                  onChange={(e) => setTextos((v) => ({ ...v, [i.id]: e.target.value }))}
                   placeholder="0"
+                  disabled={locked}
                 />
               </div>
             ))}
           </div>
         </div>
       ))}
+      <button className="btn-primary" onClick={guardar} disabled={locked}>
+        Guardar inventario
+      </button>
+
+      {pidiendoConfirmacion && (
+        <Sheet title="Editar inventario guardado" onClose={() => setPidiendoConfirmacion(false)}>
+          <p className="hint">
+            Este inventario ya se guardó. No deberías editarlo salvo que estés seguro de que algún valor
+            capturado está mal — cambiarlo afecta tu historial de inventario de esta semana.
+          </p>
+          <button
+            className="btn-warn"
+            onClick={() => {
+              setLocked(false);
+              setPidiendoConfirmacion(false);
+            }}
+          >
+            <TriangleAlert size={16} /> Sí, necesito editarlo
+          </button>
+          <button className="link-btn" onClick={() => setPidiendoConfirmacion(false)}>
+            Cancelar
+          </button>
+        </Sheet>
+      )}
     </>
   );
 }
