@@ -469,6 +469,8 @@ body {
 .horario-table { border-collapse: collapse; width: 100%; }
 .horario-table th, .horario-table td { padding: 4px; text-align: center; }
 .horario-table th { font-size: 11px; color: var(--ink-soft); font-weight: 600; }
+.horario-table th.festivo { color: var(--warn); }
+.horario-festivos button.festivo.active { background: var(--warn-soft); color: var(--warn); }
 .horario-table .horario-col-nombre {
   text-align: left; position: sticky; left: 0; background: var(--surface);
   font-size: 13px; font-weight: 500; white-space: nowrap; padding-right: 10px; max-width: 110px;
@@ -510,6 +512,7 @@ body {
   padding: 6px 4px; text-align: center;
 }
 .nomina-dia.cero { opacity: 0.45; }
+.nomina-dia.festivo { background: var(--warn-soft); }
 .nomina-dia-label { font-size: 10px; color: var(--ink-soft); font-weight: 600; text-transform: uppercase; }
 .nomina-dia-valor { font-size: 12px; font-weight: 600; margin: 3px 0 1px; min-height: 14px; }
 .nomina-dia-monto { font-size: 11px; color: var(--ink-soft); }
@@ -520,6 +523,7 @@ body {
 }
 .nomina-descuentos-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 12.5px; }
 .nomina-descuentos-row.bruto { color: var(--ink-soft); }
+.nomina-descuentos-row.extra .nomina-descuentos-monto { color: var(--good); }
 .nomina-descuentos-row.neto { font-weight: 600; padding-top: 4px; border-top: 1px solid var(--border); }
 .nomina-descuentos-item { flex: 1; min-width: 0; color: var(--ink-soft); }
 .nomina-descuentos-item strong { color: var(--ink); font-weight: 500; }

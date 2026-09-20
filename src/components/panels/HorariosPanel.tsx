@@ -47,6 +47,9 @@ export function HorariosPanel({
   const saved = horarios[monthKey]?.weeks?.[weekIndex] ?? null;
   const seeded = !saved ? findPreviousHorarioSemana(horarios, monthKeys, monthKey, weekIndex) : null;
   const semanaInicial: HorarioSemana = normalizeHorarioSemana(saved ?? seeded);
+  // Un festivo es de esa semana en concreto — no se debe precargar del
+  // personal de la semana anterior aunque esa sí haya tenido uno.
+  if (!saved) semanaInicial.festivos = [];
   const isDraftBase = !saved && !!seeded;
 
   return (
@@ -143,6 +146,16 @@ function HorarioSemanaForm({
     }));
   }
 
+  function toggleFestivo(day: DayName) {
+    setSemana((s) => {
+      const festivos = s.festivos || [];
+      return {
+        ...s,
+        festivos: festivos.includes(day) ? festivos.filter((d) => d !== day) : [...festivos, day],
+      };
+    });
+  }
+
   function setCellValue(areaId: string, empleadoId: string, day: DayName, value: string) {
     setSemana((s) => ({
       areas: s.areas.map((a) =>
@@ -201,6 +214,21 @@ function HorarioSemanaForm({
         )
       )}
 
+      <p className="hint">Día festivo — a quien trabaje ese día se le paga 1 turno extra.</p>
+      <div className="segmented horario-festivos">
+        {DAYS.map((d) => (
+          <button
+            key={d}
+            type="button"
+            className={(semana.festivos || []).includes(d) ? "festivo active" : ""}
+            onClick={() => toggleFestivo(d)}
+            disabled={locked}
+          >
+            {DAY_SHORT[d]}
+          </button>
+        ))}
+      </div>
+
       {semana.areas.map((area) => (
         <div className="horario-area" key={area.id}>
           <div className="horario-area-head">
@@ -216,7 +244,9 @@ function HorarioSemanaForm({
                   <tr>
                     <th className="horario-col-nombre">Nombre</th>
                     {DAYS.map((d) => (
-                      <th key={d}>{DAY_SHORT[d]}</th>
+                      <th key={d} className={(semana.festivos || []).includes(d) ? "festivo" : ""}>
+                        {DAY_SHORT[d]}
+                      </th>
                     ))}
                     <th></th>
                   </tr>

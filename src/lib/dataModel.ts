@@ -524,6 +524,7 @@ export function normalizeHorarioSemana(semana: HorarioSemana | null): HorarioSem
       const existing = semana?.areas.find((a) => a.id === fixed.id);
       return { id: fixed.id, nombre: fixed.nombre, filas: existing?.filas ?? [] };
     }),
+    festivos: semana?.festivos ?? [],
   };
 }
 
@@ -563,9 +564,14 @@ export function findPreviousHorarioSemana(
 // capturada pagan 1x, y OFF solo paga 1x si esa semana ya se trabajaron
 // los otros 6 días — si se trabajaron 5 o menos, el descanso no se paga.
 // Una celda sin capturar no se paga y tampoco cuenta como día trabajado.
+// Si el día está marcado como festivo (ver HorarioSemana.festivos) y sí se
+// trabajó, se suma 1 turno extra al multiplicador que le tocaba (normal o
+// Z) — el descanso pagado en un día festivo no cuenta como "trabajado",
+// así que no recibe el extra.
 export function computeNominaFila(
   fila: HorarioFila,
-  sueldoDiario: number
+  sueldoDiario: number,
+  festivos: DayName[] = []
 ): { dias: NominaDia[]; diasTrabajados: number; offPagado: boolean; total: number } {
   const diasTrabajados = DAYS.filter((d) => {
     const v = fila.valores[d];
@@ -579,9 +585,11 @@ export function computeNominaFila(
     if (valor === "Z") multiplicador = 2;
     else if (valor === "OFF") multiplicador = offPagado ? 1 : 0;
     else if (valor) multiplicador = 1;
+    const esFestivo = festivos.includes(d) && !!valor && valor !== "OFF";
+    if (esFestivo) multiplicador += 1;
     const monto = round2(sueldoDiario * multiplicador);
     total += monto;
-    return { day: d, valor, multiplicador, monto };
+    return { day: d, valor, multiplicador, monto, esFestivo };
   });
   return { dias, diasTrabajados, offPagado, total: round2(total) };
 }
@@ -610,7 +618,7 @@ export function computeNominaSemana(
   semana.areas.forEach((area) => {
     area.filas.forEach((fila) => {
       const sueldoDiario = empleados.find((e) => e.id === fila.empleadoId)?.sueldoDiario || 0;
-      const { dias, diasTrabajados, offPagado, total: bruto } = computeNominaFila(fila, sueldoDiario);
+      const { dias, diasTrabajados, offPagado, total: bruto } = computeNominaFila(fila, sueldoDiario, semana.festivos || []);
 
       const delCorte: NominaDescuento[] = [];
       if (week) {
@@ -632,10 +640,12 @@ export function computeNominaSemana(
       const manuales = (descuentosSemana?.descuentos || []).filter((d) => d.empleadoId === fila.empleadoId);
       const descuentos = [...delCorte, ...manuales];
       const totalDescuentos = round2(descuentos.reduce((s, d) => s + d.monto, 0));
-      const neto = round2(bruto - totalDescuentos);
+      const extras = (descuentosSemana?.extras || []).filter((x) => x.empleadoId === fila.empleadoId);
+      const totalExtras = round2(extras.reduce((s, x) => s + x.monto, 0));
+      const neto = round2(bruto + totalExtras - totalDescuentos);
       result.push({
         empleadoId: fila.empleadoId, nombre: fila.nombre, areaNombre: area.nombre, sueldoDiario,
-        dias, diasTrabajados, offPagado, bruto, descuentos, totalDescuentos, neto,
+        dias, diasTrabajados, offPagado, bruto, extras, totalExtras, descuentos, totalDescuentos, neto,
       });
     });
   });

@@ -13,7 +13,7 @@ import {
 } from "../lib/dataModel";
 import { useStaffAssignments } from "../lib/staffAssignments";
 import { DAYS, DAY_SHORT } from "../lib/types";
-import type { AreaEntry, CreditoProveedores, DayData, DayName, EmpleadoEntry, Gasto, GastoCategoria, HorarioSemana, InsumoEntry, InventarioSemanal, MeseroCatalogEntry, MeseroCut, NominaDescuento, Profile, ProveedorCatalogEntry, PuestoEntry, Transferencia, WeekData } from "../lib/types";
+import type { AreaEntry, CreditoProveedores, DayData, DayName, EmpleadoEntry, Gasto, GastoCategoria, HorarioSemana, InsumoEntry, InventarioSemanal, MeseroCatalogEntry, MeseroCut, NominaDescuentosSemana, Profile, ProveedorCatalogEntry, PuestoEntry, Transferencia, WeekData } from "../lib/types";
 import { Empty } from "../components/ui";
 import { MonthModal } from "../components/modals/MonthModal";
 import { MeseroModal, type MeseroFormValues } from "../components/modals/MeseroModal";
@@ -543,14 +543,15 @@ export default function CortesApp({ profile }: { profile: Profile }) {
     persist(next);
   }
 
-  // Descuentos de nómina de una semana (tardanzas, adelantos, comida) —
-  // mismas semanas que Horarios; no afectan el total bruto que usa el
-  // Dashboard, solo el neto que se ve en la propia página de Nómina.
-  function saveNominaDescuentos(monthKey: string, weekIndex: number, descuentos: NominaDescuento[]) {
+  // Descuentos (tardanzas, adelantos, comida) y extras (finiquitos, bonos)
+  // de nómina de una semana — mismas semanas que Horarios; no afectan el
+  // total bruto que usa el Dashboard, solo el neto que se ve en la propia
+  // página de Nómina.
+  function saveNominaDescuentos(monthKey: string, weekIndex: number, semana: NominaDescuentosSemana) {
     if (!data) return;
     const next = structuredClone(data);
     if (!next.nominaDescuentos[monthKey]) next.nominaDescuentos[monthKey] = { weeks: [null, null, null, null] };
-    next.nominaDescuentos[monthKey].weeks[weekIndex] = { descuentos };
+    next.nominaDescuentos[monthKey].weeks[weekIndex] = semana;
     persist(next);
   }
 

@@ -51,32 +51,42 @@ estando en Nómina te regresa al menú de Equipo):
   pero ya no se guarda solo — hay un botón "Guardar horario" y, en cuanto
   se guarda, la semana queda bloqueada para evitar ediciones accidentales,
   igual que Conteo diario e Inventario, para tener un historial real por
-  semana)
+  semana. Ahí mismo se pueden marcar uno o más días como "festivo" —
+  específico de esa semana, no se precarga de la semana anterior — y a
+  quien trabaje ese día (cualquier valor salvo OFF) se le paga 1 turno
+  extra además de lo que le tocaba; el descanso pagado en un día festivo
+  no cuenta como trabajado, así que no recibe el extra)
   y "Nómina" (calculada sola a partir de Horarios y el sueldo diario de
-  cada quien: Z paga doble, O/X y cualquier hora capturada pagan 1x, y el
-  descanso OFF solo se paga si esa semana se trabajaron los otros 6 días —
-  el sueldo semanal completo, sueldo diario × 7, solo se alcanza así. Ahí
-  mismo, por persona, se capturan descuentos itemizados — tardanza,
-  adelanto de efectivo, comida u otro, cada uno con su propio concepto y
-  monto — y la tarjeta de cada quien muestra bruto, cada descuento y el
-  neto a pagar; el total de la semana también se ve en bruto/descuentos/
-  neto. Un gasto del corte diario categorizado "Nómina" o "Comida
-  empleado" también se puede vincular a un empleado de Personal — por
-  ejemplo, un adelanto que sale del corte de otra persona —, y ese gasto
-  aparece solo como descuento en la nómina del empleado elegido, marcado
-  "Corte" y sin poder borrarse desde ahí — se edita o se quita desde el
-  gasto mismo en Corte. Cada quien también muestra "Generada hasta hoy",
-  el bruto acumulado solo de los días de esa semana cuya fecha ya pasó (o
-  es hoy) — útil para ver a media semana cuánta nómina llevas, sin esperar
-  a que termine; en una semana ya cerrada equivale al bruto completo, y en
-  una futura es $0 —, con su propio total para todo el personal). Un botón
-  "Descargar imagen del desglose (sueldo bruto)" genera y descarga un PNG
-  con la nómina de esa semana sin descuentos, agrupada por área con
-  subtotales y un total general al final, imitando la hoja de cálculo que
-  se usaba antes para esto — pensado para compartirlo por WhatsApp con
-  quien paga. Solo en esa imagen el número de semana es el de la semana
-  del año (ISO), no el "Semana 1"-"4" del mes que se usa en toda la app —
-  ej. la semana del 14 al 20 de septiembre se ve ahí como "Semana 38".
+  cada quien: Z paga doble, O/X y cualquier hora capturada pagan 1x, el
+  descanso OFF solo se paga si esa semana se trabajaron los otros 6 días
+  — el sueldo semanal completo, sueldo diario × 7, solo se alcanza así —,
+  y un día festivo marcado en Horarios suma 1 turno extra a quien lo
+  trabajó (se ve resaltado en la celda de ese día). Ahí mismo, por
+  persona, se capturan descuentos itemizados — tardanza, adelanto de
+  efectivo, comida u otro, cada uno con su propio concepto y monto — y
+  percepciones extra itemizadas — finiquito, bono u otro, que solo
+  existen en la semana donde se capturan, no se repiten — y la tarjeta de
+  cada quien muestra bruto, cada extra (+), cada descuento (-) y el neto
+  a pagar; el total de la semana también se ve en bruto/extras/
+  descuentos/neto. Un gasto del corte diario categorizado "Nómina" o
+  "Comida empleado" también se puede vincular a un empleado de Personal —
+  por ejemplo, un adelanto que sale del corte de otra persona —, y ese
+  gasto aparece solo como descuento en la nómina del empleado elegido,
+  marcado "Corte" y sin poder borrarse desde ahí — se edita o se quita
+  desde el gasto mismo en Corte. Cada quien también muestra "Generada
+  hasta hoy", el bruto acumulado solo de los días de esa semana cuya
+  fecha ya pasó (o es hoy) — útil para ver a media semana cuánta nómina
+  llevas, sin esperar a que termine; en una semana ya cerrada equivale al
+  bruto completo, y en una futura es $0 —, con su propio total para todo
+  el personal). Un botón "Descargar imagen del desglose (sueldo bruto)"
+  genera y descarga un PNG con la nómina de esa semana sin descuentos
+  (bruto + percepciones extra si las hay, marcadas con un asterisco),
+  agrupada por área con subtotales y un total general al final, imitando
+  la hoja de cálculo que se usaba antes para esto — pensado para
+  compartirlo por WhatsApp con quien paga. Solo en esa imagen el número
+  de semana es el de la semana del año (ISO), no el "Semana 1"-"4" del
+  mes que se usa en toda la app — ej. la semana del 14 al 20 de
+  septiembre se ve ahí como "Semana 38".
   Personal
   sigue siendo una lista aparte del catálogo de Meseros — este es solo
   nombre, sin sueldo, para el corte.

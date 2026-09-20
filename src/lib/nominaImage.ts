@@ -16,6 +16,7 @@ const SUBTOTAL_H = 32;
 const TITLE_H = 64;
 const COL_HEADER_H = 40;
 const TOTAL_H = 50;
+const FOOTNOTE_H = 26;
 
 const AREA_COLORS = ["#8BC34A", "#F39C12", "#26A69A", "#5C6BC0", "#EC7063", "#AF7AC5"];
 const NEGRO = "#111111";
@@ -39,17 +40,20 @@ function agruparPorArea(reporte: NominaEmpleadoSemana[]): { nombre: string; empl
   return grupos;
 }
 
-// Genera y descarga una imagen PNG con el desglose de nómina bruta (sin
-// descuentos) de la semana, agrupado por área con subtotales — pensado
-// para compartir por WhatsApp con quien paga, igual que la hoja de
-// cálculo que se usaba antes para esto.
+// Genera y descarga una imagen PNG con el desglose de nómina de la
+// semana sin descuentos (bruto + percepciones extra, como finiquitos o
+// bonos, si hay), agrupado por área con subtotales — pensado para
+// compartir por WhatsApp con quien paga, igual que la hoja de cálculo
+// que se usaba antes para esto.
 export function downloadNominaImage(reporte: NominaEmpleadoSemana[], titulo: string, subtitulo: string): void {
   const grupos = agruparPorArea(reporte);
+  const hayExtras = reporte.some((e) => e.totalExtras > 0);
   const height =
     TITLE_H +
     COL_HEADER_H +
     grupos.reduce((s, g) => s + AREA_BAND_H + g.empleados.length * ROW_H + SUBTOTAL_H, 0) +
-    TOTAL_H;
+    TOTAL_H +
+    (hayExtras ? FOOTNOTE_H : 0);
 
   const scale = 2;
   const canvas = document.createElement("canvas");
@@ -109,7 +113,7 @@ export function downloadNominaImage(reporte: NominaEmpleadoSemana[], titulo: str
 
   grupos.forEach((g, gi) => {
     const color = AREA_COLORS[gi % AREA_COLORS.length];
-    const subtotalArea = g.empleados.reduce((s, e) => s + e.bruto, 0);
+    const subtotalArea = g.empleados.reduce((s, e) => s + e.bruto + e.totalExtras, 0);
     granTotal += subtotalArea;
 
     // Banda del área
@@ -133,7 +137,7 @@ export function downloadNominaImage(reporte: NominaEmpleadoSemana[], titulo: str
       ctx.fillStyle = "#1a1a1a";
       ctx.font = "bold 12px Arial";
       ctx.textAlign = "left";
-      ctx.fillText(e.nombre, cx + 12, y + ROW_H / 2);
+      ctx.fillText(e.nombre + (e.totalExtras > 0 ? " *" : ""), cx + 12, y + ROW_H / 2);
       cx += COL_NOMBRE;
 
       ctx.font = "12px Arial";
@@ -152,7 +156,7 @@ export function downloadNominaImage(reporte: NominaEmpleadoSemana[], titulo: str
       });
 
       ctx.font = "bold 12px Arial";
-      ctx.fillText(money(e.bruto), cx + COL_TOTAL / 2, y + ROW_H / 2);
+      ctx.fillText(money(e.bruto + e.totalExtras), cx + COL_TOTAL / 2, y + ROW_H / 2);
 
       y += ROW_H;
     });
@@ -181,6 +185,16 @@ export function downloadNominaImage(reporte: NominaEmpleadoSemana[], titulo: str
   ctx.fillStyle = "#ffffff";
   ctx.textAlign = "center";
   ctx.fillText(money(granTotal), WIDTH - COL_TOTAL / 2, y + TOTAL_H / 2);
+  y += TOTAL_H;
+
+  if (hayExtras) {
+    ctx.fillStyle = "#fafafa";
+    ctx.fillRect(0, y, WIDTH, FOOTNOTE_H);
+    ctx.fillStyle = "#666666";
+    ctx.font = "italic 11px Arial";
+    ctx.textAlign = "left";
+    ctx.fillText("* incluye percepciones extra de esta semana (finiquito, bono)", 12, y + FOOTNOTE_H / 2);
+  }
 
   canvas.toBlob((blob) => {
     if (!blob) return;

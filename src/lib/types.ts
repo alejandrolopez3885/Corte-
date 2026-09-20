@@ -69,6 +69,11 @@ export interface HorarioArea {
 
 export interface HorarioSemana {
   areas: HorarioArea[];
+  // Días marcados como festivo en esta semana — a quien trabaje ese día
+  // (cualquier valor que no sea OFF) se le paga 1 turno extra además de lo
+  // que ya le tocaba (normal o Z), ver computeNominaFila. No se paga solo
+  // por tener el descanso ahí si no trabajó.
+  festivos?: DayName[];
 }
 
 export interface HorarioMonthData {
@@ -82,6 +87,7 @@ export interface NominaDia {
   valor: string;
   multiplicador: number;
   monto: number;
+  esFestivo: boolean;
 }
 
 export interface NominaEmpleadoSemana {
@@ -93,6 +99,8 @@ export interface NominaEmpleadoSemana {
   diasTrabajados: number;
   offPagado: boolean;
   bruto: number;
+  extras: NominaExtra[];
+  totalExtras: number;
   descuentos: NominaDescuento[];
   totalDescuentos: number;
   neto: number;
@@ -124,8 +132,28 @@ export interface NominaDescuento {
   origen?: "manual" | "corte";
 }
 
+// Percepciones extra de una sola vez — finiquitos, bonos, etc. Igual que
+// los descuentos, pero se suman al bruto en vez de restarse, y solo
+// existen en la semana donde se capturaron (no son recurrentes).
+export type NominaExtraTipo = "finiquito" | "bono" | "otro";
+
+export const NOMINA_EXTRA_TIPOS: { value: NominaExtraTipo; label: string }[] = [
+  { value: "finiquito", label: "Finiquito" },
+  { value: "bono", label: "Bono" },
+  { value: "otro", label: "Otro" },
+];
+
+export interface NominaExtra {
+  id: string;
+  empleadoId: string;
+  tipo: NominaExtraTipo;
+  concepto?: string;
+  monto: number;
+}
+
 export interface NominaDescuentosSemana {
   descuentos: NominaDescuento[];
+  extras?: NominaExtra[];
 }
 
 export interface NominaDescuentosMonthData {
