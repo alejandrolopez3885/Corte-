@@ -78,11 +78,12 @@ estando en Nómina te regresa al menú de Equipo):
   Cocina" — las dos abren primero a un menú propio (para poder ir sumando
   ahí compras como opción hermana más adelante), con dos piezas
   construidas, en este orden: "Conteo diario" primero (lista solo los
-  insumos de esa área marcados de alta rotación en el catálogo, con un
-  campo para capturar cuánto queda; usa los mismos filtros de Mes/Semana
-  y los mismos chips de día que ya se usan en Corte, así que se puede
-  entrar y revisar o capturar el conteo de cualquier día, no solo el de
-  hoy, y cada día se guarda por separado por su fecha real. En cuanto se
+  insumos de esa área marcados de alta rotación en el catálogo, agrupados
+  por proveedor igual que el Catálogo y que Inventario, con un campo para
+  capturar cuánto queda; usa los mismos filtros de Mes/Semana y los
+  mismos chips de día que ya se usan en Corte, así que se puede entrar y
+  revisar o capturar el conteo de cualquier día, no solo el de hoy, y
+  cada día se guarda por separado por su fecha real. En cuanto se
   guarda un conteo, sus campos quedan bloqueados para evitar ediciones
   accidentales; para corregirlo hay que tocar "Editar", confirmar un
   aviso de que no debería modificarse salvo que sea necesario, y recién

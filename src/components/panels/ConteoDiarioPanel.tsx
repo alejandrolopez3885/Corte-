@@ -11,7 +11,7 @@ import {
   sumFromText,
 } from "../../lib/dataModel";
 import { DAYS, DAY_SHORT } from "../../lib/types";
-import type { DayName, InsumoEntry, MonthData } from "../../lib/types";
+import type { DayName, InsumoEntry, MonthData, ProveedorCatalogEntry } from "../../lib/types";
 
 export function ConteoDiarioPanel({
   onBack,
@@ -19,6 +19,7 @@ export function ConteoDiarioPanel({
   emptyIcon,
   emptyText,
   insumos,
+  proveedores,
   months,
   monthKeys,
   initialMonthKey,
@@ -31,6 +32,7 @@ export function ConteoDiarioPanel({
   emptyIcon: ReactNode;
   emptyText: string;
   insumos: InsumoEntry[];
+  proveedores: ProveedorCatalogEntry[];
   months: Record<string, MonthData>;
   monthKeys: string[];
   initialMonthKey: string;
@@ -120,7 +122,7 @@ export function ConteoDiarioPanel({
         <ConteoDiaForm
           key={fecha}
           fecha={fecha}
-          insumos={insumos}
+          grupos={agruparPorProveedor(insumos, proveedores)}
           guardadoDelDia={conteosDiarios[fecha] || {}}
           onGuardar={onGuardar}
         />
@@ -129,22 +131,44 @@ export function ConteoDiarioPanel({
   );
 }
 
+function agruparPorProveedor(insumos: InsumoEntry[], proveedores: ProveedorCatalogEntry[]) {
+  const porProveedor = new Map<string, InsumoEntry[]>();
+  const sinProveedor: InsumoEntry[] = [];
+  insumos.forEach((i) => {
+    if (!i.proveedorId) {
+      sinProveedor.push(i);
+      return;
+    }
+    if (!porProveedor.has(i.proveedorId)) porProveedor.set(i.proveedorId, []);
+    porProveedor.get(i.proveedorId)!.push(i);
+  });
+  const grupos: { key: string; nombre: string; items: InsumoEntry[] }[] = [];
+  proveedores.forEach((p) => {
+    const items = porProveedor.get(p.id);
+    if (items && items.length > 0) grupos.push({ key: p.id, nombre: p.nombre, items });
+  });
+  if (sinProveedor.length > 0) grupos.push({ key: "sin", nombre: "Sin proveedor", items: sinProveedor });
+  return grupos;
+}
+
 function ConteoDiaForm({
   fecha,
-  insumos,
+  grupos,
   guardadoDelDia,
   onGuardar,
 }: {
   fecha: string;
-  insumos: InsumoEntry[];
+  grupos: { key: string; nombre: string; items: InsumoEntry[] }[];
   guardadoDelDia: Record<string, number>;
   onGuardar: (fecha: string, valores: Record<string, number>) => void;
 }) {
   const [valores, setValores] = useState<Record<string, string>>(() => {
     const init: Record<string, string> = {};
-    insumos.forEach((i) => {
-      init[i.id] = guardadoDelDia[i.id] !== undefined ? String(guardadoDelDia[i.id]) : "";
-    });
+    grupos.forEach((g) =>
+      g.items.forEach((i) => {
+        init[i.id] = guardadoDelDia[i.id] !== undefined ? String(guardadoDelDia[i.id]) : "";
+      })
+    );
     return init;
   });
   const [locked, setLocked] = useState(() => Object.keys(guardadoDelDia).length > 0);
@@ -152,9 +176,11 @@ function ConteoDiaForm({
 
   function guardar() {
     const out: Record<string, number> = {};
-    insumos.forEach((i) => {
-      if (valores[i.id]?.trim()) out[i.id] = sumFromText(valores[i.id]);
-    });
+    grupos.forEach((g) =>
+      g.items.forEach((i) => {
+        if (valores[i.id]?.trim()) out[i.id] = sumFromText(valores[i.id]);
+      })
+    );
     onGuardar(fecha, out);
     setLocked(true);
   }
@@ -169,22 +195,27 @@ function ConteoDiaForm({
           </button>
         </div>
       )}
-      <div className="catalog-list">
-        {insumos.map((i) => (
-          <div key={i.id} className="catalog-row conteo-row">
-            <div>
-              <strong>{i.nombre}</strong>
-              <span>{i.unidad}</span>
-            </div>
-            <NumInput
-              value={valores[i.id] ?? ""}
-              onChange={(e) => setValores((v) => ({ ...v, [i.id]: e.target.value }))}
-              placeholder="0"
-              disabled={locked}
-            />
+      {grupos.map((g) => (
+        <div className="insumos-grupo" key={g.key}>
+          <h3 className="insumos-grupo-titulo">{g.nombre}</h3>
+          <div className="catalog-list">
+            {g.items.map((i) => (
+              <div key={i.id} className="catalog-row conteo-row">
+                <div>
+                  <strong>{i.nombre}</strong>
+                  <span>{i.unidad}</span>
+                </div>
+                <NumInput
+                  value={valores[i.id] ?? ""}
+                  onChange={(e) => setValores((v) => ({ ...v, [i.id]: e.target.value }))}
+                  placeholder="0"
+                  disabled={locked}
+                />
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+        </div>
+      ))}
       <button className="btn-primary" onClick={guardar} disabled={locked}>
         Guardar conteo
       </button>
