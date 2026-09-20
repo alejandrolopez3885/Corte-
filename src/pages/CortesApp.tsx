@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import {
   Plus, Settings2, Users, Receipt, ArrowLeftRight, CircleDot, Circle, Pencil,
-  Smartphone, BarChart3, LogOut, Truck, Trash2, Home, Store, LayoutDashboard, Contact, Clock, Wallet, ChartLine,
+  Smartphone, BarChart3, LogOut, Truck, Trash2, Home, Store, LayoutDashboard, Contact, Clock, Wallet, ChartLine, Martini,
 } from "lucide-react";
 import { useAuth } from "../lib/auth.tsx";
 import { useAppData } from "../lib/useAppData";
@@ -31,6 +31,7 @@ import { EmpleadosPanel } from "../components/panels/EmpleadosPanel";
 import { HorariosPanel } from "../components/panels/HorariosPanel";
 import { NominaPanel } from "../components/panels/NominaPanel";
 import { TendenciasPanel } from "../components/panels/TendenciasPanel";
+import { ControlBarPanel } from "../components/panels/ControlBarPanel";
 
 type ModalState =
   | { type: "month" }
@@ -49,7 +50,7 @@ type ModalState =
 
 type EquipoView = "menu" | "personal" | "horarios" | "nomina";
 
-type NegocioView = "menu" | "tendencias";
+type NegocioView = "menu" | "tendencias" | "controlBar";
 
 type OwnerTab = "corte" | "equipo" | "negocio" | "dashboard";
 
@@ -700,6 +701,19 @@ export default function CortesApp({ profile }: { profile: Profile }) {
               </span>
             </button>
           </div>
+
+          <h3 className="menu-subtitle">Bar</h3>
+          <div className="menu-list">
+            <button className="menu-item" onClick={() => setNegocioView("controlBar")}>
+              <span className="menu-item-icon">
+                <Martini size={20} />
+              </span>
+              <span className="menu-item-text">
+                <strong>Control de Bar</strong>
+                <span>Próximamente</span>
+              </span>
+            </button>
+          </div>
         </div>
       )}
 
@@ -711,6 +725,10 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           empleados={data.empleados}
           meseros={data.meseros}
         />
+      )}
+
+      {isOwner && activeTab === "negocio" && negocioView === "controlBar" && (
+        <ControlBarPanel onBack={() => setNegocioView("menu")} />
       )}
 
       {isOwner && activeTab === "dashboard" && (

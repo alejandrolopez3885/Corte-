@@ -69,7 +69,8 @@ estando en Nómina te regresa al menú de Equipo):
   poco confiable), una cuadrícula de KPIs con su cambio semana a semana y
   minigráfica (Venta total, Utilidad, Margen, Gastos totales, Nómina), una
   gráfica de venta con la proyección marcada aparte, y una tabla detallada
-  por semana.
+  por semana; y bajo "Bar", "Control de Bar" (aún vacía, en blanco a
+  propósito para cuando se construya).
 - **Dashboard**: reporte de resultados de la semana, solo para leer (con
   porcentajes sobre la venta total): Venta total, Gastos operativos (suma
   los de efectivo categorizados como Operación más los de transferencia),
