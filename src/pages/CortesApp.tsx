@@ -649,6 +649,15 @@ export default function CortesApp({ profile }: { profile: Profile }) {
                 <span>Lista de tu personal</span>
               </span>
             </button>
+            <button className="menu-item" onClick={() => setModal({ type: "catalog" })}>
+              <span className="menu-item-icon">
+                <Settings2 size={20} />
+              </span>
+              <span className="menu-item-text">
+                <strong>Meseros</strong>
+                <span>Catálogo de meseros para el corte</span>
+              </span>
+            </button>
             <button className="menu-item" onClick={() => setEquipoView("horarios")}>
               <span className="menu-item-icon">
                 <Clock size={20} />
@@ -712,15 +721,6 @@ export default function CortesApp({ profile }: { profile: Profile }) {
         <div className="page-section">
           <h2 className="page-title">Negocio</h2>
           <div className="menu-list">
-            <button className="menu-item" onClick={() => setModal({ type: "catalog" })}>
-              <span className="menu-item-icon">
-                <Settings2 size={20} />
-              </span>
-              <span className="menu-item-text">
-                <strong>Meseros</strong>
-                <span>Catálogo de meseros para el corte</span>
-              </span>
-            </button>
             <button className="menu-item" onClick={() => setModal({ type: "proveedores" })}>
               <span className="menu-item-icon">
                 <Handshake size={20} />

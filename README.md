@@ -29,11 +29,14 @@ estando en Nómina te regresa al menú de Equipo):
 
 - **Corte**: la pantalla principal — mes, semana, día, meseros, gastos,
   transferencias, ventas de apps y sus resúmenes.
-- **Equipo**: menú con 4 opciones — "Tu equipo" (dar de alta a quien te
-  apoya con PIN y asignarle días, como modal), y como páginas propias
-  "Personal" (la lista de tu personal — nombre y sueldo diario; se agrega
-  con un botón "+" en vez de tener el formulario siempre abierto, y tocar
-  a alguien lo abre para editar o eliminar), "Horarios" (arma el horario
+- **Equipo**: menú con 5 opciones — "Tu equipo" (dar de alta a quien te
+  apoya con PIN y asignarle días, como modal), "Meseros" (catálogo de
+  meseros — solo nombre, para elegir a quién le haces el corte en Corte;
+  vive aquí porque también son parte de tu equipo, aunque su lista está
+  separada de Personal), y como páginas propias "Personal" (la lista de tu
+  personal — nombre y sueldo diario; se agrega con un botón "+" en vez de
+  tener el formulario siempre abierto, y tocar a alguien lo abre para
+  editar o eliminar), "Horarios" (arma el horario
   semanal en dos áreas fijas, PISO y COCINA — no se pueden crear, renombrar
   ni borrar áreas — usando las mismas semanas de Corte; un toque en la
   celda cicla OFF → O → X → Z, y al llegar a Z se abre un modal para
@@ -57,9 +60,9 @@ estando en Nómina te regresa al menú de Equipo):
   es hoy) — útil para ver a media semana cuánta nómina llevas, sin esperar
   a que termine; en una semana ya cerrada equivale al bruto completo, y en
   una futura es $0 —, con su propio total para todo el personal). Personal
-  no es lo mismo que el catálogo de meseros de Negocio, que es solo para
-  el corte.
-- **Negocio**: catálogo de meseros; catálogo de proveedores (nombre y la
+  sigue siendo una lista aparte del catálogo de Meseros — este es solo
+  nombre, sin sueldo, para el corte.
+- **Negocio**: catálogo de proveedores (nombre y la
   marca de "también se pide los jueves" — el mismo proveedor que se elige
   en el Catálogo de Bar/Cocina y que agrupa la lista en Inventario; no se
   puede eliminar un proveedor mientras tenga algún insumo asignado, para
