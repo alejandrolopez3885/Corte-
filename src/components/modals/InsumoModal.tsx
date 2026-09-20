@@ -20,8 +20,9 @@ export function InsumoModal({
   onSave: (entry: InsumoEntry, nuevoProveedor?: ProveedorCatalogEntry) => void;
   onDelete?: () => void;
 }) {
+  const esBar = area === "bar";
   const [nombre, setNombre] = useState(editing?.nombre || "");
-  const [unidad, setUnidad] = useState(editing?.unidad || "");
+  const [unidad, setUnidad] = useState(esBar ? "pieza" : editing?.unidad || "kg");
   const [precioText, setPrecioText] = useState(editing?.precio ? String(editing.precio) : "");
   const [proveedorId, setProveedorId] = useState(editing?.proveedorId || "");
   const [nuevoProveedor, setNuevoProveedor] = useState("");
@@ -33,7 +34,7 @@ export function InsumoModal({
   // borre al primero, porque ambos parten de un structuredClone(data)
   // tomado en el mismo instante.
   function save() {
-    if (!nombre.trim() || !unidad.trim()) return;
+    if (!nombre.trim()) return;
     let finalProveedorId = proveedorId && proveedorId !== NUEVO_PROVEEDOR ? proveedorId : undefined;
     let nuevoProveedorEntry: ProveedorCatalogEntry | undefined;
     if (proveedorId === NUEVO_PROVEEDOR && nuevoProveedor.trim()) {
@@ -45,7 +46,7 @@ export function InsumoModal({
         id: editing?.id || uid(),
         area,
         nombre: nombre.trim(),
-        unidad: unidad.trim(),
+        unidad: esBar ? "pieza" : unidad,
         precio: sumFromText(precioText) || undefined,
         proveedorId: finalProveedorId,
         altaRotacion,
@@ -67,20 +68,15 @@ export function InsumoModal({
         />
       </Field>
       <Field label="Unidad de medida">
-        <input
+        <select
           className="text-input"
-          list="unidades-comunes"
           value={unidad}
           onChange={(e) => setUnidad(e.target.value)}
-          placeholder="Ej. kg, pza, lt"
-        />
-        <datalist id="unidades-comunes">
-          <option value="kg" />
-          <option value="pza" />
-          <option value="lt" />
-          <option value="caja" />
-          <option value="paquete" />
-        </datalist>
+          disabled={esBar}
+        >
+          <option value="kg">Kg</option>
+          <option value="pieza">Pieza</option>
+        </select>
       </Field>
       <Field label="Precio de referencia (opcional, por unidad)">
         <SumInput value={precioText} onChange={setPrecioText} placeholder="0.00" />
@@ -112,7 +108,7 @@ export function InsumoModal({
         onChange={setAltaRotacion}
         label="Alta rotación (aparece primero en el conteo diario)"
       />
-      <button className="btn-primary" onClick={save} disabled={!nombre.trim() || !unidad.trim()}>
+      <button className="btn-primary" onClick={save} disabled={!nombre.trim()}>
         Guardar
       </button>
     </Sheet>

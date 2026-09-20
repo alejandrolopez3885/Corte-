@@ -86,12 +86,15 @@ estando en Nómina te regresa al menú de Equipo):
   guarda un conteo, sus campos quedan bloqueados para evitar ediciones
   accidentales; para corregirlo hay que tocar "Editar", confirmar un
   aviso de que no debería modificarse salvo que sea necesario, y recién
-  ahí se desbloquea) y "Catálogo" después: cada insumo tiene nombre,
-  unidad de medida, un precio de referencia opcional y un proveedor
-  opcional (el mismo catálogo de proveedores en ambas áreas, y se puede
-  crear uno nuevo al vuelo desde el propio insumo), agrupados en la lista
-  por proveedor, y una marca de "alta rotación" para que aparezca en el
-  Conteo diario; y bajo "Compras", "Inventario" — la lista de insumos de
+  ahí se desbloquea) y "Catálogo" después: cada insumo tiene nombre, un
+  precio de referencia opcional y un proveedor opcional (el mismo
+  catálogo de proveedores en ambas áreas, y se puede crear uno nuevo al
+  vuelo desde el propio insumo), agrupados en la lista por proveedor, y
+  una marca de "alta rotación" para que aparezca en el Conteo diario. La
+  unidad de medida es un selector con solo dos opciones, Kg o Pieza — en
+  Cocina se elige libremente (Kg por default), y en Bar queda fijo en
+  Pieza y el selector se ve bloqueado, porque ahí siempre se cuenta por
+  pieza; y bajo "Compras", "Inventario" — la lista de insumos de
   Bar y Cocina agrupada por proveedor (reemplaza la hoja de cálculo que
   se usaba antes para esto), con los mismos filtros de Mes/Semana y un
   campo de cantidad por insumo. Un switch "Pedido completo" (domingo,

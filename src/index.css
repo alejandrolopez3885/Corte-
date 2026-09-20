@@ -230,6 +230,7 @@ body {
   padding: 13px 14px; font-size: 16px; font-family: inherit; color: var(--ink); width: 100%;
 }
 .num-input { font-variant-numeric: tabular-nums; }
+.text-input:disabled { background: var(--surface-alt); color: var(--ink-soft); opacity: 0.85; }
 .readonly-value {
   border: 1px solid var(--border); background: var(--surface-alt); border-radius: 12px;
   padding: 13px 14px; font-size: 16px; font-family: inherit; color: var(--ink-soft); width: 100%;

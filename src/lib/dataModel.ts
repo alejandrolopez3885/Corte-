@@ -202,6 +202,14 @@ export function migrateAppData(raw: AppData): { data: AppData; changed: boolean 
     changed = true;
   }
 
+  // Los insumos de bar solo se cuentan por pieza — si alguno quedó con
+  // otra unidad (de antes de que este campo se volviera fijo), se
+  // normaliza aquí.
+  if (data.insumos.some((i) => i.area === "bar" && i.unidad !== "pieza")) {
+    data.insumos = data.insumos.map((i) => (i.area === "bar" && i.unidad !== "pieza" ? { ...i, unidad: "pieza" } : i));
+    changed = true;
+  }
+
   const proveedores = [...data.proveedores];
   const facturas = [...data.facturas];
 
