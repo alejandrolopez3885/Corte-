@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { ArrowLeft, Trash2, Wallet } from "lucide-react";
+import { ArrowLeft, Download, Trash2, Wallet } from "lucide-react";
 import { Empty, Field, Sheet, SumInput } from "../ui";
 import { computeNominaHastaHoyPorEmpleado, computeNominaSemana, formatShortDayDate, formatWeekRange, money, resolveWeekStartDate, sumFromText, todayIso, uid } from "../../lib/dataModel";
+import { downloadNominaImage } from "../../lib/nominaImage";
 import { DAY_SHORT, NOMINA_DESCUENTO_TIPOS } from "../../lib/types";
 import type {
   EmpleadoEntry,
@@ -133,6 +134,18 @@ export function NominaPanel({
         <Empty icon={<Wallet size={26} strokeWidth={1.3} />} text="El horario de esta semana no tiene personal capturado todavía." />
       ) : (
         <>
+          <button
+            className="link-btn"
+            onClick={() =>
+              downloadNominaImage(
+                reporte,
+                `Nómina · ${month.label} · Semana ${weekIndex + 1}`,
+                `${formatWeekRange(weekStartDate)} · Sueldo bruto, sin descuentos`
+              )
+            }
+          >
+            <Download size={15} /> Descargar imagen del desglose (sueldo bruto)
+          </button>
           {reporte.map((e) => (
             <div className="nomina-emp" key={e.empleadoId}>
               <div className="nomina-emp-head">

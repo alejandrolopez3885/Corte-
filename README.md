@@ -65,7 +65,12 @@ estando en Nómina te regresa al menú de Equipo):
   el bruto acumulado solo de los días de esa semana cuya fecha ya pasó (o
   es hoy) — útil para ver a media semana cuánta nómina llevas, sin esperar
   a que termine; en una semana ya cerrada equivale al bruto completo, y en
-  una futura es $0 —, con su propio total para todo el personal). Personal
+  una futura es $0 —, con su propio total para todo el personal). Un botón
+  "Descargar imagen del desglose (sueldo bruto)" genera y descarga un PNG
+  con la nómina de esa semana sin descuentos, agrupada por área con
+  subtotales y un total general al final, imitando la hoja de cálculo que
+  se usaba antes para esto — pensado para compartirlo por WhatsApp con
+  quien paga. Personal
   sigue siendo una lista aparte del catálogo de Meseros — este es solo
   nombre, sin sueldo, para el corte.
 - **Negocio**: catálogo de proveedores (nombre y la
