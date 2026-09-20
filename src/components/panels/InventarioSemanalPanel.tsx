@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { ArrowLeft, Package } from "lucide-react";
-import { Empty, Field, NumInput, Sheet, SumInput, Toggle } from "../ui";
-import { computeInventarioFila, formatWeekRange, money, resolveWeekStartDate, sumFromText, todayIso } from "../../lib/dataModel";
-import type { InsumoEntry, InventarioFila, InventarioSemanal, InventarioSemanalMonthData, MonthData, ProveedorCatalogEntry } from "../../lib/types";
+import { Empty, Field, NumInput, Sheet, Toggle } from "../ui";
+import { formatWeekRange, money, resolveWeekStartDate, sumFromText, todayIso } from "../../lib/dataModel";
+import type { InsumoEntry, InventarioSemanal, InventarioSemanalMonthData, MonthData, ProveedorCatalogEntry } from "../../lib/types";
 
 type Modo = "completo" | "jueves";
 
@@ -46,8 +46,8 @@ export function InventarioSemanalPanel({
         <button className="link-btn back-link" onClick={onBack}>
           <ArrowLeft size={15} /> Negocio
         </button>
-        <h2 className="page-title">Pedidos a proveedores</h2>
-        <Empty icon={<Package size={26} strokeWidth={1.3} />} text="Primero crea un mes en Corte para poder llevar el inventario semanal." />
+        <h2 className="page-title">Inventario</h2>
+        <Empty icon={<Package size={26} strokeWidth={1.3} />} text="Primero crea un mes en Corte para poder llevar el inventario." />
       </div>
     );
   }
@@ -71,10 +71,9 @@ export function InventarioSemanalPanel({
       <button className="link-btn back-link" onClick={onBack}>
         <ArrowLeft size={15} /> Negocio
       </button>
-      <h2 className="page-title">Pedidos a proveedores</h2>
+      <h2 className="page-title">Inventario</h2>
       <p className="hint">
-        Domingo: cuenta completa de todos los proveedores para decidir el pedido que llega el lunes. Jueves: solo los
-        proveedores marcados abajo, para el pedido parcial que llega el viernes.
+        Domingo: cuenta completa de todos los proveedores. Jueves: solo los proveedores marcados abajo.
       </p>
 
       <div className="field-row">
@@ -169,88 +168,53 @@ function InventarioSemanaForm({
   emptyText: string;
   onGuardarSemana: (monthKey: string, weekIndex: number, inventario: InventarioSemanal) => void;
 }) {
-  const [textos, setTextos] = useState<Record<string, { inicio: string; compras: string; fin: string }>>(() => {
-    const init: Record<string, { inicio: string; compras: string; fin: string }> = {};
+  const [textos, setTextos] = useState<Record<string, string>>(() => {
+    const init: Record<string, string> = {};
     grupos.forEach((g) =>
       g.items.forEach((i) => {
         const f = semana.filas[i.id];
-        init[i.id] = {
-          inicio: f?.cantidadInicio !== undefined ? String(f.cantidadInicio) : "",
-          compras: f?.comprasSemana !== undefined ? String(f.comprasSemana) : "",
-          fin: f?.cantidadFin !== undefined ? String(f.cantidadFin) : "",
-        };
+        init[i.id] = f?.cantidad !== undefined ? String(f.cantidad) : "";
       })
     );
     return init;
   });
-  const [ventaTexto, setVentaTexto] = useState(semana.ventaSemana ? String(semana.ventaSemana) : "");
 
-  function commitCampo(insumoId: string, campo: "inicio" | "compras" | "fin", valorTexto: string) {
-    setTextos((v) => ({ ...v, [insumoId]: { ...v[insumoId], [campo]: valorTexto } }));
+  function commitCantidad(insumoId: string, valorTexto: string) {
+    setTextos((v) => ({ ...v, [insumoId]: valorTexto }));
     const n = valorTexto.trim() ? sumFromText(valorTexto) : undefined;
-    const key: keyof InventarioFila = campo === "inicio" ? "cantidadInicio" : campo === "compras" ? "comprasSemana" : "cantidadFin";
-    const prevFila = semana.filas[insumoId] || {};
-    const nextFilas = { ...semana.filas, [insumoId]: { ...prevFila, [key]: n } };
+    const nextFilas = { ...semana.filas, [insumoId]: { cantidad: n } };
     onGuardarSemana(monthKey, weekIndex, { ...semana, filas: nextFilas });
   }
 
-  function commitVenta(valorTexto: string) {
-    setVentaTexto(valorTexto);
-    onGuardarSemana(monthKey, weekIndex, { ...semana, ventaSemana: valorTexto.trim() ? sumFromText(valorTexto) : undefined });
+  if (grupos.length === 0) {
+    return <Empty icon={<Package size={26} strokeWidth={1.3} />} text={emptyText} />;
   }
 
   return (
     <>
-      <Field label="Venta total de la semana (opcional, para referencia)">
-        <SumInput value={ventaTexto} onChange={commitVenta} placeholder="0.00" />
-      </Field>
-
-      {grupos.length === 0 ? (
-        <Empty icon={<Package size={26} strokeWidth={1.3} />} text={emptyText} />
-      ) : (
-        grupos.map((g) => (
-          <div className="insumos-grupo" key={g.key}>
-            <h3 className="insumos-grupo-titulo">{g.nombre}</h3>
-            <div className="catalog-list">
-              {g.items.map((i) => {
-                const t = textos[i.id] || { inicio: "", compras: "", fin: "" };
-                const { consumo, costoConsumo } = computeInventarioFila(semana.filas[i.id], i.precio);
-                return (
-                  <div key={i.id} className="inventario-fila">
-                    <div className="inventario-fila-head">
-                      <strong>{i.nombre}</strong>
-                      <span>
-                        {i.unidad}
-                        {i.precio ? ` · ${money(i.precio)}` : ""}
-                      </span>
-                    </div>
-                    <div className="inventario-campos">
-                      <label>
-                        <span>Inicio (lun)</span>
-                        <NumInput value={t.inicio} onChange={(e) => commitCampo(i.id, "inicio", e.target.value)} placeholder="0" />
-                      </label>
-                      <label>
-                        <span>Compras</span>
-                        <NumInput value={t.compras} onChange={(e) => commitCampo(i.id, "compras", e.target.value)} placeholder="0" />
-                      </label>
-                      <label>
-                        <span>Fin (dom)</span>
-                        <NumInput value={t.fin} onChange={(e) => commitCampo(i.id, "fin", e.target.value)} placeholder="0" />
-                      </label>
-                    </div>
-                    {(t.inicio || t.compras || t.fin) && (
-                      <p className="inventario-resumen">
-                        Consumo: {consumo} {i.unidad}
-                        {i.precio ? ` · ${money(costoConsumo)}` : ""}
-                      </p>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+      {grupos.map((g) => (
+        <div className="insumos-grupo" key={g.key}>
+          <h3 className="insumos-grupo-titulo">{g.nombre}</h3>
+          <div className="catalog-list">
+            {g.items.map((i) => (
+              <div key={i.id} className="catalog-row conteo-row">
+                <div>
+                  <strong>{i.nombre}</strong>
+                  <span>
+                    {i.unidad}
+                    {i.precio ? ` · ${money(i.precio)}` : ""}
+                  </span>
+                </div>
+                <NumInput
+                  value={textos[i.id] ?? ""}
+                  onChange={(e) => commitCantidad(i.id, e.target.value)}
+                  placeholder="0"
+                />
+              </div>
+            ))}
           </div>
-        ))
-      )}
+        </div>
+      ))}
     </>
   );
 }

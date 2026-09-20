@@ -546,8 +546,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
     persist(next);
   }
 
-  // Inventario semanal para pedidos a proveedores (Negocio > Pedidos a
-  // proveedores) — mismas semanas que Horarios/Nómina.
+  // Inventario semanal (Negocio > Inventario) — mismas semanas que Horarios/Nómina.
   function saveInventarioSemanal(monthKey: string, weekIndex: number, inventario: InventarioSemanal) {
     if (!data) return;
     const next = structuredClone(data);
@@ -762,8 +761,8 @@ export default function CortesApp({ profile }: { profile: Profile }) {
                 <ShoppingCart size={20} />
               </span>
               <span className="menu-item-text">
-                <strong>Pedidos a proveedores</strong>
-                <span>Inventario semanal de Bar y Cocina, agrupado por proveedor</span>
+                <strong>Inventario</strong>
+                <span>Insumos de Bar y Cocina, agrupados por proveedor</span>
               </span>
             </button>
           </div>

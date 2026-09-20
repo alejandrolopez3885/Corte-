@@ -207,22 +207,17 @@ export interface InsumoEntry {
   altaRotacion?: boolean;
 }
 
-// Inventario semanal para pedidos (Negocio > Pedidos a proveedores) — una
-// fila por insumo, por semana (mismas semanas que Corte). Domingo: cantidad
-// inicio/fin y compras de TODOS los proveedores, para decidir el pedido
-// completo que llega el lunes. Jueves: mismo formato, pero solo de los
-// proveedores marcados incluyeJueves, para el pedido parcial que llega el
-// viernes — ambos ciclos caen dentro de la misma semana Lunes-Domingo, así
-// que comparten la misma fila.
+// Inventario semanal (Negocio > Inventario) — una fila por insumo, por
+// semana (mismas semanas que Corte). Domingo: cantidad de TODOS los
+// proveedores. Jueves: mismo formato, pero solo de los proveedores
+// marcados incluyeJueves — ambos caen dentro de la misma semana
+// Lunes-Domingo, así que comparten la misma fila.
 export interface InventarioFila {
-  cantidadInicio?: number;
-  comprasSemana?: number;
-  cantidadFin?: number;
+  cantidad?: number;
 }
 
 export interface InventarioSemanal {
   filas: Record<string, InventarioFila>; // insumoId -> fila
-  ventaSemana?: number; // capturado a mano, para comparar costo de consumo contra venta más adelante
 }
 
 export interface InventarioSemanalMonthData {

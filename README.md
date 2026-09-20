@@ -86,26 +86,17 @@ estando en Nómina te regresa al menú de Equipo):
   opcional (el mismo catálogo de proveedores en ambas áreas, y se puede
   crear uno nuevo al vuelo desde el propio insumo), agrupados en la lista
   por proveedor, y una marca de "alta rotación" para que aparezca en el
-  Conteo diario; y bajo "Compras", "Pedidos a proveedores" — el inventario
-  semanal que reemplaza la hoja de cálculo que se usaba antes, combinando
-  insumos de Bar y Cocina agrupados por proveedor. Mismos filtros de
-  Mes/Semana; un switch "Pedido completo" (domingo, cuenta todos los
-  proveedores, para decidir el pedido que llega el lunes) / "Pedido
-  jueves" (solo los proveedores marcados con "también se pide los
-  jueves" desde ahí mismo, sin necesitar una pantalla de Proveedores
-  aparte, para el pedido parcial que llega el viernes). Por insumo:
-  Cantidad inicio (lunes), Compras semana y Cantidad fin (domingo), con
-  Consumo y Costo de consumo calculados solos con el precio de
-  referencia — igual que las celdas verdes de la hoja anterior. A
-  diferencia de Conteo diario, aquí no hay bloqueo al guardar: cada celda
-  se guarda sola al salir de ella, porque es una hoja que se llena en
-  momentos distintos de la semana (inicio el lunes, compras el jueves,
-  fin el domingo), igual que ya funcionan Horarios y los descuentos de
-  Nómina. También hay un campo para la venta total de la semana
-  (opcional, capturada a mano) — por ahora solo se guarda junto al
-  inventario; comparar el costo de consumo contra la venta queda para la
-  fase de Dashboard. El resto (costo de consumo comparado con Utilidad)
-  sigue pendiente.
+  Conteo diario; y bajo "Compras", "Inventario" — la lista de insumos de
+  Bar y Cocina agrupada por proveedor (reemplaza la hoja de cálculo que
+  se usaba antes para esto), con los mismos filtros de Mes/Semana y un
+  campo de cantidad por insumo. Un switch "Pedido completo" (domingo,
+  cuenta todos los proveedores) / "Pedido jueves" (solo los proveedores
+  marcados con "también se pide los jueves" desde ahí mismo, sin
+  necesitar una pantalla de Proveedores aparte) decide qué insumos se
+  muestran. Cada cantidad se guarda sola al salir del campo, sin botón
+  "Guardar" ni bloqueo — igual que ya funcionan Horarios y los
+  descuentos de Nómina. El manejo de compras/pedidos en sí (qué se pidió,
+  cuánto, si llegó) se deja para más adelante, aparte de esto.
 - **Dashboard**: reporte de resultados de la semana, solo para leer (con
   porcentajes sobre la venta total): Venta total, Gastos operativos (suma
   los de efectivo categorizados como Operación más los de transferencia),

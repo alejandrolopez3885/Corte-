@@ -316,18 +316,6 @@ body {
   margin-bottom: 4px;
 }
 
-.inventario-fila {
-  display: flex; flex-direction: column; gap: 8px;
-  background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 10px 14px;
-}
-.inventario-fila-head { display: flex; flex-direction: column; gap: 2px; }
-.inventario-fila-head span { font-size: 12px; color: var(--ink-soft); }
-.inventario-campos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-.inventario-campos label { display: flex; flex-direction: column; gap: 4px; }
-.inventario-campos label span { font-size: 11px; color: var(--ink-soft); }
-.inventario-campos input.num-input { width: 100%; text-align: right; padding: 9px 10px; }
-.inventario-resumen { margin: 0; font-size: 12px; color: var(--ink-soft); }
-
 /* ---- Secciones de nivel superior (Equipo, Negocio) ---- */
 .page-section { padding: 6px 20px 60px; display: flex; flex-direction: column; gap: 14px; }
 .page-title { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 600; margin: 4px 0 0; }

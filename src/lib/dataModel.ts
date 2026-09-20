@@ -1,4 +1,4 @@
-import { DAYS, GASTO_CATEGORIAS, HORARIO_AREAS_FIJAS, type AppData, type DayData, type DayName, type EmpleadoEntry, type GastoCategoria, type HorarioFila, type HorarioMonthData, type HorarioSemana, type InventarioFila, type MeseroCatalogEntry, type MeseroCut, type MonthData, type NominaDescuento, type NominaDescuentosSemana, type NominaDia, type NominaEmpleadoSemana, type VentaProyeccion, type WeekData, type WeekTrendPoint } from "./types";
+import { DAYS, GASTO_CATEGORIAS, HORARIO_AREAS_FIJAS, type AppData, type DayData, type DayName, type EmpleadoEntry, type GastoCategoria, type HorarioFila, type HorarioMonthData, type HorarioSemana, type MeseroCatalogEntry, type MeseroCut, type MonthData, type NominaDescuento, type NominaDescuentosSemana, type NominaDia, type NominaEmpleadoSemana, type VentaProyeccion, type WeekData, type WeekTrendPoint } from "./types";
 
 export const uid = (): string => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 
@@ -735,19 +735,3 @@ export function computeVentaProyeccion(puntos: WeekTrendPoint[]): VentaProyeccio
   return { monto, confiable: n >= 3, semanasBase: n, tendenciaSemanal };
 }
 
-// Columnas calculadas del inventario semanal (Negocio > Pedidos a
-// proveedores), igual que las celdas verdes de la hoja de cálculo que se
-// usaba antes: consumo = lo que entró menos lo que quedó, y su valor en
-// pesos con el precio de referencia del insumo.
-export function computeInventarioFila(fila: InventarioFila | undefined, precio: number | undefined) {
-  const cantidadInicio = fila?.cantidadInicio || 0;
-  const comprasSemana = fila?.comprasSemana || 0;
-  const cantidadFin = fila?.cantidadFin || 0;
-  const p = precio || 0;
-  const consumo = round2(cantidadInicio + comprasSemana - cantidadFin);
-  return {
-    valorFin: round2(cantidadFin * p),
-    consumo,
-    costoConsumo: round2(consumo * p),
-  };
-}
