@@ -302,6 +302,7 @@ export function migrateAppData(raw: AppData): { data: AppData; changed: boolean 
   const VERDURAS_A_SEMBRAR = [
     "Zanahoria", "Jalapeño", "Tomate bola", "Cebolla blanca", "Cebolla morada",
     "Papa blanca", "Tomatillo", "Cilantro", "Coliflor", "Piña", "Limón", "Naranja",
+    "Jamaica", "Lechuga orejona", "Lechuga romana",
   ];
   const yaExisteVerdura = (nombre: string) =>
     data.insumos.some((i) => i.area === "cocina" && i.nombre.trim().toLowerCase() === nombre.toLowerCase());
