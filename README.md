@@ -74,13 +74,19 @@ estando en Nómina te regresa al menú de Equipo):
   ahí compras como opción hermana más adelante), con dos piezas
   construidas, en este orden: "Conteo diario" primero (lista solo los
   insumos de esa área marcados de alta rotación en el catálogo, con un
-  campo para capturar cuánto queda hoy de cada uno, guardado por fecha
-  real — cada día tiene su propio conteo y no se pisa con el de ayer) y
-  "Catálogo" después: cada insumo tiene nombre, unidad de medida, un
-  precio de referencia opcional y un proveedor opcional (el mismo
-  catálogo de proveedores en ambas áreas, y se puede crear uno nuevo al
-  vuelo desde el propio insumo), agrupados en la lista por proveedor, y
-  una marca de "alta rotación" para que aparezca en el Conteo diario. El
+  campo para capturar cuánto queda; usa los mismos filtros de Mes/Semana
+  y los mismos chips de día que ya se usan en Corte, así que se puede
+  entrar y revisar o capturar el conteo de cualquier día, no solo el de
+  hoy, y cada día se guarda por separado por su fecha real. En cuanto se
+  guarda un conteo, sus campos quedan bloqueados para evitar ediciones
+  accidentales; para corregirlo hay que tocar "Editar", confirmar un
+  aviso de que no debería modificarse salvo que sea necesario, y recién
+  ahí se desbloquea) y "Catálogo" después: cada insumo tiene nombre,
+  unidad de medida, un precio de referencia opcional y un proveedor
+  opcional (el mismo catálogo de proveedores en ambas áreas, y se puede
+  crear uno nuevo al vuelo desde el propio insumo), agrupados en la lista
+  por proveedor, y una marca de "alta rotación" para que aparezca en el
+  Conteo diario. El
   resto (compras, costo de consumo) sigue pendiente.
 - **Dashboard**: reporte de resultados de la semana, solo para leer (con
   porcentajes sobre la venta total): Venta total, Gastos operativos (suma

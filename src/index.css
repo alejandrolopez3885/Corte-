@@ -301,6 +301,20 @@ body {
 .catalog-row-button { width: 100%; text-align: left; cursor: pointer; font: inherit; color: inherit; }
 .conteo-row { gap: 10px; }
 .conteo-row input.num-input { width: 88px; flex-shrink: 0; text-align: right; }
+.num-input:disabled { background: var(--surface-alt); color: var(--ink-soft); opacity: 0.85; }
+
+.conteo-locked-banner {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  background: var(--warn-soft); color: var(--warn); border-radius: 12px; padding: 10px 14px; font-size: 13px;
+}
+.conteo-locked-banner .link-btn { color: var(--warn); font-weight: 600; padding: 0; flex-shrink: 0; }
+
+.btn-warn {
+  background: var(--warn); color: white; border: none; border-radius: 100px;
+  padding: 13px 20px; font-size: 15px; font-weight: 600; width: 100%;
+  display: flex; align-items: center; justify-content: center; gap: 7px; cursor: pointer;
+  margin-bottom: 4px;
+}
 
 /* ---- Secciones de nivel superior (Equipo, Negocio) ---- */
 .page-section { padding: 6px 20px 60px; display: flex; flex-direction: column; gap: 14px; }

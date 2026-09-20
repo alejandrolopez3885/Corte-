@@ -2,7 +2,7 @@ import { useState } from "react";
 import { ArrowLeft, ClipboardList, Martini, Package } from "lucide-react";
 import { InsumosPanel } from "./InsumosPanel";
 import { ConteoDiarioPanel } from "./ConteoDiarioPanel";
-import type { InsumoEntry, ProveedorCatalogEntry } from "../../lib/types";
+import type { InsumoEntry, MonthData, ProveedorCatalogEntry } from "../../lib/types";
 
 type ControlBarView = "menu" | "catalogo" | "conteo";
 
@@ -12,7 +12,11 @@ export function ControlBarPanel({
   proveedores,
   onSaveInsumo,
   onRemoveInsumo,
-  conteoHoy,
+  months,
+  monthKeys,
+  initialMonthKey,
+  initialWeekIndex,
+  conteosDiarios,
   onGuardarConteo,
 }: {
   onBack: () => void;
@@ -20,7 +24,11 @@ export function ControlBarPanel({
   proveedores: ProveedorCatalogEntry[];
   onSaveInsumo: (entry: InsumoEntry, nuevoProveedor?: ProveedorCatalogEntry) => void;
   onRemoveInsumo: (id: string) => void;
-  conteoHoy: Record<string, number>;
+  months: Record<string, MonthData>;
+  monthKeys: string[];
+  initialMonthKey: string;
+  initialWeekIndex: number;
+  conteosDiarios: Record<string, Record<string, number>>;
   onGuardarConteo: (fecha: string, valores: Record<string, number>) => void;
 }) {
   const [view, setView] = useState<ControlBarView>("menu");
@@ -51,7 +59,11 @@ export function ControlBarPanel({
         emptyIcon={<Martini size={26} strokeWidth={1.3} />}
         emptyText="Aún no marcas insumos de bar como alta rotación. Márcalos desde el Catálogo para que aparezcan aquí."
         insumos={insumosBar.filter((i) => i.altaRotacion)}
-        conteoHoy={conteoHoy}
+        months={months}
+        monthKeys={monthKeys}
+        initialMonthKey={initialMonthKey}
+        initialWeekIndex={initialWeekIndex}
+        conteosDiarios={conteosDiarios}
         onGuardar={onGuardarConteo}
       />
     );

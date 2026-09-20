@@ -780,7 +780,11 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           proveedores={data.proveedores}
           onSaveInsumo={upsertInsumo}
           onRemoveInsumo={removeInsumo}
-          conteoHoy={data.conteosDiarios[todayIso()] || {}}
+          months={data.months}
+          monthKeys={monthKeys}
+          initialMonthKey={mostRecentMonthKey as string}
+          initialWeekIndex={mostRecentWeekIdx}
+          conteosDiarios={data.conteosDiarios}
           onGuardarConteo={guardarConteoDiario}
         />
       )}
@@ -792,7 +796,11 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           proveedores={data.proveedores}
           onSaveInsumo={upsertInsumo}
           onRemoveInsumo={removeInsumo}
-          conteoHoy={data.conteosDiarios[todayIso()] || {}}
+          months={data.months}
+          monthKeys={monthKeys}
+          initialMonthKey={mostRecentMonthKey as string}
+          initialWeekIndex={mostRecentWeekIdx}
+          conteosDiarios={data.conteosDiarios}
           onGuardarConteo={guardarConteoDiario}
         />
       )}
