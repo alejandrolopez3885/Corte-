@@ -34,9 +34,15 @@ estando en Nómina te regresa al menú de Equipo):
   meseros — solo nombre, para elegir a quién le haces el corte en Corte;
   vive aquí porque también son parte de tu equipo, aunque su lista está
   separada de Personal), y como páginas propias "Personal" (la lista de tu
-  personal — nombre y sueldo diario; se agrega con un botón "+" en vez de
-  tener el formulario siempre abierto, y tocar a alguien lo abre para
-  editar o eliminar), "Horarios" (arma el horario
+  personal — nombre, sueldo diario y un puesto opcional (Gerente, Mesero,
+  Cocinero, ...); la lista se agrupa sola por área según el puesto de cada
+  quien. Áreas y puestos son catálogos editables — arrancan con Gerencia
+  (Gerente, Subgerente), Piso (Barra, Mesero, Calidad) y Cocina (Jefe de
+  cocina, Cocinero) como punto de partida, y se puede crear un puesto
+  nuevo (y de paso un área nueva, si hace falta) al vuelo desde el propio
+  empleado, igual que un insumo puede crear su proveedor al vuelo. Se
+  agrega con un botón "+" en vez de tener el formulario siempre abierto,
+  y tocar a alguien lo abre para editar o eliminar), "Horarios" (arma el horario
   semanal en dos áreas fijas, PISO y COCINA — no se pueden crear, renombrar
   ni borrar áreas — usando las mismas semanas de Corte; un toque en la
   celda cicla OFF → O → X → Z, y al llegar a Z se abre un modal para

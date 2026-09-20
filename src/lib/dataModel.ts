@@ -1,4 +1,4 @@
-import { DAYS, GASTO_CATEGORIAS, HORARIO_AREAS_FIJAS, type AppData, type DayData, type DayName, type EmpleadoEntry, type GastoCategoria, type HorarioFila, type HorarioMonthData, type HorarioSemana, type MeseroCatalogEntry, type MeseroCut, type MonthData, type NominaDescuento, type NominaDescuentosSemana, type NominaDia, type NominaEmpleadoSemana, type VentaProyeccion, type WeekData, type WeekTrendPoint } from "./types";
+import { DAYS, GASTO_CATEGORIAS, HORARIO_AREAS_FIJAS, type AppData, type AreaEntry, type DayData, type DayName, type EmpleadoEntry, type GastoCategoria, type HorarioFila, type HorarioMonthData, type HorarioSemana, type MeseroCatalogEntry, type MeseroCut, type MonthData, type NominaDescuento, type NominaDescuentosSemana, type NominaDia, type NominaEmpleadoSemana, type PuestoEntry, type VentaProyeccion, type WeekData, type WeekTrendPoint } from "./types";
 
 export const uid = (): string => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 
@@ -153,9 +153,30 @@ export function buildMonth(monthKey: string, week1Start?: string): MonthData {
   };
 }
 
+// Áreas y puestos con los que arranca cualquier negocio nuevo — Gerencia
+// (Gerente, Subgerente), Piso (Barra, Mesero, Calidad) y Cocina (Jefe de
+// cocina, Cocinero). Editable después desde Personal, esto es solo el
+// punto de partida para no empezar de cero.
+function seedAreasYPuestos(): { areas: AreaEntry[]; puestos: PuestoEntry[] } {
+  const gerencia: AreaEntry = { id: uid(), nombre: "Gerencia" };
+  const piso: AreaEntry = { id: uid(), nombre: "Piso" };
+  const cocina: AreaEntry = { id: uid(), nombre: "Cocina" };
+  const puestos: PuestoEntry[] = [
+    { id: uid(), nombre: "Gerente", areaId: gerencia.id },
+    { id: uid(), nombre: "Subgerente", areaId: gerencia.id },
+    { id: uid(), nombre: "Barra", areaId: piso.id },
+    { id: uid(), nombre: "Mesero", areaId: piso.id },
+    { id: uid(), nombre: "Calidad", areaId: piso.id },
+    { id: uid(), nombre: "Jefe de cocina", areaId: cocina.id },
+    { id: uid(), nombre: "Cocinero", areaId: cocina.id },
+  ];
+  return { areas: [gerencia, piso, cocina], puestos };
+}
+
 export function defaultData(): AppData {
+  const { areas, puestos } = seedAreasYPuestos();
   return {
-    meseros: [], empleados: [], proveedores: [], facturas: [], months: {}, horarios: {}, nominaDescuentos: {},
+    meseros: [], empleados: [], areas, puestos, proveedores: [], facturas: [], months: {}, horarios: {}, nominaDescuentos: {},
     insumos: [], conteosDiarios: {}, inventarioSemanal: {},
   };
 }
@@ -171,6 +192,12 @@ export function migrateAppData(raw: AppData): { data: AppData; changed: boolean 
 
   if (!data.empleados) {
     data.empleados = [];
+    changed = true;
+  }
+  if (!data.areas || !data.puestos) {
+    const seed = seedAreasYPuestos();
+    data.areas = data.areas || seed.areas;
+    data.puestos = data.puestos || seed.puestos;
     changed = true;
   }
   if (!data.proveedores) {

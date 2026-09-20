@@ -12,14 +12,32 @@ export interface MeseroCatalogEntry {
   nombre: string;
 }
 
+// Área/categoría a la que pertenece un puesto (Gerencia, Piso, Cocina, lo
+// que se vaya necesitando) — catálogo editable, crece igual que
+// Proveedores: se crea al vuelo desde el propio puesto en Personal.
+export interface AreaEntry {
+  id: string;
+  nombre: string;
+}
+
+// Puesto específico de una persona (Gerente, Mesero, Cocinero, ...),
+// ligado a un área. También editable, se crea al vuelo desde Personal.
+export interface PuestoEntry {
+  id: string;
+  nombre: string;
+  areaId: string;
+}
+
 // Lista de personal, separada del catálogo de meseros (ese es para el
 // corte). sueldoDiario es la base para calcular la nómina a partir de
 // Horarios — el sueldo semanal completo (6 días trabajados + 1 de
-// descanso pagado) siempre es sueldoDiario × 7.
+// descanso pagado) siempre es sueldoDiario × 7. puestoId es opcional
+// (Gerente, Mesero, Cocinero, ...) y determina el área a la que pertenece.
 export interface EmpleadoEntry {
   id: string;
   nombre: string;
   sueldoDiario?: number;
+  puestoId?: string;
 }
 
 // Valores rápidos para una celda de horario — el resto de las celdas
@@ -276,6 +294,9 @@ export interface MonthData {
 export interface AppData {
   meseros: MeseroCatalogEntry[];
   empleados: EmpleadoEntry[];
+  // Áreas y puestos de Personal (Equipo > Personal) — ver AreaEntry/PuestoEntry.
+  areas: AreaEntry[];
+  puestos: PuestoEntry[];
   proveedores: ProveedorCatalogEntry[];
   facturas: FacturaProveedor[];
   months: Record<string, MonthData>;

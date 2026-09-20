@@ -13,7 +13,7 @@ import {
 } from "../lib/dataModel";
 import { useStaffAssignments } from "../lib/staffAssignments";
 import { DAYS, DAY_SHORT } from "../lib/types";
-import type { CreditoProveedores, DayData, DayName, EmpleadoEntry, Gasto, GastoCategoria, HorarioSemana, InsumoEntry, InventarioSemanal, MeseroCatalogEntry, MeseroCut, NominaDescuento, Profile, ProveedorCatalogEntry, Transferencia, WeekData } from "../lib/types";
+import type { AreaEntry, CreditoProveedores, DayData, DayName, EmpleadoEntry, Gasto, GastoCategoria, HorarioSemana, InsumoEntry, InventarioSemanal, MeseroCatalogEntry, MeseroCut, NominaDescuento, Profile, ProveedorCatalogEntry, PuestoEntry, Transferencia, WeekData } from "../lib/types";
 import { Empty } from "../components/ui";
 import { MonthModal } from "../components/modals/MonthModal";
 import { MeseroModal, type MeseroFormValues } from "../components/modals/MeseroModal";
@@ -326,10 +326,15 @@ export default function CortesApp({ profile }: { profile: Profile }) {
   }
 
   // Lista de personal (Equipo) — separada del catálogo de meseros, que es
-  // solo para el corte.
-  function upsertEmpleado(entry: EmpleadoEntry) {
+  // solo para el corte. Si se crea un puesto (y, dentro de eso, un área)
+  // nuevos desde el propio modal, van en el mismo structuredClone(data) +
+  // persist que el empleado — misma razón que insumo+proveedor: una sola
+  // escritura atómica, para no perder nada por partir de datos viejos.
+  function upsertEmpleado(entry: EmpleadoEntry, nuevaArea?: AreaEntry, nuevoPuesto?: PuestoEntry) {
     if (!data) return;
     const next = structuredClone(data);
+    if (nuevaArea) next.areas.push(nuevaArea);
+    if (nuevoPuesto) next.puestos.push(nuevoPuesto);
     const idx = next.empleados.findIndex((e) => e.id === entry.id);
     if (idx >= 0) next.empleados[idx] = entry;
     else next.empleados.push(entry);
@@ -683,6 +688,8 @@ export default function CortesApp({ profile }: { profile: Profile }) {
       {isOwner && activeTab === "equipo" && equipoView === "personal" && (
         <EmpleadosPanel
           empleados={data.empleados}
+          areas={data.areas}
+          puestos={data.puestos}
           onAdd={() => setModal({ type: "empleado" })}
           onEdit={(entry) => setModal({ type: "empleado", editing: entry })}
           onBack={() => setEquipoView("menu")}
@@ -1265,6 +1272,8 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           onSave={upsertEmpleado}
           onDelete={modal.editing ? () => removeEmpleado((modal.editing as EmpleadoEntry).id) : undefined}
           editing={modal.editing}
+          areas={data.areas}
+          puestos={data.puestos}
         />
       )}
       {modal?.type === "deleteMonth" && (
