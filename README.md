@@ -70,13 +70,15 @@ estando en Nómina te regresa al menú de Equipo):
   minigráfica (Venta total, Utilidad, Margen, Gastos totales, Nómina), una
   gráfica de venta con la proyección marcada aparte, y una tabla detallada
   por semana; bajo "Bar", "Control de Bar"; y bajo "Cocina", "Control de
-  Cocina" — las dos con la misma primera pieza construida, el catálogo de
-  insumos: cada insumo tiene nombre, unidad de medida y un proveedor
-  opcional (el mismo catálogo de proveedores en ambas áreas, y se puede
-  crear uno nuevo al vuelo desde el propio insumo), agrupados en la lista
-  por proveedor, y una marca de "alta rotación" para el conteo diario que
-  se construirá después. El resto de Control de Bar/Cocina (compras,
-  conteo de inventario, costo de consumo) sigue pendiente.
+  Cocina" — las dos abren primero a un menú propio (para poder ir sumando
+  ahí compras y conteo de inventario como opciones hermanas más adelante),
+  con la primera pieza construida como opción "Catálogo": cada insumo
+  tiene nombre, unidad de medida, un precio de referencia opcional y un
+  proveedor opcional (el mismo catálogo de proveedores en ambas áreas, y
+  se puede crear uno nuevo al vuelo desde el propio insumo), agrupados en
+  la lista por proveedor, y una marca de "alta rotación" para el conteo
+  diario que se construirá después. El resto de Control de Bar/Cocina
+  (compras, conteo de inventario, costo de consumo) sigue pendiente.
 - **Dashboard**: reporte de resultados de la semana, solo para leer (con
   porcentajes sobre la venta total): Venta total, Gastos operativos (suma
   los de efectivo categorizados como Operación más los de transferencia),

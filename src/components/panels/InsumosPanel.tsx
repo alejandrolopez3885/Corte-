@@ -1,11 +1,13 @@
 import { useState, type ReactNode } from "react";
 import { ArrowLeft, Plus } from "lucide-react";
 import { Empty } from "../ui";
+import { money } from "../../lib/dataModel";
 import { InsumoModal } from "../modals/InsumoModal";
 import type { InsumoArea, InsumoEntry, ProveedorCatalogEntry } from "../../lib/types";
 
 export function InsumosPanel({
   onBack,
+  backLabel,
   area,
   title,
   emptyIcon,
@@ -16,6 +18,7 @@ export function InsumosPanel({
   onRemoveInsumo,
 }: {
   onBack: () => void;
+  backLabel: string;
   area: InsumoArea;
   title: string;
   emptyIcon: ReactNode;
@@ -47,7 +50,7 @@ export function InsumosPanel({
   return (
     <div className="page-section">
       <button className="link-btn back-link" onClick={onBack}>
-        <ArrowLeft size={15} /> Negocio
+        <ArrowLeft size={15} /> {backLabel}
       </button>
       <div className="page-title-row">
         <h2 className="page-title">{title}</h2>
@@ -70,6 +73,7 @@ export function InsumosPanel({
                     <strong>{i.nombre}</strong>
                     <span>
                       {i.unidad}
+                      {i.precio ? ` · ${money(i.precio)}` : ""}
                       {i.altaRotacion ? " · alta rotación" : ""}
                     </span>
                   </div>

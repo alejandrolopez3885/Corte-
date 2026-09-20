@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { Sheet, Field, Toggle } from "../ui";
-import { uid } from "../../lib/dataModel";
+import { Sheet, Field, SumInput, Toggle } from "../ui";
+import { sumFromText, uid } from "../../lib/dataModel";
 import type { InsumoArea, InsumoEntry, ProveedorCatalogEntry } from "../../lib/types";
 
 const NUEVO_PROVEEDOR = "__nuevo__";
@@ -22,6 +22,7 @@ export function InsumoModal({
 }) {
   const [nombre, setNombre] = useState(editing?.nombre || "");
   const [unidad, setUnidad] = useState(editing?.unidad || "");
+  const [precioText, setPrecioText] = useState(editing?.precio ? String(editing.precio) : "");
   const [proveedorId, setProveedorId] = useState(editing?.proveedorId || "");
   const [nuevoProveedor, setNuevoProveedor] = useState("");
   const [altaRotacion, setAltaRotacion] = useState(editing?.altaRotacion || false);
@@ -45,6 +46,7 @@ export function InsumoModal({
         area,
         nombre: nombre.trim(),
         unidad: unidad.trim(),
+        precio: sumFromText(precioText) || undefined,
         proveedorId: finalProveedorId,
         altaRotacion,
       },
@@ -79,6 +81,9 @@ export function InsumoModal({
           <option value="caja" />
           <option value="paquete" />
         </datalist>
+      </Field>
+      <Field label="Precio de referencia (opcional, por unidad)">
+        <SumInput value={precioText} onChange={setPrecioText} placeholder="0.00" />
       </Field>
       <Field label="Proveedor (opcional)">
         <select className="text-input" value={proveedorId} onChange={(e) => setProveedorId(e.target.value)}>

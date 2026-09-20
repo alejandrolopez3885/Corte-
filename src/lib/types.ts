@@ -198,6 +198,7 @@ export interface InsumoEntry {
   area: InsumoArea;
   nombre: string;
   unidad: string;
+  precio?: number;
   proveedorId?: string;
   altaRotacion?: boolean;
 }
