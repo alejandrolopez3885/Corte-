@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import {
   Plus, Settings2, Users, Receipt, ArrowLeftRight, CircleDot, Circle, Pencil,
-  Smartphone, BarChart3, LogOut, Truck, Trash2, Home, Store, LayoutDashboard, Contact, Clock, Wallet, ChartLine, Martini,
+  Smartphone, BarChart3, LogOut, Truck, Trash2, Home, Store, LayoutDashboard, Contact, Clock, Wallet, ChartLine, Martini, ChefHat,
 } from "lucide-react";
 import { useAuth } from "../lib/auth.tsx";
 import { useAppData } from "../lib/useAppData";
@@ -32,6 +32,7 @@ import { HorariosPanel } from "../components/panels/HorariosPanel";
 import { NominaPanel } from "../components/panels/NominaPanel";
 import { TendenciasPanel } from "../components/panels/TendenciasPanel";
 import { ControlBarPanel } from "../components/panels/ControlBarPanel";
+import { ControlCocinaPanel } from "../components/panels/ControlCocinaPanel";
 
 type ModalState =
   | { type: "month" }
@@ -50,7 +51,7 @@ type ModalState =
 
 type EquipoView = "menu" | "personal" | "horarios" | "nomina";
 
-type NegocioView = "menu" | "tendencias" | "controlBar";
+type NegocioView = "menu" | "tendencias" | "controlBar" | "controlCocina";
 
 type OwnerTab = "corte" | "equipo" | "negocio" | "dashboard";
 
@@ -714,6 +715,19 @@ export default function CortesApp({ profile }: { profile: Profile }) {
               </span>
             </button>
           </div>
+
+          <h3 className="menu-subtitle">Cocina</h3>
+          <div className="menu-list">
+            <button className="menu-item" onClick={() => setNegocioView("controlCocina")}>
+              <span className="menu-item-icon">
+                <ChefHat size={20} />
+              </span>
+              <span className="menu-item-text">
+                <strong>Control de Cocina</strong>
+                <span>Próximamente</span>
+              </span>
+            </button>
+          </div>
         </div>
       )}
 
@@ -729,6 +743,10 @@ export default function CortesApp({ profile }: { profile: Profile }) {
 
       {isOwner && activeTab === "negocio" && negocioView === "controlBar" && (
         <ControlBarPanel onBack={() => setNegocioView("menu")} />
+      )}
+
+      {isOwner && activeTab === "negocio" && negocioView === "controlCocina" && (
+        <ControlCocinaPanel onBack={() => setNegocioView("menu")} />
       )}
 
       {isOwner && activeTab === "dashboard" && (
