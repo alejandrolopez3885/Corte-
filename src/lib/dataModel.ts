@@ -1,4 +1,4 @@
-import { DAYS, GASTO_CATEGORIAS, HORARIO_AREAS_FIJAS, type AppData, type AreaEntry, type DayData, type DayName, type EmpleadoEntry, type GastoCategoria, type HorarioFila, type HorarioMonthData, type HorarioSemana, type MeseroCatalogEntry, type MeseroCut, type MonthData, type NominaDescuento, type NominaDescuentosSemana, type NominaDia, type NominaEmpleadoSemana, type PuestoEntry, type VentaProyeccion, type WeekData, type WeekTrendPoint } from "./types";
+import { DAYS, GASTO_CATEGORIAS, HORARIO_AREAS_FIJAS, type AppData, type AreaEntry, type DayData, type DayName, type EmpleadoEntry, type GastoCategoria, type HorarioFila, type HorarioMonthData, type HorarioSemana, type InsumoArea, type MeseroCatalogEntry, type MeseroCut, type MonthData, type NominaDescuento, type NominaDescuentosSemana, type NominaDia, type NominaEmpleadoSemana, type PuestoEntry, type VentaProyeccion, type WeekData, type WeekTrendPoint } from "./types";
 
 export const uid = (): string => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 
@@ -295,38 +295,52 @@ export function migrateAppData(raw: AppData): { data: AppData; changed: boolean 
   data.proveedores = proveedores;
   data.facturas = facturas;
 
-  // Insumos de verdura que el dueño ya llevaba en papel (proveedor
-  // "Verdura") — se siembran una sola vez si no existen ya en el catálogo
-  // de Cocina, por nombre, para no duplicarlos en cuentas donde ya se
-  // hayan dado de alta a mano.
-  const VERDURAS_A_SEMBRAR = [
+  // Insumos que el dueño ya llevaba en papel, agrupados por proveedor —
+  // se siembran una sola vez si no existen ya en el catálogo de esa área
+  // (por nombre, sin importar mayúsculas), para no duplicarlos en cuentas
+  // donde ya se hayan dado de alta a mano.
+  if (sembrarInsumosPorProveedor(data, "cocina", "kg", "Verdura", [
     "Zanahoria", "Jalapeño", "Tomate bola", "Cebolla blanca", "Cebolla morada",
     "Papa blanca", "Tomatillo", "Cilantro", "Coliflor", "Piña", "Limón", "Naranja",
     "Jamaica", "Lechuga orejona", "Lechuga romana",
-  ];
-  const yaExisteVerdura = (nombre: string) =>
-    data.insumos.some((i) => i.area === "cocina" && i.nombre.trim().toLowerCase() === nombre.toLowerCase());
-  const verdurasFaltantes = VERDURAS_A_SEMBRAR.filter((n) => !yaExisteVerdura(n));
-  if (verdurasFaltantes.length > 0) {
-    let proveedorVerdura = data.proveedores.find((p) => p.nombre.trim().toLowerCase() === "verdura");
-    if (!proveedorVerdura) {
-      proveedorVerdura = { id: uid(), nombre: "Verdura" };
-      data.proveedores = [...data.proveedores, proveedorVerdura];
-    }
-    data.insumos = [
-      ...data.insumos,
-      ...verdurasFaltantes.map((nombre) => ({
-        id: uid(),
-        area: "cocina" as const,
-        nombre,
-        unidad: "kg",
-        proveedorId: proveedorVerdura.id,
-      })),
-    ];
+  ])) {
+    changed = true;
+  }
+  if (sembrarInsumosPorProveedor(data, "bar", "pieza", "Limonadas", [
+    "Limón", "Mango", "Fresa", "Maracuyá", "Frutos rojos", "Pepino",
+    "Concentrado de piña", "Concentrado de tamarindo", "Concentrado de sandía", "Concentrado de mora",
+  ])) {
     changed = true;
   }
 
   return { data, changed };
+}
+
+// Agrega los insumos de `nombres` a `data.insumos` bajo el proveedor
+// `proveedorNombre` (lo crea si no existe), pero solo los que no existan
+// ya en esa área (comparando por nombre, sin importar mayúsculas).
+// Devuelve true si agregó algo.
+function sembrarInsumosPorProveedor(
+  data: AppData,
+  area: InsumoArea,
+  unidad: string,
+  proveedorNombre: string,
+  nombres: string[]
+): boolean {
+  const yaExiste = (nombre: string) =>
+    data.insumos.some((i) => i.area === area && i.nombre.trim().toLowerCase() === nombre.toLowerCase());
+  const faltantes = nombres.filter((n) => !yaExiste(n));
+  if (faltantes.length === 0) return false;
+  let proveedor = data.proveedores.find((p) => p.nombre.trim().toLowerCase() === proveedorNombre.toLowerCase());
+  if (!proveedor) {
+    proveedor = { id: uid(), nombre: proveedorNombre };
+    data.proveedores = [...data.proveedores, proveedor];
+  }
+  data.insumos = [
+    ...data.insumos,
+    ...faltantes.map((nombre) => ({ id: uid(), area, nombre, unidad, proveedorId: proveedor.id })),
+  ];
+  return true;
 }
 
 // Solo para migrar facturas que antes vivían en un día del corte: aproxima
