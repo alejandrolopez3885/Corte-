@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { ArrowLeft, Martini, Package } from "lucide-react";
+import { ArrowLeft, ClipboardList, Martini, Package } from "lucide-react";
 import { InsumosPanel } from "./InsumosPanel";
+import { ConteoDiarioPanel } from "./ConteoDiarioPanel";
 import type { InsumoEntry, ProveedorCatalogEntry } from "../../lib/types";
 
-type ControlBarView = "menu" | "catalogo";
+type ControlBarView = "menu" | "catalogo" | "conteo";
 
 export function ControlBarPanel({
   onBack,
@@ -11,14 +12,19 @@ export function ControlBarPanel({
   proveedores,
   onSaveInsumo,
   onRemoveInsumo,
+  conteoHoy,
+  onGuardarConteo,
 }: {
   onBack: () => void;
   insumos: InsumoEntry[];
   proveedores: ProveedorCatalogEntry[];
   onSaveInsumo: (entry: InsumoEntry, nuevoProveedor?: ProveedorCatalogEntry) => void;
   onRemoveInsumo: (id: string) => void;
+  conteoHoy: Record<string, number>;
+  onGuardarConteo: (fecha: string, valores: Record<string, number>) => void;
 }) {
   const [view, setView] = useState<ControlBarView>("menu");
+  const insumosBar = insumos.filter((i) => i.area === "bar");
 
   if (view === "catalogo") {
     return (
@@ -29,10 +35,24 @@ export function ControlBarPanel({
         title="Catálogo"
         emptyIcon={<Martini size={26} strokeWidth={1.3} />}
         emptyText="Aún no agregas insumos de bar. Empieza con tus cervezas y refrescos."
-        insumos={insumos.filter((i) => i.area === "bar")}
+        insumos={insumosBar}
         proveedores={proveedores}
         onSaveInsumo={onSaveInsumo}
         onRemoveInsumo={onRemoveInsumo}
+      />
+    );
+  }
+
+  if (view === "conteo") {
+    return (
+      <ConteoDiarioPanel
+        onBack={() => setView("menu")}
+        backLabel="Control de Bar"
+        emptyIcon={<Martini size={26} strokeWidth={1.3} />}
+        emptyText="Aún no marcas insumos de bar como alta rotación. Márcalos desde el Catálogo para que aparezcan aquí."
+        insumos={insumosBar.filter((i) => i.altaRotacion)}
+        conteoHoy={conteoHoy}
+        onGuardar={onGuardarConteo}
       />
     );
   }
@@ -44,6 +64,15 @@ export function ControlBarPanel({
       </button>
       <h2 className="page-title">Control de Bar</h2>
       <div className="menu-list">
+        <button className="menu-item" onClick={() => setView("conteo")}>
+          <span className="menu-item-icon">
+            <ClipboardList size={20} />
+          </span>
+          <span className="menu-item-text">
+            <strong>Conteo diario</strong>
+            <span>Captura de insumos de alta rotación</span>
+          </span>
+        </button>
         <button className="menu-item" onClick={() => setView("catalogo")}>
           <span className="menu-item-icon">
             <Package size={20} />

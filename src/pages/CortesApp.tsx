@@ -780,6 +780,8 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           proveedores={data.proveedores}
           onSaveInsumo={upsertInsumo}
           onRemoveInsumo={removeInsumo}
+          conteoHoy={data.conteosDiarios[todayIso()] || {}}
+          onGuardarConteo={guardarConteoDiario}
         />
       )}
 

@@ -64,15 +64,6 @@ export function ControlCocinaPanel({
       </button>
       <h2 className="page-title">Control de Cocina</h2>
       <div className="menu-list">
-        <button className="menu-item" onClick={() => setView("catalogo")}>
-          <span className="menu-item-icon">
-            <Package size={20} />
-          </span>
-          <span className="menu-item-text">
-            <strong>Catálogo</strong>
-            <span>Productos, precio, unidad y proveedor</span>
-          </span>
-        </button>
         <button className="menu-item" onClick={() => setView("conteo")}>
           <span className="menu-item-icon">
             <ClipboardList size={20} />
@@ -80,6 +71,15 @@ export function ControlCocinaPanel({
           <span className="menu-item-text">
             <strong>Conteo diario</strong>
             <span>Captura de insumos de alta rotación</span>
+          </span>
+        </button>
+        <button className="menu-item" onClick={() => setView("catalogo")}>
+          <span className="menu-item-icon">
+            <Package size={20} />
+          </span>
+          <span className="menu-item-text">
+            <strong>Catálogo</strong>
+            <span>Productos, precio, unidad y proveedor</span>
           </span>
         </button>
       </div>
