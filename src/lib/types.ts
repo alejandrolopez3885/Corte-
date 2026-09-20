@@ -185,6 +185,10 @@ export interface Transferencia {
 export interface ProveedorCatalogEntry {
   id: string;
   nombre: string;
+  // Si también se le hace un pedido parcial los jueves (para entrega el
+  // viernes), aparte del pedido completo de todos los proveedores que se
+  // cuenta cada domingo (Negocio > Pedidos a proveedores).
+  incluyeJueves?: boolean;
 }
 
 // Catálogo de insumos de Bar/Cocina — el primer paso de Control de Bar y
@@ -201,6 +205,28 @@ export interface InsumoEntry {
   precio?: number;
   proveedorId?: string;
   altaRotacion?: boolean;
+}
+
+// Inventario semanal para pedidos (Negocio > Pedidos a proveedores) — una
+// fila por insumo, por semana (mismas semanas que Corte). Domingo: cantidad
+// inicio/fin y compras de TODOS los proveedores, para decidir el pedido
+// completo que llega el lunes. Jueves: mismo formato, pero solo de los
+// proveedores marcados incluyeJueves, para el pedido parcial que llega el
+// viernes — ambos ciclos caen dentro de la misma semana Lunes-Domingo, así
+// que comparten la misma fila.
+export interface InventarioFila {
+  cantidadInicio?: number;
+  comprasSemana?: number;
+  cantidadFin?: number;
+}
+
+export interface InventarioSemanal {
+  filas: Record<string, InventarioFila>; // insumoId -> fila
+  ventaSemana?: number; // capturado a mano, para comparar costo de consumo contra venta más adelante
+}
+
+export interface InventarioSemanalMonthData {
+  weeks: (InventarioSemanal | null)[];
 }
 
 // Facturas/notas de proveedores pagadas por transferencia — no son efectivo,
@@ -271,6 +297,9 @@ export interface AppData {
   // mismo formato en ambas áreas: fecha real (ISO) -> insumoId -> cantidad.
   // Solo existe entrada para las fechas donde ya se capturó algo.
   conteosDiarios: Record<string, Record<string, number>>;
+  // Inventario semanal para pedidos a proveedores (mismas semanas que
+  // Corte/Horarios).
+  inventarioSemanal: Record<string, InventarioSemanalMonthData>;
 }
 
 // Un punto de la tendencia semanal (Negocio > Tendencias) — un resumen de

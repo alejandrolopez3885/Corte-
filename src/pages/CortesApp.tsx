@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   Plus, Settings2, Users, Receipt, ArrowLeftRight, CircleDot, Circle, Pencil,
   Smartphone, BarChart3, LogOut, Truck, Trash2, Home, Store, LayoutDashboard, Contact, Clock, Wallet, ChartLine, Martini, ChefHat,
+  ShoppingCart,
 } from "lucide-react";
 import { useAuth } from "../lib/auth.tsx";
 import { useAppData } from "../lib/useAppData";
@@ -12,7 +13,7 @@ import {
 } from "../lib/dataModel";
 import { useStaffAssignments } from "../lib/staffAssignments";
 import { DAYS, DAY_SHORT } from "../lib/types";
-import type { CreditoProveedores, DayData, DayName, EmpleadoEntry, Gasto, GastoCategoria, HorarioSemana, InsumoEntry, MeseroCatalogEntry, MeseroCut, NominaDescuento, Profile, ProveedorCatalogEntry, Transferencia, WeekData } from "../lib/types";
+import type { CreditoProveedores, DayData, DayName, EmpleadoEntry, Gasto, GastoCategoria, HorarioSemana, InsumoEntry, InventarioSemanal, MeseroCatalogEntry, MeseroCut, NominaDescuento, Profile, ProveedorCatalogEntry, Transferencia, WeekData } from "../lib/types";
 import { Empty } from "../components/ui";
 import { MonthModal } from "../components/modals/MonthModal";
 import { MeseroModal, type MeseroFormValues } from "../components/modals/MeseroModal";
@@ -33,6 +34,7 @@ import { NominaPanel } from "../components/panels/NominaPanel";
 import { TendenciasPanel } from "../components/panels/TendenciasPanel";
 import { ControlBarPanel } from "../components/panels/ControlBarPanel";
 import { ControlCocinaPanel } from "../components/panels/ControlCocinaPanel";
+import { InventarioSemanalPanel } from "../components/panels/InventarioSemanalPanel";
 
 type ModalState =
   | { type: "month" }
@@ -51,7 +53,7 @@ type ModalState =
 
 type EquipoView = "menu" | "personal" | "horarios" | "nomina";
 
-type NegocioView = "menu" | "tendencias" | "controlBar" | "controlCocina";
+type NegocioView = "menu" | "tendencias" | "controlBar" | "controlCocina" | "pedidos";
 
 type OwnerTab = "corte" | "equipo" | "negocio" | "dashboard";
 
@@ -544,6 +546,24 @@ export default function CortesApp({ profile }: { profile: Profile }) {
     persist(next);
   }
 
+  // Inventario semanal para pedidos a proveedores (Negocio > Pedidos a
+  // proveedores) — mismas semanas que Horarios/Nómina.
+  function saveInventarioSemanal(monthKey: string, weekIndex: number, inventario: InventarioSemanal) {
+    if (!data) return;
+    const next = structuredClone(data);
+    if (!next.inventarioSemanal[monthKey]) next.inventarioSemanal[monthKey] = { weeks: [null, null, null, null] };
+    next.inventarioSemanal[monthKey].weeks[weekIndex] = inventario;
+    persist(next);
+  }
+
+  function toggleProveedorJueves(proveedorId: string, incluyeJueves: boolean) {
+    if (!data) return;
+    const next = structuredClone(data);
+    const p = next.proveedores.find((x) => x.id === proveedorId);
+    if (p) p.incluyeJueves = incluyeJueves;
+    persist(next);
+  }
+
   function saveVentaApps(rawValue: string) {
     updateDay((d) => {
       d.ventaApps = sumFromText(rawValue);
@@ -735,6 +755,19 @@ export default function CortesApp({ profile }: { profile: Profile }) {
             </button>
           </div>
 
+          <h3 className="menu-subtitle">Compras</h3>
+          <div className="menu-list">
+            <button className="menu-item" onClick={() => setNegocioView("pedidos")}>
+              <span className="menu-item-icon">
+                <ShoppingCart size={20} />
+              </span>
+              <span className="menu-item-text">
+                <strong>Pedidos a proveedores</strong>
+                <span>Inventario semanal de Bar y Cocina, agrupado por proveedor</span>
+              </span>
+            </button>
+          </div>
+
           <h3 className="menu-subtitle">Bar</h3>
           <div className="menu-list">
             <button className="menu-item" onClick={() => setNegocioView("controlBar")}>
@@ -743,7 +776,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
               </span>
               <span className="menu-item-text">
                 <strong>Control de Bar</strong>
-                <span>Próximamente</span>
+                <span>Catálogo y conteo diario de insumos</span>
               </span>
             </button>
           </div>
@@ -756,7 +789,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
               </span>
               <span className="menu-item-text">
                 <strong>Control de Cocina</strong>
-                <span>Próximamente</span>
+                <span>Catálogo y conteo diario de insumos</span>
               </span>
             </button>
           </div>
@@ -802,6 +835,21 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           initialWeekIndex={mostRecentWeekIdx}
           conteosDiarios={data.conteosDiarios}
           onGuardarConteo={guardarConteoDiario}
+        />
+      )}
+
+      {isOwner && activeTab === "negocio" && negocioView === "pedidos" && (
+        <InventarioSemanalPanel
+          onBack={() => setNegocioView("menu")}
+          insumos={data.insumos}
+          proveedores={data.proveedores}
+          months={data.months}
+          monthKeys={monthKeys}
+          initialMonthKey={mostRecentMonthKey as string}
+          initialWeekIndex={mostRecentWeekIdx}
+          inventarioSemanal={data.inventarioSemanal}
+          onGuardarSemana={saveInventarioSemanal}
+          onToggleProveedorJueves={toggleProveedorJueves}
         />
       )}
 
