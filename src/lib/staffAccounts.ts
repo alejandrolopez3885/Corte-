@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { supabase } from "./supabaseClient";
+import type { PermisoStaff } from "./types";
 
 export const PIN_LENGTH = 4;
 const EMAIL_DOMAIN = "cortes.local";
@@ -51,8 +52,12 @@ export async function createStaffAccount(options: {
   displayName: string;
   pin: string;
   ownerId: string;
+  // Solo para cuentas dadas de alta desde Personal (jefe de cocina y
+  // similares) — la cuenta de meseros en "Tu equipo" no usa esto.
+  empleadoId?: string;
+  permisos?: PermisoStaff[];
 }): Promise<{ id: string }> {
-  const { displayName, pin, ownerId } = options;
+  const { displayName, pin, ownerId, empleadoId, permisos } = options;
   if (!/^\d{4}$/.test(pin)) {
     throw new Error(`El PIN debe tener exactamente ${PIN_LENGTH} dígitos.`);
   }
@@ -76,6 +81,8 @@ export async function createStaffAccount(options: {
     role: "staff",
     display_name: displayName.trim(),
     owner_id: ownerId,
+    empleado_id: empleadoId,
+    permisos: permisos || [],
   });
   if (profileError) throw profileError;
 
@@ -87,4 +94,22 @@ export async function createStaffAccount(options: {
   if (directoryError) throw directoryError;
 
   return { id: newId };
+}
+
+// Cambia qué secciones puede ver/usar una cuenta de equipo ya creada desde
+// Personal — no cambia su PIN ni su nombre.
+export async function updateStaffPermisos(profileId: string, permisos: PermisoStaff[]): Promise<void> {
+  const { error } = await supabase.from("profiles").update({ permisos }).eq("id", profileId);
+  if (error) throw error;
+}
+
+// Quita el acceso de una cuenta dada de alta desde Personal. Borra su fila
+// de profiles (staff_login_directory se borra solo por el ON DELETE
+// CASCADE) — así deja de aparecer en "¿Quién eres?" y nadie puede volver a
+// entrar con ese PIN. No cambia el PIN (no se puede sin la clave de
+// servicio de Supabase, que esta app no usa): si necesita volver a tener
+// acceso, se da de alta de nuevo con un PIN nuevo.
+export async function revokeStaffAccess(profileId: string): Promise<void> {
+  const { error } = await supabase.from("profiles").delete().eq("id", profileId);
+  if (error) throw error;
 }

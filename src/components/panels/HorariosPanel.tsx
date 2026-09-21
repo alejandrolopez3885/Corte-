@@ -16,8 +16,9 @@ export function HorariosPanel({
   empleados,
   horarios,
   onSaveSemana,
+  soloAreaId,
 }: {
-  onBack: () => void;
+  onBack?: () => void;
   months: Record<string, MonthData>;
   monthKeys: string[];
   initialMonthKey: string;
@@ -25,6 +26,10 @@ export function HorariosPanel({
   empleados: EmpleadoEntry[];
   horarios: Record<string, HorarioMonthData>;
   onSaveSemana: (monthKey: string, weekIndex: number, semana: HorarioSemana) => void;
+  // Solo para cuentas de equipo con el permiso "Horarios" — limita la
+  // pantalla a un área nada más (la suya) y esconde el control de día
+  // festivo, que es una decisión de toda la semana, no solo de su área.
+  soloAreaId?: string;
 }) {
   const [monthKey, setMonthKey] = useState(initialMonthKey);
   const [weekIndex, setWeekIndex] = useState(initialWeekIndex);
@@ -34,9 +39,11 @@ export function HorariosPanel({
   if (!month) {
     return (
       <div className="page-section">
-        <button className="link-btn back-link" onClick={onBack}>
-          <ArrowLeft size={15} /> Equipo
-        </button>
+        {onBack && (
+          <button className="link-btn back-link" onClick={onBack}>
+            <ArrowLeft size={15} /> Equipo
+          </button>
+        )}
         <h2 className="page-title">Horarios</h2>
         <Empty icon={<Clock size={26} strokeWidth={1.3} />} text="Primero crea un mes en Corte para poder armar horarios." />
       </div>
@@ -54,9 +61,11 @@ export function HorariosPanel({
 
   return (
     <div className="page-section">
-      <button className="link-btn back-link" onClick={onBack}>
-        <ArrowLeft size={15} /> Equipo
-      </button>
+      {onBack && (
+        <button className="link-btn back-link" onClick={onBack}>
+          <ArrowLeft size={15} /> Equipo
+        </button>
+      )}
       <h2 className="page-title">Horarios</h2>
       <p className="hint">Por área, con el nombre, el día y la hora de entrada — igual que llevabas el control antes.</p>
 
@@ -98,6 +107,7 @@ export function HorariosPanel({
         isDraftBase={isDraftBase}
         empleados={empleados}
         onSaveSemana={onSaveSemana}
+        soloAreaId={soloAreaId}
       />
     </div>
   );
@@ -111,6 +121,7 @@ function HorarioSemanaForm({
   isDraftBase,
   empleados,
   onSaveSemana,
+  soloAreaId,
 }: {
   monthKey: string;
   weekIndex: number;
@@ -119,6 +130,7 @@ function HorarioSemanaForm({
   isDraftBase: boolean;
   empleados: EmpleadoEntry[];
   onSaveSemana: (monthKey: string, weekIndex: number, semana: HorarioSemana) => void;
+  soloAreaId?: string;
 }) {
   const [semana, setSemana] = useState(semanaInicial);
   const [locked, setLocked] = useState(yaGuardada);
@@ -214,22 +226,28 @@ function HorarioSemanaForm({
         )
       )}
 
-      <p className="hint">Día festivo — a quien trabaje ese día se le paga 1 turno extra.</p>
-      <div className="segmented horario-festivos">
-        {DAYS.map((d) => (
-          <button
-            key={d}
-            type="button"
-            className={(semana.festivos || []).includes(d) ? "festivo active" : ""}
-            onClick={() => toggleFestivo(d)}
-            disabled={locked}
-          >
-            {DAY_SHORT[d]}
-          </button>
-        ))}
-      </div>
+      {!soloAreaId && (
+        <>
+          <p className="hint">Día festivo — a quien trabaje ese día se le paga 1 turno extra.</p>
+          <div className="segmented horario-festivos">
+            {DAYS.map((d) => (
+              <button
+                key={d}
+                type="button"
+                className={(semana.festivos || []).includes(d) ? "festivo active" : ""}
+                onClick={() => toggleFestivo(d)}
+                disabled={locked}
+              >
+                {DAY_SHORT[d]}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
 
-      {semana.areas.map((area) => (
+      {semana.areas
+        .filter((area) => !soloAreaId || area.id === soloAreaId)
+        .map((area) => (
         <div className="horario-area" key={area.id}>
           <div className="horario-area-head">
             <h3>{area.nombre}</h3>

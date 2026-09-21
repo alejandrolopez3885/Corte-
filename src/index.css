@@ -419,6 +419,14 @@ body {
 .auth-subtitle { color: var(--ink-soft); font-size: 13.5px; margin: -8px 0 4px; }
 .auth-error { color: var(--bad); background: var(--bad-soft); border-radius: 10px; padding: 10px 12px; font-size: 13px; }
 
+.acceso-app-block {
+  background: var(--surface-alt); border-radius: 14px; padding: 14px;
+  display: flex; flex-direction: column; gap: 8px; margin: 4px 0;
+}
+.acceso-app-title { font-size: 13.5px; margin: 0; }
+.permisos-checklist { display: flex; flex-direction: column; gap: 6px; }
+.permisos-checklist-label { font-size: 12.5px; color: var(--ink-soft); }
+
 .staff-name-grid { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
 .staff-name-btn {
   border: 1px solid var(--border); background: var(--surface); color: var(--ink);

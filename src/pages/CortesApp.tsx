@@ -37,6 +37,7 @@ import { ControlBarPanel } from "../components/panels/ControlBarPanel";
 import { ControlCocinaPanel } from "../components/panels/ControlCocinaPanel";
 import { InsumosPanel } from "../components/panels/InsumosPanel";
 import { InventarioSemanalPanel } from "../components/panels/InventarioSemanalPanel";
+import StaffAccessShell from "./StaffAccessShell";
 
 type ModalState =
   | { type: "month" }
@@ -134,6 +135,12 @@ export default function CortesApp({ profile }: { profile: Profile }) {
   }
 
   if (!isOwner) {
+    // Cuenta dada de alta desde Personal (ej. jefe de cocina) — distinta
+    // de la cuenta de meseros por día asignado. Tiene su propia pantalla,
+    // acotada a las secciones que su permiso habilita.
+    if ((profile.permisos || []).length > 0) {
+      return <StaffAccessShell profile={profile} data={data} onSaveHorarioSemana={saveHorarioSemana} onSignOut={signOut} />;
+    }
     if (assignmentsStatus === "loading" || assignments === null) {
       return (
         <div className="app-shell">
@@ -1304,6 +1311,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           editing={modal.editing}
           areas={data.areas}
           puestos={data.puestos}
+          ownerId={profile.id}
         />
       )}
       {modal?.type === "deleteMonth" && (

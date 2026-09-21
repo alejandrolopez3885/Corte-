@@ -42,7 +42,20 @@ estando en Nómina te regresa al menú de Equipo):
   nuevo (y de paso un área nueva, si hace falta) al vuelo desde el propio
   empleado, igual que un insumo puede crear su proveedor al vuelo. Se
   agrega con un botón "+" en vez de tener el formulario siempre abierto,
-  y tocar a alguien lo abre para editar o eliminar), "Horarios" (arma el horario
+  y tocar a alguien lo abre para editar o eliminar. Desde ahí mismo, un
+  bloque "Acceso a la app" permite darle a esa persona su propia cuenta
+  con PIN — distinta de la de "Tu equipo" (esa es solo para meseros por
+  día asignado) — marcando un checklist de qué secciones puede usar (hoy
+  solo existe "Horarios"). El permiso siempre queda acotado a su propia
+  área, la del puesto que tenga asignado aquí mismo — sin puesto con área,
+  no se puede habilitar. Al entrar con su PIN, esa persona no ve las
+  pestañas normales de la app: va directo a la sección habilitada (ej.
+  Horarios, mostrando solo su área — Cocina para un jefe de cocina — y
+  solo puede agregar a su horario personal de esa misma área). El PIN no
+  se puede cambiar una vez creado (no hay forma de hacerlo sin la clave de
+  servicio de Supabase, que esta app no usa) — si hace falta uno nuevo,
+  se quita el acceso desde el mismo bloque y se vuelve a dar de alta),
+  "Horarios" (arma el horario
   semanal en dos áreas fijas, PISO y COCINA — no se pueden crear, renombrar
   ni borrar áreas — usando las mismas semanas de Corte; un toque en la
   celda cicla OFF → O → X → Z, y al llegar a Z se abre un modal para
@@ -213,14 +226,18 @@ Hay 2 tipos de cuenta:
 6. Corre también [`supabase/migration_005_realtime.sql`](./supabase/migration_005_realtime.sql).
    Habilita que los cambios se reflejen solos en todos los dispositivos
    conectados, sin recargar la página (ver sección 5 más abajo).
-7. Ve a **Authentication → Sign In / Providers → Email** y **apaga "Confirm
+7. Corre también [`supabase/migration_006_staff_permisos.sql`](./supabase/migration_006_staff_permisos.sql).
+   Agrega los campos que permiten dar de alta cuentas de equipo adicionales
+   (ej. jefe de cocina) con permisos por sección desde Equipo &gt; Personal
+   (ver "Acceso a la app" en la sección de Personal, más abajo).
+8. Ve a **Authentication → Sign In / Providers → Email** y **apaga "Confirm
    email"**. Es obligatorio: las cuentas del equipo usan un correo técnico
    que no es real, así que nunca podrían confirmarse por correo.
-8. Ve a **Authentication → Users → Add user** y crea **un solo usuario para
+9. Ve a **Authentication → Users → Add user** y crea **un solo usuario para
    ti** (el dueño), con tu correo y una contraseña. Copia su **User UID** (lo
    verás en la lista de usuarios). A tu compañero **no** lo crees aquí — eso
    se hace desde la app en el paso 4 más abajo.
-9. Vuelve a **SQL Editor** y da de alta tu perfil de dueño, reemplazando el
+10. Vuelve a **SQL Editor** y da de alta tu perfil de dueño, reemplazando el
    UUID por el que copiaste:
 
    ```sql
@@ -228,7 +245,7 @@ Hay 2 tipos de cuenta:
      values ('UUID-DEL-DUEÑO', 'owner', 'Tu nombre');
    ```
 
-10. Ve a **Project Settings → API** y copia:
+11. Ve a **Project Settings → API** y copia:
    - **Project URL** → será `VITE_SUPABASE_URL`
    - **anon public key** → será `VITE_SUPABASE_ANON_KEY`
 
@@ -308,11 +325,13 @@ src/
     modals/       un modal por acción (mesero, gasto, transferencia, etc.)
   pages/
     Login.tsx
-    CortesApp.tsx vista principal (dueño y staff)
+    CortesApp.tsx vista principal del dueño y de meseros por día asignado
+    StaffAccessShell.tsx vista de cuentas de equipo con permisos (Personal)
 supabase/
   schema.sql                        tablas y políticas RLS base
   migration_002_staff_pin.sql       tabla de directorio para el login por PIN
   migration_003_staff_assignments.sql  fechas asignadas (varias por persona)
   migration_004_assignment_week.sql    semana elegida a mano por asignación
   migration_005_realtime.sql           activa la sincronización en vivo
+  migration_006_staff_permisos.sql     cuentas de equipo con permisos por sección
 ```

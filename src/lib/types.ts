@@ -38,6 +38,10 @@ export interface EmpleadoEntry {
   nombre: string;
   sueldoDiario?: number;
   puestoId?: string;
+  // Si tiene una cuenta de equipo con PIN dada de alta desde aquí, el id
+  // de su profile — ver staffAccounts.ts. Sin esto, esta persona no tiene
+  // acceso a la app (es normal, la mayoría no lo necesita).
+  staffProfileId?: string;
 }
 
 // Valores rápidos para una celda de horario — el resto de las celdas
@@ -376,11 +380,30 @@ export interface VentaProyeccion {
 
 export type Role = "owner" | "staff";
 
+// Secciones que una cuenta de equipo con PIN puede tener habilitadas más
+// allá del acceso por día asignado (mesero) — ver EmpleadoEntry.staffProfileId
+// y PERMISOS_DISPONIBLES. Empieza en 1 solo permiso a propósito; se agregan
+// más conforme el dueño los vaya necesitando, sin rehacer el checklist.
+export type PermisoStaff = "horarios";
+
+export const PERMISOS_DISPONIBLES: { value: PermisoStaff; label: string; description: string }[] = [
+  {
+    value: "horarios",
+    label: "Horarios",
+    description: "Ver y capturar el horario semanal de su propia área (según su puesto en Personal).",
+  },
+];
+
 export interface Profile {
   id: string;
   role: Role;
   display_name: string | null;
   owner_id: string | null;
+  // Solo para cuentas de equipo dadas de alta desde Personal (no las de
+  // meseros por día asignado): a qué EmpleadoEntry corresponden (para
+  // saber su puesto/área) y qué secciones tienen habilitadas.
+  empleado_id?: string | null;
+  permisos?: PermisoStaff[];
 }
 
 export interface StaffAssignment {
