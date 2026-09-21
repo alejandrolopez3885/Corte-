@@ -341,6 +341,14 @@ export function migrateAppData(raw: AppData): { data: AppData; changed: boolean 
   ])) {
     changed = true;
   }
+  if (sembrarInsumosPorProveedor(data, "bar", "pieza", "Compras Johnster", [
+    "Clamato", "Calahua", "Squirt", "Agua mineral", "Granadina", "Jarabe natural",
+    "Jugo de piña", "Jugo de mango", "Bacardí", "Captain Morgan", "Black & White",
+    "Gran Malo", "Red Label", "Buchanan's", "Jose Cuervo", "Maestro Tequilero",
+    "Smirnoff Tamarindo", "Viuda de Sánchez", "Tarugo",
+  ])) {
+    changed = true;
+  }
 
   return { data, changed };
 }
