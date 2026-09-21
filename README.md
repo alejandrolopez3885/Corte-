@@ -68,7 +68,13 @@ estando en Nómina te regresa al menú de Equipo):
   específico de esa semana, no se precarga de la semana anterior — y a
   quien trabaje ese día (cualquier valor salvo OFF) se le paga 1 turno
   extra además de lo que le tocaba; el descanso pagado en un día festivo
-  no cuenta como trabajado, así que no recibe el extra)
+  no cuenta como trabajado, así que no recibe el extra. En cuanto un
+  horario queda guardado aparecen botones "Imagen · Piso" / "Imagen ·
+  Cocina" / "Imagen · Las 2 áreas" (solo los que aplican — si un área no
+  tiene personal capturado, no sale su botón) que generan y descargan un
+  PNG con esa parte del horario, agrupado por área igual que la hoja de
+  cálculo que se usaba antes para esto — pensado para compartir por
+  WhatsApp con cada encargado de área)
   y "Nómina" (calculada sola a partir de Horarios y el sueldo diario de
   cada quien: Z paga doble, O/X y cualquier hora capturada pagan 1x, el
   descanso OFF solo se paga si esa semana se trabajaron los otros 6 días
@@ -91,12 +97,14 @@ estando en Nómina te regresa al menú de Equipo):
   fecha ya pasó (o es hoy) — útil para ver a media semana cuánta nómina
   llevas, sin esperar a que termine; en una semana ya cerrada equivale al
   bruto completo, y en una futura es $0 —, con su propio total para todo
-  el personal). Un botón "Descargar imagen del desglose (sueldo bruto)"
-  genera y descarga un PNG con la nómina de esa semana sin descuentos
-  (bruto + percepciones extra si las hay, marcadas con un asterisco),
-  agrupada por área con subtotales y un total general al final, imitando
-  la hoja de cálculo que se usaba antes para esto — pensado para
-  compartirlo por WhatsApp con quien paga. Solo en esa imagen el número
+  el personal). Igual que en Horarios, hay botones "Imagen · Piso" /
+  "Imagen · Cocina" / "Imagen · Las 2 áreas" (solo los que apliquen) que
+  generan y descargan un PNG con esa parte de la nómina de la semana sin
+  descuentos (bruto + percepciones extra si las hay, marcadas con un
+  asterisco), agrupada por área con subtotales y un total general al
+  final, imitando la hoja de cálculo que se usaba antes para esto —
+  pensado para compartir por WhatsApp con quien paga cada área o con
+  quien paga todo. Solo en esa imagen el número
   de semana es el de la semana del año (ISO), no el "Semana 1"-"4" del
   mes que se usa en toda la app — ej. la semana del 14 al 20 de
   septiembre se ve ahí como "Semana 38".

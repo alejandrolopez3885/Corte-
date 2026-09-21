@@ -1,6 +1,7 @@
 import { DAYS, DAY_SHORT } from "./types";
 import type { NominaEmpleadoSemana } from "./types";
 import { money } from "./dataModel";
+import { downloadCanvasAsPng } from "./imageExport";
 
 const COL_NOMBRE = 210;
 const COL_BASE = 110;
@@ -196,15 +197,5 @@ export function downloadNominaImage(reporte: NominaEmpleadoSemana[], titulo: str
     ctx.fillText("* incluye percepciones extra de esta semana (finiquito, bono)", 12, y + FOOTNOTE_H / 2);
   }
 
-  canvas.toBlob((blob) => {
-    if (!blob) return;
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${titulo.replace(/[^\wÀ-ÿ .-]/g, "")}.png`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-  }, "image/png");
+  downloadCanvasAsPng(canvas, titulo);
 }

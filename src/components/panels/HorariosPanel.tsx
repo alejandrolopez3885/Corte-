@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { ArrowLeft, Clock, Trash2, TriangleAlert } from "lucide-react";
+import { ArrowLeft, Clock, Download, Trash2, TriangleAlert } from "lucide-react";
 import { Empty, Field, Sheet } from "../ui";
-import { findPreviousHorarioSemana, formatWeekRange, normalizeHorarioSemana, resolveWeekStartDate } from "../../lib/dataModel";
-import { DAYS, DAY_SHORT, HORARIO_CHIPS } from "../../lib/types";
+import { findPreviousHorarioSemana, formatWeekRange, isoWeekNumber, normalizeHorarioSemana, resolveWeekStartDate } from "../../lib/dataModel";
+import { downloadHorarioImage } from "../../lib/horarioImage";
+import { DAYS, DAY_SHORT, HORARIO_AREAS_FIJAS, HORARIO_CHIPS } from "../../lib/types";
 import type { DayName, EmpleadoEntry, HorarioArea, HorarioMonthData, HorarioSemana, MonthData } from "../../lib/types";
 
 type CellTarget = { areaId: string; empleadoId: string; nombre: string; day: DayName };
@@ -97,6 +98,43 @@ export function HorariosPanel({
         </Field>
       </div>
       <p className="hint">{formatWeekRange(weekStartDate)}</p>
+
+      {saved && (
+        <div className="field-row horario-descargas">
+          {HORARIO_AREAS_FIJAS.filter(
+            (a) => (!soloAreaId || a.id === soloAreaId) && (saved.areas.find((sa) => sa.id === a.id)?.filas.length ?? 0) > 0
+          ).map((a) => (
+            <button
+              key={a.id}
+              className="link-btn"
+              onClick={() =>
+                downloadHorarioImage(
+                  saved,
+                  `Horario · ${month.label} · Semana ${isoWeekNumber(weekStartDate)}`,
+                  formatWeekRange(weekStartDate),
+                  a.id
+                )
+              }
+            >
+              <Download size={15} /> Imagen · {a.nombre}
+            </button>
+          ))}
+          {!soloAreaId && saved.areas.filter((a) => a.filas.length > 0).length > 1 && (
+            <button
+              className="link-btn"
+              onClick={() =>
+                downloadHorarioImage(
+                  saved,
+                  `Horario · ${month.label} · Semana ${isoWeekNumber(weekStartDate)}`,
+                  formatWeekRange(weekStartDate)
+                )
+              }
+            >
+              <Download size={15} /> Imagen · Las 2 áreas
+            </button>
+          )}
+        </div>
+      )}
 
       <HorarioSemanaForm
         key={`${monthKey}-${weekIndex}`}

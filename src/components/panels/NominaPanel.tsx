@@ -3,7 +3,7 @@ import { ArrowLeft, Download, Trash2, Wallet } from "lucide-react";
 import { Empty, Field, Sheet, SumInput } from "../ui";
 import { computeNominaHastaHoyPorEmpleado, computeNominaSemana, formatShortDayDate, formatWeekRange, isoWeekNumber, money, resolveWeekStartDate, sumFromText, todayIso, uid } from "../../lib/dataModel";
 import { downloadNominaImage } from "../../lib/nominaImage";
-import { DAY_SHORT, NOMINA_DESCUENTO_TIPOS, NOMINA_EXTRA_TIPOS } from "../../lib/types";
+import { DAY_SHORT, HORARIO_AREAS_FIJAS, NOMINA_DESCUENTO_TIPOS, NOMINA_EXTRA_TIPOS } from "../../lib/types";
 import type {
   EmpleadoEntry,
   HorarioMonthData,
@@ -157,18 +157,41 @@ export function NominaPanel({
         <Empty icon={<Wallet size={26} strokeWidth={1.3} />} text="El horario de esta semana no tiene personal capturado todavía." />
       ) : (
         <>
-          <button
-            className="link-btn"
-            onClick={() =>
-              downloadNominaImage(
-                reporte,
-                `Nómina · ${month.label} · Semana ${isoWeekNumber(weekStartDate)}`,
-                `${formatWeekRange(weekStartDate)} · Sueldo bruto, sin descuentos`
-              )
-            }
-          >
-            <Download size={15} /> Descargar imagen del desglose (sueldo bruto)
-          </button>
+          <div className="field-row horario-descargas">
+            {HORARIO_AREAS_FIJAS.map((a) => {
+              const reporteArea = reporte.filter((e) => e.areaNombre.toLowerCase() === a.nombre.toLowerCase());
+              if (reporteArea.length === 0) return null;
+              return (
+                <button
+                  key={a.id}
+                  className="link-btn"
+                  onClick={() =>
+                    downloadNominaImage(
+                      reporteArea,
+                      `Nómina · ${a.nombre} · ${month.label} · Semana ${isoWeekNumber(weekStartDate)}`,
+                      `${formatWeekRange(weekStartDate)} · Sueldo bruto, sin descuentos`
+                    )
+                  }
+                >
+                  <Download size={15} /> Imagen · {a.nombre}
+                </button>
+              );
+            })}
+            {new Set(reporte.map((e) => e.areaNombre)).size > 1 && (
+              <button
+                className="link-btn"
+                onClick={() =>
+                  downloadNominaImage(
+                    reporte,
+                    `Nómina · ${month.label} · Semana ${isoWeekNumber(weekStartDate)}`,
+                    `${formatWeekRange(weekStartDate)} · Sueldo bruto, sin descuentos`
+                  )
+                }
+              >
+                <Download size={15} /> Imagen · Las 2 áreas
+              </button>
+            )}
+          </div>
           {reporte.map((e) => (
             <div className="nomina-emp" key={e.empleadoId}>
               <div className="nomina-emp-head">
