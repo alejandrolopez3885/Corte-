@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ArrowLeft, Package, TriangleAlert } from "lucide-react";
 import { Empty, Field, NumInput, Sheet } from "../ui";
-import { formatWeekRange, money, resolveWeekStartDate, sumFromText, todayIso } from "../../lib/dataModel";
+import { dateForDay, formatWeekRange, money, resolveWeekStartDate, sumFromText, todayIso } from "../../lib/dataModel";
 import type { InsumoArea, InsumoEntry, InventarioFila, InventarioSemanal, InventarioSemanalMonthData, MonthData, ProveedorCatalogEntry } from "../../lib/types";
 
 type Modo = "completo" | "jueves";
@@ -22,6 +22,7 @@ export function InventarioSemanalPanel({
   initialMonthKey,
   initialWeekIndex,
   inventarioSemanal,
+  conteosDiarios,
   onGuardarSemana,
   onEditarProveedores,
 }: {
@@ -33,6 +34,7 @@ export function InventarioSemanalPanel({
   initialMonthKey: string;
   initialWeekIndex: number;
   inventarioSemanal: Record<string, InventarioSemanalMonthData>;
+  conteosDiarios: Record<string, Record<string, number>>;
   onGuardarSemana: (monthKey: string, weekIndex: number, inventario: InventarioSemanal) => void;
   onEditarProveedores: () => void;
 }) {
@@ -58,6 +60,16 @@ export function InventarioSemanalPanel({
   const weekStartDate = resolveWeekStartDate(monthKey, weekIndex, month);
   const semana: InventarioSemanal = inventarioSemanal[monthKey]?.weeks?.[weekIndex] ?? { filas: {} };
 
+  // El Conteo diario del insumo de alta rotación manda sobre lo que se
+  // vería aquí — se hace más tarde en el día, así que es más real. Completo
+  // se cuenta el domingo, Jueves el jueves; se usa la fecha real de cada
+  // uno para leer ese día exacto de conteosDiarios.
+  const fechaDelModo =
+    modo === "completo"
+      ? dateForDay(monthKey, weekIndex, month, "Domingo")
+      : dateForDay(monthKey, weekIndex, month, "Jueves");
+  const conteoDelDia = conteosDiarios[fechaDelModo] || {};
+
   const insumosDelArea = areaFiltro === "todas" ? insumos : insumos.filter((i) => i.area === areaFiltro);
   const proveedoresDelModo = modo === "completo" ? proveedores : proveedores.filter((p) => p.incluyeJueves);
   const grupos: { key: string; nombre: string; items: InsumoEntry[] }[] = [];
@@ -77,7 +89,9 @@ export function InventarioSemanalPanel({
       </button>
       <h2 className="page-title">Inventario</h2>
       <p className="hint">
-        Domingo: cuenta completa de todos los proveedores. Jueves: solo los proveedores marcados abajo.
+        Domingo: cuenta completa de todos los proveedores. Jueves: solo los proveedores marcados abajo. Los insumos de
+        alta rotación no se capturan aquí — se ven bloqueados porque reflejan directo lo que ya tengas en Conteo diario
+        de ese mismo día.
       </p>
 
       <div className="field-row">
@@ -138,6 +152,7 @@ export function InventarioSemanalPanel({
         weekIndex={weekIndex}
         grupos={grupos}
         semana={semana}
+        conteoDelDia={conteoDelDia}
         emptyText={
           modo === "jueves"
             ? "Ningún proveedor está marcado para el jueves todavía. Márcalos con \"Editar proveedores del jueves\"."
@@ -156,6 +171,7 @@ function InventarioSemanaForm({
   weekIndex,
   grupos,
   semana,
+  conteoDelDia,
   emptyText,
   onGuardarSemana,
 }: {
@@ -163,6 +179,7 @@ function InventarioSemanaForm({
   weekIndex: number;
   grupos: { key: string; nombre: string; items: InsumoEntry[] }[];
   semana: InventarioSemanal;
+  conteoDelDia: Record<string, number>;
   emptyText: string;
   onGuardarSemana: (monthKey: string, weekIndex: number, inventario: InventarioSemanal) => void;
 }) {
@@ -189,6 +206,10 @@ function InventarioSemanaForm({
     const nextFilas: Record<string, InventarioFila> = { ...semana.filas };
     grupos.forEach((g) =>
       g.items.forEach((i) => {
+        if (i.altaRotacion) {
+          nextFilas[i.id] = { cantidad: conteoDelDia[i.id] };
+          return;
+        }
         const t = textos[i.id];
         nextFilas[i.id] = { cantidad: t?.trim() ? sumFromText(t) : undefined };
       })
@@ -215,23 +236,27 @@ function InventarioSemanaForm({
         <div className="insumos-grupo" key={g.key}>
           <h3 className="insumos-grupo-titulo">{g.nombre}</h3>
           <div className="catalog-list">
-            {g.items.map((i) => (
-              <div key={i.id} className="catalog-row conteo-row">
-                <div>
-                  <strong>{i.nombre}</strong>
-                  <span>
-                    {i.unidad}
-                    {i.precio ? ` · ${money(i.precio)}` : ""}
-                  </span>
+            {g.items.map((i) => {
+              const valorConteoDiario = conteoDelDia[i.id];
+              return (
+                <div key={i.id} className="catalog-row conteo-row">
+                  <div>
+                    <strong>{i.nombre}</strong>
+                    <span>
+                      {i.unidad}
+                      {i.precio ? ` · ${money(i.precio)}` : ""}
+                    </span>
+                    {i.altaRotacion && <span className="pedido-inventario-ref">De Conteo diario</span>}
+                  </div>
+                  <NumInput
+                    value={i.altaRotacion ? (valorConteoDiario !== undefined ? String(valorConteoDiario) : "") : (textos[i.id] ?? "")}
+                    onChange={(e) => setTextos((v) => ({ ...v, [i.id]: e.target.value }))}
+                    placeholder="0"
+                    disabled={locked || !!i.altaRotacion}
+                  />
                 </div>
-                <NumInput
-                  value={textos[i.id] ?? ""}
-                  onChange={(e) => setTextos((v) => ({ ...v, [i.id]: e.target.value }))}
-                  placeholder="0"
-                  disabled={locked}
-                />
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       ))}

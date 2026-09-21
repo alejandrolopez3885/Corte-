@@ -172,7 +172,17 @@ estando en Nómina te regresa al menú de Equipo):
   por área dentro de la semana (compartido entre los modos Completo y
   Jueves, pero independiente entre Bar/Cocina/General) — así guardar Bar
   no bloquea Cocina ni General de la misma semana, y guardar cualquier
-  área nunca borra lo ya capturado en las demás; y "Pedidos" — misma
+  área nunca borra lo ya capturado en las demás. Los insumos de "alta
+  rotación" son un caso aparte: ese campo en Inventario nunca se captura
+  a mano — siempre queda bloqueado y refleja directo lo que haya en
+  Conteo diario de la fecha real de ese modo (el domingo de esa semana
+  para Completo, el jueves para Jueves), porque el conteo diario se hace
+  más tarde y es el dato más real; si todavía no se ha hecho el conteo
+  diario de ese día, se ve vacío. Esto aplica incluso con el resto del
+  Inventario desbloqueado para editar — la única forma de cambiar ese
+  número es en Conteo diario mismo. Al guardar, ese valor se copia igual
+  al historial de Inventario (para que Pedidos y los reportes lo sigan
+  viendo normal); y "Pedidos" — misma
   estructura, filtros, switch Completo/Jueves y comportamiento de guardar/
   bloquear/editar que Inventario, con las mismas semanas, pero la
   cantidad que se captura y se guarda ahí es la que se va a pedir, no la

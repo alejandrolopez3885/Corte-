@@ -941,6 +941,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           initialMonthKey={mostRecentMonthKey as string}
           initialWeekIndex={mostRecentWeekIdx}
           inventarioSemanal={data.inventarioSemanal}
+          conteosDiarios={data.conteosDiarios}
           onGuardarSemana={saveInventarioSemanal}
           onEditarProveedores={() => setModal({ type: "proveedores" })}
         />
