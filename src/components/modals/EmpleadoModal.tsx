@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Sheet, Field, SumInput, Toggle, NumInput } from "../ui";
 import { money, sumFromText, uid } from "../../lib/dataModel";
 import { supabase } from "../../lib/supabaseClient";
-import { createStaffAccount, revokeStaffAccess, updateStaffPermisos, PIN_LENGTH } from "../../lib/staffAccounts";
+import { createStaffAccount, errorMessage, revokeStaffAccess, updateStaffPermisos, PIN_LENGTH } from "../../lib/staffAccounts";
 import { PERMISOS_DISPONIBLES } from "../../lib/types";
 import type { AreaEntry, EmpleadoEntry, PermisoStaff, PuestoEntry } from "../../lib/types";
 
@@ -105,7 +105,7 @@ export function EmpleadoModal({
       setPin("");
       setPin2("");
     } catch (e) {
-      setAccesoError(e instanceof Error ? e.message : "No se pudo dar de alta el acceso.");
+      setAccesoError(errorMessage(e, "No se pudo dar de alta el acceso."));
     } finally {
       setAccesoBusy(false);
     }
@@ -122,7 +122,7 @@ export function EmpleadoModal({
       setAccesoRecienCreado(false);
       setPidiendoQuitarAcceso(false);
     } catch (e) {
-      setAccesoError(e instanceof Error ? e.message : "No se pudo quitar el acceso.");
+      setAccesoError(errorMessage(e, "No se pudo quitar el acceso."));
     } finally {
       setAccesoBusy(false);
     }
@@ -139,7 +139,7 @@ export function EmpleadoModal({
       try {
         await updateStaffPermisos(staffProfileId, permisos);
       } catch (e) {
-        setAccesoError(e instanceof Error ? e.message : "No se pudieron guardar sus permisos.");
+        setAccesoError(errorMessage(e, "No se pudieron guardar sus permisos."));
         return;
       }
     }

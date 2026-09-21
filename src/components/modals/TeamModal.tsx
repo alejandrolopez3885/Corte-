@@ -4,7 +4,7 @@ import { Sheet, Field, NumInput } from "../ui";
 import { supabase } from "../../lib/supabaseClient";
 import { formatAssignedDate, locateDate, todayIso } from "../../lib/dataModel";
 import { addAssignment, listAssignments, removeAssignment } from "../../lib/staffAssignments";
-import { createStaffAccount, PIN_LENGTH } from "../../lib/staffAccounts";
+import { createStaffAccount, errorMessage, PIN_LENGTH } from "../../lib/staffAccounts";
 import type { Profile, StaffAssignment } from "../../lib/types";
 
 export function TeamModal({ onClose, ownerId }: { onClose: () => void; ownerId: string }) {
@@ -62,7 +62,7 @@ function CreateStaffForm({ ownerId, onCreated }: { ownerId: string; onCreated: (
       await createStaffAccount({ displayName: name, pin, ownerId });
       onCreated();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "No se pudo crear la cuenta.");
+      setError(errorMessage(e, "No se pudo crear la cuenta."));
     } finally {
       setSaving(false);
     }

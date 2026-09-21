@@ -5,6 +5,17 @@ import type { PermisoStaff } from "./types";
 export const PIN_LENGTH = 4;
 const EMAIL_DOMAIN = "cortes.local";
 
+// Los errores de Supabase (Postgrest, Auth) no siempre son instancias de
+// Error — muchos son objetos planos con .message. Sin esto, un catch que
+// solo revisa `e instanceof Error` esconde el motivo real detrás de un
+// mensaje genérico.
+export function errorMessage(e: unknown, fallback: string): string {
+  if (e && typeof e === "object" && "message" in e && typeof (e as { message?: unknown }).message === "string") {
+    return (e as { message: string }).message;
+  }
+  return fallback;
+}
+
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
 
