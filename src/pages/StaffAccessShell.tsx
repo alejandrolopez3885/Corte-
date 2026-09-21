@@ -1,8 +1,12 @@
-import { LogOut } from "lucide-react";
+import { useState } from "react";
+import { ChefHat, ClipboardList, Clock, LogOut, Martini } from "lucide-react";
 import { mostRecentWeekIndex } from "../lib/dataModel";
-import { HORARIO_AREAS_FIJAS } from "../lib/types";
-import type { AppData, HorarioSemana, Profile } from "../lib/types";
+import { HORARIO_AREAS_FIJAS, PERMISOS_DISPONIBLES } from "../lib/types";
+import type { AppData, HorarioSemana, InsumoArea, PermisoStaff, Profile } from "../lib/types";
 import { HorariosPanel } from "../components/panels/HorariosPanel";
+import { ConteoDiarioPanel } from "../components/panels/ConteoDiarioPanel";
+
+type StaffView = "menu" | PermisoStaff;
 
 function ShellHeader({ subtitle, onSignOut }: { subtitle?: string; onSignOut: () => void }) {
   return (
@@ -18,27 +22,40 @@ function ShellHeader({ subtitle, onSignOut }: { subtitle?: string; onSignOut: ()
   );
 }
 
+// El nombre del área en Personal (ej. "Bar", "Cocina") no siempre coincide
+// literalmente con el id que usan Horarios/Insumos — se resuelve por
+// nombre, sin importar mayúsculas.
+function insumoAreaForNombre(nombre: string): InsumoArea | null {
+  const n = nombre.toLowerCase();
+  if (n === "bar") return "bar";
+  if (n === "cocina") return "cocina";
+  return null;
+}
+
 // Pantalla para cuentas de equipo dadas de alta desde Personal (no las de
 // meseros por día asignado) — solo ve las secciones que su permiso
 // habilita, y esas siempre acotadas a su propia área (la de su puesto en
-// Personal). Hoy solo existe el permiso "horarios"; se agregan más
-// secciones aquí conforme se vayan habilitando, sin tocar el resto de la
-// app ni el flujo de meseros.
+// Personal). Con un solo permiso entra directo a esa sección; con dos o
+// más, primero ve un menú para elegir.
 export default function StaffAccessShell({
   profile,
   data,
   onSaveHorarioSemana,
+  onSaveConteoDiario,
   onSignOut,
 }: {
   profile: Profile;
   data: AppData;
   onSaveHorarioSemana: (monthKey: string, weekIndex: number, semana: HorarioSemana) => void;
+  onSaveConteoDiario: (fecha: string, valores: Record<string, number>) => void;
   onSignOut: () => void;
 }) {
+  const permisos = profile.permisos || [];
+  const [view, setView] = useState<StaffView>(() => (permisos.length === 1 ? permisos[0] : "menu"));
+
   const empleado = data.empleados.find((e) => e.id === profile.empleado_id);
   const puesto = empleado?.puestoId ? data.puestos.find((p) => p.id === empleado.puestoId) : undefined;
   const area = puesto ? data.areas.find((a) => a.id === puesto.areaId) : undefined;
-  const permisos = profile.permisos || [];
 
   const monthKeys = Object.keys(data.months).sort();
   const mostRecentMonthKey = monthKeys.length > 0 ? monthKeys[monthKeys.length - 1] : null;
@@ -55,7 +72,20 @@ export default function StaffAccessShell({
     );
   }
 
-  if (permisos.includes("horarios")) {
+  if (permisos.length === 0) {
+    return (
+      <div className="app-shell">
+        <ShellHeader subtitle={area.nombre} onSignOut={onSignOut} />
+        <div className="full-page-msg">Todavía no tienes ninguna sección habilitada. Pide al dueño que te dé acceso.</div>
+      </div>
+    );
+  }
+
+  // Con un único permiso no hay menú al que volver — nunca se muestra la
+  // vista "menu" ni un botón de regreso.
+  const backToMenu = permisos.length > 1 ? () => setView("menu") : undefined;
+
+  if (view === "horarios" && permisos.includes("horarios")) {
     const horarioAreaId = HORARIO_AREAS_FIJAS.find((a) => a.nombre.toLowerCase() === area.nombre.toLowerCase())?.id;
     if (!horarioAreaId) {
       return (
@@ -76,6 +106,8 @@ export default function StaffAccessShell({
       <div className="app-shell">
         <ShellHeader subtitle={area.nombre} onSignOut={onSignOut} />
         <HorariosPanel
+          onBack={backToMenu}
+          backLabel="Inicio"
           months={data.months}
           monthKeys={monthKeys}
           initialMonthKey={mostRecentMonthKey as string}
@@ -89,10 +121,65 @@ export default function StaffAccessShell({
     );
   }
 
+  if (view === "conteo_diario" && permisos.includes("conteo_diario")) {
+    const insumoArea = insumoAreaForNombre(area.nombre);
+    if (!insumoArea) {
+      return (
+        <div className="app-shell">
+          <ShellHeader subtitle={area.nombre} onSignOut={onSignOut} />
+          <div className="full-page-msg">
+            Tu área ("{area.nombre}") todavía no tiene Conteo diario en la app — por ahora solo existe para Bar y
+            Cocina.
+          </div>
+        </div>
+      );
+    }
+    const insumosDelArea = data.insumos.filter((i) => i.area === insumoArea && i.altaRotacion);
+    return (
+      <div className="app-shell">
+        <ShellHeader subtitle={area.nombre} onSignOut={onSignOut} />
+        <ConteoDiarioPanel
+          onBack={backToMenu}
+          backLabel="Inicio"
+          emptyIcon={insumoArea === "bar" ? <Martini size={26} strokeWidth={1.3} /> : <ChefHat size={26} strokeWidth={1.3} />}
+          emptyText={`Aún no hay insumos de ${area.nombre} marcados como alta rotación. Pide al dueño que los marque desde el Catálogo.`}
+          insumos={insumosDelArea}
+          proveedores={data.proveedores}
+          months={data.months}
+          monthKeys={monthKeys}
+          initialMonthKey={mostRecentMonthKey as string}
+          initialWeekIndex={mostRecentWeekIdx}
+          conteosDiarios={data.conteosDiarios}
+          onGuardar={onSaveConteoDiario}
+        />
+      </div>
+    );
+  }
+
+  const ICONOS: Record<PermisoStaff, typeof Clock> = { horarios: Clock, conteo_diario: ClipboardList };
+
   return (
     <div className="app-shell">
       <ShellHeader subtitle={area.nombre} onSignOut={onSignOut} />
-      <div className="full-page-msg">Todavía no tienes ninguna sección habilitada. Pide al dueño que te dé acceso.</div>
+      <div className="page-section">
+        <h2 className="page-title">Inicio</h2>
+        <div className="menu-list">
+          {PERMISOS_DISPONIBLES.filter((p) => permisos.includes(p.value)).map((p) => {
+            const Icono = ICONOS[p.value];
+            return (
+              <button key={p.value} className="menu-item" onClick={() => setView(p.value)}>
+                <span className="menu-item-icon">
+                  <Icono size={20} />
+                </span>
+                <span className="menu-item-text">
+                  <strong>{p.label}</strong>
+                  <span>{p.description}</span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }

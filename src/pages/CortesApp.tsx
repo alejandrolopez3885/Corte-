@@ -140,7 +140,15 @@ export default function CortesApp({ profile }: { profile: Profile }) {
     // de la cuenta de meseros por día asignado. Tiene su propia pantalla,
     // acotada a las secciones que su permiso habilita.
     if ((profile.permisos || []).length > 0) {
-      return <StaffAccessShell profile={profile} data={data} onSaveHorarioSemana={saveHorarioSemana} onSignOut={signOut} />;
+      return (
+        <StaffAccessShell
+          profile={profile}
+          data={data}
+          onSaveHorarioSemana={saveHorarioSemana}
+          onSaveConteoDiario={guardarConteoDiario}
+          onSignOut={signOut}
+        />
+      );
     }
     if (assignmentsStatus === "loading" || assignments === null) {
       return (

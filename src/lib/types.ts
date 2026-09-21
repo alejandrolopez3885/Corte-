@@ -402,15 +402,20 @@ export type Role = "owner" | "staff";
 
 // Secciones que una cuenta de equipo con PIN puede tener habilitadas más
 // allá del acceso por día asignado (mesero) — ver EmpleadoEntry.staffProfileId
-// y PERMISOS_DISPONIBLES. Empieza en 1 solo permiso a propósito; se agregan
-// más conforme el dueño los vaya necesitando, sin rehacer el checklist.
-export type PermisoStaff = "horarios";
+// y PERMISOS_DISPONIBLES. Se agregan más conforme el dueño los vaya
+// necesitando, sin rehacer el checklist.
+export type PermisoStaff = "horarios" | "conteo_diario";
 
 export const PERMISOS_DISPONIBLES: { value: PermisoStaff; label: string; description: string }[] = [
   {
     value: "horarios",
     label: "Horarios",
     description: "Ver y capturar el horario semanal de su propia área (según su puesto en Personal).",
+  },
+  {
+    value: "conteo_diario",
+    label: "Conteo diario",
+    description: "Capturar el conteo diario de insumos de alta rotación de su propia área (Bar o Cocina) — sin catálogo.",
   },
 ];
 

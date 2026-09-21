@@ -27,7 +27,7 @@ export function ConteoDiarioPanel({
   conteosDiarios,
   onGuardar,
 }: {
-  onBack: () => void;
+  onBack?: () => void;
   backLabel: string;
   emptyIcon: ReactNode;
   emptyText: string;
@@ -53,9 +53,11 @@ export function ConteoDiarioPanel({
   if (monthKeys.length === 0 || !month || !fecha || !weekStartDate) {
     return (
       <div className="page-section">
-        <button className="link-btn back-link" onClick={onBack}>
-          <ArrowLeft size={15} /> {backLabel}
-        </button>
+        {onBack && (
+          <button className="link-btn back-link" onClick={onBack}>
+            <ArrowLeft size={15} /> {backLabel}
+          </button>
+        )}
         <h2 className="page-title">Conteo diario</h2>
         <Empty icon={emptyIcon} text="Primero crea un mes en Corte para poder llevar el conteo diario." />
       </div>
@@ -70,9 +72,11 @@ export function ConteoDiarioPanel({
 
   return (
     <div className="page-section">
-      <button className="link-btn back-link" onClick={onBack}>
-        <ArrowLeft size={15} /> {backLabel}
-      </button>
+      {onBack && (
+        <button className="link-btn back-link" onClick={onBack}>
+          <ArrowLeft size={15} /> {backLabel}
+        </button>
+      )}
       <h2 className="page-title">Conteo diario</h2>
 
       <div className="field-row">

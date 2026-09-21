@@ -10,6 +10,7 @@ type CellTarget = { areaId: string; empleadoId: string; nombre: string; day: Day
 
 export function HorariosPanel({
   onBack,
+  backLabel = "Equipo",
   months,
   monthKeys,
   initialMonthKey,
@@ -20,6 +21,7 @@ export function HorariosPanel({
   soloAreaId,
 }: {
   onBack?: () => void;
+  backLabel?: string;
   months: Record<string, MonthData>;
   monthKeys: string[];
   initialMonthKey: string;
@@ -42,7 +44,7 @@ export function HorariosPanel({
       <div className="page-section">
         {onBack && (
           <button className="link-btn back-link" onClick={onBack}>
-            <ArrowLeft size={15} /> Equipo
+            <ArrowLeft size={15} /> {backLabel}
           </button>
         )}
         <h2 className="page-title">Horarios</h2>
@@ -64,7 +66,7 @@ export function HorariosPanel({
     <div className="page-section">
       {onBack && (
         <button className="link-btn back-link" onClick={onBack}>
-          <ArrowLeft size={15} /> Equipo
+          <ArrowLeft size={15} /> {backLabel}
         </button>
       )}
       <h2 className="page-title">Horarios</h2>
