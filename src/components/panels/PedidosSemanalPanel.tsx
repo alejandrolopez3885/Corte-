@@ -1,0 +1,278 @@
+import { useState } from "react";
+import { ArrowLeft, ShoppingCart, TriangleAlert } from "lucide-react";
+import { Empty, Field, NumInput, Sheet } from "../ui";
+import { formatWeekRange, money, resolveWeekStartDate, sumFromText, todayIso } from "../../lib/dataModel";
+import type { InsumoArea, InsumoEntry, InventarioSemanal, InventarioSemanalMonthData, MonthData, PedidoFila, PedidoSemanal, PedidoSemanalMonthData, ProveedorCatalogEntry } from "../../lib/types";
+
+type Modo = "completo" | "jueves";
+type AreaFiltro = "todas" | InsumoArea;
+
+const AREA_LABEL: Record<InsumoArea, string> = { bar: "Bar", cocina: "Cocina", general: "General" };
+
+function esHoyJueves(): boolean {
+  return new Date(`${todayIso()}T00:00:00`).getDay() === 4;
+}
+
+export function PedidosSemanalPanel({
+  onBack,
+  insumos,
+  proveedores,
+  months,
+  monthKeys,
+  initialMonthKey,
+  initialWeekIndex,
+  pedidosSemanal,
+  inventarioSemanal,
+  onGuardarSemana,
+  onEditarProveedores,
+}: {
+  onBack: () => void;
+  insumos: InsumoEntry[];
+  proveedores: ProveedorCatalogEntry[];
+  months: Record<string, MonthData>;
+  monthKeys: string[];
+  initialMonthKey: string;
+  initialWeekIndex: number;
+  pedidosSemanal: Record<string, PedidoSemanalMonthData>;
+  inventarioSemanal: Record<string, InventarioSemanalMonthData>;
+  onGuardarSemana: (monthKey: string, weekIndex: number, pedido: PedidoSemanal) => void;
+  onEditarProveedores: () => void;
+}) {
+  const [monthKey, setMonthKey] = useState(initialMonthKey);
+  const [weekIndex, setWeekIndex] = useState(initialWeekIndex);
+  const [modo, setModo] = useState<Modo>(() => (esHoyJueves() ? "jueves" : "completo"));
+  const [areaFiltro, setAreaFiltro] = useState<AreaFiltro>("todas");
+
+  const month = months[monthKey] || null;
+
+  if (monthKeys.length === 0 || !month) {
+    return (
+      <div className="page-section">
+        <button className="link-btn back-link" onClick={onBack}>
+          <ArrowLeft size={15} /> Negocio
+        </button>
+        <h2 className="page-title">Pedidos</h2>
+        <Empty icon={<ShoppingCart size={26} strokeWidth={1.3} />} text="Primero crea un mes en Corte para poder llevar pedidos." />
+      </div>
+    );
+  }
+
+  const weekStartDate = resolveWeekStartDate(monthKey, weekIndex, month);
+  const semana: PedidoSemanal = pedidosSemanal[monthKey]?.weeks?.[weekIndex] ?? { filas: {} };
+  const inventarioSemana: InventarioSemanal = inventarioSemanal[monthKey]?.weeks?.[weekIndex] ?? { filas: {} };
+
+  const insumosDelArea = areaFiltro === "todas" ? insumos : insumos.filter((i) => i.area === areaFiltro);
+  const proveedoresDelModo = modo === "completo" ? proveedores : proveedores.filter((p) => p.incluyeJueves);
+  const grupos: { key: string; nombre: string; items: InsumoEntry[] }[] = [];
+  proveedoresDelModo.forEach((p) => {
+    const items = insumosDelArea.filter((i) => i.proveedorId === p.id);
+    if (items.length > 0) grupos.push({ key: p.id, nombre: p.nombre, items });
+  });
+  if (modo === "completo") {
+    const sinProveedor = insumosDelArea.filter((i) => !i.proveedorId);
+    if (sinProveedor.length > 0) grupos.push({ key: "sin", nombre: "Sin proveedor", items: sinProveedor });
+  }
+
+  return (
+    <div className="page-section">
+      <button className="link-btn back-link" onClick={onBack}>
+        <ArrowLeft size={15} /> Negocio
+      </button>
+      <h2 className="page-title">Pedidos</h2>
+      <p className="hint">
+        Domingo: pedido completo de todos los proveedores. Jueves: solo los proveedores marcados abajo. Junto a cada
+        insumo se ve la cantidad que ya contaste en Inventario esta semana, solo como referencia para decidir cuánto
+        pedir.
+      </p>
+
+      <div className="field-row">
+        <Field label="Mes">
+          <select
+            className="text-input"
+            value={monthKey}
+            onChange={(e) => {
+              setMonthKey(e.target.value);
+              setWeekIndex(0);
+            }}
+          >
+            {monthKeys.map((mk) => (
+              <option key={mk} value={mk}>
+                {months[mk].label}
+              </option>
+            ))}
+          </select>
+        </Field>
+        <Field label="Semana">
+          <select className="text-input" value={weekIndex} onChange={(e) => setWeekIndex(Number(e.target.value))}>
+            {[0, 1, 2, 3].map((i) => (
+              <option key={i} value={i}>
+                Semana {i + 1}
+              </option>
+            ))}
+          </select>
+        </Field>
+      </div>
+      <p className="hint">{formatWeekRange(weekStartDate)}</p>
+
+      <div className="segmented">
+        <button type="button" className={modo === "completo" ? "active" : ""} onClick={() => setModo("completo")}>
+          Completo
+        </button>
+        <button type="button" className={modo === "jueves" ? "active" : ""} onClick={() => setModo("jueves")}>
+          Jueves
+        </button>
+      </div>
+      <button className="link-btn" onClick={onEditarProveedores}>
+        Editar proveedores del jueves
+      </button>
+
+      <div className="segmented">
+        <button type="button" className={areaFiltro === "todas" ? "active" : ""} onClick={() => setAreaFiltro("todas")}>
+          Todas
+        </button>
+        {(Object.keys(AREA_LABEL) as InsumoArea[]).map((a) => (
+          <button key={a} type="button" className={areaFiltro === a ? "active" : ""} onClick={() => setAreaFiltro(a)}>
+            {AREA_LABEL[a]}
+          </button>
+        ))}
+      </div>
+
+      <PedidoSemanaForm
+        key={`${monthKey}-${weekIndex}-${areaFiltro}`}
+        monthKey={monthKey}
+        weekIndex={weekIndex}
+        grupos={grupos}
+        semana={semana}
+        inventarioSemana={inventarioSemana}
+        emptyText={
+          modo === "jueves"
+            ? "Ningún proveedor está marcado para el jueves todavía. Márcalos con \"Editar proveedores del jueves\"."
+            : areaFiltro === "todas"
+              ? "Aún no tienes insumos en el catálogo de Bar o Cocina."
+              : `Aún no tienes insumos en el catálogo de ${AREA_LABEL[areaFiltro]}.`
+        }
+        onGuardarSemana={onGuardarSemana}
+      />
+    </div>
+  );
+}
+
+function PedidoSemanaForm({
+  monthKey,
+  weekIndex,
+  grupos,
+  semana,
+  inventarioSemana,
+  emptyText,
+  onGuardarSemana,
+}: {
+  monthKey: string;
+  weekIndex: number;
+  grupos: { key: string; nombre: string; items: InsumoEntry[] }[];
+  semana: PedidoSemanal;
+  inventarioSemana: InventarioSemanal;
+  emptyText: string;
+  onGuardarSemana: (monthKey: string, weekIndex: number, pedido: PedidoSemanal) => void;
+}) {
+  // Se siembra de semana.filas completo (no solo de los grupos visibles
+  // del modo actual), para que cambiar entre Completo/Jueves sin cambiar
+  // de semana nunca muestre en blanco una cantidad que ya estaba guardada
+  // bajo el otro modo.
+  const [textos, setTextos] = useState<Record<string, string>>(() => {
+    const init: Record<string, string> = {};
+    Object.entries(semana.filas).forEach(([insumoId, fila]) => {
+      if (fila.cantidad !== undefined) init[insumoId] = String(fila.cantidad);
+    });
+    return init;
+  });
+  // Bloqueado solo si el área/proveedores visibles ahora ya tienen algo
+  // guardado — así pedir a un área nueva de la misma semana no queda
+  // bloqueado solo porque otra área ya se guardó antes.
+  const [locked, setLocked] = useState(() =>
+    grupos.some((g) => g.items.some((i) => i.id in semana.filas))
+  );
+  const [pidiendoConfirmacion, setPidiendoConfirmacion] = useState(false);
+
+  function guardar() {
+    const nextFilas: Record<string, PedidoFila> = { ...semana.filas };
+    grupos.forEach((g) =>
+      g.items.forEach((i) => {
+        const t = textos[i.id];
+        nextFilas[i.id] = { cantidad: t?.trim() ? sumFromText(t) : undefined };
+      })
+    );
+    onGuardarSemana(monthKey, weekIndex, { ...semana, filas: nextFilas });
+    setLocked(true);
+  }
+
+  if (grupos.length === 0) {
+    return <Empty icon={<ShoppingCart size={26} strokeWidth={1.3} />} text={emptyText} />;
+  }
+
+  return (
+    <>
+      {locked && (
+        <div className="conteo-locked-banner">
+          <span>Este pedido ya está guardado y los campos están bloqueados.</span>
+          <button className="link-btn" onClick={() => setPidiendoConfirmacion(true)}>
+            Editar
+          </button>
+        </div>
+      )}
+      {grupos.map((g) => (
+        <div className="insumos-grupo" key={g.key}>
+          <h3 className="insumos-grupo-titulo">{g.nombre}</h3>
+          <div className="catalog-list">
+            {g.items.map((i) => {
+              const enInventario = inventarioSemana.filas[i.id]?.cantidad;
+              return (
+                <div key={i.id} className="catalog-row conteo-row">
+                  <div>
+                    <strong>{i.nombre}</strong>
+                    <span>
+                      {i.unidad}
+                      {i.precio ? ` · ${money(i.precio)}` : ""}
+                    </span>
+                    <span className="pedido-inventario-ref">
+                      Inventario: {enInventario !== undefined ? enInventario : "–"}
+                    </span>
+                  </div>
+                  <NumInput
+                    value={textos[i.id] ?? ""}
+                    onChange={(e) => setTextos((v) => ({ ...v, [i.id]: e.target.value }))}
+                    placeholder="0"
+                    disabled={locked}
+                  />
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+      <button className="btn-primary" onClick={guardar} disabled={locked}>
+        Guardar pedido
+      </button>
+
+      {pidiendoConfirmacion && (
+        <Sheet title="Editar pedido guardado" onClose={() => setPidiendoConfirmacion(false)}>
+          <p className="hint">
+            Este pedido ya se guardó. No deberías editarlo salvo que estés seguro de que algún valor capturado está
+            mal — cambiarlo afecta tu historial de pedidos de esta semana.
+          </p>
+          <button
+            className="btn-warn"
+            onClick={() => {
+              setLocked(false);
+              setPidiendoConfirmacion(false);
+            }}
+          >
+            <TriangleAlert size={16} /> Sí, necesito editarlo
+          </button>
+          <button className="link-btn" onClick={() => setPidiendoConfirmacion(false)}>
+            Cancelar
+          </button>
+        </Sheet>
+      )}
+    </>
+  );
+}

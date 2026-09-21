@@ -277,6 +277,23 @@ export interface InventarioSemanalMonthData {
   weeks: (InventarioSemanal | null)[];
 }
 
+// Pedido semanal (Negocio > Pedidos) — misma estructura y semanas que
+// Inventario (Completo/Jueves incluidos), pero la cantidad que se
+// guarda aquí es la que se va a pedir, no la que hay en existencia. El
+// panel muestra junto a cada fila la cantidad de Inventario de esa misma
+// semana/modo, solo como referencia de lectura — no vive en esta fila.
+export interface PedidoFila {
+  cantidad?: number;
+}
+
+export interface PedidoSemanal {
+  filas: Record<string, PedidoFila>; // insumoId -> fila
+}
+
+export interface PedidoSemanalMonthData {
+  weeks: (PedidoSemanal | null)[];
+}
+
 // Facturas/notas de proveedores pagadas por transferencia — no son efectivo,
 // no afectan ningún total de caja, y se administran aparte del corte diario
 // (no viven dentro de un mes/semana/día). Categoría fija (no editable) para
@@ -348,9 +365,12 @@ export interface AppData {
   // mismo formato en ambas áreas: fecha real (ISO) -> insumoId -> cantidad.
   // Solo existe entrada para las fechas donde ya se capturó algo.
   conteosDiarios: Record<string, Record<string, number>>;
-  // Inventario semanal para pedidos a proveedores (mismas semanas que
-  // Corte/Horarios).
+  // Inventario semanal (Negocio > Inventario, mismas semanas que
+  // Corte/Horarios) — lo que hay en existencia, no lo que se pide.
   inventarioSemanal: Record<string, InventarioSemanalMonthData>;
+  // Pedidos semanales (Negocio > Pedidos) — lo que se va a pedir a cada
+  // proveedor, mismas semanas y Completo/Jueves que Inventario.
+  pedidosSemanal: Record<string, PedidoSemanalMonthData>;
 }
 
 // Un punto de la tendencia semanal (Negocio > Tendencias) — un resumen de

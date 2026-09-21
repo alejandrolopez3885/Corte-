@@ -187,7 +187,7 @@ export function defaultData(): AppData {
   const { areas, puestos } = seedAreasYPuestos();
   return {
     meseros: [], empleados: [], areas, puestos, proveedores: [], facturas: [], months: {}, horarios: {}, nominaDescuentos: {},
-    insumos: [], conteosDiarios: {}, inventarioSemanal: {},
+    insumos: [], conteosDiarios: {}, inventarioSemanal: {}, pedidosSemanal: {},
   };
 }
 
@@ -236,6 +236,10 @@ export function migrateAppData(raw: AppData): { data: AppData; changed: boolean 
   }
   if (!data.inventarioSemanal) {
     data.inventarioSemanal = {};
+    changed = true;
+  }
+  if (!data.pedidosSemanal) {
+    data.pedidosSemanal = {};
     changed = true;
   }
 

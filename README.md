@@ -172,9 +172,18 @@ estando en Nómina te regresa al menú de Equipo):
   por área dentro de la semana (compartido entre los modos Completo y
   Jueves, pero independiente entre Bar/Cocina/General) — así guardar Bar
   no bloquea Cocina ni General de la misma semana, y guardar cualquier
-  área nunca borra lo ya capturado en las demás. El manejo de
-  compras/pedidos en sí (qué se pidió,
-  cuánto, si llegó) se deja para más adelante, como una sección aparte.
+  área nunca borra lo ya capturado en las demás; y "Pedidos" — misma
+  estructura, filtros, switch Completo/Jueves y comportamiento de guardar/
+  bloquear/editar que Inventario, con las mismas semanas, pero la
+  cantidad que se captura y se guarda ahí es la que se va a pedir, no la
+  que hay en existencia. Junto a cada insumo se ve, solo de lectura,
+  "Inventario: N" con la cantidad que ya se contó en Inventario esa misma
+  semana (o "–" si no se ha contado) — nada más como referencia para
+  decidir cuánto pedir; nunca se guarda ni se puede editar desde Pedidos.
+  Ambas secciones son completamente independientes (mismos insumos, pero
+  cada una con su propio historial), así que guardar un pedido no toca el
+  inventario de esa semana ni viceversa. El manejo de si un pedido ya
+  llegó o no se deja para más adelante.
 - **Dashboard**: reporte de resultados de la semana, solo para leer (con
   porcentajes sobre la venta total): Venta total, Gastos operativos (suma
   los de efectivo categorizados como Operación más los de transferencia),
