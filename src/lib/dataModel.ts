@@ -333,6 +333,7 @@ export function migrateAppData(raw: AppData): { data: AppData; changed: boolean 
     "Fibras de alambre", "Escoba", "Recogedor", "Trapeador", "Rastrillo",
     "Cubetas", "Trapos", "Cofias negras", "Malla para mingitorio",
     "Papel sanitario", "Papel secante", "Sobre de nómina",
+    "Paquete de servilletas", "Chiles jalapeños", "Chocolate líquido",
   ])) {
     changed = true;
   }
@@ -346,10 +347,19 @@ export function migrateAppData(raw: AppData): { data: AppData; changed: boolean 
     "Jugo de piña", "Jugo de mango", "Bacardí", "Captain Morgan", "Black & White",
     "Gran Malo", "Red Label", "Buchanan's", "Jose Cuervo", "Maestro Tequilero",
     "Smirnoff Tamarindo", "Viuda de Sánchez", "Tarugo",
+    "Pepsi", "Sprite", "Gin", "Mezcal", "Curazao", "Licor de fresa", "Azúcar",
   ])) {
     changed = true;
   }
-
+  if (sembrarInsumosPorProveedor(data, "cocina", "pieza", "Compras Johnster", [
+    "Pan artesanal", "Aderezo Caesar", "Mayonesa", "Mostaza", "Frijoles refritos",
+    "Chipotle", "Salsa marinara", "Crotones", "Puré de papa", "Sal",
+    "Sazonador italiano", "Perejil", "Consomé de pollo", "Harina", "Leche",
+    "Pasta penne", "Frijol ranch", "Consomate", "Huevo", "Tortilla amarilla",
+    "Tortilla blanca", "Tortilla para burrito", "Pepinillos", "Aluminio",
+  ])) {
+    changed = true;
+  }
   return { data, changed };
 }
 
