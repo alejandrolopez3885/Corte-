@@ -368,6 +368,21 @@ export function migrateAppData(raw: AppData): { data: AppData; changed: boolean 
   ])) {
     changed = true;
   }
+  if (sembrarInsumosPorProveedor(data, "bar", "pieza", "Compras Johnster", [
+    "Coca de sabor para llevar", "Agua natural", "Pepsi",
+  ], true)) {
+    changed = true;
+  }
+  if (sembrarInsumosPorProveedor(data, "bar", "pieza", "Cerveza", [
+    "Tecate Light", "Indio", "XX", "Tecate rojo", "XX ámbar", "XX ultra", "Amstel", "Carta blanca",
+  ], true)) {
+    changed = true;
+  }
+  if (sembrarInsumosPorProveedor(data, "bar", "pieza", "Coca Cola", [
+    "Coca regular", "Coca zero", "Coca light",
+  ], true)) {
+    changed = true;
+  }
   if (sembrarInsumosPorProveedor(data, "cocina", "pieza", "Compras Johnster", [
     "Pan artesanal", "Aderezo Caesar", "Mayonesa", "Mostaza", "Frijoles refritos",
     "Chipotle", "Salsa marinara", "Crotones", "Puré de papa", "Sal",
@@ -389,7 +404,8 @@ function sembrarInsumosPorProveedor(
   area: InsumoArea,
   unidad: string,
   proveedorNombre: string,
-  nombres: string[]
+  nombres: string[],
+  altaRotacion = false
 ): boolean {
   const yaExiste = (nombre: string) =>
     data.insumos.some((i) => i.area === area && i.nombre.trim().toLowerCase() === nombre.toLowerCase());
@@ -402,7 +418,7 @@ function sembrarInsumosPorProveedor(
   }
   data.insumos = [
     ...data.insumos,
-    ...faltantes.map((nombre) => ({ id: uid(), area, nombre, unidad, proveedorId: proveedor.id })),
+    ...faltantes.map((nombre) => ({ id: uid(), area, nombre, unidad, proveedorId: proveedor.id, altaRotacion })),
   ];
   return true;
 }
