@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { ChefHat, ClipboardList, Clock, LogOut, Martini } from "lucide-react";
-import { mostRecentWeekIndex } from "../lib/dataModel";
+import { insumoAreaForPuesto, mostRecentWeekIndex } from "../lib/dataModel";
 import { HORARIO_AREAS_FIJAS, PERMISOS_DISPONIBLES } from "../lib/types";
-import type { AppData, HorarioSemana, InsumoArea, PermisoStaff, Profile } from "../lib/types";
+import type { AppData, HorarioSemana, PermisoStaff, Profile } from "../lib/types";
 import { HorariosPanel } from "../components/panels/HorariosPanel";
 import { ConteoDiarioPanel } from "../components/panels/ConteoDiarioPanel";
 
@@ -20,16 +20,6 @@ function ShellHeader({ subtitle, onSignOut }: { subtitle?: string; onSignOut: ()
       </button>
     </header>
   );
-}
-
-// El nombre del área en Personal (ej. "Bar", "Cocina") no siempre coincide
-// literalmente con el id que usan Horarios/Insumos — se resuelve por
-// nombre, sin importar mayúsculas.
-function insumoAreaForNombre(nombre: string): InsumoArea | null {
-  const n = nombre.toLowerCase();
-  if (n === "bar") return "bar";
-  if (n === "cocina") return "cocina";
-  return null;
 }
 
 // Pantalla para cuentas de equipo dadas de alta desde Personal (no las de
@@ -122,27 +112,28 @@ export default function StaffAccessShell({
   }
 
   if (view === "conteo_diario" && permisos.includes("conteo_diario")) {
-    const insumoArea = insumoAreaForNombre(area.nombre);
+    const insumoArea = puesto ? insumoAreaForPuesto(puesto.nombre) : null;
     if (!insumoArea) {
       return (
         <div className="app-shell">
           <ShellHeader subtitle={area.nombre} onSignOut={onSignOut} />
           <div className="full-page-msg">
-            Tu área ("{area.nombre}") todavía no tiene Conteo diario en la app — por ahora solo existe para Bar y
-            Cocina.
+            Tu puesto ("{puesto?.nombre}") todavía no tiene Conteo diario en la app — por ahora solo existe para
+            puestos de Barra o Cocina.
           </div>
         </div>
       );
     }
+    const insumoAreaLabel = insumoArea === "bar" ? "Bar" : "Cocina";
     const insumosDelArea = data.insumos.filter((i) => i.area === insumoArea && i.altaRotacion);
     return (
       <div className="app-shell">
-        <ShellHeader subtitle={area.nombre} onSignOut={onSignOut} />
+        <ShellHeader subtitle={insumoAreaLabel} onSignOut={onSignOut} />
         <ConteoDiarioPanel
           onBack={backToMenu}
           backLabel="Inicio"
           emptyIcon={insumoArea === "bar" ? <Martini size={26} strokeWidth={1.3} /> : <ChefHat size={26} strokeWidth={1.3} />}
-          emptyText={`Aún no hay insumos de ${area.nombre} marcados como alta rotación. Pide al dueño que los marque desde el Catálogo.`}
+          emptyText={`Aún no hay insumos de ${insumoAreaLabel} marcados como alta rotación. Pide al dueño que los marque desde el Catálogo.`}
           insumos={insumosDelArea}
           proveedores={data.proveedores}
           months={data.months}

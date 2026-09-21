@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Sheet, Field, SumInput, Toggle, NumInput } from "../ui";
-import { money, sumFromText, uid } from "../../lib/dataModel";
+import { insumoAreaForPuesto, money, sumFromText, uid } from "../../lib/dataModel";
 import { supabase } from "../../lib/supabaseClient";
 import { createStaffAccount, errorMessage, revokeStaffAccess, updateStaffPermisos, PIN_LENGTH } from "../../lib/staffAccounts";
 import { PERMISOS_DISPONIBLES } from "../../lib/types";
@@ -274,7 +274,7 @@ export function EmpleadoModal({
                 placeholder="0000"
               />
             </Field>
-            <PermisosChecklist permisos={permisos} onToggle={togglePermiso} areaActual={areaActual} />
+            <PermisosChecklist permisos={permisos} onToggle={togglePermiso} areaActual={areaActual} puestoActual={puestoActual} />
             <button
               className="btn-primary"
               onClick={darAcceso}
@@ -296,7 +296,7 @@ export function EmpleadoModal({
             {!permisosCargados ? (
               <p className="hint">Cargando sus permisos…</p>
             ) : (
-              <PermisosChecklist permisos={permisos} onToggle={togglePermiso} areaActual={areaActual} />
+              <PermisosChecklist permisos={permisos} onToggle={togglePermiso} areaActual={areaActual} puestoActual={puestoActual} />
             )}
             <p className="hint">
               El PIN no se puede cambiar desde aquí — si lo necesita, quita el acceso y créalo de nuevo con un PIN
@@ -335,26 +335,43 @@ function PermisosChecklist({
   permisos,
   onToggle,
   areaActual,
+  puestoActual,
 }: {
   permisos: PermisoStaff[];
   onToggle: (p: PermisoStaff) => void;
   areaActual?: AreaEntry;
+  puestoActual?: PuestoEntry;
 }) {
+  // "Conteo diario" se acota por el catálogo de insumos (Bar/Cocina), que
+  // se resuelve por el nombre del puesto (ej. "Barra"), no por el área de
+  // Personal del puesto (que puede ser "Piso") — son dos clasificaciones
+  // distintas. "Horarios" sí se acota directo por esa área de Personal.
+  const insumoArea = puestoActual ? insumoAreaForPuesto(puestoActual.nombre) : null;
+  const insumoAreaLabel = insumoArea === "bar" ? "Bar" : insumoArea === "cocina" ? "Cocina" : undefined;
+
   return (
     <div className="permisos-checklist">
       <span className="permisos-checklist-label">Qué puede ver/usar</span>
       {!areaActual && (
         <p className="hint">Asígnale un puesto con área arriba para poder habilitar permisos por área, como Horarios.</p>
       )}
-      {PERMISOS_DISPONIBLES.map((p) => (
-        <Toggle
-          key={p.value}
-          checked={permisos.includes(p.value)}
-          onChange={() => onToggle(p.value)}
-          label={areaActual ? `${p.label} de ${areaActual.nombre}` : p.label}
-          disabled={!areaActual}
-        />
-      ))}
+      {PERMISOS_DISPONIBLES.map((p) => {
+        const esConteoDiario = p.value === "conteo_diario";
+        const habilitado = esConteoDiario ? !!insumoAreaLabel : !!areaActual;
+        const etiquetaArea = esConteoDiario ? insumoAreaLabel : areaActual?.nombre;
+        return (
+          <Toggle
+            key={p.value}
+            checked={permisos.includes(p.value)}
+            onChange={() => onToggle(p.value)}
+            label={etiquetaArea ? `${p.label} de ${etiquetaArea}` : p.label}
+            disabled={!habilitado}
+          />
+        );
+      })}
+      {areaActual && !insumoAreaLabel && (
+        <p className="hint">Conteo diario solo aplica a puestos de Barra o Cocina — el puesto actual no es ninguno de esos.</p>
+      )}
     </div>
   );
 }

@@ -146,6 +146,19 @@ export function isoWeekNumber(dateIso: string): number {
   return Math.ceil(((date.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
 }
 
+// A qué área de insumos (Bar/Cocina, para Catálogo/Conteo diario/Inventario)
+// corresponde un puesto de Personal — no es lo mismo que su área de Personal
+// (Gerencia/Piso/Cocina): "Barra" vive bajo el área "Piso" en Personal, pero
+// sus insumos son los de Bar. Se resuelve por el nombre del puesto, no del
+// área, para que el permiso "Conteo diario" de una cuenta de equipo apunte
+// al catálogo correcto.
+export function insumoAreaForPuesto(puestoNombre: string): InsumoArea | null {
+  const n = puestoNombre.toLowerCase();
+  if (n.includes("barra") || n === "bar") return "bar";
+  if (n.includes("cocin")) return "cocina";
+  return null;
+}
+
 // week1Start: fecha real (Lunes) donde debe empezar la semana 1, cuando ya
 // se conoce (ej. hoy, si apenas estás empezando a usar el mes; o la fecha
 // real de una asignación de staff). Si no se da, usa el default por

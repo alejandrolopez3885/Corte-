@@ -47,18 +47,26 @@ estando en Nómina te regresa al menú de Equipo):
   con PIN — distinta de la de "Tu equipo" (esa es solo para meseros por
   día asignado) — marcando un checklist de qué secciones puede usar: hoy
   existen "Horarios" y "Conteo diario" (captura el conteo diario de
-  insumos de alta rotación de su área, Bar o Cocina, sin acceso al
-  Catálogo — igual que puede hacerlo el dueño desde Control de Bar/Cocina,
-  pero sin poder editar productos, precios ni proveedores). El permiso
-  siempre queda acotado a su propia área, la del puesto que tenga
-  asignado aquí mismo — sin puesto con área, no se puede habilitar. Al
-  entrar con su PIN, esa persona no ve las pestañas normales de la app:
-  con un solo permiso va directo a esa sección (ej. Horarios, mostrando
-  solo su área — Cocina para un jefe de cocina — y solo puede agregar a
-  su horario personal de esa misma área; o Conteo diario, mostrando solo
-  los insumos de alta rotación de su área); con dos o más permisos
-  habilitados, primero ve un menú de inicio para elegir cuál abrir, con
-  un botón para volver a ese menú desde cada sección. El PIN no
+  insumos de alta rotación de Bar o Cocina, sin acceso al Catálogo —
+  igual que puede hacerlo el dueño desde Control de Bar/Cocina, pero sin
+  poder editar productos, precios ni proveedores). Cada permiso se acota
+  distinto: "Horarios" usa el área de Personal del puesto (Gerencia/Piso/
+  Cocina); "Conteo diario" usa el catálogo de insumos (Bar/Cocina/
+  General) en vez del área de Personal, porque no son la misma
+  clasificación — un puesto de "Barra" vive bajo el área de Personal
+  "Piso", pero sus insumos son los de Bar, así que ese permiso se resuelve
+  por el nombre del puesto (Barra → Bar, Cocinero/Jefe de cocina →
+  Cocina), no por su área; el checklist ya muestra la etiqueta correcta
+  ("Conteo diario de Bar") y lo deja deshabilitado si el puesto actual no
+  aplica a ninguna de las dos. Sin puesto asignado, ningún permiso se
+  puede habilitar. Al entrar con su PIN, esa persona no ve las pestañas
+  normales de la app: con un solo permiso va directo a esa sección (ej.
+  Horarios, mostrando solo su área — Cocina para un jefe de cocina — y
+  solo puede agregar a su horario personal de esa misma área; o Conteo
+  diario, mostrando solo los insumos de alta rotación de Bar o Cocina
+  según su puesto); con dos o más permisos habilitados, primero ve un
+  menú de inicio para elegir cuál abrir, con un botón para volver a ese
+  menú desde cada sección. El PIN no
   se puede cambiar una vez creado (no hay forma de hacerlo sin la clave de
   servicio de Supabase, que esta app no usa) — si hace falta uno nuevo,
   se quita el acceso desde el mismo bloque y se vuelve a dar de alta),
