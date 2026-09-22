@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Check } from "lucide-react";
 import { Sheet, Field } from "../ui";
 import { computeWeekGastos, dateForDay, formatShortDayDate, formatWeekRange, money, resolveWeekStartDate } from "../../lib/dataModel";
-import { GASTO_CATEGORIAS } from "../../lib/types";
+import { DAYS, GASTO_CATEGORIAS } from "../../lib/types";
 import type { DayName, GastoCategoria, MonthData } from "../../lib/types";
 
 export function GastosSummaryModal({
@@ -13,6 +13,7 @@ export function GastosSummaryModal({
   initialWeekIndex,
   onToggleEstado,
   onSetCategoria,
+  onMoverGasto,
 }: {
   onClose: () => void;
   months: Record<string, MonthData>;
@@ -21,6 +22,7 @@ export function GastosSummaryModal({
   initialWeekIndex: number;
   onToggleEstado: (monthKey: string, weekIndex: number, dayName: DayName, id: string) => void;
   onSetCategoria: (monthKey: string, weekIndex: number, dayName: DayName, id: string, categoria: GastoCategoria | "") => void;
+  onMoverGasto: (monthKey: string, weekIndex: number, fromDay: DayName, toDay: DayName, id: string) => void;
 }) {
   const [monthKey, setMonthKey] = useState(initialMonthKey);
   const [weekIndex, setWeekIndex] = useState(initialWeekIndex);
@@ -130,9 +132,30 @@ export function GastosSummaryModal({
                           </>
                         )}
                       </button>
+                      <select
+                        className="categoria-select mover-gasto-select"
+                        value=""
+                        onChange={(e) => {
+                          const toDay = e.target.value as DayName;
+                          if (toDay) onMoverGasto(monthKey, weekIndex, d.day, toDay, item.id);
+                        }}
+                      >
+                        <option value="">Mover a...</option>
+                        {DAYS.filter((dn) => dn !== d.day).map((dn) => (
+                          <option key={dn} value={dn}>
+                            {dn}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                     {item.estado === "pendiente" && !item.categoria && (
                       <p className="hint gasto-row-hint">Elige una categoría para poder confirmarlo.</p>
+                    )}
+                    {item.meseroCutId && (
+                      <p className="hint gasto-row-hint">
+                        Restado del corte de {item.meseroNombre || "un mesero"} este día — si lo mueves, se desliga y su total de
+                        este día se recalcula.
+                      </p>
                     )}
                   </div>
                 ))}

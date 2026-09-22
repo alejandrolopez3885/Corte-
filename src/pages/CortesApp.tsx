@@ -514,6 +514,34 @@ export default function CortesApp({ profile }: { profile: Profile }) {
     persist(next);
   }
 
+  // Mover un gasto de un día a otro dentro de la misma semana, desde
+  // "Control de gastos en efectivo". El registro (id, categoría, estado)
+  // se conserva — solo cambia de día. Si estaba ligado al corte de un
+  // mesero (se le restó ese gasto), se desliga y el total de ese mesero
+  // en el día de origen se recalcula sumando de vuelta el monto, para que
+  // el corte diario no quede desacomodado.
+  function moverGastoEnSemana(monthKey: string, weekIndex: number, fromDay: DayName, toDay: DayName, id: string) {
+    if (!data || fromDay === toDay) return;
+    const next = structuredClone(data);
+    const week = next.months[monthKey].weeks[weekIndex];
+    const origenDia = week.days[fromDay];
+    const idx = origenDia.gastos.findIndex((g) => g.id === id);
+    if (idx < 0) return;
+    const [gasto] = origenDia.gastos.splice(idx, 1);
+    if (gasto.meseroCutId) {
+      const cut = origenDia.meseros.find((m) => m.id === gasto.meseroCutId);
+      if (cut) {
+        cut.gastosTotal = round2(cut.gastosTotal - gasto.total);
+        cut.total = round2(cut.total + gasto.total);
+      }
+      gasto.meseroCutId = undefined;
+      gasto.meseroNombre = undefined;
+      gasto.origen = "manual";
+    }
+    week.days[toDay].gastos.push(gasto);
+    persist(next);
+  }
+
   function deleteGasto(id: string) {
     updateDay((d) => {
       d.gastos = d.gastos.filter((g) => g.id !== id);
@@ -1323,6 +1351,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           initialWeekIndex={mostRecentWeekIdx}
           onToggleEstado={toggleGastoEstadoInWeek}
           onSetCategoria={setGastoCategoriaInWeek}
+          onMoverGasto={moverGastoEnSemana}
         />
       )}
       {modal?.type === "creditoProveedores" && monthKeys.length > 0 && (

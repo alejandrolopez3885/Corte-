@@ -18,6 +18,14 @@ comisión DIDI, comisión UBER y comisión RAPPI. Esta última vive totalmente
 separada del corte diario: es solo informativa, no afecta el efectivo ni
 ningún total de caja.
 
+Desde **Control de gastos en efectivo** también se puede mover un gasto de
+un día a otro dentro de la misma semana (botón "Mover a..." en cada gasto),
+sin perder su historial (mismo id, categoría y estado). Si el gasto estaba
+restado del corte de un mesero ese día, al moverlo se desliga de ese corte y
+el total de ese mesero en el día de origen se recalcula sumando de vuelta
+el monto — para que el corte diario no quede desacomodado. El gasto llega
+al día destino como un gasto suelto (sin ligar a ningún mesero).
+
 - **Frontend**: React + Vite + TypeScript.
 - **Backend**: Supabase (Auth + Postgres).
 - **Hosting sugerido**: Vercel.
