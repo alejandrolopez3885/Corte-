@@ -280,7 +280,11 @@ body {
 .gasto-existing-monto { font-weight: 600; }
 
 .gasto-row-classify { flex-direction: column; align-items: stretch; gap: 8px; }
-.gasto-row-main { display: flex; justify-content: space-between; gap: 10px; }
+.gasto-row-main { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.gasto-row-main-text { display: flex; justify-content: space-between; gap: 10px; flex: 1; min-width: 0; }
+.gasto-edit-btn { flex-shrink: 0; width: 28px; height: 28px; }
+.gasto-row-edit { display: flex; flex-direction: column; gap: 8px; }
+.gasto-row-edit-actions { display: flex; justify-content: flex-end; gap: 12px; align-items: center; }
 .gasto-row-controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .categoria-select {
   flex: 1; min-width: 0; border: 1px solid var(--border); background: var(--surface);

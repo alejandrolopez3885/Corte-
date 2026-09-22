@@ -26,6 +26,14 @@ el total de ese mesero en el día de origen se recalcula sumando de vuelta
 el monto — para que el corte diario no quede desacomodado. El gasto llega
 al día destino como un gasto suelto (sin ligar a ningún mesero).
 
+También desde ahí se puede editar el concepto y el monto de un gasto —
+oculto detrás de un botón de editar (lápiz), para que no se cambie por
+accidente. Es el mismo registro que el corte diario (mismo id), así que el
+cambio se refleja ahí directo, sin ningún paso extra. Si el gasto estaba
+restado del corte de un mesero ese día, el cambio en el monto se traslada a
+ese corte (se ajustan sus gastos y su total) — a diferencia de mover un
+gasto de día, aquí el gasto se queda ligado al mismo mesero.
+
 - **Frontend**: React + Vite + TypeScript.
 - **Backend**: Supabase (Auth + Postgres).
 - **Hosting sugerido**: Vercel.

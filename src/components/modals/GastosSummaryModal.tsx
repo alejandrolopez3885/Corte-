@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { Check } from "lucide-react";
-import { Sheet, Field } from "../ui";
+import { Check, Pencil } from "lucide-react";
+import { Sheet, Field, NumInput } from "../ui";
 import { computeWeekGastos, dateForDay, formatShortDayDate, formatWeekRange, money, resolveWeekStartDate } from "../../lib/dataModel";
 import { DAYS, GASTO_CATEGORIAS } from "../../lib/types";
 import type { DayName, GastoCategoria, MonthData } from "../../lib/types";
@@ -14,6 +14,7 @@ export function GastosSummaryModal({
   onToggleEstado,
   onSetCategoria,
   onMoverGasto,
+  onEditarGasto,
 }: {
   onClose: () => void;
   months: Record<string, MonthData>;
@@ -23,9 +24,11 @@ export function GastosSummaryModal({
   onToggleEstado: (monthKey: string, weekIndex: number, dayName: DayName, id: string) => void;
   onSetCategoria: (monthKey: string, weekIndex: number, dayName: DayName, id: string, categoria: GastoCategoria | "") => void;
   onMoverGasto: (monthKey: string, weekIndex: number, fromDay: DayName, toDay: DayName, id: string) => void;
+  onEditarGasto: (monthKey: string, weekIndex: number, dayName: DayName, id: string, concepto: string, total: number) => void;
 }) {
   const [monthKey, setMonthKey] = useState(initialMonthKey);
   const [weekIndex, setWeekIndex] = useState(initialWeekIndex);
+  const [editing, setEditing] = useState<{ id: string; concepto: string; total: string } | null>(null);
 
   const month = months[monthKey];
   const week = month?.weeks[weekIndex];
@@ -45,6 +48,7 @@ export function GastosSummaryModal({
             onChange={(e) => {
               setMonthKey(e.target.value);
               setWeekIndex(0);
+              setEditing(null);
             }}
           >
             {monthKeys.map((mk) => (
@@ -55,7 +59,14 @@ export function GastosSummaryModal({
           </select>
         </Field>
         <Field label="Semana">
-          <select className="text-input" value={weekIndex} onChange={(e) => setWeekIndex(Number(e.target.value))}>
+          <select
+            className="text-input"
+            value={weekIndex}
+            onChange={(e) => {
+              setWeekIndex(Number(e.target.value));
+              setEditing(null);
+            }}
+          >
             {[0, 1, 2, 3].map((i) => (
               <option key={i} value={i}>
                 Semana {i + 1}
@@ -98,67 +109,114 @@ export function GastosSummaryModal({
               <p className="hint">Sin gastos este día.</p>
             ) : (
               <div className="gasto-existing-list">
-                {d.items.map((item) => (
-                  <div key={item.id} className="gasto-existing-row gasto-row-classify">
-                    <div className="gasto-row-main">
-                      <span className="gasto-existing-concepto">{item.concepto}</span>
-                      <span className="gasto-existing-monto">{money(item.total)}</span>
+                {d.items.map((item) => {
+                  const isEditing = editing?.id === item.id;
+                  return (
+                    <div key={item.id} className="gasto-existing-row gasto-row-classify">
+                      {isEditing ? (
+                        <div className="gasto-row-edit">
+                          <input
+                            className="text-input"
+                            value={editing.concepto}
+                            onChange={(e) => setEditing({ ...editing, concepto: e.target.value })}
+                            placeholder="Concepto"
+                          />
+                          <NumInput
+                            value={editing.total}
+                            onChange={(e) => setEditing({ ...editing, total: e.target.value })}
+                            placeholder="0.00"
+                          />
+                          <div className="gasto-row-edit-actions">
+                            <button type="button" className="link-btn" onClick={() => setEditing(null)}>
+                              Cancelar
+                            </button>
+                            <button
+                              type="button"
+                              className="btn-primary"
+                              disabled={!editing.concepto || !editing.total}
+                              onClick={() => {
+                                onEditarGasto(monthKey, weekIndex, d.day, item.id, editing.concepto, parseFloat(editing.total) || 0);
+                                setEditing(null);
+                              }}
+                            >
+                              Guardar
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="gasto-row-main">
+                            <span className="gasto-row-main-text">
+                              <span className="gasto-existing-concepto">{item.concepto}</span>
+                              <span className="gasto-existing-monto">{money(item.total)}</span>
+                            </span>
+                            <button
+                              type="button"
+                              className="icon-btn gasto-edit-btn"
+                              aria-label="Editar gasto"
+                              onClick={() => setEditing({ id: item.id, concepto: item.concepto, total: String(item.total) })}
+                            >
+                              <Pencil size={14} />
+                            </button>
+                          </div>
+                          <div className="gasto-row-controls">
+                            <select
+                              className="categoria-select"
+                              value={item.categoria || ""}
+                              disabled={item.estado === "ingresado"}
+                              onChange={(e) => onSetCategoria(monthKey, weekIndex, d.day, item.id, e.target.value as GastoCategoria | "")}
+                            >
+                              <option value="">Sin categoría</option>
+                              {GASTO_CATEGORIAS.map((c) => (
+                                <option key={c.value} value={c.value}>
+                                  {c.label}
+                                </option>
+                              ))}
+                            </select>
+                            <button
+                              type="button"
+                              className={`estado-chip ${item.estado}`}
+                              disabled={item.estado === "pendiente" && !item.categoria}
+                              onClick={() => onToggleEstado(monthKey, weekIndex, d.day, item.id)}
+                            >
+                              {item.estado === "pendiente" ? (
+                                "Confirmar"
+                              ) : (
+                                <>
+                                  <Check size={13} /> Ingresado
+                                </>
+                              )}
+                            </button>
+                            <select
+                              className="categoria-select mover-gasto-select"
+                              value=""
+                              onChange={(e) => {
+                                const toDay = e.target.value as DayName;
+                                if (toDay) onMoverGasto(monthKey, weekIndex, d.day, toDay, item.id);
+                              }}
+                            >
+                              <option value="">Mover a...</option>
+                              {DAYS.filter((dn) => dn !== d.day).map((dn) => (
+                                <option key={dn} value={dn}>
+                                  {dn}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                          {item.estado === "pendiente" && !item.categoria && (
+                            <p className="hint gasto-row-hint">Elige una categoría para poder confirmarlo.</p>
+                          )}
+                          {item.meseroCutId && (
+                            <p className="hint gasto-row-hint">
+                              Restado del corte de {item.meseroNombre || "un mesero"} este día — si lo mueves o editas el monto, su
+                              total de este día se recalcula.
+                            </p>
+                          )}
+                        </>
+                      )}
                     </div>
-                    <div className="gasto-row-controls">
-                      <select
-                        className="categoria-select"
-                        value={item.categoria || ""}
-                        disabled={item.estado === "ingresado"}
-                        onChange={(e) => onSetCategoria(monthKey, weekIndex, d.day, item.id, e.target.value as GastoCategoria | "")}
-                      >
-                        <option value="">Sin categoría</option>
-                        {GASTO_CATEGORIAS.map((c) => (
-                          <option key={c.value} value={c.value}>
-                            {c.label}
-                          </option>
-                        ))}
-                      </select>
-                      <button
-                        type="button"
-                        className={`estado-chip ${item.estado}`}
-                        disabled={item.estado === "pendiente" && !item.categoria}
-                        onClick={() => onToggleEstado(monthKey, weekIndex, d.day, item.id)}
-                      >
-                        {item.estado === "pendiente" ? (
-                          "Confirmar"
-                        ) : (
-                          <>
-                            <Check size={13} /> Ingresado
-                          </>
-                        )}
-                      </button>
-                      <select
-                        className="categoria-select mover-gasto-select"
-                        value=""
-                        onChange={(e) => {
-                          const toDay = e.target.value as DayName;
-                          if (toDay) onMoverGasto(monthKey, weekIndex, d.day, toDay, item.id);
-                        }}
-                      >
-                        <option value="">Mover a...</option>
-                        {DAYS.filter((dn) => dn !== d.day).map((dn) => (
-                          <option key={dn} value={dn}>
-                            {dn}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    {item.estado === "pendiente" && !item.categoria && (
-                      <p className="hint gasto-row-hint">Elige una categoría para poder confirmarlo.</p>
-                    )}
-                    {item.meseroCutId && (
-                      <p className="hint gasto-row-hint">
-                        Restado del corte de {item.meseroNombre || "un mesero"} este día — si lo mueves, se desliga y su total de
-                        este día se recalcula.
-                      </p>
-                    )}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>

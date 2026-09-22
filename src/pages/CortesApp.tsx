@@ -542,6 +542,32 @@ export default function CortesApp({ profile }: { profile: Profile }) {
     persist(next);
   }
 
+  // Editar concepto/monto de un gasto desde "Control de gastos en
+  // efectivo" — se refleja solo en el corte diario, porque es el mismo
+  // registro (mismo id) en la misma estructura de datos. Si el gasto
+  // estaba ligado al corte de un mesero, el cambio en el monto se
+  // traslada a ese corte (gastosTotal/total), para que no quede
+  // desacomodado.
+  function editarGastoEnSemana(monthKey: string, weekIndex: number, dayName: DayName, id: string, concepto: string, total: number) {
+    if (!data) return;
+    const next = structuredClone(data);
+    const dia = next.months[monthKey].weeks[weekIndex].days[dayName];
+    const g = dia.gastos.find((x) => x.id === id);
+    if (!g) return;
+    const nuevoTotal = round2(total);
+    const delta = round2(nuevoTotal - g.total);
+    g.concepto = concepto;
+    g.total = nuevoTotal;
+    if (g.meseroCutId && delta !== 0) {
+      const cut = dia.meseros.find((m) => m.id === g.meseroCutId);
+      if (cut) {
+        cut.gastosTotal = round2(cut.gastosTotal + delta);
+        cut.total = round2(cut.total - delta);
+      }
+    }
+    persist(next);
+  }
+
   function deleteGasto(id: string) {
     updateDay((d) => {
       d.gastos = d.gastos.filter((g) => g.id !== id);
@@ -1352,6 +1378,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           onToggleEstado={toggleGastoEstadoInWeek}
           onSetCategoria={setGastoCategoriaInWeek}
           onMoverGasto={moverGastoEnSemana}
+          onEditarGasto={editarGastoEnSemana}
         />
       )}
       {modal?.type === "creditoProveedores" && monthKeys.length > 0 && (
