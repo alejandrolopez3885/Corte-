@@ -384,8 +384,16 @@ body {
 .report-row.total { background: var(--accent-soft); }
 .report-row.total .report-row-label { color: var(--ink); font-weight: 600; }
 .report-row.total .report-row-amount { color: var(--accent); font-size: 17px; }
+.report-row.total.positive { background: var(--good-soft); }
+.report-row.total.positive .report-row-amount, .report-row.total.positive .report-row-pct { color: var(--good); }
 .report-row.total.negative { background: var(--bad-soft); }
-.report-row.total.negative .report-row-amount { color: var(--bad); }
+.report-row.total.negative .report-row-amount, .report-row.total.negative .report-row-pct { color: var(--bad); }
+
+/* Números buenos/malos/neutros del Dashboard (ej. meta de gastos
+   operativos) — neutro es el color por defecto de .report-row-pct/-amount,
+   así que solo hace falta pintar los estados good/bad. */
+.report-row-pct.good, .report-row-amount.good { color: var(--good); }
+.report-row-pct.bad, .report-row-amount.bad { color: var(--bad); }
 
 .report-row-toggle {
   border: none; background: none; margin: 0; width: 100%; font: inherit; color: inherit; text-align: left; cursor: pointer;

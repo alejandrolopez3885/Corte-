@@ -1,7 +1,11 @@
 import { useState } from "react";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, Download } from "lucide-react";
 import { Field } from "../ui";
-import { computeDashboardReport, computeNominaTotalHastaHoy, formatShortDayDate, formatWeekRange, money, resolveWeekStartDate, todayIso } from "../../lib/dataModel";
+import {
+  META_GASTOS_OPERATIVOS_PCT, computeDashboardReport, computeNominaTotalHastaHoy, formatShortDayDate, formatWeekRange, isoWeekNumber,
+  money, resolveWeekStartDate, todayIso,
+} from "../../lib/dataModel";
+import { downloadDashboardImage } from "../../lib/dashboardImage";
 import type { EmpleadoEntry, HorarioMonthData, MeseroCatalogEntry, MonthData } from "../../lib/types";
 
 // Categorías donde además del total conviene ver el detalle de cada gasto
@@ -53,6 +57,7 @@ export function DashboardPanel({
   const semana = horarios[monthKey]?.weeks?.[weekIndex] ?? null;
   const nominaCalculada = computeNominaTotalHastaHoy(monthKey, weekIndex, month, semana, empleados);
   const report = computeDashboardReport(week, nominaCalculada, meseros);
+  const gastosOperativosOk = report.pct.gastosOperativos <= META_GASTOS_OPERATIVOS_PCT;
 
   return (
     <div className="page-section">
@@ -91,6 +96,19 @@ export function DashboardPanel({
         </Field>
       </div>
       <p className="hint">{formatWeekRange(weekStartDate)}</p>
+      <button
+        type="button"
+        className="link-btn"
+        onClick={() =>
+          downloadDashboardImage(
+            report,
+            `Resultado · ${month.label} · Semana ${isoWeekNumber(weekStartDate)}`,
+            formatWeekRange(weekStartDate)
+          )
+        }
+      >
+        <Download size={15} /> Descargar imagen
+      </button>
 
       <div className="report-list">
         <div className="report-row">
@@ -99,9 +117,11 @@ export function DashboardPanel({
           <strong className="report-row-amount">{money(report.ventaTotal)}</strong>
         </div>
         <button type="button" className="report-row report-row-toggle" onClick={() => setShowGastosOperativos((v) => !v)}>
-          <span className="report-row-label">Gastos operativos</span>
-          <span className="report-row-pct">{report.pct.gastosOperativos}%</span>
-          <strong className="report-row-amount">{money(report.gastosOperativos)}</strong>
+          <span className="report-row-label">
+            Gastos operativos <em>(meta: {META_GASTOS_OPERATIVOS_PCT}% o menos)</em>
+          </span>
+          <span className={`report-row-pct ${gastosOperativosOk ? "good" : "bad"}`}>{report.pct.gastosOperativos}%</span>
+          <strong className={`report-row-amount ${gastosOperativosOk ? "good" : "bad"}`}>{money(report.gastosOperativos)}</strong>
           {showGastosOperativos ? <ChevronUp size={16} className="report-row-chevron" /> : <ChevronDown size={16} className="report-row-chevron" />}
         </button>
         {showGastosOperativos && (
@@ -195,7 +215,7 @@ export function DashboardPanel({
           <span className="report-row-pct">{report.pct.nomina}%</span>
           <strong className="report-row-amount">{money(report.nomina)}</strong>
         </div>
-        <div className={`report-row total ${report.utilidad < 0 ? "negative" : ""}`}>
+        <div className={`report-row total ${report.utilidad < 0 ? "negative" : "positive"}`}>
           <span className="report-row-label">Utilidad</span>
           <span className="report-row-pct">{report.pct.utilidad}%</span>
           <strong className="report-row-amount">{money(report.utilidad)}</strong>

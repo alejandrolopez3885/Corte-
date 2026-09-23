@@ -853,6 +853,13 @@ export function computeDashboardReport(week: WeekData, nominaCalculada: number, 
   };
 }
 
+export type DashboardReport = ReturnType<typeof computeDashboardReport>;
+
+// Meta de gasto operativo del negocio: 42% o menos de la venta total se
+// considera saludable — usado tanto en la pantalla del Dashboard como en
+// su imagen descargable para pintar ese número en verde/rojo.
+export const META_GASTOS_OPERATIVOS_PCT = 42;
+
 // --- Tendencias y proyección de venta (Negocio > Tendencias) -----------
 // Un resumen de salud del negocio por cada semana ya capturada (con
 // actividad real — venta o meseros — para no diluir la tendencia con

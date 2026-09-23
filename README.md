@@ -271,6 +271,17 @@ estando en Nómina te regresa al menú de Equipo):
   directo al desglose) — y al final la Utilidad (Venta
   total menos todo lo anterior).
 
+  Los números se pintan en verde/rojo/neutro según qué tan bien le fue al
+  negocio esa semana, no solo con texto: Gastos operativos tiene una meta
+  fija de 42% o menos de la venta — verde si la cumple, rojo si se pasó —,
+  y Utilidad se pinta verde si es positiva o rojo si no (con toda la fila
+  resaltada, no solo el número). El resto de las filas son informativas y
+  se quedan en el color neutro de siempre — no tienen una meta buena/mala
+  definida. Arriba del reporte hay un botón "Descargar imagen" que genera
+  y descarga un PNG con este mismo resultado (mismos colores, para que se
+  note de un vistazo si algo se salió de la meta) — pensado para enviarlo
+  por WhatsApp, igual que las imágenes de Horarios y Nómina.
+
 Hay 2 tipos de cuenta:
 
 - **Dueño (`owner`)**: acceso completo — todos los meses, semanas y días,
