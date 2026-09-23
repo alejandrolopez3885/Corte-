@@ -313,6 +313,13 @@ export interface DayData {
   gastos: Gasto[];
   transferencias: Transferencia[];
   ventaApps: number;
+  // Historial de quién tiene/tuvo este día asignado y quién realmente
+  // capturó el corte — independientes entre sí: asignadoA refleja la
+  // asignación vigente (se limpia si se quita el acceso), hechoPor es un
+  // registro permanente de quién guardó datos aquí, para que no se pierda
+  // aunque después se le quite el acceso a esa persona.
+  asignadoA?: { empleadoId: string; staffId: string; nombre: string };
+  hechoPor?: { empleadoId?: string; nombre: string };
 }
 
 // Control de gastos que los proveedores dan a crédito, pagados después por

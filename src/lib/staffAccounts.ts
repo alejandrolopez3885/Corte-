@@ -63,8 +63,10 @@ export async function createStaffAccount(options: {
   displayName: string;
   pin: string;
   ownerId: string;
-  // Solo para cuentas dadas de alta desde Personal (jefe de cocina y
-  // similares) — la cuenta de meseros en "Tu equipo" no usa esto.
+  // El empleado de Personal al que corresponde esta cuenta — toda cuenta
+  // de equipo se da de alta desde ahí, así que en la práctica siempre
+  // viene. Opcional solo para no romper cuentas viejas que se hayan
+  // creado antes sin este vínculo.
   empleadoId?: string;
   permisos?: PermisoStaff[];
 }): Promise<{ id: string }> {

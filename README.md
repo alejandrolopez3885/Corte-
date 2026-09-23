@@ -44,9 +44,10 @@ sección, aunque ya estés adentro de una de sus páginas (ej. tocar "Equipo"
 estando en Nómina te regresa al menú de Equipo):
 
 - **Corte**: la pantalla principal — mes, semana, día, meseros, gastos,
-  transferencias, ventas de apps y sus resúmenes.
-- **Equipo**: menú con 5 opciones — "Tu equipo" (dar de alta a quien te
-  apoya con PIN y asignarle días, como modal), "Meseros" (catálogo de
+  transferencias, ventas de apps y sus resúmenes. Arriba de los totales del
+  día hay una tarjeta de asignación: quién tiene asignado ese día (si
+  alguien) y quién capturó su corte — ver "Asignar día" más abajo.
+- **Equipo**: menú con 4 opciones — "Meseros" (catálogo de
   meseros — solo nombre, para elegir a quién le haces el corte en Corte;
   vive aquí porque también son parte de tu equipo, aunque su lista está
   separada de Personal), y como páginas propias "Personal" (la lista de tu
@@ -60,8 +61,7 @@ estando en Nómina te regresa al menú de Equipo):
   agrega con un botón "+" en vez de tener el formulario siempre abierto,
   y tocar a alguien lo abre para editar o eliminar. Desde ahí mismo, un
   bloque "Acceso a la app" permite darle a esa persona su propia cuenta
-  con PIN — distinta de la de "Tu equipo" (esa es solo para meseros por
-  día asignado) — marcando un checklist de qué secciones puede usar: hoy
+  con PIN, marcando un checklist de qué secciones puede usar: hoy
   existen "Horarios", "Conteo diario" (captura el conteo diario de
   insumos de alta rotación de Bar o Cocina, sin acceso al Catálogo —
   igual que puede hacerlo el dueño desde Control de Bar/Cocina, pero sin
@@ -87,13 +87,17 @@ estando en Nómina te regresa al menú de Equipo):
   cualquier otro puesto con este permiso (mesero, barra, etc.) solo
   puede verlo, sin poder tocar las celdas, agregar/quitar personal,
   guardar ni descargar nada.
-  Sin puesto asignado, ningún permiso se
-  puede habilitar. Al entrar con su PIN, esa persona no ve las pestañas
-  normales de la app: con un solo permiso va directo a esa sección (ej.
+  Sin puesto asignado, ningún permiso de estos tres se
+  puede habilitar (aunque igual puede tener acceso a "Corte", que no
+  depende de un puesto — ver **Asignar día** más abajo).
+  Al entrar con su PIN, esa persona no ve las pestañas
+  normales de la app: con una sola sección habilitada en total (contando
+  Corte) va directo a ella (ej.
   Horarios, mostrando toda su área — Cocina para un jefe de cocina — y
   solo puede agregar a esa misma área; Conteo diario, mostrando solo los
-  insumos de alta rotación de Bar o Cocina según su puesto; o Nómina,
-  mostrando solo su propia fila); con dos o más permisos habilitados,
+  insumos de alta rotación de Bar o Cocina según su puesto; Nómina,
+  mostrando solo su propia fila; o Corte, mostrando la lista de días que
+  tiene asignados); con dos o más secciones habilitadas,
   primero ve un menú de inicio para elegir cuál abrir, con un botón para
   volver a ese menú desde cada sección. El PIN no
   se puede cambiar una vez creado (no hay forma de hacerlo sin la clave de
@@ -155,6 +159,21 @@ estando en Nómina te regresa al menú de Equipo):
   Personal
   sigue siendo una lista aparte del catálogo de Meseros — este es solo
   nombre, sin sueldo, para el corte.
+
+  **Asignar día**: desde el propio Corte diario (arriba de los totales del
+  día) el dueño puede asignar ese día a alguien de Personal que ya tenga
+  "Acceso a la app" creado — no crea una cuenta nueva, solo elige entre
+  quienes ya la tienen. A esa persona le aparece "Corte" como una sección
+  más en su cuenta (junto a Horarios/Conteo diario/Nómina si también las
+  tiene), acotada solo a los días que le hayan asignado; ahí entra
+  igual que el dueño a capturar meseros, gastos, transferencias y ventas
+  de apps de ese día. La tarjeta de asignación en Corte diario muestra
+  "Asignado a" (se puede cambiar a otra persona o quitar) y, por separado,
+  "Corte hecho por" — un registro que se guarda solo, la primera vez que
+  esa persona guarda algo en ese día, y que ya no se borra aunque después
+  se le quite el acceso o se reasigne el día a alguien más — así el corte
+  diario conserva el historial de quién lo hizo, aparte de quién lo tiene
+  asignado ahora.
 - **Negocio**: catálogo de proveedores (nombre y la
   marca de "también se pide los jueves" — el mismo proveedor que se elige
   en el Catálogo de Bar/Cocina y que agrupa la lista en Inventario; no se
@@ -256,26 +275,27 @@ Hay 2 tipos de cuenta:
 
 - **Dueño (`owner`)**: acceso completo — todos los meses, semanas y días,
   catálogo de meseros, resúmenes. Inicia sesión con correo y contraseña.
-- **Staff (`staff`)**: solo puede capturar el corte de **los días que el
-  dueño le asigne** (una o varias fechas, desde la sección "Equipo"). El
-  dueño da de alta a esta persona **desde la misma app**
-  (nombre + PIN de 4 dígitos, sin correo) — no hace falta crearla en el
-  dashboard de Supabase. Esa persona entra desde "Soy del equipo, tengo un
-  PIN" en la pantalla de inicio, elige su nombre y teclea su PIN; si tiene
-  varios días asignados, primero elige cuál va a capturar.
+- **Staff (`staff`)**: una cuenta de equipo, dada de alta **desde Equipo >
+  Personal** (nombre + PIN de 4 dígitos, sin correo — ver "Acceso a la
+  app" más arriba) — no hace falta crearla en el dashboard de Supabase.
+  Solo ve las secciones que su checklist de permisos habilita
+  (Horarios/Conteo diario/Nómina) más, si el dueño le asignó algún día
+  desde Corte diario (ver "Asignar día" más arriba), "Corte" — acotado
+  solo a esos días. Esa persona entra desde "Soy del equipo, tengo un
+  PIN" en la pantalla de inicio, elige su nombre y teclea su PIN.
 
   Por debajo sigue siendo una cuenta real de Supabase Auth (con un correo
   técnico invisible tipo `xxxx@cortes.local` y el PIN como contraseña), así
   que reutiliza toda la seguridad y sesiones ya construidas. Las fechas
-  asignadas sí viven en su propia tabla con permisos (RLS): el staff solo
-  puede leer sus propias fechas, y solo el dueño puede asignarlas o
-  quitarlas. Al quitar una fecha, esa persona pierde acceso a ese día de
-  inmediato — la app revisa sus fechas asignadas cada ~20 segundos mientras
-  está abierta, así que no necesita cerrar sesión ni recargar para que la
-  revocación tome efecto. Lo que sigue viviendo solo en la interfaz es el
-  acceso al resto del negocio (catálogo, otros meses/semanas): a nivel de
-  base de datos el staff puede leer y escribir el mismo registro `app_data`
-  que el dueño.
+  asignadas para Corte sí viven en su propia tabla con permisos (RLS): el
+  staff solo puede leer sus propias fechas, y solo el dueño puede
+  asignarlas o quitarlas. Al quitar una fecha, esa persona pierde acceso a
+  ese día de inmediato — la app revisa sus fechas asignadas cada ~20
+  segundos mientras está abierta, así que no necesita cerrar sesión ni
+  recargar para que la revocación tome efecto. Lo que sigue viviendo solo
+  en la interfaz es el acceso al resto del negocio (catálogo, otros
+  meses/semanas): a nivel de base de datos el staff puede leer y escribir
+  el mismo registro `app_data` que el dueño.
 
 ## 1. Crear el proyecto en Supabase
 
@@ -396,8 +416,8 @@ src/
     modals/       un modal por acción (mesero, gasto, transferencia, etc.)
   pages/
     Login.tsx
-    CortesApp.tsx vista principal del dueño y de meseros por día asignado
-    StaffAccessShell.tsx vista de cuentas de equipo con permisos (Personal)
+    CortesApp.tsx vista principal del dueño y de Corte por día asignado
+    StaffAccessShell.tsx menú de cuentas de equipo (permisos + Corte)
 supabase/
   schema.sql                        tablas y políticas RLS base
   migration_002_staff_pin.sql       tabla de directorio para el login por PIN

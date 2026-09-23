@@ -11,7 +11,7 @@ import {
   mondayOnOrBefore, money, mostRecentDayInWeek, mostRecentWeekIndex, resolveAssignmentLocation, resolveWeekStartDate,
   round2, sumFromText, todayIso, uid,
 } from "../lib/dataModel";
-import { useStaffAssignments } from "../lib/staffAssignments";
+import { removeAssignmentByStaffAndDate, upsertAssignment, useStaffAssignments } from "../lib/staffAssignments";
 import { DAYS, DAY_SHORT } from "../lib/types";
 import type { AreaEntry, CreditoProveedores, DayData, DayName, EmpleadoEntry, Gasto, GastoCategoria, HorarioSemana, InsumoEntry, InventarioSemanal, MeseroCatalogEntry, MeseroCut, NominaDescuentosSemana, PedidoSemanal, Profile, ProveedorCatalogEntry, PuestoEntry, Transferencia, WeekData } from "../lib/types";
 import { Empty } from "../components/ui";
@@ -26,7 +26,7 @@ import { AppsModal } from "../components/modals/AppsModal";
 import { WeekSummaryModal } from "../components/modals/WeekSummaryModal";
 import { GastosSummaryModal } from "../components/modals/GastosSummaryModal";
 import { DeleteMonthModal } from "../components/modals/DeleteMonthModal";
-import { TeamModal } from "../components/modals/TeamModal";
+import { AsignarDiaModal } from "../components/modals/AsignarDiaModal";
 import { EmpleadoModal } from "../components/modals/EmpleadoModal";
 import { DashboardPanel } from "../components/panels/DashboardPanel";
 import { EmpleadosPanel } from "../components/panels/EmpleadosPanel";
@@ -51,7 +51,7 @@ type ModalState =
   | { type: "creditoProveedores" }
   | { type: "catalog" }
   | { type: "proveedores" }
-  | { type: "team" }
+  | { type: "asignarDia" }
   | { type: "empleado"; editing?: EmpleadoEntry }
   | { type: "deleteMonth"; monthKey: string }
   | null;
@@ -136,46 +136,14 @@ export default function CortesApp({ profile }: { profile: Profile }) {
   }
 
   if (!isOwner) {
-    // Cuenta dada de alta desde Personal (ej. jefe de cocina) — distinta
-    // de la cuenta de meseros por día asignado. Tiene su propia pantalla,
-    // acotada a las secciones que su permiso habilita.
-    if ((profile.permisos || []).length > 0) {
-      return (
-        <StaffAccessShell
-          profile={profile}
-          data={data}
-          onSaveHorarioSemana={saveHorarioSemana}
-          onSaveConteoDiario={guardarConteoDiario}
-          onSignOut={signOut}
-        />
-      );
-    }
+    // Cuenta de equipo dada de alta desde Personal: tiene su propia
+    // pantalla, acotada a las secciones que su checklist de permisos
+    // habilita (Horarios/Conteo diario/Nómina) y, si le asignaron algún
+    // día, "Corte" — acotado a esos días nada más.
     if (assignmentsStatus === "loading" || assignments === null) {
       return (
         <div className="app-shell">
-          <div className="loading">Cargando tus días asignados…</div>
-        </div>
-      );
-    }
-    if (assignmentsStatus === "error") {
-      return (
-        <div className="app-shell">
-          <div className="full-page-msg">No se pudieron cargar tus días asignados. Intenta recargar la página.</div>
-        </div>
-      );
-    }
-    if (assignments.length === 0) {
-      return (
-        <div className="app-shell">
-          <header className="topbar">
-            <div className="brand">
-              <span className="brand-mark">Cortes</span>
-            </div>
-            <button className="icon-btn" onClick={signOut} aria-label="Cerrar sesión">
-              <LogOut size={18} />
-            </button>
-          </header>
-          <div className="full-page-msg">No tienes días asignados para hacer corte. Pide al encargado que te asigne uno.</div>
+          <div className="loading">Cargando tu información…</div>
         </div>
       );
     }
@@ -194,7 +162,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           <div className="full-page-msg">Ya no tienes acceso a este día. Si fue un error, pide al encargado que te lo asigne de nuevo.</div>
           <div style={{ padding: "0 20px" }}>
             <button className="btn-primary" onClick={() => setSelectedAssignedDate(null)}>
-              Ver mis días asignados
+              Volver
             </button>
           </div>
         </div>
@@ -202,26 +170,15 @@ export default function CortesApp({ profile }: { profile: Profile }) {
     }
     if (!selectedAssignedDate) {
       return (
-        <div className="app-shell">
-          <header className="topbar">
-            <div className="brand">
-              <span className="brand-mark">Cortes</span>
-            </div>
-            <button className="icon-btn" onClick={signOut} aria-label="Cerrar sesión">
-              <LogOut size={18} />
-            </button>
-          </header>
-          <div style={{ padding: "8px 20px" }}>
-            <p className="hint">Toca el día que vas a capturar:</p>
-            <div className="staff-name-grid">
-              {assignments.map((a) => (
-                <button key={a.id} className="staff-name-btn" onClick={() => setSelectedAssignedDate(a.assigned_date)}>
-                  {formatAssignedDate(a.assigned_date)}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
+        <StaffAccessShell
+          profile={profile}
+          data={data}
+          onSaveHorarioSemana={saveHorarioSemana}
+          onSaveConteoDiario={guardarConteoDiario}
+          onSignOut={signOut}
+          assignments={assignmentsStatus === "error" ? [] : assignments}
+          onPickCorteDate={(date) => setSelectedAssignedDate(date)}
+        />
       );
     }
   }
@@ -253,6 +210,13 @@ export default function CortesApp({ profile }: { profile: Profile }) {
     const next = structuredClone(data);
     const d = next.months[activeMonth].weeks[activeWeek].days[activeDay];
     mutator(d);
+    // Registro permanente de quién realmente capturó este corte — se
+    // estampa en cualquier cambio que haga una cuenta de equipo (no el
+    // dueño), y no se borra al reasignar o quitarle el acceso a esa
+    // persona, para que quede como historial.
+    if (!isOwner) {
+      d.hechoPor = { empleadoId: profile.empleado_id || undefined, nombre: profile.display_name || "Alguien del equipo" };
+    }
     persist(next);
   }
 
@@ -262,6 +226,35 @@ export default function CortesApp({ profile }: { profile: Profile }) {
     const w = next.months[activeMonth].weeks[activeWeek];
     mutator(w);
     persist(next);
+  }
+
+  // Asignar/quitar el día que se está viendo a alguien de Personal —
+  // le da acceso real (fila en staff_assignments) y deja el registro en
+  // el propio corte diario (asignadoA), para historial aunque después se
+  // le quite el acceso.
+  async function assignDay(empleado: EmpleadoEntry) {
+    if (!data || !activeMonth || !empleado.staffProfileId) return;
+    const staffProfileId = empleado.staffProfileId;
+    const fecha = dateForDay(activeMonth, activeWeek, data.months[activeMonth], activeDay);
+    const previo = data.months[activeMonth].weeks[activeWeek].days[activeDay].asignadoA;
+    if (previo && previo.staffId !== staffProfileId) {
+      await removeAssignmentByStaffAndDate(previo.staffId, fecha);
+    }
+    await upsertAssignment(staffProfileId, fecha, activeWeek);
+    updateDay((d) => {
+      d.asignadoA = { empleadoId: empleado.id, staffId: staffProfileId, nombre: empleado.nombre };
+    });
+  }
+
+  async function unassignDay() {
+    if (!data || !activeMonth) return;
+    const asignadoA = data.months[activeMonth].weeks[activeWeek].days[activeDay].asignadoA;
+    if (!asignadoA) return;
+    const fecha = dateForDay(activeMonth, activeWeek, data.months[activeMonth], activeDay);
+    await removeAssignmentByStaffAndDate(asignadoA.staffId, fecha);
+    updateDay((d) => {
+      d.asignadoA = undefined;
+    });
   }
 
   function saveEfectivoReal(rawValue: string) {
@@ -719,15 +712,6 @@ export default function CortesApp({ profile }: { profile: Profile }) {
         <div className="page-section">
           <h2 className="page-title">Equipo</h2>
           <div className="menu-list">
-            <button className="menu-item" onClick={() => setModal({ type: "team" })}>
-              <span className="menu-item-icon">
-                <Users size={20} />
-              </span>
-              <span className="menu-item-text">
-                <strong>Tu equipo</strong>
-                <span>Cuenta con PIN y días asignados</span>
-              </span>
-            </button>
             <button className="menu-item" onClick={() => setEquipoView("personal")}>
               <span className="menu-item-icon">
                 <Contact size={20} />
@@ -1121,9 +1105,9 @@ export default function CortesApp({ profile }: { profile: Profile }) {
             ) : (
               <div className="staff-banner">
                 <span>Capturando el corte de {selectedAssignedDate && formatAssignedDate(selectedAssignedDate)}</span>
-                {assignments && assignments.length > 1 && (
+                {((assignments && assignments.length > 1) || (profile.permisos || []).length > 0) && (
                   <button className="link-btn" onClick={() => setSelectedAssignedDate(null)}>
-                    Cambiar día
+                    Menú
                   </button>
                 )}
               </div>
@@ -1145,6 +1129,29 @@ export default function CortesApp({ profile }: { profile: Profile }) {
             )}
 
             {isOwner && activeDayDate && <p className="active-day-date">{formatLongDayDate(activeDayDate)}</p>}
+
+            {isOwner && day && (
+              <div className="asignado-actual">
+                <span>
+                  {day.asignadoA ? (
+                    <>
+                      Asignado a <strong>{day.asignadoA.nombre}</strong>
+                    </>
+                  ) : (
+                    "Sin asignar"
+                  )}
+                  {day.hechoPor && (
+                    <>
+                      {" "}
+                      · Corte hecho por <strong>{day.hechoPor.nombre}</strong>
+                    </>
+                  )}
+                </span>
+                <button className="link-btn" onClick={() => setModal({ type: "asignarDia" })}>
+                  {day.asignadoA ? "Cambiar" : "Asignar día"}
+                </button>
+              </div>
+            )}
 
             {totals && (
               <section className="summary">
@@ -1404,7 +1411,17 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           onRemove={removeProveedor}
         />
       )}
-      {modal?.type === "team" && <TeamModal onClose={() => setModal(null)} ownerId={profile.id} />}
+      {modal?.type === "asignarDia" && day && activeDayDate && (
+        <AsignarDiaModal
+          onClose={() => setModal(null)}
+          fechaLabel={formatAssignedDate(activeDayDate)}
+          empleados={data.empleados}
+          asignadoA={day.asignadoA}
+          hechoPor={day.hechoPor}
+          onAsignar={assignDay}
+          onQuitar={unassignDay}
+        />
+      )}
       {modal?.type === "empleado" && (
         <EmpleadoModal
           onClose={() => setModal(null)}

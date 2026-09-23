@@ -21,8 +21,28 @@ export async function addAssignment(staffId: string, date: string, weekIndex: nu
   if (error) throw error;
 }
 
+// Igual que addAssignment, pero no truena si esa persona ya tenía esa fecha
+// asignada — la deja tal cual (o actualiza la semana). Usado al asignar un
+// día desde el propio Corte diario, donde reintentar/reasignar a la misma
+// persona debe ser inofensivo.
+export async function upsertAssignment(staffId: string, date: string, weekIndex: number): Promise<void> {
+  const { error } = await supabase
+    .from("staff_assignments")
+    .upsert({ staff_id: staffId, assigned_date: date, week_index: weekIndex }, { onConflict: "staff_id,assigned_date" });
+  if (error) throw error;
+}
+
 export async function removeAssignment(assignmentId: string): Promise<void> {
   const { error } = await supabase.from("staff_assignments").delete().eq("id", assignmentId);
+  if (error) throw error;
+}
+
+// Quita la asignación de una persona en concreto para una fecha en
+// concreto — usado al reasignar el día a alguien más o al quitarle el
+// acceso desde el Corte diario, donde no se tiene a la mano el id de la
+// fila (solo se sabe quién y qué fecha).
+export async function removeAssignmentByStaffAndDate(staffId: string, date: string): Promise<void> {
+  const { error } = await supabase.from("staff_assignments").delete().eq("staff_id", staffId).eq("assigned_date", date);
   if (error) throw error;
 }
 

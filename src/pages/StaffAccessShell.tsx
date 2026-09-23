@@ -1,13 +1,13 @@
 import { useState } from "react";
-import { ChefHat, ClipboardList, Clock, LogOut, Martini, Wallet } from "lucide-react";
-import { insumoAreaForPuesto, mostRecentWeekIndex, puedeEditarHorarios } from "../lib/dataModel";
+import { ChefHat, ClipboardList, Clock, Home, LogOut, Martini, Wallet } from "lucide-react";
+import { formatAssignedDate, insumoAreaForPuesto, mostRecentWeekIndex, puedeEditarHorarios } from "../lib/dataModel";
 import { HORARIO_AREAS_FIJAS, PERMISOS_DISPONIBLES } from "../lib/types";
-import type { AppData, HorarioSemana, PermisoStaff, Profile } from "../lib/types";
+import type { AppData, HorarioSemana, PermisoStaff, Profile, StaffAssignment } from "../lib/types";
 import { HorariosPanel } from "../components/panels/HorariosPanel";
 import { ConteoDiarioPanel } from "../components/panels/ConteoDiarioPanel";
 import { NominaPanel } from "../components/panels/NominaPanel";
 
-type StaffView = "menu" | PermisoStaff;
+type StaffView = "menu" | PermisoStaff | "corte";
 
 function ShellHeader({ subtitle, onSignOut }: { subtitle?: string; onSignOut: () => void }) {
   return (
@@ -23,26 +23,36 @@ function ShellHeader({ subtitle, onSignOut }: { subtitle?: string; onSignOut: ()
   );
 }
 
-// Pantalla para cuentas de equipo dadas de alta desde Personal (no las de
-// meseros por día asignado) — solo ve las secciones que su permiso
-// habilita, y esas siempre acotadas a su propia área (la de su puesto en
-// Personal). Con un solo permiso entra directo a esa sección; con dos o
-// más, primero ve un menú para elegir.
+// Pantalla para cuentas de equipo dadas de alta desde Personal — solo ve
+// las secciones que tiene habilitadas: las de su checklist de permisos
+// (Horarios/Conteo diario/Nómina, acotadas a su propia área o persona) y,
+// si le asignaron algún día, "Corte" (acotado a esos días). Con una sola
+// sección en total entra directo a ella; con dos o más, primero ve un
+// menú para elegir.
 export default function StaffAccessShell({
   profile,
   data,
   onSaveHorarioSemana,
   onSaveConteoDiario,
   onSignOut,
+  assignments,
+  onPickCorteDate,
 }: {
   profile: Profile;
   data: AppData;
   onSaveHorarioSemana: (monthKey: string, weekIndex: number, semana: HorarioSemana) => void;
   onSaveConteoDiario: (fecha: string, valores: Record<string, number>) => void;
   onSignOut: () => void;
+  assignments: StaffAssignment[];
+  onPickCorteDate: (date: string) => void;
 }) {
   const permisos = profile.permisos || [];
-  const [view, setView] = useState<StaffView>(() => (permisos.length === 1 ? permisos[0] : "menu"));
+  const tieneCorte = assignments.length > 0;
+  const totalSecciones = permisos.length + (tieneCorte ? 1 : 0);
+  const [view, setView] = useState<StaffView>(() => {
+    if (totalSecciones !== 1) return "menu";
+    return permisos.length === 1 ? permisos[0] : "corte";
+  });
 
   const empleado = data.empleados.find((e) => e.id === profile.empleado_id);
   const puesto = empleado?.puestoId ? data.puestos.find((p) => p.id === empleado.puestoId) : undefined;
@@ -52,39 +62,64 @@ export default function StaffAccessShell({
   const mostRecentMonthKey = monthKeys.length > 0 ? monthKeys[monthKeys.length - 1] : null;
   const mostRecentWeekIdx = mostRecentMonthKey ? mostRecentWeekIndex(mostRecentMonthKey, data.months[mostRecentMonthKey]) : 0;
 
-  if (!empleado || !area) {
+  if (!empleado) {
     return (
       <div className="app-shell">
         <ShellHeader onSignOut={onSignOut} />
         <div className="full-page-msg">
-          Tu cuenta todavía no está vinculada a un puesto con área en Personal. Pide al dueño que revise tu acceso.
+          Tu cuenta todavía no está vinculada a nadie en Personal. Pide al dueño que revise tu acceso.
         </div>
       </div>
     );
   }
 
-  if (permisos.length === 0) {
+  if (totalSecciones === 0) {
     return (
       <div className="app-shell">
-        <ShellHeader subtitle={area.nombre} onSignOut={onSignOut} />
+        <ShellHeader subtitle={area?.nombre} onSignOut={onSignOut} />
         <div className="full-page-msg">Todavía no tienes ninguna sección habilitada. Pide al dueño que te dé acceso.</div>
       </div>
     );
   }
 
-  // Con un único permiso no hay menú al que volver — nunca se muestra la
-  // vista "menu" ni un botón de regreso.
-  const backToMenu = permisos.length > 1 ? () => setView("menu") : undefined;
+  // Con una sola sección en total no hay menú al que volver — nunca se
+  // muestra la vista "menu" ni un botón de regreso.
+  const backToMenu = totalSecciones > 1 ? () => setView("menu") : undefined;
+
+  if (view === "corte" && tieneCorte) {
+    return (
+      <div className="app-shell">
+        <ShellHeader subtitle={area?.nombre} onSignOut={onSignOut} />
+        <div className="page-section">
+          {backToMenu && (
+            <button className="link-btn back-link" onClick={backToMenu}>
+              Inicio
+            </button>
+          )}
+          <h2 className="page-title">Corte</h2>
+          <p className="hint">Toca el día que vas a capturar:</p>
+          <div className="staff-name-grid">
+            {assignments.map((a) => (
+              <button key={a.id} className="staff-name-btn" onClick={() => onPickCorteDate(a.assigned_date)}>
+                {formatAssignedDate(a.assigned_date)}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (view === "horarios" && permisos.includes("horarios")) {
-    const horarioAreaId = HORARIO_AREAS_FIJAS.find((a) => a.nombre.toLowerCase() === area.nombre.toLowerCase())?.id;
+    const horarioAreaId = area ? HORARIO_AREAS_FIJAS.find((a) => a.nombre.toLowerCase() === area.nombre.toLowerCase())?.id : undefined;
     if (!horarioAreaId) {
       return (
         <div className="app-shell">
-          <ShellHeader subtitle={area.nombre} onSignOut={onSignOut} />
+          <ShellHeader subtitle={area?.nombre} onSignOut={onSignOut} />
           <div className="full-page-msg">
-            Tu área ("{area.nombre}") todavía no tiene horario en la app — por ahora Horarios solo existe para Piso y
-            Cocina.
+            {area
+              ? `Tu área ("${area.nombre}") todavía no tiene horario en la app — por ahora Horarios solo existe para Piso y Cocina.`
+              : "Necesitas tener un puesto asignado en Personal para ver Horarios."}
           </div>
         </div>
       );
@@ -95,7 +130,7 @@ export default function StaffAccessShell({
     });
     return (
       <div className="app-shell">
-        <ShellHeader subtitle={area.nombre} onSignOut={onSignOut} />
+        <ShellHeader subtitle={area?.nombre} onSignOut={onSignOut} />
         <HorariosPanel
           onBack={backToMenu}
           backLabel="Inicio"
@@ -118,7 +153,7 @@ export default function StaffAccessShell({
     if (!insumoArea) {
       return (
         <div className="app-shell">
-          <ShellHeader subtitle={area.nombre} onSignOut={onSignOut} />
+          <ShellHeader subtitle={area?.nombre} onSignOut={onSignOut} />
           <div className="full-page-msg">
             Tu puesto ("{puesto?.nombre}") todavía no tiene Conteo diario en la app — por ahora solo existe para
             puestos de Barra o Cocina.
@@ -152,7 +187,7 @@ export default function StaffAccessShell({
   if (view === "nomina" && permisos.includes("nomina")) {
     return (
       <div className="app-shell">
-        <ShellHeader subtitle={area.nombre} onSignOut={onSignOut} />
+        <ShellHeader subtitle={area?.nombre} onSignOut={onSignOut} />
         <NominaPanel
           onBack={backToMenu}
           backLabel="Inicio"
@@ -174,10 +209,21 @@ export default function StaffAccessShell({
 
   return (
     <div className="app-shell">
-      <ShellHeader subtitle={area.nombre} onSignOut={onSignOut} />
+      <ShellHeader subtitle={area?.nombre} onSignOut={onSignOut} />
       <div className="page-section">
         <h2 className="page-title">Inicio</h2>
         <div className="menu-list">
+          {tieneCorte && (
+            <button className="menu-item" onClick={() => setView("corte")}>
+              <span className="menu-item-icon">
+                <Home size={20} />
+              </span>
+              <span className="menu-item-text">
+                <strong>Corte</strong>
+                <span>Captura el corte de los días que te asignaron</span>
+              </span>
+            </button>
+          )}
           {PERMISOS_DISPONIBLES.filter((p) => permisos.includes(p.value)).map((p) => {
             const Icono = ICONOS[p.value];
             return (
