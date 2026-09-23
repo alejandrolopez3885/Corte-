@@ -159,6 +159,16 @@ export function insumoAreaForPuesto(puestoNombre: string): InsumoArea | null {
   return null;
 }
 
+// De las cuentas de equipo con el permiso "Horarios", solo el dueño (que
+// no pasa por aquí — tiene su propia pantalla sin restricciones) y el
+// jefe de cocina pueden capturar/editar y descargar la imagen. Todos los
+// demás puestos (mesero, barra, etc.) solo pueden ver el horario de su
+// área, sin poder editarlo ni descargarlo.
+export function puedeEditarHorarios(puestoNombre: string): boolean {
+  const n = puestoNombre.toLowerCase();
+  return n.includes("jefe") && n.includes("cocin");
+}
+
 // week1Start: fecha real (Lunes) donde debe empezar la semana 1, cuando ya
 // se conoce (ej. hoy, si apenas estás empezando a usar el mes; o la fecha
 // real de una asignación de staff). Si no se da, usa el default por

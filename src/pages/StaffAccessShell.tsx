@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ChefHat, ClipboardList, Clock, LogOut, Martini, Wallet } from "lucide-react";
-import { insumoAreaForPuesto, mostRecentWeekIndex } from "../lib/dataModel";
+import { insumoAreaForPuesto, mostRecentWeekIndex, puedeEditarHorarios } from "../lib/dataModel";
 import { HORARIO_AREAS_FIJAS, PERMISOS_DISPONIBLES } from "../lib/types";
 import type { AppData, HorarioSemana, PermisoStaff, Profile } from "../lib/types";
 import { HorariosPanel } from "../components/panels/HorariosPanel";
@@ -107,6 +107,7 @@ export default function StaffAccessShell({
           horarios={data.horarios}
           onSaveSemana={onSaveHorarioSemana}
           soloAreaId={horarioAreaId}
+          readOnly={!(puesto && puedeEditarHorarios(puesto.nombre))}
         />
       </div>
     );

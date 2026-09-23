@@ -81,6 +81,12 @@ estando en Nómina te regresa al menú de Equipo):
   actual no aplica a ninguna de las dos. "Nómina" es individual (no por
   área): cada quien ve solo su propia fila del reporte, aunque igual
   necesita tener un puesto asignado (de ahí sale su sueldo diario).
+  Dentro de "Horarios" hay además otra capa de permiso, fija y no
+  editable desde el checklist: solo el dueño y el puesto "Jefe de
+  cocina" pueden capturar/editar el horario y descargar su imagen —
+  cualquier otro puesto con este permiso (mesero, barra, etc.) solo
+  puede verlo, sin poder tocar las celdas, agregar/quitar personal,
+  guardar ni descargar nada.
   Sin puesto asignado, ningún permiso se
   puede habilitar. Al entrar con su PIN, esa persona no ve las pestañas
   normales de la app: con un solo permiso va directo a esa sección (ej.

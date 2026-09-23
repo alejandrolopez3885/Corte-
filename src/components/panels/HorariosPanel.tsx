@@ -19,6 +19,7 @@ export function HorariosPanel({
   horarios,
   onSaveSemana,
   soloAreaId,
+  readOnly,
 }: {
   onBack?: () => void;
   backLabel?: string;
@@ -33,6 +34,10 @@ export function HorariosPanel({
   // pantalla a un área nada más (la suya) y esconde el control de día
   // festivo, que es una decisión de toda la semana, no solo de su área.
   soloAreaId?: string;
+  // Solo el dueño y el jefe de cocina pueden capturar/editar y descargar
+  // la imagen — el resto de las cuentas de equipo con este permiso solo
+  // pueden ver el horario ya guardado de su área.
+  readOnly?: boolean;
 }) {
   const [monthKey, setMonthKey] = useState(initialMonthKey);
   const [weekIndex, setWeekIndex] = useState(initialWeekIndex);
@@ -101,7 +106,7 @@ export function HorariosPanel({
       </div>
       <p className="hint">{formatWeekRange(weekStartDate)}</p>
 
-      {saved && (
+      {saved && !readOnly && (
         <div className="field-row horario-descargas">
           {HORARIO_AREAS_FIJAS.filter(
             (a) => (!soloAreaId || a.id === soloAreaId) && (saved.areas.find((sa) => sa.id === a.id)?.filas.length ?? 0) > 0
@@ -138,17 +143,22 @@ export function HorariosPanel({
         </div>
       )}
 
-      <HorarioSemanaForm
-        key={`${monthKey}-${weekIndex}`}
-        monthKey={monthKey}
-        weekIndex={weekIndex}
-        semanaInicial={semanaInicial}
-        yaGuardada={!!saved}
-        isDraftBase={isDraftBase}
-        empleados={empleados}
-        onSaveSemana={onSaveSemana}
-        soloAreaId={soloAreaId}
-      />
+      {readOnly && !saved ? (
+        <Empty icon={<Clock size={26} strokeWidth={1.3} />} text="Aún no se ha guardado el horario de esta semana." />
+      ) : (
+        <HorarioSemanaForm
+          key={`${monthKey}-${weekIndex}`}
+          monthKey={monthKey}
+          weekIndex={weekIndex}
+          semanaInicial={semanaInicial}
+          yaGuardada={!!saved}
+          isDraftBase={isDraftBase}
+          empleados={empleados}
+          onSaveSemana={onSaveSemana}
+          soloAreaId={soloAreaId}
+          readOnly={readOnly}
+        />
+      )}
     </div>
   );
 }
@@ -162,6 +172,7 @@ function HorarioSemanaForm({
   empleados,
   onSaveSemana,
   soloAreaId,
+  readOnly,
 }: {
   monthKey: string;
   weekIndex: number;
@@ -171,6 +182,7 @@ function HorarioSemanaForm({
   empleados: EmpleadoEntry[];
   onSaveSemana: (monthKey: string, weekIndex: number, semana: HorarioSemana) => void;
   soloAreaId?: string;
+  readOnly?: boolean;
 }) {
   const [semana, setSemana] = useState(semanaInicial);
   const [locked, setLocked] = useState(yaGuardada);
@@ -250,7 +262,9 @@ function HorarioSemanaForm({
 
   return (
     <>
-      {locked ? (
+      {readOnly ? (
+        <p className="hint">Solo el dueño y el jefe de cocina pueden editar el horario — aquí solo se puede ver.</p>
+      ) : locked ? (
         <div className="conteo-locked-banner">
           <span>Este horario ya está guardado y los campos están bloqueados.</span>
           <button className="link-btn" onClick={() => setPidiendoConfirmacion(true)}>
@@ -276,7 +290,7 @@ function HorarioSemanaForm({
                 type="button"
                 className={(semana.festivos || []).includes(d) ? "festivo active" : ""}
                 onClick={() => toggleFestivo(d)}
-                disabled={locked}
+                disabled={locked || readOnly}
               >
                 {DAY_SHORT[d]}
               </button>
@@ -306,7 +320,7 @@ function HorarioSemanaForm({
                         {DAY_SHORT[d]}
                       </th>
                     ))}
-                    <th></th>
+                    {!readOnly && <th></th>}
                   </tr>
                 </thead>
                 <tbody>
@@ -321,23 +335,25 @@ function HorarioSemanaForm({
                               type="button"
                               className={`horario-cell ${value ? "filled" : ""}`}
                               onClick={() => handleCellTap(area.id, fila.empleadoId, fila.nombre, d, value || "")}
-                              disabled={locked}
+                              disabled={locked || readOnly}
                             >
                               {value || <span className="horario-cell-empty-mark">–</span>}
                             </button>
                           </td>
                         );
                       })}
-                      <td>
-                        <button
-                          className="icon-btn horario-row-remove"
-                          onClick={() => removeFila(area.id, fila.empleadoId)}
-                          aria-label={`Quitar a ${fila.nombre} de ${area.nombre}`}
-                          disabled={locked}
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </td>
+                      {!readOnly && (
+                        <td>
+                          <button
+                            className="icon-btn horario-row-remove"
+                            onClick={() => removeFila(area.id, fila.empleadoId)}
+                            aria-label={`Quitar a ${fila.nombre} de ${area.nombre}`}
+                            disabled={locked}
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>
@@ -345,15 +361,19 @@ function HorarioSemanaForm({
             </div>
           )}
 
-          <button className="link-btn" onClick={() => setAddingEmpleadoToArea(area.id)} disabled={locked}>
-            + Agregar empleado a {area.nombre}
-          </button>
+          {!readOnly && (
+            <button className="link-btn" onClick={() => setAddingEmpleadoToArea(area.id)} disabled={locked}>
+              + Agregar empleado a {area.nombre}
+            </button>
+          )}
         </div>
       ))}
 
-      <button className="btn-primary" onClick={guardar} disabled={locked}>
-        Guardar horario
-      </button>
+      {!readOnly && (
+        <button className="btn-primary" onClick={guardar} disabled={locked}>
+          Guardar horario
+        </button>
+      )}
 
       {addingEmpleadoToArea && areaAddingTarget && (
         <Sheet title={`Agregar a ${areaAddingTarget.nombre}`} onClose={() => setAddingEmpleadoToArea(null)}>
