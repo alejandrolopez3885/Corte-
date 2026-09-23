@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { ChefHat, ClipboardList, Clock, LogOut, Martini } from "lucide-react";
+import { ChefHat, ClipboardList, Clock, LogOut, Martini, Wallet } from "lucide-react";
 import { insumoAreaForPuesto, mostRecentWeekIndex } from "../lib/dataModel";
 import { HORARIO_AREAS_FIJAS, PERMISOS_DISPONIBLES } from "../lib/types";
 import type { AppData, HorarioSemana, PermisoStaff, Profile } from "../lib/types";
 import { HorariosPanel } from "../components/panels/HorariosPanel";
 import { ConteoDiarioPanel } from "../components/panels/ConteoDiarioPanel";
+import { NominaPanel } from "../components/panels/NominaPanel";
 
 type StaffView = "menu" | PermisoStaff;
 
@@ -147,7 +148,28 @@ export default function StaffAccessShell({
     );
   }
 
-  const ICONOS: Record<PermisoStaff, typeof Clock> = { horarios: Clock, conteo_diario: ClipboardList };
+  if (view === "nomina" && permisos.includes("nomina")) {
+    return (
+      <div className="app-shell">
+        <ShellHeader subtitle={area.nombre} onSignOut={onSignOut} />
+        <NominaPanel
+          onBack={backToMenu}
+          backLabel="Inicio"
+          months={data.months}
+          monthKeys={monthKeys}
+          initialMonthKey={mostRecentMonthKey as string}
+          initialWeekIndex={mostRecentWeekIdx}
+          empleados={data.empleados}
+          horarios={data.horarios}
+          nominaDescuentos={data.nominaDescuentos}
+          soloEmpleadoId={empleado.id}
+          onGoToHorarios={permisos.includes("horarios") ? () => setView("horarios") : undefined}
+        />
+      </div>
+    );
+  }
+
+  const ICONOS: Record<PermisoStaff, typeof Clock> = { horarios: Clock, conteo_diario: ClipboardList, nomina: Wallet };
 
   return (
     <div className="app-shell">

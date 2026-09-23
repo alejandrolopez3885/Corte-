@@ -16,6 +16,7 @@ import type {
 
 export function NominaPanel({
   onBack,
+  backLabel = "Equipo",
   months,
   monthKeys,
   initialMonthKey,
@@ -25,8 +26,10 @@ export function NominaPanel({
   nominaDescuentos,
   onSaveDescuentos,
   onGoToHorarios,
+  soloEmpleadoId,
 }: {
-  onBack: () => void;
+  onBack?: () => void;
+  backLabel?: string;
   months: Record<string, MonthData>;
   monthKeys: string[];
   initialMonthKey: string;
@@ -34,22 +37,29 @@ export function NominaPanel({
   empleados: EmpleadoEntry[];
   horarios: Record<string, HorarioMonthData>;
   nominaDescuentos: Record<string, NominaDescuentosMonthData>;
-  onSaveDescuentos: (monthKey: string, weekIndex: number, semana: NominaDescuentosSemana) => void;
-  onGoToHorarios: () => void;
+  onSaveDescuentos?: (monthKey: string, weekIndex: number, semana: NominaDescuentosSemana) => void;
+  onGoToHorarios?: () => void;
+  // Cuando se pasa, es la vista de una cuenta de equipo viendo solo su
+  // propia nómina: se filtra a esa sola persona y queda de solo lectura
+  // (sin agregar/quitar descuentos ni percepciones extra de nadie).
+  soloEmpleadoId?: string;
 }) {
   const [monthKey, setMonthKey] = useState(initialMonthKey);
   const [weekIndex, setWeekIndex] = useState(initialWeekIndex);
   const [addingDescuentoFor, setAddingDescuentoFor] = useState<{ empleadoId: string; nombre: string } | null>(null);
   const [addingExtraFor, setAddingExtraFor] = useState<{ empleadoId: string; nombre: string } | null>(null);
 
+  const soloLectura = !!soloEmpleadoId;
   const month = months[monthKey];
 
   if (!month) {
     return (
       <div className="page-section">
-        <button className="link-btn back-link" onClick={onBack}>
-          <ArrowLeft size={15} /> Equipo
-        </button>
+        {onBack && (
+          <button className="link-btn back-link" onClick={onBack}>
+            <ArrowLeft size={15} /> {backLabel}
+          </button>
+        )}
         <h2 className="page-title">Nómina</h2>
         <Empty icon={<Wallet size={26} strokeWidth={1.3} />} text="Primero crea un mes en Corte para poder calcular la nómina." />
       </div>
@@ -60,7 +70,8 @@ export function NominaPanel({
   const week = month.weeks[weekIndex];
   const semana = horarios[monthKey]?.weeks?.[weekIndex] ?? null;
   const descuentosSemana = nominaDescuentos[monthKey]?.weeks?.[weekIndex] ?? null;
-  const reporte = computeNominaSemana(semana, empleados, descuentosSemana, week);
+  const reporteCompleto = computeNominaSemana(semana, empleados, descuentosSemana, week);
+  const reporte = soloEmpleadoId ? reporteCompleto.filter((e) => e.empleadoId === soloEmpleadoId) : reporteCompleto;
 
   const totalBruto = reporte.reduce((s, e) => s + e.bruto, 0);
   const totalExtras = reporte.reduce((s, e) => s + e.totalExtras, 0);
@@ -69,12 +80,12 @@ export function NominaPanel({
 
   const today = todayIso();
   const hastaHoyPorEmpleado = computeNominaHastaHoyPorEmpleado(monthKey, weekIndex, month, semana, empleados);
-  const totalHastaHoy = Object.values(hastaHoyPorEmpleado).reduce((s, n) => s + n, 0);
+  const totalHastaHoy = reporte.reduce((s, e) => s + (hastaHoyPorEmpleado[e.empleadoId] || 0), 0);
 
   function addDescuento(empleadoId: string, tipo: NominaDescuentoTipo, concepto: string, monto: number) {
     const descuentos = descuentosSemana?.descuentos || [];
     const extras = descuentosSemana?.extras || [];
-    onSaveDescuentos(monthKey, weekIndex, {
+    onSaveDescuentos?.(monthKey, weekIndex, {
       descuentos: [...descuentos, { id: uid(), empleadoId, tipo, concepto: concepto || undefined, monto }],
       extras,
     });
@@ -83,13 +94,13 @@ export function NominaPanel({
 
   function removeDescuento(id: string) {
     const descuentos = descuentosSemana?.descuentos || [];
-    onSaveDescuentos(monthKey, weekIndex, { descuentos: descuentos.filter((d) => d.id !== id), extras: descuentosSemana?.extras || [] });
+    onSaveDescuentos?.(monthKey, weekIndex, { descuentos: descuentos.filter((d) => d.id !== id), extras: descuentosSemana?.extras || [] });
   }
 
   function addExtra(empleadoId: string, tipo: NominaExtraTipo, concepto: string, monto: number) {
     const descuentos = descuentosSemana?.descuentos || [];
     const extras = descuentosSemana?.extras || [];
-    onSaveDescuentos(monthKey, weekIndex, {
+    onSaveDescuentos?.(monthKey, weekIndex, {
       descuentos,
       extras: [...extras, { id: uid(), empleadoId, tipo, concepto: concepto || undefined, monto }],
     });
@@ -98,20 +109,24 @@ export function NominaPanel({
 
   function removeExtra(id: string) {
     const extras = descuentosSemana?.extras || [];
-    onSaveDescuentos(monthKey, weekIndex, { descuentos: descuentosSemana?.descuentos || [], extras: extras.filter((x) => x.id !== id) });
+    onSaveDescuentos?.(monthKey, weekIndex, { descuentos: descuentosSemana?.descuentos || [], extras: extras.filter((x) => x.id !== id) });
   }
 
   return (
     <div className="page-section">
-      <button className="link-btn back-link" onClick={onBack}>
-        <ArrowLeft size={15} /> Equipo
-      </button>
+      {onBack && (
+        <button className="link-btn back-link" onClick={onBack}>
+          <ArrowLeft size={15} /> {backLabel}
+        </button>
+      )}
       <h2 className="page-title">Nómina</h2>
       <p className="hint">
         Calculada sola a partir de Horarios y el sueldo diario de cada quien en Personal: Z paga doble, O/X pagan normal, el
         descanso (OFF) solo se paga si se trabajaron los otros 6 días, y un día marcado festivo en Horarios paga 1 turno
-        extra a quien lo trabajó. Los descuentos (tardanzas, adelantos, comida) y las percepciones extra (finiquitos, bonos
-        — solo existen en la semana donde se capturan) se agregan aquí mismo, por persona.
+        extra a quien lo trabajó.{" "}
+        {soloLectura
+          ? "Los descuentos y percepciones extra los agrega el dueño — aquí solo se ven."
+          : "Los descuentos (tardanzas, adelantos, comida) y las percepciones extra (finiquitos, bonos — solo existen en la semana donde se capturan) se agregan aquí mismo, por persona."}
       </p>
 
       <div className="field-row">
@@ -147,51 +162,66 @@ export function NominaPanel({
         <>
           <Empty
             icon={<Wallet size={26} strokeWidth={1.3} />}
-            text="Aún no has capturado el horario de esta semana — la nómina se calcula de ahí."
+            text={
+              soloLectura
+                ? "Aún no se ha capturado el horario de esta semana — tu nómina se calcula de ahí."
+                : "Aún no has capturado el horario de esta semana — la nómina se calcula de ahí."
+            }
           />
-          <button className="link-btn" onClick={onGoToHorarios}>
-            Ir a Horarios
-          </button>
+          {onGoToHorarios && (
+            <button className="link-btn" onClick={onGoToHorarios}>
+              Ir a Horarios
+            </button>
+          )}
         </>
       ) : reporte.length === 0 ? (
-        <Empty icon={<Wallet size={26} strokeWidth={1.3} />} text="El horario de esta semana no tiene personal capturado todavía." />
+        <Empty
+          icon={<Wallet size={26} strokeWidth={1.3} />}
+          text={
+            soloLectura
+              ? "Todavía no tienes horario capturado esta semana."
+              : "El horario de esta semana no tiene personal capturado todavía."
+          }
+        />
       ) : (
         <>
-          <div className="field-row horario-descargas">
-            {HORARIO_AREAS_FIJAS.map((a) => {
-              const reporteArea = reporte.filter((e) => e.areaNombre.toLowerCase() === a.nombre.toLowerCase());
-              if (reporteArea.length === 0) return null;
-              return (
+          {!soloLectura && (
+            <div className="field-row horario-descargas">
+              {HORARIO_AREAS_FIJAS.map((a) => {
+                const reporteArea = reporte.filter((e) => e.areaNombre.toLowerCase() === a.nombre.toLowerCase());
+                if (reporteArea.length === 0) return null;
+                return (
+                  <button
+                    key={a.id}
+                    className="link-btn"
+                    onClick={() =>
+                      downloadNominaImage(
+                        reporteArea,
+                        `Nómina · ${a.nombre} · ${month.label} · Semana ${isoWeekNumber(weekStartDate)}`,
+                        `${formatWeekRange(weekStartDate)} · Sueldo bruto, sin descuentos`
+                      )
+                    }
+                  >
+                    <Download size={15} /> Imagen · {a.nombre}
+                  </button>
+                );
+              })}
+              {new Set(reporte.map((e) => e.areaNombre)).size > 1 && (
                 <button
-                  key={a.id}
                   className="link-btn"
                   onClick={() =>
                     downloadNominaImage(
-                      reporteArea,
-                      `Nómina · ${a.nombre} · ${month.label} · Semana ${isoWeekNumber(weekStartDate)}`,
+                      reporte,
+                      `Nómina · ${month.label} · Semana ${isoWeekNumber(weekStartDate)}`,
                       `${formatWeekRange(weekStartDate)} · Sueldo bruto, sin descuentos`
                     )
                   }
                 >
-                  <Download size={15} /> Imagen · {a.nombre}
+                  <Download size={15} /> Imagen · Las 2 áreas
                 </button>
-              );
-            })}
-            {new Set(reporte.map((e) => e.areaNombre)).size > 1 && (
-              <button
-                className="link-btn"
-                onClick={() =>
-                  downloadNominaImage(
-                    reporte,
-                    `Nómina · ${month.label} · Semana ${isoWeekNumber(weekStartDate)}`,
-                    `${formatWeekRange(weekStartDate)} · Sueldo bruto, sin descuentos`
-                  )
-                }
-              >
-                <Download size={15} /> Imagen · Las 2 áreas
-              </button>
-            )}
-          </div>
+              )}
+            </div>
+          )}
           {reporte.map((e) => (
             <div className="nomina-emp" key={e.empleadoId}>
               <div className="nomina-emp-head">
@@ -233,9 +263,11 @@ export function NominaPanel({
                         {x.concepto ? ` · ${x.concepto}` : ""}
                       </span>
                       <span className="nomina-descuentos-monto">+{money(x.monto)}</span>
-                      <button className="icon-btn" onClick={() => removeExtra(x.id)} aria-label="Quitar percepción extra">
-                        <Trash2 size={13} />
-                      </button>
+                      {!soloLectura && (
+                        <button className="icon-btn" onClick={() => removeExtra(x.id)} aria-label="Quitar percepción extra">
+                          <Trash2 size={13} />
+                        </button>
+                      )}
                     </div>
                   ))}
                   {e.descuentos.map((d) => (
@@ -246,7 +278,7 @@ export function NominaPanel({
                         {d.origen === "corte" && <span className="nomina-descuentos-tag">Corte</span>}
                       </span>
                       <span className="nomina-descuentos-monto">-{money(d.monto)}</span>
-                      {d.origen === "corte" ? (
+                      {soloLectura || d.origen === "corte" ? (
                         <span className="icon-btn-spacer" />
                       ) : (
                         <button className="icon-btn" onClick={() => removeDescuento(d.id)} aria-label="Quitar descuento">
@@ -262,26 +294,30 @@ export function NominaPanel({
                 </div>
               )}
 
-              <div className="field-row">
-                <button
-                  className="link-btn"
-                  onClick={() => setAddingExtraFor({ empleadoId: e.empleadoId, nombre: e.nombre })}
-                >
-                  + Agregar percepción extra
-                </button>
-                <button
-                  className="link-btn"
-                  onClick={() => setAddingDescuentoFor({ empleadoId: e.empleadoId, nombre: e.nombre })}
-                >
-                  + Agregar descuento
-                </button>
-              </div>
+              {!soloLectura && (
+                <div className="field-row">
+                  <button
+                    className="link-btn"
+                    onClick={() => setAddingExtraFor({ empleadoId: e.empleadoId, nombre: e.nombre })}
+                  >
+                    + Agregar percepción extra
+                  </button>
+                  <button
+                    className="link-btn"
+                    onClick={() => setAddingDescuentoFor({ empleadoId: e.empleadoId, nombre: e.nombre })}
+                  >
+                    + Agregar descuento
+                  </button>
+                </div>
+              )}
             </div>
           ))}
 
           <div className="report-list">
             <div className="report-row">
-              <span className="report-row-label">Generada hasta hoy ({formatShortDayDate(today)}, todo el personal)</span>
+              <span className="report-row-label">
+                Generada hasta hoy ({formatShortDayDate(today)}{soloLectura ? "" : ", todo el personal"})
+              </span>
               <strong className="report-row-amount">{money(totalHastaHoy)}</strong>
             </div>
             <div className="report-row">

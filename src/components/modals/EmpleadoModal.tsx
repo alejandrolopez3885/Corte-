@@ -357,8 +357,13 @@ function PermisosChecklist({
       )}
       {PERMISOS_DISPONIBLES.map((p) => {
         const esConteoDiario = p.value === "conteo_diario";
+        // Nómina es individual (cada quien ve solo la suya), no por área —
+        // así que a diferencia de Horarios no se le pone sufijo de área,
+        // aunque sí requiere tener un puesto asignado (de ahí sale su
+        // sueldo diario).
+        const esNomina = p.value === "nomina";
         const habilitado = esConteoDiario ? !!insumoAreaLabel : !!areaActual;
-        const etiquetaArea = esConteoDiario ? insumoAreaLabel : areaActual?.nombre;
+        const etiquetaArea = esConteoDiario ? insumoAreaLabel : esNomina ? undefined : areaActual?.nombre;
         return (
           <Toggle
             key={p.value}
