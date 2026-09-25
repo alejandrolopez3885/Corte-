@@ -34,6 +34,7 @@ export default function StaffAccessShell({
   data,
   onSaveHorarioSemana,
   onSaveConteoDiario,
+  onConfirmarNomina,
   onSignOut,
   assignments,
   onPickCorteDate,
@@ -42,6 +43,7 @@ export default function StaffAccessShell({
   data: AppData;
   onSaveHorarioSemana: (monthKey: string, weekIndex: number, semana: HorarioSemana) => void;
   onSaveConteoDiario: (fecha: string, valores: Record<string, number>) => void;
+  onConfirmarNomina: (monthKey: string, weekIndex: number, empleadoId: string, nombre: string) => void;
   onSignOut: () => void;
   assignments: StaffAssignment[];
   onPickCorteDate: (date: string) => void;
@@ -199,6 +201,7 @@ export default function StaffAccessShell({
           horarios={data.horarios}
           nominaDescuentos={data.nominaDescuentos}
           soloEmpleadoId={empleado.id}
+          onConfirmarNomina={onConfirmarNomina}
           onGoToHorarios={permisos.includes("horarios") ? () => setView("horarios") : undefined}
         />
       </div>

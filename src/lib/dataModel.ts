@@ -704,9 +704,11 @@ export function computeNominaSemana(
       const extras = (descuentosSemana?.extras || []).filter((x) => x.empleadoId === fila.empleadoId);
       const totalExtras = round2(extras.reduce((s, x) => s + x.monto, 0));
       const neto = round2(bruto + totalExtras - totalDescuentos);
+      const confirmacion = (descuentosSemana?.confirmaciones || []).find((c) => c.empleadoId === fila.empleadoId);
       result.push({
         empleadoId: fila.empleadoId, nombre: fila.nombre, areaNombre: area.nombre, sueldoDiario,
         dias, diasTrabajados, offPagado, bruto, extras, totalExtras, descuentos, totalDescuentos, neto,
+        confirmado: !!confirmacion, confirmadoEn: confirmacion?.confirmadoEn,
       });
     });
   });

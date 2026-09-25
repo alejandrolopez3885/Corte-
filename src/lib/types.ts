@@ -108,6 +108,10 @@ export interface NominaEmpleadoSemana {
   descuentos: NominaDescuento[];
   totalDescuentos: number;
   neto: number;
+  // Si esta persona ya confirmó ("Recibí mi nómina correcta") que recibió
+  // el monto correcto de esta semana — ver NominaConfirmacion.
+  confirmado: boolean;
+  confirmadoEn?: string;
 }
 
 // Descuentos de nómina capturados a mano por empleado — tardanzas,
@@ -155,9 +159,20 @@ export interface NominaExtra {
   monto: number;
 }
 
+// Confirmación de que un empleado recibió su nómina de la semana tal cual
+// se calculó (monto correcto) — la captura la propia persona desde su
+// cuenta con el permiso "Nómina", tocando "Recibí mi nómina correcta".
+// Sirve para que el dueño vea, al pagar, quién ya confirmó y quién no.
+export interface NominaConfirmacion {
+  empleadoId: string;
+  nombre: string;
+  confirmadoEn: string; // ISO datetime
+}
+
 export interface NominaDescuentosSemana {
   descuentos: NominaDescuento[];
   extras?: NominaExtra[];
+  confirmaciones?: NominaConfirmacion[];
 }
 
 export interface NominaDescuentosMonthData {

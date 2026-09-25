@@ -175,6 +175,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           data={data}
           onSaveHorarioSemana={saveHorarioSemana}
           onSaveConteoDiario={guardarConteoDiario}
+          onConfirmarNomina={confirmarNomina}
           onSignOut={signOut}
           assignments={assignmentsStatus === "error" ? [] : assignments}
           onPickCorteDate={(date) => setSelectedAssignedDate(date)}
@@ -615,6 +616,21 @@ export default function CortesApp({ profile }: { profile: Profile }) {
     const next = structuredClone(data);
     if (!next.nominaDescuentos[monthKey]) next.nominaDescuentos[monthKey] = { weeks: [null, null, null, null] };
     next.nominaDescuentos[monthKey].weeks[weekIndex] = semana;
+    persist(next);
+  }
+
+  // "Recibí mi nómina correcta" — lo dispara la propia persona desde su
+  // vista de Nómina de solo lectura. Independiente de saveNominaDescuentos
+  // porque no debe poder tocar descuentos ni percepciones extra de nadie,
+  // solo agregar/actualizar su propia confirmación de esa semana.
+  function confirmarNomina(monthKey: string, weekIndex: number, empleadoId: string, nombre: string) {
+    if (!data) return;
+    const next = structuredClone(data);
+    if (!next.nominaDescuentos[monthKey]) next.nominaDescuentos[monthKey] = { weeks: [null, null, null, null] };
+    const semana = next.nominaDescuentos[monthKey].weeks[weekIndex] || { descuentos: [], extras: [] };
+    const confirmaciones = (semana.confirmaciones || []).filter((c) => c.empleadoId !== empleadoId);
+    confirmaciones.push({ empleadoId, nombre, confirmadoEn: new Date().toISOString() });
+    next.nominaDescuentos[monthKey].weeks[weekIndex] = { ...semana, confirmaciones };
     persist(next);
   }
 

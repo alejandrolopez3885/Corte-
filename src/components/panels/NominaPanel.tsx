@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowLeft, Download, Trash2, Wallet } from "lucide-react";
+import { ArrowLeft, Check, Download, Trash2, Wallet } from "lucide-react";
 import { Empty, Field, Sheet, SumInput } from "../ui";
 import { computeNominaHastaHoyPorEmpleado, computeNominaSemana, formatShortDayDate, formatWeekRange, isoWeekNumber, money, resolveWeekStartDate, sumFromText, todayIso, uid } from "../../lib/dataModel";
 import { downloadNominaImage } from "../../lib/nominaImage";
@@ -26,6 +26,7 @@ export function NominaPanel({
   nominaDescuentos,
   onSaveDescuentos,
   onGoToHorarios,
+  onConfirmarNomina,
   soloEmpleadoId,
 }: {
   onBack?: () => void;
@@ -39,6 +40,11 @@ export function NominaPanel({
   nominaDescuentos: Record<string, NominaDescuentosMonthData>;
   onSaveDescuentos?: (monthKey: string, weekIndex: number, semana: NominaDescuentosSemana) => void;
   onGoToHorarios?: () => void;
+  // "Recibí mi nómina correcta" — lo dispara la propia persona desde su
+  // vista de solo lectura (soloEmpleadoId). Independiente de
+  // onSaveDescuentos: no toca descuentos ni percepciones extra, solo
+  // agrega/actualiza su propia confirmación de esa semana.
+  onConfirmarNomina?: (monthKey: string, weekIndex: number, empleadoId: string, nombre: string) => void;
   // Cuando se pasa, es la vista de una cuenta de equipo viendo solo su
   // propia nómina: se filtra a esa sola persona y queda de solo lectura
   // (sin agregar/quitar descuentos ni percepciones extra de nadie).
@@ -77,6 +83,9 @@ export function NominaPanel({
   const totalExtras = reporte.reduce((s, e) => s + e.totalExtras, 0);
   const totalDescuentos = reporte.reduce((s, e) => s + e.totalDescuentos, 0);
   const totalNeto = reporte.reduce((s, e) => s + e.neto, 0);
+  const confirmados = reporte.filter((e) => e.confirmado);
+  const totalPagado = confirmados.reduce((s, e) => s + e.neto, 0);
+  const totalPorPagar = totalNeto - totalPagado;
 
   const today = todayIso();
   const hastaHoyPorEmpleado = computeNominaHastaHoyPorEmpleado(monthKey, weekIndex, month, semana, empleados);
@@ -225,7 +234,20 @@ export function NominaPanel({
           {reporte.map((e) => (
             <div className="nomina-emp" key={e.empleadoId}>
               <div className="nomina-emp-head">
-                <strong>{e.nombre}</strong>
+                <span className="nomina-emp-nombre">
+                  {e.nombre}
+                  {!soloLectura && (
+                    <span className={`nomina-confirm-badge ${e.confirmado ? "confirmado" : "pendiente"}`}>
+                      {e.confirmado ? (
+                        <>
+                          <Check size={11} /> Confirmada
+                        </>
+                      ) : (
+                        "Pendiente"
+                      )}
+                    </span>
+                  )}
+                </span>
                 <strong className="nomina-emp-total">{money(e.neto)}</strong>
               </div>
               {e.sueldoDiario === 0 ? (
@@ -310,8 +332,47 @@ export function NominaPanel({
                   </button>
                 </div>
               )}
+
+              {soloLectura &&
+                (e.confirmado ? (
+                  <div className="nomina-confirm-ok">
+                    <Check size={15} />
+                    <span>
+                      Confirmaste que recibiste tu nómina correcta
+                      {e.confirmadoEn &&
+                        ` el ${new Date(e.confirmadoEn).toLocaleString("es-MX", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}`}
+                      .
+                    </span>
+                  </div>
+                ) : (
+                  <button
+                    className="btn-primary"
+                    onClick={() => onConfirmarNomina?.(monthKey, weekIndex, e.empleadoId, e.nombre)}
+                  >
+                    <Check size={16} /> Recibí mi nómina correcta
+                  </button>
+                ))}
             </div>
           ))}
+
+          {!soloLectura && (
+            <div className="report-list">
+              <div className="report-row">
+                <span className="report-row-label">Confirmaron que recibieron correcto</span>
+                <strong className="report-row-amount">
+                  {confirmados.length} de {reporte.length}
+                </strong>
+              </div>
+              <div className="report-row">
+                <span className="report-row-label">Total pagado (confirmado)</span>
+                <strong className="report-row-amount good">{money(totalPagado)}</strong>
+              </div>
+              <div className={`report-row total ${totalPorPagar > 0 ? "" : "positive"}`}>
+                <span className="report-row-label">Restante por pagar</span>
+                <strong className="report-row-amount">{money(totalPorPagar)}</strong>
+              </div>
+            </div>
+          )}
 
           <div className="report-list">
             <div className="report-row">

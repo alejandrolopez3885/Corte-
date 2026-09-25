@@ -68,7 +68,9 @@ estando en Nómina te regresa al menú de Equipo):
   poder editar productos, precios ni proveedores) y "Nómina" (ve su
   propia nómina semanal, calculada igual que la del dueño, pero de solo
   lectura — sin poder agregar ni quitar descuentos o percepciones extra
-  de nadie). Cada permiso se acota distinto: "Horarios" usa el área de
+  de nadie; sí tiene un botón "Recibí mi nómina correcta" para confirmar
+  que el monto de esa semana está bien — ver el desglose más abajo, en
+  la propia sección "Nómina"). Cada permiso se acota distinto: "Horarios" usa el área de
   Personal del puesto (Gerencia/Piso/Cocina) y muestra el horario
   completo de esa área (todo el personal de Piso, o todo el de Cocina,
   no solo su propia fila); "Conteo diario" usa el catálogo de insumos
@@ -156,6 +158,21 @@ estando en Nómina te regresa al menú de Equipo):
   de semana es el de la semana del año (ISO), no el "Semana 1"-"4" del
   mes que se usa en toda la app — ej. la semana del 14 al 20 de
   septiembre se ve ahí como "Semana 38".
+
+  Cada quien con el permiso "Nómina" puede confirmar, desde su propia
+  cuenta, que el monto de esa semana es correcto — con un botón "Recibí
+  mi nómina correcta" que solo aparece si todavía no lo ha confirmado; al
+  tocarlo, se guarda quién y cuándo (fecha y hora), y el botón se
+  reemplaza por un aviso con esa fecha. El dueño ve el resultado en
+  Equipo > Nómina: junto al nombre de cada quien aparece una etiqueta
+  "Confirmada" (verde) o "Pendiente" (neutral), y arriba de los totales
+  de siempre hay un apartado nuevo con cuántos confirmaron ("2 de 5"), el
+  total ya pagado (solo lo de quienes confirmaron) y el restante por
+  pagar (lo de quienes no) — para llevar el control de a quién ya le
+  entregaste su pago sin tener que preguntarle uno por uno. Es
+  independiente de los descuentos/percepciones extra: no se puede
+  confirmar ni revocar desde Equipo, y no bloquea que el dueño siga
+  editando esa nómina si hace falta.
   Personal
   sigue siendo una lista aparte del catálogo de Meseros — este es solo
   nombre, sin sueldo, para el corte.
