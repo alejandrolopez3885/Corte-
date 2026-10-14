@@ -939,3 +939,33 @@ export function plantillaConteo(area: ConteoTextoArea, insumos: InsumoEntry[]): 
     .map((i) => `${i.nombre} (${i.unidad === "pieza" ? "pz" : i.unidad}): `)
     .join("\n");
 }
+
+export interface LineaConteoTexto {
+  nombre: string; // "Pollo"
+  presentacion?: string; // "kg" — lo que va entre paréntesis
+  etiqueta: string; // "Pollo (kg)" — tal cual antes de ":"
+  valor: string; // lo escrito después de ":", sin espacios a los lados
+}
+
+// Separa el texto del Conteo diario en una línea por producto: lo que va
+// antes de ":" es el producto (con su presentación entre paréntesis) y lo
+// de después, la cantidad. Las líneas sin ":" se ignoran.
+export function leerConteoTexto(texto: string): LineaConteoTexto[] {
+  return texto.split("\n").flatMap((raw) => {
+    const i = raw.indexOf(":");
+    if (i < 0) return [];
+    const etiqueta = raw.slice(0, i).trim();
+    if (!etiqueta) return [];
+    const m = etiqueta.match(/^(.*?)\s*\(([^)]*)\)\s*$/);
+    return [{ nombre: m ? m[1].trim() : etiqueta, presentacion: m ? m[2].trim() : undefined, etiqueta, valor: raw.slice(i + 1).trim() }];
+  });
+}
+
+// Solo números: "11.77", "5", "1,5". Nada de letras ni unidades ("5kg").
+export function esCantidadValida(valor: string): boolean {
+  return /^\d+(?:[.,]\d+)?$/.test(valor);
+}
+
+export function normalizarNombre(t: string): string {
+  return t.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/\s+/g, " ").trim();
+}

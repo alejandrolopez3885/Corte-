@@ -222,7 +222,16 @@ estando en Nómina te regresa al menú de Equipo):
   los mismos filtros de Mes/Semana y chips de día que Corte. La lista de
   insumos con un campo por producto queda oculta por ahora (por eso los
   insumos de alta rotación de Inventario no reciben valores nuevos desde
-  aquí). En cuanto se guarda, el texto queda bloqueado; para corregirlo
+  aquí). Al tocar "Guardar conteo" se revisa cada línea: si a algún
+  producto le falta la cantidad, o trae algo que no sea solo un número
+  (ej. "5kg" o "dos" — la presentación ya va entre paréntesis), aparece
+  un aviso con esos productos y no se guarda hasta corregirlos (si no
+  hay, se pone 0). Ya guardado, debajo del texto aparece la lista
+  separada por proveedor con cada cantidad: cada producto se busca por
+  su nombre en el catálogo del área (sin importar mayúsculas ni acentos)
+  y toma el proveedor que tenga asignado ahí; lo que no está en el
+  catálogo o no tiene proveedor cae en "Sin proveedor". En cuanto se
+  guarda, el texto queda bloqueado; para corregirlo
   hay que tocar "Editar", confirmar un aviso, y recién
   ahí se desbloquea) y "Catálogo" después: cada insumo tiene nombre, un
   precio de referencia opcional y un proveedor opcional (el mismo

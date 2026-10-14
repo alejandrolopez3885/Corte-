@@ -8,9 +8,13 @@ import {
   formatWeekRange,
   mostRecentDayInWeek,
   resolveWeekStartDate,
+  esCantidadValida,
+  leerConteoTexto,
+  normalizarNombre,
+  type LineaConteoTexto,
 } from "../../lib/dataModel";
 import { DAYS, DAY_SHORT } from "../../lib/types";
-import type { DayName, MonthData } from "../../lib/types";
+import type { DayName, InsumoEntry, MonthData, ProveedorCatalogEntry } from "../../lib/types";
 
 export function ConteoDiarioPanel({
   onBack,
@@ -18,6 +22,8 @@ export function ConteoDiarioPanel({
   emptyIcon,
   emptyText,
   plantilla,
+  insumos,
+  proveedores,
   months,
   monthKeys,
   initialMonthKey,
@@ -30,6 +36,9 @@ export function ConteoDiarioPanel({
   emptyIcon: ReactNode;
   emptyText: string;
   plantilla: string;
+  // Catálogo del área — para ligar cada producto del texto con su proveedor.
+  insumos: InsumoEntry[];
+  proveedores: ProveedorCatalogEntry[];
   months: Record<string, MonthData>;
   monthKeys: string[];
   initialMonthKey: string;
@@ -116,7 +125,15 @@ export function ConteoDiarioPanel({
         <Empty icon={emptyIcon} text={emptyText} />
       ) : (
         // key={fecha}: el formulario nace de lo guardado para ESA fecha.
-        <ConteoTextoForm key={fecha} fecha={fecha} guardado={textos[fecha]} plantilla={plantilla} onGuardar={onGuardar} />
+        <ConteoTextoForm
+          key={fecha}
+          fecha={fecha}
+          guardado={textos[fecha]}
+          plantilla={plantilla}
+          insumos={insumos}
+          proveedores={proveedores}
+          onGuardar={onGuardar}
+        />
       )}
     </div>
   );
@@ -129,18 +146,32 @@ function ConteoTextoForm({
   fecha,
   guardado,
   plantilla,
+  insumos,
+  proveedores,
   onGuardar,
 }: {
   fecha: string;
   guardado?: string;
   plantilla: string;
+  insumos: InsumoEntry[];
+  proveedores: ProveedorCatalogEntry[];
   onGuardar: (fecha: string, texto: string) => void;
 }) {
   const [texto, setTexto] = useState(guardado ?? plantilla);
   const [locked, setLocked] = useState(guardado !== undefined);
   const [pidiendoConfirmacion, setPidiendoConfirmacion] = useState(false);
+  const [errores, setErrores] = useState<{ faltan: LineaConteoTexto[]; invalidas: LineaConteoTexto[] } | null>(null);
 
+  // No se guarda si a algún producto le falta la cantidad o trae algo que
+  // no sea solo un número (la presentación ya va entre paréntesis).
   function guardar() {
+    const lineas = leerConteoTexto(texto);
+    const faltan = lineas.filter((l) => !l.valor);
+    const invalidas = lineas.filter((l) => l.valor && !esCantidadValida(l.valor));
+    if (faltan.length > 0 || invalidas.length > 0) {
+      setErrores({ faltan, invalidas });
+      return;
+    }
     onGuardar(fecha, texto);
     setLocked(true);
   }
@@ -166,6 +197,46 @@ function ConteoTextoForm({
         Guardar conteo
       </button>
 
+      {locked && guardado !== undefined && (
+        <ListaPorProveedor lineas={leerConteoTexto(guardado)} insumos={insumos} proveedores={proveedores} />
+      )}
+
+      {errores && (
+        <Sheet
+          title={errores.invalidas.length > 0 ? "Revisa el conteo" : "Faltan productos por rellenar"}
+          onClose={() => setErrores(null)}
+        >
+          {errores.faltan.length > 0 && (
+            <>
+              {errores.invalidas.length > 0 && <p className="hint">Faltan productos por rellenar:</p>}
+              <div className="conteo-errores">
+                {errores.faltan.map((l) => (
+                  <span key={l.etiqueta}>
+                    <TriangleAlert size={14} /> {l.etiqueta}
+                  </span>
+                ))}
+              </div>
+            </>
+          )}
+          {errores.invalidas.length > 0 && (
+            <>
+              <p className="hint">Solo se aceptan números — la presentación ya va entre paréntesis:</p>
+              <div className="conteo-errores">
+                {errores.invalidas.map((l) => (
+                  <span key={l.etiqueta}>
+                    <TriangleAlert size={14} /> {l.etiqueta}: "{l.valor}"
+                  </span>
+                ))}
+              </div>
+            </>
+          )}
+          <p className="hint">Escribe solo la cantidad de cada uno (si no hay, pon 0) para poder guardar.</p>
+          <button className="btn-primary" onClick={() => setErrores(null)}>
+            Volver a rellenar
+          </button>
+        </Sheet>
+      )}
+
       {pidiendoConfirmacion && (
         <Sheet title="Editar conteo guardado" onClose={() => setPidiendoConfirmacion(false)}>
           <p className="hint">
@@ -186,6 +257,56 @@ function ConteoTextoForm({
           </button>
         </Sheet>
       )}
+    </>
+  );
+}
+
+// Lo guardado, separado por proveedor: cada producto del texto se busca por
+// nombre en el catálogo del área y toma el proveedor que tenga asignado; lo
+// que no está en el catálogo o no tiene proveedor cae en "Sin proveedor".
+function ListaPorProveedor({
+  lineas,
+  insumos,
+  proveedores,
+}: {
+  lineas: LineaConteoTexto[];
+  insumos: InsumoEntry[];
+  proveedores: ProveedorCatalogEntry[];
+}) {
+  const porNombre = new Map(insumos.map((i) => [normalizarNombre(i.nombre), i]));
+  const grupos = new Map<string, { linea: LineaConteoTexto; enCatalogo: boolean }[]>();
+  lineas.forEach((linea) => {
+    const insumo = porNombre.get(normalizarNombre(linea.nombre));
+    const key = insumo?.proveedorId && proveedores.some((p) => p.id === insumo.proveedorId) ? insumo.proveedorId : "sin";
+    if (!grupos.has(key)) grupos.set(key, []);
+    grupos.get(key)!.push({ linea, enCatalogo: !!insumo });
+  });
+  const orden = [...proveedores.filter((p) => grupos.has(p.id)).map((p) => ({ key: p.id, nombre: p.nombre }))];
+  if (grupos.has("sin")) orden.push({ key: "sin", nombre: "Sin proveedor" });
+
+  return (
+    <>
+      {orden.map((g) => (
+        <div className="insumos-grupo" key={g.key}>
+          <h3 className="insumos-grupo-titulo">{g.nombre}</h3>
+          <div className="catalog-list">
+            {grupos.get(g.key)!.map(({ linea, enCatalogo }) => (
+              <div key={linea.etiqueta} className="catalog-row conteo-row">
+                <div>
+                  <strong>{linea.nombre}</strong>
+                  <span className={enCatalogo ? undefined : "conteo-no-catalogo"}>
+                    {enCatalogo ? linea.presentacion : "No está en el catálogo"}
+                  </span>
+                </div>
+                <span className="conteo-cantidad">
+                  {linea.valor}
+                  {enCatalogo ? "" : linea.presentacion ? ` ${linea.presentacion}` : ""}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
     </>
   );
 }

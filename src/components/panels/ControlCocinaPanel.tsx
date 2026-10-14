@@ -60,6 +60,8 @@ export function ControlCocinaPanel({
         emptyIcon={<ChefHat size={26} strokeWidth={1.3} />}
         emptyText="Aún no marcas insumos de cocina como alta rotación. Márcalos desde el Catálogo para que aparezcan aquí."
         plantilla={plantillaConteo("cocina", insumos)}
+        insumos={insumosCocina}
+        proveedores={proveedores}
         months={months}
         monthKeys={monthKeys}
         initialMonthKey={initialMonthKey}

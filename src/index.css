@@ -633,3 +633,10 @@ body {
 }
 
 .conteo-texto { width: 100%; resize: vertical; font: inherit; font-size: 15px; line-height: 1.75; padding: 12px 14px; }
+.conteo-errores {
+  display: flex; flex-direction: column; gap: 4px;
+  background: var(--bad-soft); color: var(--bad); border-radius: 12px; padding: 10px 14px; font-size: 14px;
+}
+.conteo-errores span { display: flex; align-items: center; gap: 6px; }
+.conteo-cantidad { font-weight: 600; font-size: 15px; flex-shrink: 0; }
+.catalog-row span.conteo-no-catalogo { color: var(--warn); }

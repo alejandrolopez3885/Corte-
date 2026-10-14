@@ -173,6 +173,8 @@ export default function StaffAccessShell({
           emptyIcon={insumoArea === "bar" ? <Martini size={26} strokeWidth={1.3} /> : <ChefHat size={26} strokeWidth={1.3} />}
           emptyText={`Aún no hay insumos de ${insumoAreaLabel} marcados como alta rotación. Pide al dueño que los marque desde el Catálogo.`}
           plantilla={plantillaConteo(insumoArea, data.insumos)}
+          insumos={data.insumos.filter((i) => i.area === insumoArea)}
+          proveedores={data.proveedores}
           months={data.months}
           monthKeys={monthKeys}
           initialMonthKey={mostRecentMonthKey as string}
