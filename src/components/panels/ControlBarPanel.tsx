@@ -19,6 +19,8 @@ export function ControlBarPanel({
   initialWeekIndex,
   conteosTexto,
   onGuardarConteo,
+  pedidosDiarios,
+  onGuardarPedido,
 }: {
   onBack: () => void;
   insumos: InsumoEntry[];
@@ -31,6 +33,8 @@ export function ControlBarPanel({
   initialWeekIndex: number;
   conteosTexto: Record<ConteoTextoArea, Record<string, string>>;
   onGuardarConteo: (area: ConteoTextoArea, fecha: string, texto: string) => void;
+  pedidosDiarios: Record<ConteoTextoArea, Record<string, Record<string, number>>>;
+  onGuardarPedido: (area: ConteoTextoArea, fecha: string, pedido: Record<string, number>) => void;
 }) {
   const [view, setView] = useState<ControlBarView>("menu");
   const insumosBar = insumos.filter((i) => i.area === "bar");
@@ -68,6 +72,8 @@ export function ControlBarPanel({
         initialWeekIndex={initialWeekIndex}
         textos={conteosTexto.bar}
         onGuardar={(fecha, texto) => onGuardarConteo("bar", fecha, texto)}
+        pedidos={pedidosDiarios.bar}
+        onGuardarPedido={(fecha, pedido) => onGuardarPedido("bar", fecha, pedido)}
       />
     );
   }

@@ -175,6 +175,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           data={data}
           onSaveHorarioSemana={saveHorarioSemana}
           onSaveConteoTexto={guardarConteoTexto}
+          onSavePedidoDiario={guardarPedidoDiario}
           onConfirmarNomina={confirmarNomina}
           onSignOut={signOut}
           assignments={assignmentsStatus === "error" ? [] : assignments}
@@ -382,6 +383,13 @@ export default function CortesApp({ profile }: { profile: Profile }) {
     if (!data) return;
     const next = structuredClone(data);
     next.insumos = next.insumos.filter((i) => i.id !== id);
+    persist(next);
+  }
+
+  function guardarPedidoDiario(area: ConteoTextoArea, fecha: string, pedido: Record<string, number>) {
+    if (!data) return;
+    const next = structuredClone(data);
+    next.pedidosDiarios[area][fecha] = pedido;
     persist(next);
   }
 
@@ -959,6 +967,8 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           initialWeekIndex={mostRecentWeekIdx}
           conteosTexto={data.conteosDiariosTexto}
           onGuardarConteo={guardarConteoTexto}
+          pedidosDiarios={data.pedidosDiarios}
+          onGuardarPedido={guardarPedidoDiario}
         />
       )}
 
@@ -975,6 +985,8 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           initialWeekIndex={mostRecentWeekIdx}
           conteosTexto={data.conteosDiariosTexto}
           onGuardarConteo={guardarConteoTexto}
+          pedidosDiarios={data.pedidosDiarios}
+          onGuardarPedido={guardarPedidoDiario}
         />
       )}
 

@@ -19,6 +19,8 @@ export function ControlCocinaPanel({
   initialWeekIndex,
   conteosTexto,
   onGuardarConteo,
+  pedidosDiarios,
+  onGuardarPedido,
 }: {
   onBack: () => void;
   insumos: InsumoEntry[];
@@ -31,6 +33,8 @@ export function ControlCocinaPanel({
   initialWeekIndex: number;
   conteosTexto: Record<ConteoTextoArea, Record<string, string>>;
   onGuardarConteo: (area: ConteoTextoArea, fecha: string, texto: string) => void;
+  pedidosDiarios: Record<ConteoTextoArea, Record<string, Record<string, number>>>;
+  onGuardarPedido: (area: ConteoTextoArea, fecha: string, pedido: Record<string, number>) => void;
 }) {
   const [view, setView] = useState<ControlCocinaView>("menu");
   const insumosCocina = insumos.filter((i) => i.area === "cocina");
@@ -68,6 +72,8 @@ export function ControlCocinaPanel({
         initialWeekIndex={initialWeekIndex}
         textos={conteosTexto.cocina}
         onGuardar={(fecha, texto) => onGuardarConteo("cocina", fecha, texto)}
+        pedidos={pedidosDiarios.cocina}
+        onGuardarPedido={(fecha, pedido) => onGuardarPedido("cocina", fecha, pedido)}
       />
     );
   }

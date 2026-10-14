@@ -230,7 +230,14 @@ estando en Nómina te regresa al menú de Equipo):
   separada por proveedor con cada cantidad: cada producto se busca por
   su nombre en el catálogo del área (sin importar mayúsculas ni acentos)
   y toma el proveedor que tenga asignado ahí; lo que no está en el
-  catálogo o no tiene proveedor cae en "Sin proveedor". En cuanto se
+  catálogo o no tiene proveedor cae en "Sin proveedor". Cada fila
+  muestra la cantidad contada con su presentación al lado ("Dedos de
+  queso … 9 pz") y un recuadro "Pedir" para escribir ahí mismo cuánto
+  pedir; se guarda con "Guardar pedido" (por área y fecha, aparte del
+  conteo): si algún recuadro queda vacío o no es solo un número aparece
+  el mismo aviso y no se guarda, y 0 significa que ese día no se pide
+  ese producto. Ya guardado, el pedido queda bloqueado hasta tocar
+  "Editar pedido". En cuanto se
   guarda, el texto queda bloqueado; para corregirlo
   hay que tocar "Editar", confirmar un aviso, y recién
   ahí se desbloquea) y "Catálogo" después: cada insumo tiene nombre, un

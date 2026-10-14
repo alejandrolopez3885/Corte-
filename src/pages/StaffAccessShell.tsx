@@ -34,6 +34,7 @@ export default function StaffAccessShell({
   data,
   onSaveHorarioSemana,
   onSaveConteoTexto,
+  onSavePedidoDiario,
   onConfirmarNomina,
   onSignOut,
   assignments,
@@ -43,6 +44,7 @@ export default function StaffAccessShell({
   data: AppData;
   onSaveHorarioSemana: (monthKey: string, weekIndex: number, semana: HorarioSemana) => void;
   onSaveConteoTexto: (area: ConteoTextoArea, fecha: string, texto: string) => void;
+  onSavePedidoDiario: (area: ConteoTextoArea, fecha: string, pedido: Record<string, number>) => void;
   onConfirmarNomina: (monthKey: string, weekIndex: number, empleadoId: string, nombre: string) => void;
   onSignOut: () => void;
   assignments: StaffAssignment[];
@@ -181,6 +183,8 @@ export default function StaffAccessShell({
           initialWeekIndex={mostRecentWeekIdx}
           textos={data.conteosDiariosTexto[insumoArea]}
           onGuardar={(fecha, texto) => onSaveConteoTexto(insumoArea, fecha, texto)}
+          pedidos={data.pedidosDiarios[insumoArea]}
+          onGuardarPedido={(fecha, pedido) => onSavePedidoDiario(insumoArea, fecha, pedido)}
         />
       </div>
     );

@@ -411,6 +411,10 @@ export interface AppData {
   // la lista tal cual la escribe el jefe de cocina/barra, por área y por
   // fecha real (ISO) -> texto.
   conteosDiariosTexto: Record<ConteoTextoArea, Record<string, string>>;
+  // Cantidad a pedir que se captura junto al conteo diario en texto: por
+  // área, fecha real (ISO) -> producto (nombre normalizado) -> cantidad.
+  // 0 significa que ese día no se pide ese producto.
+  pedidosDiarios: Record<ConteoTextoArea, Record<string, Record<string, number>>>;
   // Inventario semanal (Negocio > Inventario, mismas semanas que
   // Corte/Horarios) — lo que hay en existencia, no lo que se pide.
   inventarioSemanal: Record<string, InventarioSemanalMonthData>;

@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { ArrowLeft, Circle, CircleDot, TriangleAlert } from "lucide-react";
-import { Empty, Field, Sheet } from "../ui";
+import { Empty, Field, NumInput, Sheet } from "../ui";
 import {
   dateForDay,
   formatDayNumber,
@@ -30,6 +30,8 @@ export function ConteoDiarioPanel({
   initialWeekIndex,
   textos,
   onGuardar,
+  pedidos,
+  onGuardarPedido,
 }: {
   onBack?: () => void;
   backLabel: string;
@@ -45,6 +47,9 @@ export function ConteoDiarioPanel({
   initialWeekIndex: number;
   textos: Record<string, string>;
   onGuardar: (fecha: string, texto: string) => void;
+  // Cantidad a pedir por producto (nombre normalizado), por fecha.
+  pedidos: Record<string, Record<string, number>>;
+  onGuardarPedido: (fecha: string, pedido: Record<string, number>) => void;
 }) {
   const [monthKey, setMonthKey] = useState(initialMonthKey);
   const [weekIndex, setWeekIndex] = useState(initialWeekIndex);
@@ -133,6 +138,8 @@ export function ConteoDiarioPanel({
           insumos={insumos}
           proveedores={proveedores}
           onGuardar={onGuardar}
+          pedidoGuardado={pedidos[fecha]}
+          onGuardarPedido={onGuardarPedido}
         />
       )}
     </div>
@@ -149,6 +156,8 @@ function ConteoTextoForm({
   insumos,
   proveedores,
   onGuardar,
+  pedidoGuardado,
+  onGuardarPedido,
 }: {
   fecha: string;
   guardado?: string;
@@ -156,20 +165,22 @@ function ConteoTextoForm({
   insumos: InsumoEntry[];
   proveedores: ProveedorCatalogEntry[];
   onGuardar: (fecha: string, texto: string) => void;
+  pedidoGuardado?: Record<string, number>;
+  onGuardarPedido: (fecha: string, pedido: Record<string, number>) => void;
 }) {
   const [texto, setTexto] = useState(guardado ?? plantilla);
   const [locked, setLocked] = useState(guardado !== undefined);
   const [pidiendoConfirmacion, setPidiendoConfirmacion] = useState(false);
-  const [errores, setErrores] = useState<{ faltan: LineaConteoTexto[]; invalidas: LineaConteoTexto[] } | null>(null);
+  const [errores, setErrores] = useState<ErroresCaptura | null>(null);
 
   // No se guarda si a algún producto le falta la cantidad o trae algo que
   // no sea solo un número (la presentación ya va entre paréntesis).
   function guardar() {
     const lineas = leerConteoTexto(texto);
-    const faltan = lineas.filter((l) => !l.valor);
-    const invalidas = lineas.filter((l) => l.valor && !esCantidadValida(l.valor));
+    const faltan = lineas.filter((l) => !l.valor).map((l) => l.etiqueta);
+    const invalidas = lineas.filter((l) => l.valor && !esCantidadValida(l.valor)).map((l) => `${l.etiqueta}: "${l.valor}"`);
     if (faltan.length > 0 || invalidas.length > 0) {
-      setErrores({ faltan, invalidas });
+      setErrores({ titulo: "Faltan productos por rellenar", faltan, invalidas });
       return;
     }
     onGuardar(fecha, texto);
@@ -198,44 +209,17 @@ function ConteoTextoForm({
       </button>
 
       {locked && guardado !== undefined && (
-        <ListaPorProveedor lineas={leerConteoTexto(guardado)} insumos={insumos} proveedores={proveedores} />
+        <ListaPorProveedor
+          fecha={fecha}
+          lineas={leerConteoTexto(guardado)}
+          insumos={insumos}
+          proveedores={proveedores}
+          pedidoGuardado={pedidoGuardado}
+          onGuardarPedido={onGuardarPedido}
+        />
       )}
 
-      {errores && (
-        <Sheet
-          title={errores.invalidas.length > 0 ? "Revisa el conteo" : "Faltan productos por rellenar"}
-          onClose={() => setErrores(null)}
-        >
-          {errores.faltan.length > 0 && (
-            <>
-              {errores.invalidas.length > 0 && <p className="hint">Faltan productos por rellenar:</p>}
-              <div className="conteo-errores">
-                {errores.faltan.map((l) => (
-                  <span key={l.etiqueta}>
-                    <TriangleAlert size={14} /> {l.etiqueta}
-                  </span>
-                ))}
-              </div>
-            </>
-          )}
-          {errores.invalidas.length > 0 && (
-            <>
-              <p className="hint">Solo se aceptan números — la presentación ya va entre paréntesis:</p>
-              <div className="conteo-errores">
-                {errores.invalidas.map((l) => (
-                  <span key={l.etiqueta}>
-                    <TriangleAlert size={14} /> {l.etiqueta}: "{l.valor}"
-                  </span>
-                ))}
-              </div>
-            </>
-          )}
-          <p className="hint">Escribe solo la cantidad de cada uno (si no hay, pon 0) para poder guardar.</p>
-          <button className="btn-primary" onClick={() => setErrores(null)}>
-            Volver a rellenar
-          </button>
-        </Sheet>
-      )}
+      {errores && <ErroresSheet errores={errores} onClose={() => setErrores(null)} />}
 
       {pidiendoConfirmacion && (
         <Sheet title="Editar conteo guardado" onClose={() => setPidiendoConfirmacion(false)}>
@@ -261,18 +245,81 @@ function ConteoTextoForm({
   );
 }
 
+interface ErroresCaptura {
+  titulo: string;
+  faltan: string[];
+  invalidas: string[];
+}
+
+// Mismo aviso para el conteo y para el pedido: lo vacío y lo que no es
+// solo un número.
+function ErroresSheet({ errores, onClose }: { errores: ErroresCaptura; onClose: () => void }) {
+  const { titulo, faltan, invalidas } = errores;
+  return (
+    <Sheet title={invalidas.length > 0 ? "Revisa los datos" : titulo} onClose={onClose}>
+      {faltan.length > 0 && (
+        <>
+          {invalidas.length > 0 && <p className="hint">{titulo}:</p>}
+          <div className="conteo-errores">
+            {faltan.map((t) => (
+              <span key={t}>
+                <TriangleAlert size={14} /> {t}
+              </span>
+            ))}
+          </div>
+        </>
+      )}
+      {invalidas.length > 0 && (
+        <>
+          <p className="hint">Solo se aceptan números — la presentación ya va entre paréntesis:</p>
+          <div className="conteo-errores">
+            {invalidas.map((t) => (
+              <span key={t}>
+                <TriangleAlert size={14} /> {t}
+              </span>
+            ))}
+          </div>
+        </>
+      )}
+      <p className="hint">Escribe solo la cantidad de cada uno (si no hay o no se pide, pon 0) para poder guardar.</p>
+      <button className="btn-primary" onClick={onClose}>
+        Volver a rellenar
+      </button>
+    </Sheet>
+  );
+}
+
 // Lo guardado, separado por proveedor: cada producto del texto se busca por
 // nombre en el catálogo del área y toma el proveedor que tenga asignado; lo
 // que no está en el catálogo o no tiene proveedor cae en "Sin proveedor".
+// Junto a la cantidad contada va un recuadro para la cantidad a pedir: vacío
+// no deja guardar, y 0 significa que no se pide ese producto.
 function ListaPorProveedor({
+  fecha,
   lineas,
   insumos,
   proveedores,
+  pedidoGuardado,
+  onGuardarPedido,
 }: {
+  fecha: string;
   lineas: LineaConteoTexto[];
   insumos: InsumoEntry[];
   proveedores: ProveedorCatalogEntry[];
+  pedidoGuardado?: Record<string, number>;
+  onGuardarPedido: (fecha: string, pedido: Record<string, number>) => void;
 }) {
+  const [pedido, setPedido] = useState<Record<string, string>>(() => {
+    const init: Record<string, string> = {};
+    lineas.forEach((l) => {
+      const v = pedidoGuardado?.[normalizarNombre(l.nombre)];
+      init[normalizarNombre(l.nombre)] = v !== undefined ? String(v) : "";
+    });
+    return init;
+  });
+  const [pedidoLocked, setPedidoLocked] = useState(pedidoGuardado !== undefined);
+  const [errores, setErrores] = useState<ErroresCaptura | null>(null);
+
   const porNombre = new Map(insumos.map((i) => [normalizarNombre(i.nombre), i]));
   const grupos = new Map<string, { linea: LineaConteoTexto; enCatalogo: boolean }[]>();
   lineas.forEach((linea) => {
@@ -284,29 +331,74 @@ function ListaPorProveedor({
   const orden = [...proveedores.filter((p) => grupos.has(p.id)).map((p) => ({ key: p.id, nombre: p.nombre }))];
   if (grupos.has("sin")) orden.push({ key: "sin", nombre: "Sin proveedor" });
 
+  function guardarPedido() {
+    const faltan: string[] = [];
+    const invalidas: string[] = [];
+    const out: Record<string, number> = {};
+    lineas.forEach((l) => {
+      const v = (pedido[normalizarNombre(l.nombre)] || "").trim();
+      if (!v) faltan.push(l.etiqueta);
+      else if (!esCantidadValida(v)) invalidas.push(`${l.etiqueta}: "${v}"`);
+      else out[normalizarNombre(l.nombre)] = Number(v.replace(",", "."));
+    });
+    if (faltan.length > 0 || invalidas.length > 0) {
+      setErrores({ titulo: "Faltan campos por rellenar en el pedido", faltan, invalidas });
+      return;
+    }
+    onGuardarPedido(fecha, out);
+    setPedidoLocked(true);
+  }
+
   return (
     <>
+      <div className="conteo-colhead">
+        <span>Conteo</span>
+        <span>Pedir</span>
+      </div>
       {orden.map((g) => (
         <div className="insumos-grupo" key={g.key}>
           <h3 className="insumos-grupo-titulo">{g.nombre}</h3>
           <div className="catalog-list">
-            {grupos.get(g.key)!.map(({ linea, enCatalogo }) => (
-              <div key={linea.etiqueta} className="catalog-row conteo-row">
-                <div>
-                  <strong>{linea.nombre}</strong>
-                  <span className={enCatalogo ? undefined : "conteo-no-catalogo"}>
-                    {enCatalogo ? linea.presentacion : "No está en el catálogo"}
+            {grupos.get(g.key)!.map(({ linea, enCatalogo }) => {
+              const key = normalizarNombre(linea.nombre);
+              const valor = pedido[key] ?? "";
+              return (
+                <div key={linea.etiqueta} className="catalog-row conteo-row">
+                  <div>
+                    <strong>{linea.nombre}</strong>
+                    {!enCatalogo && <span className="conteo-no-catalogo">No está en el catálogo</span>}
+                  </div>
+                  <span className="conteo-cantidad">
+                    {linea.valor}
+                    {linea.presentacion && <small> {linea.presentacion}</small>}
                   </span>
+                  <NumInput
+                    className={`num-input pedido-input ${valor.trim() && valor.trim() !== "0" ? "con-pedido" : ""}`}
+                    value={valor}
+                    onChange={(e) => setPedido((p) => ({ ...p, [key]: e.target.value }))}
+                    placeholder="—"
+                    disabled={pedidoLocked}
+                  />
                 </div>
-                <span className="conteo-cantidad">
-                  {linea.valor}
-                  {enCatalogo ? "" : linea.presentacion ? ` ${linea.presentacion}` : ""}
-                </span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       ))}
+      {pedidoLocked ? (
+        <div className="conteo-locked-banner">
+          <span>Pedido guardado.</span>
+          <button className="link-btn" onClick={() => setPedidoLocked(false)}>
+            Editar pedido
+          </button>
+        </div>
+      ) : (
+        <button className="btn-primary" onClick={guardarPedido}>
+          Guardar pedido
+        </button>
+      )}
+
+      {errores && <ErroresSheet errores={errores} onClose={() => setErrores(null)} />}
     </>
   );
 }

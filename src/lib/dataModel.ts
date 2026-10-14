@@ -210,7 +210,7 @@ export function defaultData(): AppData {
   const { areas, puestos } = seedAreasYPuestos();
   return {
     meseros: [], empleados: [], areas, puestos, proveedores: [], facturas: [], months: {}, horarios: {}, nominaDescuentos: {},
-    insumos: [], conteosDiarios: {}, conteosDiariosTexto: { bar: {}, cocina: {} }, inventarioSemanal: {}, pedidosSemanal: {},
+    insumos: [], conteosDiarios: {}, conteosDiariosTexto: { bar: {}, cocina: {} }, pedidosDiarios: { bar: {}, cocina: {} }, inventarioSemanal: {}, pedidosSemanal: {},
   };
 }
 
@@ -255,6 +255,10 @@ export function migrateAppData(raw: AppData): { data: AppData; changed: boolean 
   }
   if (!data.conteosDiarios) {
     data.conteosDiarios = {};
+    changed = true;
+  }
+  if (!data.pedidosDiarios?.bar || !data.pedidosDiarios?.cocina) {
+    data.pedidosDiarios = { bar: data.pedidosDiarios?.bar || {}, cocina: data.pedidosDiarios?.cocina || {} };
     changed = true;
   }
   if (!data.conteosDiariosTexto?.bar || !data.conteosDiariosTexto?.cocina) {
