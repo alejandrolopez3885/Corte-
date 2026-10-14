@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { ChefHat, ClipboardList, Clock, Home, LogOut, Martini, Wallet } from "lucide-react";
-import { formatAssignedDate, insumoAreaForPuesto, mostRecentWeekIndex, puedeEditarHorarios } from "../lib/dataModel";
+import { formatAssignedDate, insumoAreaForPuesto, plantillaConteo, mostRecentWeekIndex, puedeEditarHorarios } from "../lib/dataModel";
 import { HORARIO_AREAS_FIJAS, PERMISOS_DISPONIBLES } from "../lib/types";
-import type { AppData, HorarioSemana, PermisoStaff, Profile, StaffAssignment } from "../lib/types";
+import type { AppData, ConteoTextoArea, HorarioSemana, PermisoStaff, Profile, StaffAssignment } from "../lib/types";
 import { HorariosPanel } from "../components/panels/HorariosPanel";
 import { ConteoDiarioPanel } from "../components/panels/ConteoDiarioPanel";
 import { NominaPanel } from "../components/panels/NominaPanel";
@@ -33,7 +33,7 @@ export default function StaffAccessShell({
   profile,
   data,
   onSaveHorarioSemana,
-  onSaveConteoDiario,
+  onSaveConteoTexto,
   onConfirmarNomina,
   onSignOut,
   assignments,
@@ -42,7 +42,7 @@ export default function StaffAccessShell({
   profile: Profile;
   data: AppData;
   onSaveHorarioSemana: (monthKey: string, weekIndex: number, semana: HorarioSemana) => void;
-  onSaveConteoDiario: (fecha: string, valores: Record<string, number>, apodosNuevos?: Record<string, string[]>) => void;
+  onSaveConteoTexto: (area: ConteoTextoArea, fecha: string, texto: string) => void;
   onConfirmarNomina: (monthKey: string, weekIndex: number, empleadoId: string, nombre: string) => void;
   onSignOut: () => void;
   assignments: StaffAssignment[];
@@ -164,7 +164,6 @@ export default function StaffAccessShell({
       );
     }
     const insumoAreaLabel = insumoArea === "bar" ? "Bar" : "Cocina";
-    const insumosDelArea = data.insumos.filter((i) => i.area === insumoArea && i.altaRotacion);
     return (
       <div className="app-shell">
         <ShellHeader subtitle={insumoAreaLabel} onSignOut={onSignOut} />
@@ -173,14 +172,13 @@ export default function StaffAccessShell({
           backLabel="Inicio"
           emptyIcon={insumoArea === "bar" ? <Martini size={26} strokeWidth={1.3} /> : <ChefHat size={26} strokeWidth={1.3} />}
           emptyText={`Aún no hay insumos de ${insumoAreaLabel} marcados como alta rotación. Pide al dueño que los marque desde el Catálogo.`}
-          insumos={insumosDelArea}
-          proveedores={data.proveedores}
+          plantilla={plantillaConteo(insumoArea, data.insumos)}
           months={data.months}
           monthKeys={monthKeys}
           initialMonthKey={mostRecentMonthKey as string}
           initialWeekIndex={mostRecentWeekIdx}
-          conteosDiarios={data.conteosDiarios}
-          onGuardar={onSaveConteoDiario}
+          textos={data.conteosDiariosTexto[insumoArea]}
+          onGuardar={(fecha, texto) => onSaveConteoTexto(insumoArea, fecha, texto)}
         />
       </div>
     );

@@ -2,7 +2,8 @@ import { useState } from "react";
 import { ArrowLeft, ClipboardList, Martini, Package } from "lucide-react";
 import { InsumosPanel } from "./InsumosPanel";
 import { ConteoDiarioPanel } from "./ConteoDiarioPanel";
-import type { InsumoEntry, MonthData, ProveedorCatalogEntry } from "../../lib/types";
+import { plantillaConteo } from "../../lib/dataModel";
+import type { ConteoTextoArea, InsumoEntry, MonthData, ProveedorCatalogEntry } from "../../lib/types";
 
 type ControlBarView = "menu" | "catalogo" | "conteo";
 
@@ -16,7 +17,7 @@ export function ControlBarPanel({
   monthKeys,
   initialMonthKey,
   initialWeekIndex,
-  conteosDiarios,
+  conteosTexto,
   onGuardarConteo,
 }: {
   onBack: () => void;
@@ -28,8 +29,8 @@ export function ControlBarPanel({
   monthKeys: string[];
   initialMonthKey: string;
   initialWeekIndex: number;
-  conteosDiarios: Record<string, Record<string, number>>;
-  onGuardarConteo: (fecha: string, valores: Record<string, number>, apodosNuevos?: Record<string, string[]>) => void;
+  conteosTexto: Record<ConteoTextoArea, Record<string, string>>;
+  onGuardarConteo: (area: ConteoTextoArea, fecha: string, texto: string) => void;
 }) {
   const [view, setView] = useState<ControlBarView>("menu");
   const insumosBar = insumos.filter((i) => i.area === "bar");
@@ -58,14 +59,13 @@ export function ControlBarPanel({
         backLabel="Control de Bar"
         emptyIcon={<Martini size={26} strokeWidth={1.3} />}
         emptyText="Aún no marcas insumos de bar como alta rotación. Márcalos desde el Catálogo para que aparezcan aquí."
-        insumos={insumosBar.filter((i) => i.altaRotacion)}
-        proveedores={proveedores}
+        plantilla={plantillaConteo("bar", insumos)}
         months={months}
         monthKeys={monthKeys}
         initialMonthKey={initialMonthKey}
         initialWeekIndex={initialWeekIndex}
-        conteosDiarios={conteosDiarios}
-        onGuardar={onGuardarConteo}
+        textos={conteosTexto.bar}
+        onGuardar={(fecha, texto) => onGuardarConteo("bar", fecha, texto)}
       />
     );
   }

@@ -632,33 +632,4 @@ body {
   font-size: 13px; font-weight: 600; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.03em; margin: 0;
 }
 
-/* ---- Pegar nota de WhatsApp (Conteo diario) ---- */
-.pegar-whatsapp-btn {
-  display: flex; align-items: center; justify-content: center; gap: 7px; width: 100%;
-  background: var(--accent-soft); color: var(--accent); border: 1px dashed var(--accent);
-  border-radius: 12px; padding: 11px 14px; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer;
-}
-.conteo-row.falta { border-color: var(--bad); background: var(--bad-soft); }
-.conteo-row.falta span { color: var(--bad); font-weight: 600; }
-.conteo-faltan-aviso {
-  display: flex; gap: 6px; align-items: flex-start; margin: 0;
-  background: var(--bad-soft); color: var(--bad); border-radius: 12px; padding: 10px 14px; font-size: 13px;
-}
-.conteo-faltan-aviso svg { flex-shrink: 0; margin-top: 2px; }
-.pegar-textarea { width: 100%; resize: vertical; font-family: inherit; min-height: 180px; }
-.pegar-lista { display: flex; flex-direction: column; gap: 8px; }
-.pegar-linea {
-  display: flex; flex-direction: column; gap: 6px;
-  background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 10px 14px;
-}
-.pegar-linea.pendiente { border-color: var(--warn); background: var(--warn-soft); }
-.pegar-linea-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
-.pegar-linea-top code { font-size: 13px; color: var(--ink-soft); overflow-wrap: anywhere; }
-.pegar-linea-match { display: flex; align-items: center; gap: 10px; font-size: 13.5px; color: var(--good); font-weight: 600; }
-.pegar-recordar { display: flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--ink-soft); }
-.pegar-aviso { font-size: 12px; color: var(--warn); }
-.pegar-faltan {
-  display: flex; flex-direction: column; gap: 4px;
-  background: var(--bad-soft); color: var(--bad); border-radius: 12px; padding: 10px 14px; font-size: 13px;
-}
-.pegar-faltan strong { display: flex; align-items: center; gap: 6px; }
+.conteo-texto { width: 100%; resize: vertical; font: inherit; font-size: 15px; line-height: 1.75; padding: 12px 14px; }

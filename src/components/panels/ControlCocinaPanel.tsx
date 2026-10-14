@@ -2,7 +2,8 @@ import { useState } from "react";
 import { ArrowLeft, ChefHat, ClipboardList, Package } from "lucide-react";
 import { InsumosPanel } from "./InsumosPanel";
 import { ConteoDiarioPanel } from "./ConteoDiarioPanel";
-import type { InsumoEntry, MonthData, ProveedorCatalogEntry } from "../../lib/types";
+import { plantillaConteo } from "../../lib/dataModel";
+import type { ConteoTextoArea, InsumoEntry, MonthData, ProveedorCatalogEntry } from "../../lib/types";
 
 type ControlCocinaView = "menu" | "catalogo" | "conteo";
 
@@ -16,7 +17,7 @@ export function ControlCocinaPanel({
   monthKeys,
   initialMonthKey,
   initialWeekIndex,
-  conteosDiarios,
+  conteosTexto,
   onGuardarConteo,
 }: {
   onBack: () => void;
@@ -28,8 +29,8 @@ export function ControlCocinaPanel({
   monthKeys: string[];
   initialMonthKey: string;
   initialWeekIndex: number;
-  conteosDiarios: Record<string, Record<string, number>>;
-  onGuardarConteo: (fecha: string, valores: Record<string, number>, apodosNuevos?: Record<string, string[]>) => void;
+  conteosTexto: Record<ConteoTextoArea, Record<string, string>>;
+  onGuardarConteo: (area: ConteoTextoArea, fecha: string, texto: string) => void;
 }) {
   const [view, setView] = useState<ControlCocinaView>("menu");
   const insumosCocina = insumos.filter((i) => i.area === "cocina");
@@ -58,14 +59,13 @@ export function ControlCocinaPanel({
         backLabel="Control de Cocina"
         emptyIcon={<ChefHat size={26} strokeWidth={1.3} />}
         emptyText="Aún no marcas insumos de cocina como alta rotación. Márcalos desde el Catálogo para que aparezcan aquí."
-        insumos={insumosCocina.filter((i) => i.altaRotacion)}
-        proveedores={proveedores}
+        plantilla={plantillaConteo("cocina", insumos)}
         months={months}
         monthKeys={monthKeys}
         initialMonthKey={initialMonthKey}
         initialWeekIndex={initialWeekIndex}
-        conteosDiarios={conteosDiarios}
-        onGuardar={onGuardarConteo}
+        textos={conteosTexto.cocina}
+        onGuardar={(fecha, texto) => onGuardarConteo("cocina", fecha, texto)}
       />
     );
   }

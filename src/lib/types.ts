@@ -265,6 +265,26 @@ export interface ProveedorCatalogEntry {
 // conteo diario propio, así que esa marca no aplica ahí.
 export type InsumoArea = "bar" | "cocina" | "general";
 
+export type ConteoTextoArea = "bar" | "cocina";
+
+// Lista base del Conteo diario de Cocina — el jefe de cocina escribe la
+// cantidad después de cada ":"; la presentación ya va entre paréntesis.
+export const PLANTILLA_CONTEO_COCINA = [
+  "Papas a la francesa (kg): ",
+  "Papas crisscut (kg): ",
+  "Alitas (kg): ",
+  "Pollo (kg): ",
+  "Carne de hamburguesa (kg): ",
+  "Carne de taco (kg): ",
+  "Dedos de queso (pz): ",
+  "Elotes (pz, enteros): ",
+  "Pan de hamburguesa (pz): ",
+  "Pan de hot dog (pz): ",
+  "Tocino (kg): ",
+  "Salchicha (pz): ",
+  "Guacamole (bolsa): ",
+].join("\n");
+
 export interface InsumoEntry {
   id: string;
   area: InsumoArea;
@@ -273,9 +293,6 @@ export interface InsumoEntry {
   precio?: number;
   proveedorId?: string;
   altaRotacion?: boolean;
-  // Cómo lo escriben en la nota de WhatsApp del conteo diario ("Ff", "CC",
-  // "Toci") — para reconocerlo al pegar la lista en Conteo diario.
-  apodos?: string[];
 }
 
 // Inventario semanal (Negocio > Inventario) — una fila por insumo, por
@@ -390,6 +407,10 @@ export interface AppData {
   // mismo formato en ambas áreas: fecha real (ISO) -> insumoId -> cantidad.
   // Solo existe entrada para las fechas donde ya se capturó algo.
   conteosDiarios: Record<string, Record<string, number>>;
+  // Conteo diario en texto libre (Control de Bar/Cocina > Conteo diario):
+  // la lista tal cual la escribe el jefe de cocina/barra, por área y por
+  // fecha real (ISO) -> texto.
+  conteosDiariosTexto: Record<ConteoTextoArea, Record<string, string>>;
   // Inventario semanal (Negocio > Inventario, mismas semanas que
   // Corte/Horarios) — lo que hay en existencia, no lo que se pide.
   inventarioSemanal: Record<string, InventarioSemanalMonthData>;

@@ -1,4 +1,4 @@
-import { DAYS, GASTO_CATEGORIAS, HORARIO_AREAS_FIJAS, type AppData, type AreaEntry, type DayData, type DayName, type EmpleadoEntry, type GastoCategoria, type HorarioFila, type HorarioMonthData, type HorarioSemana, type InsumoArea, type MeseroCatalogEntry, type MeseroCut, type MonthData, type NominaDescuento, type NominaDescuentosSemana, type NominaDia, type NominaEmpleadoSemana, type PuestoEntry, type VentaProyeccion, type WeekData, type WeekTrendPoint } from "./types";
+import { DAYS, GASTO_CATEGORIAS, HORARIO_AREAS_FIJAS, PLANTILLA_CONTEO_COCINA, type AppData, type ConteoTextoArea, type InsumoEntry, type AreaEntry, type DayData, type DayName, type EmpleadoEntry, type GastoCategoria, type HorarioFila, type HorarioMonthData, type HorarioSemana, type InsumoArea, type MeseroCatalogEntry, type MeseroCut, type MonthData, type NominaDescuento, type NominaDescuentosSemana, type NominaDia, type NominaEmpleadoSemana, type PuestoEntry, type VentaProyeccion, type WeekData, type WeekTrendPoint } from "./types";
 
 export const uid = (): string => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 
@@ -152,7 +152,7 @@ export function isoWeekNumber(dateIso: string): number {
 // sus insumos son los de Bar. Se resuelve por el nombre del puesto, no del
 // área, para que el permiso "Conteo diario" de una cuenta de equipo apunte
 // al catálogo correcto.
-export function insumoAreaForPuesto(puestoNombre: string): InsumoArea | null {
+export function insumoAreaForPuesto(puestoNombre: string): ConteoTextoArea | null {
   const n = puestoNombre.toLowerCase();
   if (n.includes("barra") || n === "bar") return "bar";
   if (n.includes("cocin")) return "cocina";
@@ -210,7 +210,7 @@ export function defaultData(): AppData {
   const { areas, puestos } = seedAreasYPuestos();
   return {
     meseros: [], empleados: [], areas, puestos, proveedores: [], facturas: [], months: {}, horarios: {}, nominaDescuentos: {},
-    insumos: [], conteosDiarios: {}, inventarioSemanal: {}, pedidosSemanal: {},
+    insumos: [], conteosDiarios: {}, conteosDiariosTexto: { bar: {}, cocina: {} }, inventarioSemanal: {}, pedidosSemanal: {},
   };
 }
 
@@ -255,6 +255,10 @@ export function migrateAppData(raw: AppData): { data: AppData; changed: boolean 
   }
   if (!data.conteosDiarios) {
     data.conteosDiarios = {};
+    changed = true;
+  }
+  if (!data.conteosDiariosTexto?.bar || !data.conteosDiariosTexto?.cocina) {
+    data.conteosDiariosTexto = { bar: data.conteosDiariosTexto?.bar || {}, cocina: data.conteosDiariosTexto?.cocina || {} };
     changed = true;
   }
   if (!data.inventarioSemanal) {
@@ -925,3 +929,13 @@ export function computeVentaProyeccion(puntos: WeekTrendPoint[]): VentaProyeccio
   return { monto, confiable: n >= 3, semanasBase: n, tendenciaSemanal };
 }
 
+
+// Lista base del Conteo diario en texto: Cocina usa la lista fija que pidió
+// el dueño; Bar arma la suya con sus insumos de alta rotación.
+export function plantillaConteo(area: ConteoTextoArea, insumos: InsumoEntry[]): string {
+  if (area === "cocina") return PLANTILLA_CONTEO_COCINA;
+  return insumos
+    .filter((i) => i.area === area && i.altaRotacion)
+    .map((i) => `${i.nombre} (${i.unidad === "pieza" ? "pz" : i.unidad}): `)
+    .join("\n");
+}

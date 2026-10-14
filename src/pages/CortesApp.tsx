@@ -13,7 +13,7 @@ import {
 } from "../lib/dataModel";
 import { removeAssignmentByStaffAndDate, upsertAssignment, useStaffAssignments } from "../lib/staffAssignments";
 import { DAYS, DAY_SHORT } from "../lib/types";
-import type { AreaEntry, CreditoProveedores, DayData, DayName, EmpleadoEntry, Gasto, GastoCategoria, HorarioSemana, InsumoEntry, InventarioSemanal, MeseroCatalogEntry, MeseroCut, NominaDescuentosSemana, PedidoSemanal, Profile, ProveedorCatalogEntry, PuestoEntry, Transferencia, WeekData } from "../lib/types";
+import type { AreaEntry, ConteoTextoArea, CreditoProveedores, DayData, DayName, EmpleadoEntry, Gasto, GastoCategoria, HorarioSemana, InsumoEntry, InventarioSemanal, MeseroCatalogEntry, MeseroCut, NominaDescuentosSemana, PedidoSemanal, Profile, ProveedorCatalogEntry, PuestoEntry, Transferencia, WeekData } from "../lib/types";
 import { Empty } from "../components/ui";
 import { MonthModal } from "../components/modals/MonthModal";
 import { MeseroModal, type MeseroFormValues } from "../components/modals/MeseroModal";
@@ -174,7 +174,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           profile={profile}
           data={data}
           onSaveHorarioSemana={saveHorarioSemana}
-          onSaveConteoDiario={guardarConteoDiario}
+          onSaveConteoTexto={guardarConteoTexto}
           onConfirmarNomina={confirmarNomina}
           onSignOut={signOut}
           assignments={assignmentsStatus === "error" ? [] : assignments}
@@ -385,18 +385,10 @@ export default function CortesApp({ profile }: { profile: Profile }) {
     persist(next);
   }
 
-  // apodosNuevos: los que se aprendieron al pegar la nota de WhatsApp —
-  // van en el mismo persist que el conteo, para no pisar uno con el otro.
-  function guardarConteoDiario(fecha: string, valores: Record<string, number>, apodosNuevos?: Record<string, string[]>) {
+  function guardarConteoTexto(area: ConteoTextoArea, fecha: string, texto: string) {
     if (!data) return;
     const next = structuredClone(data);
-    next.conteosDiarios[fecha] = { ...(next.conteosDiarios[fecha] || {}), ...valores };
-    Object.entries(apodosNuevos || {}).forEach(([insumoId, apodos]) => {
-      const insumo = next.insumos.find((i) => i.id === insumoId);
-      if (!insumo) return;
-      const actuales = insumo.apodos || [];
-      insumo.apodos = [...actuales, ...apodos.filter((a) => !actuales.some((x) => x.toLowerCase() === a.toLowerCase()))];
-    });
+    next.conteosDiariosTexto[area][fecha] = texto;
     persist(next);
   }
 
@@ -965,8 +957,8 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           monthKeys={monthKeys}
           initialMonthKey={mostRecentMonthKey as string}
           initialWeekIndex={mostRecentWeekIdx}
-          conteosDiarios={data.conteosDiarios}
-          onGuardarConteo={guardarConteoDiario}
+          conteosTexto={data.conteosDiariosTexto}
+          onGuardarConteo={guardarConteoTexto}
         />
       )}
 
@@ -981,8 +973,8 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           monthKeys={monthKeys}
           initialMonthKey={mostRecentMonthKey as string}
           initialWeekIndex={mostRecentWeekIdx}
-          conteosDiarios={data.conteosDiarios}
-          onGuardarConteo={guardarConteoDiario}
+          conteosTexto={data.conteosDiariosTexto}
+          onGuardarConteo={guardarConteoTexto}
         />
       )}
 

@@ -209,27 +209,22 @@ estando en Nómina te regresa al menú de Equipo):
   por semana; bajo "Bar", "Control de Bar"; y bajo "Cocina", "Control de
   Cocina" — las dos abren primero a un menú propio (para poder ir sumando
   ahí compras como opción hermana más adelante), con dos piezas
-  construidas, en este orden: "Conteo diario" primero (lista solo los
-  insumos de esa área marcados de alta rotación en el catálogo, agrupados
-  por proveedor igual que el Catálogo y que Inventario, con un campo para
-  capturar cuánto queda; usa los mismos filtros de Mes/Semana y los
-  mismos chips de día que ya se usan en Corte, así que se puede entrar y
-  revisar o capturar el conteo de cualquier día, no solo el de hoy, y
-  cada día se guarda por separado por su fecha real. En cuanto se
-  guarda un conteo, sus campos quedan bloqueados para evitar ediciones
-  accidentales; para corregirlo hay que tocar "Editar", confirmar un
-  aviso de que no debería modificarse salvo que sea necesario, y recién
-  ahí se desbloquea. Arriba de la lista hay un botón "Pegar nota de
-  WhatsApp": el jefe de cocina o de barra copia la nota de su chat donde
-  va anotando el conteo ("Ff 11.77kg", "Pan B 44pz", "Toci 1kg"), la pega y
-  la app reconoce cada línea contra los insumos de esa pantalla — por
-  nombre, por apodo, por abreviatura ("Toci" → Tocino) o por iniciales
-  ("CC" → Carne Cocida); lo que no reconoce se elige a mano y se puede
-  "recordar" como apodo del insumo (se guarda junto con el conteo, y
-  también se editan desde el Catálogo), para que la próxima vez salga
-  solo. Antes de rellenar se ve qué productos no venían en la nota, y ya
-  en el formulario quedan marcados en rojo como "Falta la cantidad" hasta
-  que se capturen) y "Catálogo" después: cada insumo tiene nombre, un
+  construidas, en este orden: "Conteo diario" primero — un recuadro de
+  texto con la lista de productos de alta rotación, cada uno con su
+  presentación entre paréntesis ("Pollo (kg): ", "Elotes (pz, enteros): ",
+  "Guacamole (bolsa): "), donde el jefe de cocina/barra solo escribe la
+  cantidad después de cada ":" — igual que la nota que llevaba en su chat
+  de WhatsApp. En Cocina la lista es fija (Papas a la francesa, Papas
+  crisscut, Alitas, Pollo, Carne de hamburguesa, Carne de taco, Dedos de
+  queso, Elotes, Pan de hamburguesa, Pan de hot dog, Tocino, Salchicha y
+  Guacamole); en Bar se arma con los insumos marcados de alta rotación en
+  su catálogo. Se guarda el texto tal cual, por área y por fecha real, con
+  los mismos filtros de Mes/Semana y chips de día que Corte. La lista de
+  insumos con un campo por producto queda oculta por ahora (por eso los
+  insumos de alta rotación de Inventario no reciben valores nuevos desde
+  aquí). En cuanto se guarda, el texto queda bloqueado; para corregirlo
+  hay que tocar "Editar", confirmar un aviso, y recién
+  ahí se desbloquea) y "Catálogo" después: cada insumo tiene nombre, un
   precio de referencia opcional y un proveedor opcional (el mismo
   catálogo de proveedores en ambas áreas, y se puede crear uno nuevo al
   vuelo desde el propio insumo), agrupados en la lista por proveedor, y
