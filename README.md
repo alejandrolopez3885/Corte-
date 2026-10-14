@@ -219,7 +219,17 @@ estando en Nómina te regresa al menú de Equipo):
   guarda un conteo, sus campos quedan bloqueados para evitar ediciones
   accidentales; para corregirlo hay que tocar "Editar", confirmar un
   aviso de que no debería modificarse salvo que sea necesario, y recién
-  ahí se desbloquea) y "Catálogo" después: cada insumo tiene nombre, un
+  ahí se desbloquea. Arriba de la lista hay un botón "Pegar nota de
+  WhatsApp": el jefe de cocina o de barra copia la nota de su chat donde
+  va anotando el conteo ("Ff 11.77kg", "Pan B 44pz", "Toci 1kg"), la pega y
+  la app reconoce cada línea contra los insumos de esa pantalla — por
+  nombre, por apodo, por abreviatura ("Toci" → Tocino) o por iniciales
+  ("CC" → Carne Cocida); lo que no reconoce se elige a mano y se puede
+  "recordar" como apodo del insumo (se guarda junto con el conteo, y
+  también se editan desde el Catálogo), para que la próxima vez salga
+  solo. Antes de rellenar se ve qué productos no venían en la nota, y ya
+  en el formulario quedan marcados en rojo como "Falta la cantidad" hasta
+  que se capturen) y "Catálogo" después: cada insumo tiene nombre, un
   precio de referencia opcional y un proveedor opcional (el mismo
   catálogo de proveedores en ambas áreas, y se puede crear uno nuevo al
   vuelo desde el propio insumo), agrupados en la lista por proveedor, y

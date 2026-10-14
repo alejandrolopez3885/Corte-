@@ -273,6 +273,9 @@ export interface InsumoEntry {
   precio?: number;
   proveedorId?: string;
   altaRotacion?: boolean;
+  // Cómo lo escriben en la nota de WhatsApp del conteo diario ("Ff", "CC",
+  // "Toci") — para reconocerlo al pegar la lista en Conteo diario.
+  apodos?: string[];
 }
 
 // Inventario semanal (Negocio > Inventario) — una fila por insumo, por

@@ -27,6 +27,7 @@ export function InsumoModal({
   const [proveedorId, setProveedorId] = useState(editing?.proveedorId || "");
   const [nuevoProveedor, setNuevoProveedor] = useState("");
   const [altaRotacion, setAltaRotacion] = useState(editing?.altaRotacion || false);
+  const [apodosText, setApodosText] = useState((editing?.apodos || []).join(", "));
 
   // Si se está creando un proveedor nuevo, tiene que ir en el mismo guardado
   // que el insumo (una sola llamada, un solo persist) — guardarlos por
@@ -50,6 +51,7 @@ export function InsumoModal({
         precio: sumFromText(precioText) || undefined,
         proveedorId: finalProveedorId,
         altaRotacion,
+        apodos: apodosText.split(",").map((a) => a.trim()).filter(Boolean),
       },
       nuevoProveedorEntry
     );
@@ -109,6 +111,16 @@ export function InsumoModal({
           onChange={setAltaRotacion}
           label="Alta rotación (aparece primero en el conteo diario)"
         />
+      )}
+      {area !== "general" && altaRotacion && (
+        <Field label="Apodos en WhatsApp (opcional, separados por coma)">
+          <input
+            className="text-input"
+            value={apodosText}
+            onChange={(e) => setApodosText(e.target.value)}
+            placeholder="Ej. Ff, Papas"
+          />
+        </Field>
       )}
       <button className="btn-primary" onClick={save} disabled={!nombre.trim()}>
         Guardar

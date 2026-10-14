@@ -29,7 +29,7 @@ export function ControlCocinaPanel({
   initialMonthKey: string;
   initialWeekIndex: number;
   conteosDiarios: Record<string, Record<string, number>>;
-  onGuardarConteo: (fecha: string, valores: Record<string, number>) => void;
+  onGuardarConteo: (fecha: string, valores: Record<string, number>, apodosNuevos?: Record<string, string[]>) => void;
 }) {
   const [view, setView] = useState<ControlCocinaView>("menu");
   const insumosCocina = insumos.filter((i) => i.area === "cocina");

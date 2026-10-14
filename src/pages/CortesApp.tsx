@@ -385,10 +385,18 @@ export default function CortesApp({ profile }: { profile: Profile }) {
     persist(next);
   }
 
-  function guardarConteoDiario(fecha: string, valores: Record<string, number>) {
+  // apodosNuevos: los que se aprendieron al pegar la nota de WhatsApp —
+  // van en el mismo persist que el conteo, para no pisar uno con el otro.
+  function guardarConteoDiario(fecha: string, valores: Record<string, number>, apodosNuevos?: Record<string, string[]>) {
     if (!data) return;
     const next = structuredClone(data);
     next.conteosDiarios[fecha] = { ...(next.conteosDiarios[fecha] || {}), ...valores };
+    Object.entries(apodosNuevos || {}).forEach(([insumoId, apodos]) => {
+      const insumo = next.insumos.find((i) => i.id === insumoId);
+      if (!insumo) return;
+      const actuales = insumo.apodos || [];
+      insumo.apodos = [...actuales, ...apodos.filter((a) => !actuales.some((x) => x.toLowerCase() === a.toLowerCase()))];
+    });
     persist(next);
   }
 

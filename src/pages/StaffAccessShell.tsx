@@ -42,7 +42,7 @@ export default function StaffAccessShell({
   profile: Profile;
   data: AppData;
   onSaveHorarioSemana: (monthKey: string, weekIndex: number, semana: HorarioSemana) => void;
-  onSaveConteoDiario: (fecha: string, valores: Record<string, number>) => void;
+  onSaveConteoDiario: (fecha: string, valores: Record<string, number>, apodosNuevos?: Record<string, string[]>) => void;
   onConfirmarNomina: (monthKey: string, weekIndex: number, empleadoId: string, nombre: string) => void;
   onSignOut: () => void;
   assignments: StaffAssignment[];
