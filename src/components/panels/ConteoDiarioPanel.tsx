@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { ArrowLeft, Check, Circle, CircleDot, Copy, TriangleAlert } from "lucide-react";
 import { Empty, Field, NumInput, Sheet } from "../ui";
 import {
@@ -294,6 +294,9 @@ function ErroresSheet({ errores, onClose }: { errores: ErroresCaptura; onClose: 
 // que no está en el catálogo o no tiene proveedor cae en "Sin proveedor".
 // Junto a la cantidad contada va un recuadro para la cantidad a pedir: vacío
 // no deja guardar, y 0 significa que no se pide ese producto.
+// Primer renglón de cada mensaje de pedido: quién pide (el restaurante).
+const NOMBRE_NEGOCIO = "Metroplex";
+
 function ListaPorProveedor({
   fecha,
   lineas,
@@ -319,7 +322,8 @@ function ListaPorProveedor({
   });
   const [pedidoLocked, setPedidoLocked] = useState(pedidoGuardado !== undefined);
   const [errores, setErrores] = useState<ErroresCaptura | null>(null);
-  const [copiado, setCopiado] = useState<string | null>(null);
+  const [toastVisible, setToastVisible] = useState(false);
+  const toastTimer = useRef<number | undefined>(undefined);
 
   const porNombre = new Map(insumos.map((i) => [normalizarNombre(i.nombre), i]));
   const grupos = new Map<string, { linea: LineaConteoTexto; insumo?: InsumoEntry }[]>();
@@ -337,15 +341,19 @@ function ListaPorProveedor({
 
   // Mensaje para WhatsApp: el proveedor y un renglón por producto con
   // pedido mayor a 0 ("Papas a la francesa 1 caja").
-  async function copiarPedido(key: string, proveedor: string) {
+  async function copiarPedido(key: string) {
     const renglones = grupos
       .get(key)!
       .filter(({ linea }) => Number((pedido[normalizarNombre(linea.nombre)] || "0").replace(",", ".")) > 0)
       .map(({ linea, insumo }) =>
         `${linea.nombre} ${pedido[normalizarNombre(linea.nombre)].trim()} ${unidadPedido(linea, insumo)}`.trim()
       );
-    await copiarAlPortapapeles([proveedor, ...renglones].join("\n"));
-    setCopiado(key);
+    await copiarAlPortapapeles([NOMBRE_NEGOCIO, ...renglones].join("\n"));
+    // El botón no cambia (se puede volver a copiar las veces que sea): solo
+    // un aviso discreto abajo que se va solo.
+    setToastVisible(true);
+    window.clearTimeout(toastTimer.current);
+    toastTimer.current = window.setTimeout(() => setToastVisible(false), 2000);
   }
 
   function guardarPedido() {
@@ -403,11 +411,10 @@ function ListaPorProveedor({
           </div>
           {g.key !== "sin" && (
             <button
-              className={`copiar-pedido-btn ${copiado === g.key ? "copiado" : ""}`}
-              onClick={() => copiarPedido(g.key, g.nombre)}
+              className="copiar-pedido-btn"
+              onClick={() => copiarPedido(g.key)}
             >
-              {copiado === g.key ? <Check size={16} /> : <Copy size={16} />}
-              {copiado === g.key ? `Pedido de ${g.nombre} copiado` : `Copiar pedido ${g.nombre}`}
+              <Copy size={16} /> Copiar pedido {g.nombre}
             </button>
           )}
         </div>
@@ -426,6 +433,11 @@ function ListaPorProveedor({
       )}
 
       {errores && <ErroresSheet errores={errores} onClose={() => setErrores(null)} />}
+      {toastVisible && (
+        <div className="toast-discreto" role="status">
+          <Check size={14} /> Pedido copiado
+        </div>
+      )}
     </>
   );
 }
