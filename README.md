@@ -161,12 +161,20 @@ estando en Nómina te regresa al menú de Equipo):
   código del horario y el monto de cada día; los botones para agregar
   percepción extra o descuento; y al final, discreta en gris, la línea
   "Al cierre de la semana (según horario)" con el neto de la semana
-  completa. Hasta abajo de la página, también discreto en gris, el
-  bloque "Al cierre de la semana (según horario)" con el bruto, las
-  percepciones extra, los descuentos y el neto al cierre de todo el
-  personal; justo antes queda el control de pagos (cuántos confirmaron,
-  total pagado y restante por pagar, calculados sobre el neto de la
-  semana completa)). Igual que en Horarios, hay botones "Imagen · Piso" /
+  completa. Hasta abajo de la página (solo el dueño), primero el control
+  de pagos (cuántos confirmaron, total pagado y restante por pagar,
+  calculados sobre el neto de la semana completa) y después el bloque
+  "Cómo se paga al cierre de la semana": Nómina bruto, Descuentos
+  (adelantos, comidas, retardos), Percepciones extra (vacaciones,
+  finiquito, bonos, etc.), **Neto a pagar** (resaltado), **Nómina en
+  efectivo** — el "Efectivo recibido (calculado)" del resumen semanal de
+  Corte de esa misma semana, o sea lo que debe haber según el corte, no
+  el efectivo real que se contó; los adelantos que salieron del corte ya
+  vienen restados ahí como gasto — y **Nómina en transferencia** (neto a
+  pagar − nómina en efectivo). Si el efectivo alcanza para todo el neto,
+  la nómina en efectivo es el neto completo y la transferencia queda en
+  $0.00 (y si el efectivo calculado sale negativo, se toma como $0.00)).
+  Igual que en Horarios, hay botones "Imagen · Piso" /
   "Imagen · Cocina" / "Imagen · Las 2 áreas" (solo los que apliquen) que
   generan y descargan un PNG con esa parte de la nómina de la semana sin
   descuentos (bruto + percepciones extra si las hay, marcadas con un

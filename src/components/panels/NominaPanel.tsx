@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ArrowLeft, Check, Download, Trash2, Wallet } from "lucide-react";
 import { Empty, Field, Sheet, SumInput } from "../ui";
-import { computeNominaHastaHoyPorEmpleado, computeNominaSemana, formatShortDayDate, formatWeekRange, isoWeekNumber, money, resolveWeekStartDate, sumFromText, todayIso, uid } from "../../lib/dataModel";
+import { computeNominaHastaHoyPorEmpleado, computeNominaSemana, computeWeekSummary, formatShortDayDate, formatWeekRange, isoWeekNumber, money, resolveWeekStartDate, sumFromText, todayIso, uid } from "../../lib/dataModel";
 import { downloadNominaImage } from "../../lib/nominaImage";
 import { DAY_SHORT, HORARIO_AREAS_FIJAS, NOMINA_DESCUENTO_TIPOS, NOMINA_EXTRA_TIPOS } from "../../lib/types";
 import type {
@@ -97,6 +97,15 @@ export function NominaPanel({
   const aRecibirHastaHoy = (e: (typeof reporte)[number]) =>
     Math.round(((hastaHoyPorEmpleado[e.empleadoId] || 0) + e.totalExtras - e.totalDescuentos) * 100) / 100;
   const totalARecibirHastaHoy = reporte.reduce((s, e) => s + aRecibirHastaHoy(e), 0);
+
+  // Cómo se paga el neto de la semana: primero con el efectivo que debe
+  // haber según el corte semanal (el calculado, no el contado — los
+  // adelantos del corte ya vienen restados ahí como gasto) y lo que falte,
+  // por transferencia. Si el efectivo alcanza para todo, la transferencia
+  // queda en $0; si el efectivo calculado es negativo, no se usa nada.
+  const efectivoSemana = week ? computeWeekSummary(week).efectivoRecibido : 0;
+  const nominaEfectivo = Math.max(0, Math.min(efectivoSemana, totalNeto));
+  const nominaTransferencia = Math.round((totalNeto - nominaEfectivo) * 100) / 100;
 
   function addDescuento(empleadoId: string, tipo: NominaDescuentoTipo, concepto: string, monto: number) {
     const descuentos = descuentosSemana?.descuentos || [];
@@ -408,27 +417,51 @@ export function NominaPanel({
           )}
 
           {!soloLectura && (
-            <div className="nomina-cierre-total">
-              <span className="nomina-cierre-total-title">Al cierre de la semana (según horario)</span>
-              <div>
-                <span>Bruto</span>
-                <span>{money(totalBruto)}</span>
-              </div>
-              {totalExtras > 0 && (
-                <div>
-                  <span>Percepciones extra</span>
-                  <span>+{money(totalExtras)}</span>
+            <>
+              <span className="menu-subtitle">Cómo se paga al cierre de la semana</span>
+              <div className="report-list">
+                <div className="report-row">
+                  <span className="report-row-label">Nómina bruto</span>
+                  <strong className="report-row-amount">{money(totalBruto)}</strong>
                 </div>
-              )}
-              <div>
-                <span>Descuentos</span>
-                <span>-{money(totalDescuentos)}</span>
+                <div className="report-row">
+                  <span className="report-row-label">
+                    Descuentos
+                    <em>adelantos, comidas, retardos</em>
+                  </span>
+                  <strong className="report-row-amount">-{money(totalDescuentos)}</strong>
+                </div>
+                <div className="report-row">
+                  <span className="report-row-label">
+                    Percepciones extra
+                    <em>vacaciones, finiquito, bonos, etc.</em>
+                  </span>
+                  <strong className="report-row-amount">+{money(totalExtras)}</strong>
+                </div>
+                <div className="report-row total">
+                  <span className="report-row-label">Neto a pagar</span>
+                  <strong className="report-row-amount">{money(totalNeto)}</strong>
+                </div>
+                <div className="report-row">
+                  <span className="report-row-label">
+                    Nómina en efectivo
+                    <em>efectivo que debe haber según el corte semanal (calculado, no el contado)</em>
+                  </span>
+                  <strong className="report-row-amount good">{money(nominaEfectivo)}</strong>
+                </div>
+                <div className="report-row">
+                  <span className="report-row-label">
+                    Nómina en transferencia
+                    <em>neto a pagar − nómina en efectivo</em>
+                  </span>
+                  <strong className="report-row-amount">{money(nominaTransferencia)}</strong>
+                </div>
               </div>
-              <div>
-                <span>Neto al cierre</span>
-                <span>{money(totalNeto)}</span>
-              </div>
-            </div>
+              <p className="hint">
+                Si el efectivo de la semana alcanza para todo el neto, la nómina en efectivo es el neto completo y en
+                transferencia queda en $0.00.
+              </p>
+            </>
           )}
         </>
       )}
