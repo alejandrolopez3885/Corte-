@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ArrowLeft, Coins } from "lucide-react";
 import { Empty, Field } from "../ui";
-import { dateForDay, formatShortDayDate, formatWeekRange, isoWeekNumber, money, resolveWeekStartDate, round2 } from "../../lib/dataModel";
+import { dateForDay, formatShortDayDate, formatWeekRange, money, resolveWeekStartDate, round2 } from "../../lib/dataModel";
 import { DAYS } from "../../lib/types";
 import type { MonthData } from "../../lib/types";
 
@@ -98,7 +98,7 @@ export function PropinasPanel({
           <select className="text-input" value={weekIndex} onChange={(e) => setWeekIndex(Number(e.target.value))}>
             {[0, 1, 2, 3].map((i) => (
               <option key={i} value={i}>
-                Semana {isoWeekNumber(resolveWeekStartDate(monthKey, i, month))}
+                Semana {i + 1}
               </option>
             ))}
           </select>

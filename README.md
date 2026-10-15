@@ -181,9 +181,9 @@ estando en Nómina te regresa al menú de Equipo):
   nombre, sin sueldo, para el corte.
 
   **Propinas** (Equipo > Propinas): pantalla de solo consulta, con el
-  mismo selector de mes y semana que Nómina — la semana se muestra con
-  su número del año en estándar ISO (ej. "Semana 42"), y abajo el rango de
-  fechas de esa semana (ej. "12 – 18 oct"). Debajo, la lista de lunes a
+  mismo selector de mes y semana que Nómina ("Semana 1" a "4" dentro del
+  mes, como el resto de la app), y abajo el rango de fechas de esa semana
+  (ej. "12 – 18 oct"). Debajo, la lista de lunes a
   domingo, cada día con su fecha y el total de propinas de ese día (la
   suma de las propinas de todos los cortes de meseros de ese día; sin
   desglose por mesero — un día sin corte sale en $0.00, en gris), y al

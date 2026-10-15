@@ -136,9 +136,9 @@ export function formatWeekRange(startDate: string): string {
   return `${startLabel} – ${endLabel}`;
 }
 
-// Semana del año (ISO 8601) que corresponde a una fecha — para reportes
-// exportados (ej. la imagen de Nómina) y el selector de Propinas; el resto
-// de la app navega por "Semana 1" a "4" dentro del mes.
+// Semana del año (ISO 8601) que corresponde a una fecha — solo para
+// mostrarla en reportes exportados (ej. la imagen de Nómina), nunca en la
+// app misma: ahí siempre se navega por "Semana 1" a "4" dentro del mes.
 export function isoWeekNumber(dateIso: string): number {
   const date = new Date(`${dateIso}T00:00:00`);
   date.setDate(date.getDate() + 4 - (date.getDay() || 7));
