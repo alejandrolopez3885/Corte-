@@ -239,8 +239,8 @@ estando en Nómina te regresa al menú de Equipo):
   ese producto. Ya guardado, el pedido queda bloqueado hasta tocar
   "Editar pedido". Junto a cada recuadro va la presentación en que se
   pide: la del campo "Se pide por" del Catálogo (ej. las papas se cuentan
-  en kg y se piden por caja) o, si no tiene, la misma del conteo. Con el
-  pedido guardado, al final de cada proveedor hay un botón "Copiar pedido
+  en kg y se piden por caja) o, si no tiene, la misma del conteo. Al final
+  de cada proveedor (guardado o no el pedido) hay un botón "Copiar pedido
   [proveedor]" que copia al portapapeles el mensaje para WhatsApp — el
   nombre del proveedor y un renglón por producto con pedido mayor a 0
   ("Papas a la francesa 1 caja") — y cambia a "✓ Pedido de [proveedor]

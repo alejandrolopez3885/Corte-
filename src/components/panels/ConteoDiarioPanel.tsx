@@ -401,7 +401,7 @@ function ListaPorProveedor({
               );
             })}
           </div>
-          {pedidoLocked && g.key !== "sin" && (
+          {g.key !== "sin" && (
             <button
               className={`copiar-pedido-btn ${copiado === g.key ? "copiado" : ""}`}
               onClick={() => copiarPedido(g.key, g.nombre)}
