@@ -40,7 +40,6 @@ export default function StaffAccessShell({
   onSaveInventarioNotas,
   onSavePedidoInventario,
   onAsignarApodo,
-  onConfirmarNomina,
   onSignOut,
   assignments,
   onPickCorteDate,
@@ -53,7 +52,6 @@ export default function StaffAccessShell({
   onSaveInventarioNotas: (fecha: string, texto: string) => void;
   onSavePedidoInventario: (fecha: string, pedido: Record<string, number>) => void;
   onAsignarApodo: (insumoId: string, apodo: string) => void;
-  onConfirmarNomina: (monthKey: string, weekIndex: number, empleadoId: string, nombre: string) => void;
   onSignOut: () => void;
   assignments: StaffAssignment[];
   onPickCorteDate: (date: string) => void;
@@ -237,7 +235,6 @@ export default function StaffAccessShell({
           horarios={data.horarios}
           nominaDescuentos={data.nominaDescuentos}
           soloEmpleadoId={empleado.id}
-          onConfirmarNomina={onConfirmarNomina}
           onGoToHorarios={permisos.includes("horarios") ? () => setView("horarios") : undefined}
         />
       </div>

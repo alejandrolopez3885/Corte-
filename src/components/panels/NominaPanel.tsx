@@ -26,7 +26,7 @@ export function NominaPanel({
   nominaDescuentos,
   onSaveDescuentos,
   onGoToHorarios,
-  onConfirmarNomina,
+  onTogglePagado,
   soloEmpleadoId,
 }: {
   onBack?: () => void;
@@ -40,11 +40,9 @@ export function NominaPanel({
   nominaDescuentos: Record<string, NominaDescuentosMonthData>;
   onSaveDescuentos?: (monthKey: string, weekIndex: number, semana: NominaDescuentosSemana) => void;
   onGoToHorarios?: () => void;
-  // "Recibí mi nómina correcta" — lo dispara la propia persona desde su
-  // vista de solo lectura (soloEmpleadoId). Independiente de
-  // onSaveDescuentos: no toca descuentos ni percepciones extra, solo
-  // agrega/actualiza su propia confirmación de esa semana.
-  onConfirmarNomina?: (monthKey: string, weekIndex: number, empleadoId: string, nombre: string) => void;
+  // Etiqueta Pendiente/Pagada de cada persona (solo dueño): un toque la
+  // marca como pagada esa semana y otro la regresa a pendiente.
+  onTogglePagado?: (monthKey: string, weekIndex: number, empleadoId: string, nombre: string) => void;
   // Cuando se pasa, es la vista de una cuenta de equipo viendo solo su
   // propia nómina: se filtra a esa sola persona y queda de solo lectura
   // (sin agregar/quitar descuentos ni percepciones extra de nadie).
@@ -90,8 +88,8 @@ export function NominaPanel({
   const totalExtras = reporte.reduce((s, e) => s + e.totalExtras, 0);
   const totalDescuentos = reporte.reduce((s, e) => s + e.totalDescuentos, 0);
   const totalNeto = reporte.reduce((s, e) => s + e.neto, 0);
-  const confirmados = reporte.filter((e) => e.confirmado);
-  const totalPagado = confirmados.reduce((s, e) => s + e.neto, 0);
+  const pagados = reporte.filter((e) => e.confirmado);
+  const totalPagado = pagados.reduce((s, e) => s + e.neto, 0);
   const totalPorPagar = totalNeto - totalPagado;
 
   const today = todayIso();
@@ -287,15 +285,23 @@ export function NominaPanel({
                   <span className="nomina-emp-nombre">
                     {e.nombre}
                     {!soloLectura && (
-                      <span className={`nomina-confirm-badge ${e.confirmado ? "confirmado" : "pendiente"}`}>
+                      <button
+                        type="button"
+                        className={`nomina-pago-tap ${e.confirmado ? "pagada" : ""}`}
+                        onClick={(ev) => {
+                          // No abre ni cierra la tarjeta — solo cambia el estado de pago.
+                          ev.stopPropagation();
+                          onTogglePagado?.(monthKey, weekIndex, e.empleadoId, e.nombre);
+                        }}
+                      >
                         {e.confirmado ? (
                           <>
-                            <Check size={11} /> Confirmada
+                            <Check size={12} /> Pagada
                           </>
                         ) : (
                           "Pendiente"
                         )}
-                      </span>
+                      </button>
                     )}
                   </span>
                   {!soloLectura && (
@@ -394,26 +400,6 @@ export function NominaPanel({
                       <span>Al cierre de la semana (según horario)</span>
                       <span>{money(e.neto)}</span>
                     </div>
-      
-                    {soloLectura &&
-                      (e.confirmado ? (
-                        <div className="nomina-confirm-ok">
-                          <Check size={15} />
-                          <span>
-                            Confirmaste que recibiste tu nómina correcta
-                            {e.confirmadoEn &&
-                              ` el ${new Date(e.confirmadoEn).toLocaleString("es-MX", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}`}
-                            .
-                          </span>
-                        </div>
-                      ) : (
-                        <button
-                          className="btn-primary"
-                          onClick={() => onConfirmarNomina?.(monthKey, weekIndex, e.empleadoId, e.nombre)}
-                        >
-                          <Check size={16} /> Recibí mi nómina correcta
-                        </button>
-                      ))}
                   </>
                 )}
               </div>
@@ -423,13 +409,13 @@ export function NominaPanel({
           {!soloLectura && (
             <div className="report-list">
               <div className="report-row">
-                <span className="report-row-label">Confirmaron que recibieron correcto</span>
+                <span className="report-row-label">Ya pagados</span>
                 <strong className="report-row-amount">
-                  {confirmados.length} de {reporte.length}
+                  {pagados.length} de {reporte.length}
                 </strong>
               </div>
               <div className="report-row">
-                <span className="report-row-label">Total pagado (confirmado)</span>
+                <span className="report-row-label">Total pagado</span>
                 <strong className="report-row-amount good">{money(totalPagado)}</strong>
               </div>
               <div className={`report-row total ${totalPorPagar > 0 ? "" : "positive"}`}>

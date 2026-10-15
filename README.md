@@ -69,8 +69,7 @@ estando en Nómina te regresa al menú de Equipo):
   propia nómina semanal, calculada igual que la del dueño, con su "A
   recibir hasta hoy" resaltado y el cierre de semana discreto, pero de solo
   lectura — sin poder agregar ni quitar descuentos o percepciones extra
-  de nadie; sí tiene un botón "Recibí mi nómina correcta" para confirmar
-  que el monto de esa semana está bien — ver el desglose más abajo, en
+  de nadie, y sin ver si ya se le pagó — ver el desglose más abajo, en
   la propia sección "Nómina") y "Propinas" (la misma pantalla de
   consulta que ve el dueño en Equipo > Propinas — totales del día de toda
   la semana y su reparto por área, sin poder editar nada; no se acota por
@@ -161,11 +160,11 @@ estando en Nómina te regresa al menú de Equipo):
   hoy, las percepciones extra (si hay) y los descuentos. En la vista del
   dueño las tarjetas del personal son plegables y arrancan cerradas:
   cerrada, cada persona es una sola fila con su nombre, su etiqueta
-  Confirmada/Pendiente, lo que le toca "A recibir hasta hoy" y una
+  Pendiente/Pagada, lo que le toca "A recibir hasta hoy" y una
   flechita; tocar la fila la abre (o la cierra) y se pueden tener varias
   abiertas a la vez. La vista del empleado siempre muestra su tarjeta
   abierta. Abierta, en la tarjeta de
-  cada quien: nombre (con su etiqueta Confirmada/Pendiente), área,
+  cada quien: nombre (con su etiqueta Pendiente/Pagada), área,
   sueldo diario y días trabajados; un recuadro verde con **A recibir
   hasta hoy** en grande y su cuenta debajo — la generada hasta hoy, cada
   percepción extra (+) y cada descuento (-), con su botón para quitarlo
@@ -174,7 +173,7 @@ estando en Nómina te regresa al menú de Equipo):
   percepción extra o descuento; y al final, discreta en gris, la línea
   "Al cierre de la semana (según horario)" con el neto de la semana
   completa. Hasta abajo de la página (solo el dueño), primero el control
-  de pagos (cuántos confirmaron, total pagado y restante por pagar,
+  de pagos (cuántos ya están pagados, total pagado y restante por pagar,
   calculados sobre el neto de la semana completa) y después el bloque
   "Cómo se paga al cierre de la semana": Nómina bruto, Descuentos
   (adelantos, comidas, retardos), Percepciones extra (vacaciones,
@@ -201,20 +200,20 @@ estando en Nómina te regresa al menú de Equipo):
   mes que se usa en toda la app — ej. la semana del 14 al 20 de
   septiembre se ve ahí como "Semana 38".
 
-  Cada quien con el permiso "Nómina" puede confirmar, desde su propia
-  cuenta, que el monto de esa semana es correcto — con un botón "Recibí
-  mi nómina correcta" que solo aparece si todavía no lo ha confirmado; al
-  tocarlo, se guarda quién y cuándo (fecha y hora), y el botón se
-  reemplaza por un aviso con esa fecha. El dueño ve el resultado en
-  Equipo > Nómina: junto al nombre de cada quien aparece una etiqueta
-  "Confirmada" (verde) o "Pendiente" (neutral), y arriba de los totales
-  de siempre hay un apartado nuevo con cuántos confirmaron ("2 de 5"), el
-  total ya pagado (solo lo de quienes confirmaron) y el restante por
-  pagar (lo de quienes no) — para llevar el control de a quién ya le
-  entregaste su pago sin tener que preguntarle uno por uno. Es
-  independiente de los descuentos/percepciones extra: no se puede
-  confirmar ni revocar desde Equipo, y no bloquea que el dueño siga
-  editando esa nómina si hace falta.
+  Control de pagos: en Equipo > Nómina (solo el dueño), junto al nombre
+  de cada quien hay una etiqueta que se toca — por defecto dice
+  "Pendiente" (gris); un toque la cambia a "✓ Pagada" (verde) para marcar
+  que ya le pagaste esa semana, y otro toque la regresa a "Pendiente".
+  Funciona con la tarjeta cerrada: tocar la etiqueta no abre ni cierra la
+  tarjeta. Al final de la página, el apartado de pagos muestra "Ya
+  pagados" ("2 de 5"), el total pagado (el neto de la semana de quienes
+  están marcados) y el restante por pagar (lo de quienes no) — para
+  llevar el control de a quién ya le entregaste su pago. Es
+  independiente de los descuentos/percepciones extra y no bloquea que
+  sigas editando esa nómina. El empleado ya no confirma nada desde su
+  cuenta (se quitó el botón "Recibí mi nómina correcta") ni ve este
+  estado; las confirmaciones que se hicieron antes con ese botón cuentan
+  como "Pagada".
   Personal
   sigue siendo una lista aparte del catálogo de Meseros — este es solo
   nombre, sin sueldo, para el corte.

@@ -180,7 +180,6 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           onSaveInventarioNotas={guardarInventarioNotas}
           onSavePedidoInventario={guardarPedidoInventario}
           onAsignarApodo={asignarApodoInsumo}
-          onConfirmarNomina={confirmarNomina}
           onSignOut={signOut}
           assignments={assignmentsStatus === "error" ? [] : assignments}
           onPickCorteDate={(date) => setSelectedAssignedDate(date)}
@@ -657,17 +656,19 @@ export default function CortesApp({ profile }: { profile: Profile }) {
     persist(next);
   }
 
-  // "Recibí mi nómina correcta" — lo dispara la propia persona desde su
-  // vista de Nómina de solo lectura. Independiente de saveNominaDescuentos
-  // porque no debe poder tocar descuentos ni percepciones extra de nadie,
-  // solo agregar/actualizar su propia confirmación de esa semana.
-  function confirmarNomina(monthKey: string, weekIndex: number, empleadoId: string, nombre: string) {
+  // Etiqueta Pendiente/Pagada de Nómina — la toca el dueño para marcar a
+  // quién ya le pagó esa semana (y otra vez para regresarlo a pendiente).
+  // Se guarda en las mismas "confirmaciones" donde antes cada empleado
+  // confirmaba "Recibí mi nómina correcta", así que esas cuentan como
+  // pagadas.
+  function togglePagoNomina(monthKey: string, weekIndex: number, empleadoId: string, nombre: string) {
     if (!data) return;
     const next = structuredClone(data);
     if (!next.nominaDescuentos[monthKey]) next.nominaDescuentos[monthKey] = { weeks: [null, null, null, null] };
     const semana = next.nominaDescuentos[monthKey].weeks[weekIndex] || { descuentos: [], extras: [] };
+    const yaPagado = (semana.confirmaciones || []).some((c) => c.empleadoId === empleadoId);
     const confirmaciones = (semana.confirmaciones || []).filter((c) => c.empleadoId !== empleadoId);
-    confirmaciones.push({ empleadoId, nombre, confirmadoEn: new Date().toISOString() });
+    if (!yaPagado) confirmaciones.push({ empleadoId, nombre, confirmadoEn: new Date().toISOString() });
     next.nominaDescuentos[monthKey].weeks[weekIndex] = { ...semana, confirmaciones };
     persist(next);
   }
@@ -831,6 +832,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           nominaDescuentos={data.nominaDescuentos}
           onSaveDescuentos={saveNominaDescuentos}
           onGoToHorarios={() => setEquipoView("horarios")}
+          onTogglePagado={togglePagoNomina}
         />
       )}
 
