@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { ArrowLeft, Clock, Download, Trash2, TriangleAlert } from "lucide-react";
+import { ArrowLeft, Check, Clock, Copy, Trash2, TriangleAlert } from "lucide-react";
 import { Empty, Field, Sheet } from "../ui";
 import { findPreviousHorarioSemana, formatWeekRange, isoWeekNumber, normalizeHorarioSemana, resolveWeekStartDate } from "../../lib/dataModel";
-import { downloadHorarioImage } from "../../lib/horarioImage";
+import { copyHorarioImage } from "../../lib/horarioImage";
 import { DAYS, DAY_SHORT, HORARIO_AREAS_FIJAS, HORARIO_CHIPS } from "../../lib/types";
 import type { DayName, EmpleadoEntry, HorarioArea, HorarioMonthData, HorarioSemana, MonthData } from "../../lib/types";
 
@@ -41,6 +41,9 @@ export function HorariosPanel({
 }) {
   const [monthKey, setMonthKey] = useState(initialMonthKey);
   const [weekIndex, setWeekIndex] = useState(initialWeekIndex);
+  // Resultado del último "Copiar imagen" (por botón: id del área o
+  // "todas") — se borra solo a los pocos segundos.
+  const [copia, setCopia] = useState<{ clave: string; copiada: boolean } | null>(null);
 
   const month = months[monthKey];
 
@@ -66,6 +69,18 @@ export function HorariosPanel({
   // personal de la semana anterior aunque esa sí haya tenido uno.
   if (!saved) semanaInicial.festivos = [];
   const isDraftBase = !saved && !!seeded;
+
+  // clave: id del área copiada, o "todas" para la imagen con las 2 áreas.
+  async function copiarImagen(semana: HorarioSemana, clave: string, soloArea?: string) {
+    const copiada = await copyHorarioImage(
+      semana,
+      `Horario · ${month.label} · Semana ${isoWeekNumber(weekStartDate)}`,
+      formatWeekRange(weekStartDate),
+      soloArea
+    );
+    setCopia({ clave, copiada });
+    setTimeout(() => setCopia(null), copiada ? 3000 : 6000);
+  }
 
   return (
     <div className="page-section">
@@ -111,36 +126,35 @@ export function HorariosPanel({
           {HORARIO_AREAS_FIJAS.filter(
             (a) => (!soloAreaId || a.id === soloAreaId) && (saved.areas.find((sa) => sa.id === a.id)?.filas.length ?? 0) > 0
           ).map((a) => (
-            <button
-              key={a.id}
-              className="link-btn"
-              onClick={() =>
-                downloadHorarioImage(
-                  saved,
-                  `Horario · ${month.label} · Semana ${isoWeekNumber(weekStartDate)}`,
-                  formatWeekRange(weekStartDate),
-                  a.id
-                )
-              }
-            >
-              <Download size={15} /> Imagen · {a.nombre}
+            <button key={a.id} className="link-btn" onClick={() => copiarImagen(saved, a.id, a.id)}>
+              {copia?.clave === a.id && copia.copiada ? (
+                <>
+                  <Check size={15} /> ¡Copiada! Pégala en WhatsApp
+                </>
+              ) : (
+                <>
+                  <Copy size={15} /> Copiar imagen · {a.nombre}
+                </>
+              )}
             </button>
           ))}
           {!soloAreaId && saved.areas.filter((a) => a.filas.length > 0).length > 1 && (
-            <button
-              className="link-btn"
-              onClick={() =>
-                downloadHorarioImage(
-                  saved,
-                  `Horario · ${month.label} · Semana ${isoWeekNumber(weekStartDate)}`,
-                  formatWeekRange(weekStartDate)
-                )
-              }
-            >
-              <Download size={15} /> Imagen · Las 2 áreas
+            <button className="link-btn" onClick={() => copiarImagen(saved, "todas")}>
+              {copia?.clave === "todas" && copia.copiada ? (
+                <>
+                  <Check size={15} /> ¡Copiada! Pégala en WhatsApp
+                </>
+              ) : (
+                <>
+                  <Copy size={15} /> Copiar imagen · Las 2 áreas
+                </>
+              )}
             </button>
           )}
         </div>
+      )}
+      {saved && !readOnly && copia && !copia.copiada && (
+        <p className="hint">Tu navegador no permite copiar imágenes — se descargó el PNG.</p>
       )}
 
       {readOnly && !saved ? (

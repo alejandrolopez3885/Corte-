@@ -123,12 +123,17 @@ estando en Nómina te regresa al menú de Equipo):
   quien trabaje ese día (cualquier valor salvo OFF) se le paga 1 turno
   extra además de lo que le tocaba; el descanso pagado en un día festivo
   no cuenta como trabajado, así que no recibe el extra. En cuanto un
-  horario queda guardado aparecen botones "Imagen · Piso" / "Imagen ·
-  Cocina" / "Imagen · Las 2 áreas" (solo los que aplican — si un área no
-  tiene personal capturado, no sale su botón) que generan y descargan un
-  PNG con esa parte del horario, agrupado por área igual que la hoja de
-  cálculo que se usaba antes para esto — pensado para compartir por
-  WhatsApp con cada encargado de área)
+  horario queda guardado aparecen botones "Copiar imagen · Piso" /
+  "Copiar imagen · Cocina" / "Copiar imagen · Las 2 áreas" (solo los que
+  aplican — si un área no tiene personal capturado, no sale su botón) que
+  generan un PNG con esa parte del horario, agrupado por área igual que
+  la hoja de cálculo que se usaba antes para esto, y lo copian al
+  portapapeles para pegarlo directo en el chat de WhatsApp de cada
+  encargado de área — igual que la imagen de Nómina: el botón tocado
+  cambia unos segundos a "¡Copiada! Pégala en WhatsApp", y si el
+  navegador no permite copiar imágenes, el PNG se descarga como antes con
+  el aviso "Tu navegador no permite copiar imágenes — se descargó el
+  PNG")
   y "Nómina" (calculada sola a partir de Horarios y el sueldo diario de
   cada quien: Z paga doble, O/X y cualquier hora capturada pagan 1x, el
   descanso OFF solo se paga si esa semana se trabajaron los otros 6 días
