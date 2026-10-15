@@ -27,6 +27,7 @@ export function InsumoModal({
   const [proveedorId, setProveedorId] = useState(editing?.proveedorId || "");
   const [nuevoProveedor, setNuevoProveedor] = useState("");
   const [altaRotacion, setAltaRotacion] = useState(editing?.altaRotacion || false);
+  const [unidadPedido, setUnidadPedido] = useState(editing?.unidadPedido || "");
 
   // Si se está creando un proveedor nuevo, tiene que ir en el mismo guardado
   // que el insumo (una sola llamada, un solo persist) — guardarlos por
@@ -50,6 +51,7 @@ export function InsumoModal({
         precio: sumFromText(precioText) || undefined,
         proveedorId: finalProveedorId,
         altaRotacion,
+        unidadPedido: unidadPedido.trim() || undefined,
       },
       nuevoProveedorEntry
     );
@@ -77,6 +79,21 @@ export function InsumoModal({
           <option value="kg">Kg</option>
           <option value="pieza">Pieza</option>
         </select>
+      </Field>
+      <Field label="Se pide por (opcional)">
+        <input
+          className="text-input"
+          value={unidadPedido}
+          onChange={(e) => setUnidadPedido(e.target.value)}
+          placeholder="Ej. caja, bolsa, kg, pz"
+          list="unidades-pedido"
+        />
+        <datalist id="unidades-pedido">
+          <option value="caja" />
+          <option value="bolsa" />
+          <option value="kg" />
+          <option value="pz" />
+        </datalist>
       </Field>
       <Field label="Precio de referencia (opcional, por unidad)">
         <SumInput value={precioText} onChange={setPrecioText} placeholder="0.00" />

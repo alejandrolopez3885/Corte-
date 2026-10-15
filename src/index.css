@@ -640,11 +640,18 @@ body {
 .conteo-errores span { display: flex; align-items: center; gap: 6px; }
 .catalog-row .conteo-cantidad { font-weight: 600; font-size: 15px; flex-shrink: 0; margin-left: auto; white-space: nowrap; }
 .catalog-row .conteo-cantidad small { font-weight: 500; font-size: 13px; color: var(--ink-soft); }
-.conteo-row input.pedido-input { width: 72px; }
+.conteo-row input.pedido-input { width: 60px; }
 .conteo-row input.pedido-input.con-pedido { border-color: var(--accent); color: var(--accent); font-weight: 600; }
 .conteo-colhead {
   display: flex; justify-content: flex-end; gap: 10px; padding: 0 14px; margin-bottom: -4px;
   font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-soft);
 }
-.conteo-colhead span:last-child { width: 72px; text-align: center; }
+.conteo-colhead span:last-child { width: 118px; text-align: left; padding-left: 14px; }
 .catalog-row span.conteo-no-catalogo { color: var(--warn); }
+.catalog-row .pedido-unidad { width: 38px; flex-shrink: 0; font-size: 12.5px; color: var(--ink-soft); }
+.copiar-pedido-btn {
+  display: flex; align-items: center; justify-content: center; gap: 7px; width: 100%;
+  background: var(--accent-soft); color: var(--accent); border: 1.5px solid var(--accent);
+  border-radius: 100px; padding: 11px 16px; font: inherit; font-size: 14.5px; font-weight: 600; cursor: pointer;
+}
+.copiar-pedido-btn.copiado { background: var(--accent); color: white; }

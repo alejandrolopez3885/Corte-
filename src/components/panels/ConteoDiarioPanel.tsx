@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { ArrowLeft, Circle, CircleDot, TriangleAlert } from "lucide-react";
+import { ArrowLeft, Check, Circle, CircleDot, Copy, TriangleAlert } from "lucide-react";
 import { Empty, Field, NumInput, Sheet } from "../ui";
 import {
   dateForDay,
@@ -319,17 +319,34 @@ function ListaPorProveedor({
   });
   const [pedidoLocked, setPedidoLocked] = useState(pedidoGuardado !== undefined);
   const [errores, setErrores] = useState<ErroresCaptura | null>(null);
+  const [copiado, setCopiado] = useState<string | null>(null);
 
   const porNombre = new Map(insumos.map((i) => [normalizarNombre(i.nombre), i]));
-  const grupos = new Map<string, { linea: LineaConteoTexto; enCatalogo: boolean }[]>();
+  const grupos = new Map<string, { linea: LineaConteoTexto; insumo?: InsumoEntry }[]>();
   lineas.forEach((linea) => {
     const insumo = porNombre.get(normalizarNombre(linea.nombre));
     const key = insumo?.proveedorId && proveedores.some((p) => p.id === insumo.proveedorId) ? insumo.proveedorId : "sin";
     if (!grupos.has(key)) grupos.set(key, []);
-    grupos.get(key)!.push({ linea, enCatalogo: !!insumo });
+    grupos.get(key)!.push({ linea, insumo });
   });
   const orden = [...proveedores.filter((p) => grupos.has(p.id)).map((p) => ({ key: p.id, nombre: p.nombre }))];
   if (grupos.has("sin")) orden.push({ key: "sin", nombre: "Sin proveedor" });
+
+  // "Se pide por" del catálogo; si no tiene, la misma presentación del conteo.
+  const unidadPedido = (linea: LineaConteoTexto, insumo?: InsumoEntry) => insumo?.unidadPedido || linea.presentacion || "";
+
+  // Mensaje para WhatsApp: el proveedor y un renglón por producto con
+  // pedido mayor a 0 ("Papas a la francesa 1 caja").
+  async function copiarPedido(key: string, proveedor: string) {
+    const renglones = grupos
+      .get(key)!
+      .filter(({ linea }) => Number((pedido[normalizarNombre(linea.nombre)] || "0").replace(",", ".")) > 0)
+      .map(({ linea, insumo }) =>
+        `${linea.nombre} ${pedido[normalizarNombre(linea.nombre)].trim()} ${unidadPedido(linea, insumo)}`.trim()
+      );
+    await copiarAlPortapapeles([proveedor, ...renglones].join("\n"));
+    setCopiado(key);
+  }
 
   function guardarPedido() {
     const faltan: string[] = [];
@@ -359,14 +376,14 @@ function ListaPorProveedor({
         <div className="insumos-grupo" key={g.key}>
           <h3 className="insumos-grupo-titulo">{g.nombre}</h3>
           <div className="catalog-list">
-            {grupos.get(g.key)!.map(({ linea, enCatalogo }) => {
+            {grupos.get(g.key)!.map(({ linea, insumo }) => {
               const key = normalizarNombre(linea.nombre);
               const valor = pedido[key] ?? "";
               return (
                 <div key={linea.etiqueta} className="catalog-row conteo-row">
                   <div>
                     <strong>{linea.nombre}</strong>
-                    {!enCatalogo && <span className="conteo-no-catalogo">No está en el catálogo</span>}
+                    {!insumo && <span className="conteo-no-catalogo">No está en el catálogo</span>}
                   </div>
                   <span className="conteo-cantidad">
                     {linea.valor}
@@ -379,10 +396,20 @@ function ListaPorProveedor({
                     placeholder="—"
                     disabled={pedidoLocked}
                   />
+                  <span className="pedido-unidad">{unidadPedido(linea, insumo)}</span>
                 </div>
               );
             })}
           </div>
+          {pedidoLocked && g.key !== "sin" && (
+            <button
+              className={`copiar-pedido-btn ${copiado === g.key ? "copiado" : ""}`}
+              onClick={() => copiarPedido(g.key, g.nombre)}
+            >
+              {copiado === g.key ? <Check size={16} /> : <Copy size={16} />}
+              {copiado === g.key ? `Pedido de ${g.nombre} copiado` : `Copiar pedido ${g.nombre}`}
+            </button>
+          )}
         </div>
       ))}
       {pedidoLocked ? (
@@ -401,4 +428,21 @@ function ListaPorProveedor({
       {errores && <ErroresSheet errores={errores} onClose={() => setErrores(null)} />}
     </>
   );
+}
+
+// navigator.clipboard solo existe en HTTPS; si falla, se usa el método
+// viejo con un textarea temporal.
+async function copiarAlPortapapeles(texto: string) {
+  try {
+    await navigator.clipboard.writeText(texto);
+  } catch {
+    const ta = document.createElement("textarea");
+    ta.value = texto;
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand("copy");
+    document.body.removeChild(ta);
+  }
 }

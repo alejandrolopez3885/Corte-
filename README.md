@@ -237,14 +237,23 @@ estando en Nómina te regresa al menú de Equipo):
   conteo): si algún recuadro queda vacío o no es solo un número aparece
   el mismo aviso y no se guarda, y 0 significa que ese día no se pide
   ese producto. Ya guardado, el pedido queda bloqueado hasta tocar
-  "Editar pedido". En cuanto se
+  "Editar pedido". Junto a cada recuadro va la presentación en que se
+  pide: la del campo "Se pide por" del Catálogo (ej. las papas se cuentan
+  en kg y se piden por caja) o, si no tiene, la misma del conteo. Con el
+  pedido guardado, al final de cada proveedor hay un botón "Copiar pedido
+  [proveedor]" que copia al portapapeles el mensaje para WhatsApp — el
+  nombre del proveedor y un renglón por producto con pedido mayor a 0
+  ("Papas a la francesa 1 caja") — y cambia a "✓ Pedido de [proveedor]
+  copiado". En cuanto se
   guarda, el texto queda bloqueado; para corregirlo
   hay que tocar "Editar", confirmar un aviso, y recién
   ahí se desbloquea) y "Catálogo" después: cada insumo tiene nombre, un
   precio de referencia opcional y un proveedor opcional (el mismo
   catálogo de proveedores en ambas áreas, y se puede crear uno nuevo al
   vuelo desde el propio insumo), agrupados en la lista por proveedor, y
-  una marca de "alta rotación" para que aparezca en el Conteo diario. La
+  una marca de "alta rotación" para que aparezca en el Conteo diario. Opcional,
+  "Se pide por": la presentación en que se le pide al proveedor (caja,
+  bolsa, kg, pz…). La
   unidad de medida es un selector con solo dos opciones, Kg o Pieza — en
   Cocina se elige libremente (Kg por default), y en Bar queda fijo en
   Pieza y el selector se ve bloqueado, porque ahí siempre se cuenta por
