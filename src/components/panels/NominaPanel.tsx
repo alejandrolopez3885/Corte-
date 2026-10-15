@@ -90,6 +90,13 @@ export function NominaPanel({
   const today = todayIso();
   const hastaHoyPorEmpleado = computeNominaHastaHoyPorEmpleado(monthKey, weekIndex, month, semana, empleados);
   const totalHastaHoy = reporte.reduce((s, e) => s + (hastaHoyPorEmpleado[e.empleadoId] || 0), 0);
+  // Lo que se le debe a cada quien al día de hoy: lo generado hasta hoy
+  // (no la semana completa del horario) más sus percepciones extra, menos
+  // sus descuentos. Es el número principal de la pantalla; el neto de la
+  // semana completa (e.neto) queda como referencia discreta al cierre.
+  const aRecibirHastaHoy = (e: (typeof reporte)[number]) =>
+    Math.round(((hastaHoyPorEmpleado[e.empleadoId] || 0) + e.totalExtras - e.totalDescuentos) * 100) / 100;
+  const totalARecibirHastaHoy = reporte.reduce((s, e) => s + aRecibirHastaHoy(e), 0);
 
   function addDescuento(empleadoId: string, tipo: NominaDescuentoTipo, concepto: string, monto: number) {
     const descuentos = descuentosSemana?.descuentos || [];
@@ -195,6 +202,31 @@ export function NominaPanel({
       ) : (
         <>
           {!soloLectura && (
+            <div className="report-list">
+              <div className="report-row total">
+                <span className="report-row-label">
+                  Total a pagar hasta hoy
+                  <em>{formatShortDayDate(today)} · todo el personal</em>
+                </span>
+                <strong className="report-row-amount nomina-total-hoy">{money(totalARecibirHastaHoy)}</strong>
+              </div>
+              <div className="report-row">
+                <span className="report-row-label">Generada hasta hoy</span>
+                <strong className="report-row-amount">{money(totalHastaHoy)}</strong>
+              </div>
+              {totalExtras > 0 && (
+                <div className="report-row">
+                  <span className="report-row-label">Percepciones extra</span>
+                  <strong className="report-row-amount">+{money(totalExtras)}</strong>
+                </div>
+              )}
+              <div className="report-row">
+                <span className="report-row-label">Descuentos</span>
+                <strong className="report-row-amount">-{money(totalDescuentos)}</strong>
+              </div>
+            </div>
+          )}
+          {!soloLectura && (
             <div className="field-row horario-descargas">
               {HORARIO_AREAS_FIJAS.map((a) => {
                 const reporteArea = reporte.filter((e) => e.areaNombre.toLowerCase() === a.nombre.toLowerCase());
@@ -248,7 +280,6 @@ export function NominaPanel({
                     </span>
                   )}
                 </span>
-                <strong className="nomina-emp-total">{money(e.neto)}</strong>
               </div>
               {e.sueldoDiario === 0 ? (
                 <p className="nomina-emp-sub">Sin sueldo diario capturado en Personal.</p>
@@ -258,9 +289,50 @@ export function NominaPanel({
                   {e.offPagado ? " · descanso pagado" : ""}
                 </p>
               )}
-              <div className="nomina-hasta-hoy">
-                <span>Generada hasta hoy ({formatShortDayDate(today)})</span>
-                <strong>{money(hastaHoyPorEmpleado[e.empleadoId])}</strong>
+              <div className="nomina-recibir">
+                <div className="nomina-recibir-top">
+                  <span>A recibir hasta hoy</span>
+                  <strong>{money(aRecibirHastaHoy(e))}</strong>
+                </div>
+                <div className="nomina-recibir-calc">
+                  <div className="nomina-recibir-row">
+                    <span className="nomina-recibir-item">Generada hasta hoy ({formatShortDayDate(today)})</span>
+                    <span>{money(hastaHoyPorEmpleado[e.empleadoId])}</span>
+                    {!soloLectura && (e.extras.length > 0 || e.descuentos.length > 0) && <span className="icon-btn-spacer" />}
+                  </div>
+                  {e.extras.map((x) => (
+                    <div className="nomina-recibir-row" key={x.id}>
+                      <span className="nomina-recibir-item">
+                        {NOMINA_EXTRA_TIPOS.find((t) => t.value === x.tipo)?.label}
+                        {x.concepto ? ` · ${x.concepto}` : ""}
+                      </span>
+                      <span>+{money(x.monto)}</span>
+                      {!soloLectura && (
+                        <button className="icon-btn" onClick={() => removeExtra(x.id)} aria-label="Quitar percepción extra">
+                          <Trash2 size={13} />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                  {e.descuentos.map((d) => (
+                    <div className="nomina-recibir-row" key={d.id}>
+                      <span className="nomina-recibir-item">
+                        {NOMINA_DESCUENTO_TIPOS.find((t) => t.value === d.tipo)?.label}
+                        {d.concepto ? ` · ${d.concepto}` : ""}
+                        {d.origen === "corte" && <em> (Corte)</em>}
+                      </span>
+                      <span>-{money(d.monto)}</span>
+                      {!soloLectura &&
+                        (d.origen === "corte" ? (
+                          <span className="icon-btn-spacer" />
+                        ) : (
+                          <button className="icon-btn" onClick={() => removeDescuento(d.id)} aria-label="Quitar descuento">
+                            <Trash2 size={13} />
+                          </button>
+                        ))}
+                    </div>
+                  ))}
+                </div>
               </div>
               <div className="nomina-dias">
                 {e.dias.map((d) => (
@@ -271,50 +343,6 @@ export function NominaPanel({
                   </div>
                 ))}
               </div>
-
-              {(e.descuentos.length > 0 || e.extras.length > 0) && (
-                <div className="nomina-descuentos">
-                  <div className="nomina-descuentos-row bruto">
-                    <span>Bruto</span>
-                    <span className="nomina-descuentos-monto">{money(e.bruto)}</span>
-                  </div>
-                  {e.extras.map((x) => (
-                    <div className="nomina-descuentos-row extra" key={x.id}>
-                      <span className="nomina-descuentos-item">
-                        <strong>{NOMINA_EXTRA_TIPOS.find((t) => t.value === x.tipo)?.label}</strong>
-                        {x.concepto ? ` · ${x.concepto}` : ""}
-                      </span>
-                      <span className="nomina-descuentos-monto">+{money(x.monto)}</span>
-                      {!soloLectura && (
-                        <button className="icon-btn" onClick={() => removeExtra(x.id)} aria-label="Quitar percepción extra">
-                          <Trash2 size={13} />
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                  {e.descuentos.map((d) => (
-                    <div className="nomina-descuentos-row" key={d.id}>
-                      <span className="nomina-descuentos-item">
-                        <strong>{NOMINA_DESCUENTO_TIPOS.find((t) => t.value === d.tipo)?.label}</strong>
-                        {d.concepto ? ` · ${d.concepto}` : ""}
-                        {d.origen === "corte" && <span className="nomina-descuentos-tag">Corte</span>}
-                      </span>
-                      <span className="nomina-descuentos-monto">-{money(d.monto)}</span>
-                      {soloLectura || d.origen === "corte" ? (
-                        <span className="icon-btn-spacer" />
-                      ) : (
-                        <button className="icon-btn" onClick={() => removeDescuento(d.id)} aria-label="Quitar descuento">
-                          <Trash2 size={13} />
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                  <div className="nomina-descuentos-row neto">
-                    <span>Neto a pagar</span>
-                    <span className="nomina-descuentos-monto">{money(e.neto)}</span>
-                  </div>
-                </div>
-              )}
 
               {!soloLectura && (
                 <div className="field-row">
@@ -332,6 +360,11 @@ export function NominaPanel({
                   </button>
                 </div>
               )}
+
+              <div className="nomina-cierre">
+                <span>Al cierre de la semana (según horario)</span>
+                <span>{money(e.neto)}</span>
+              </div>
 
               {soloLectura &&
                 (e.confirmado ? (
@@ -374,34 +407,29 @@ export function NominaPanel({
             </div>
           )}
 
-          <div className="report-list">
-            <div className="report-row">
-              <span className="report-row-label">
-                Generada hasta hoy ({formatShortDayDate(today)}{soloLectura ? "" : ", todo el personal"})
-              </span>
-              <strong className="report-row-amount">{money(totalHastaHoy)}</strong>
-            </div>
-            <div className="report-row">
-              <span className="report-row-label">Bruto de la semana</span>
-              <strong className="report-row-amount">{money(totalBruto)}</strong>
-            </div>
-            {totalExtras > 0 && (
-              <div className="report-row">
-                <span className="report-row-label">Percepciones extra</span>
-                <strong className="report-row-amount">+{money(totalExtras)}</strong>
+          {!soloLectura && (
+            <div className="nomina-cierre-total">
+              <span className="nomina-cierre-total-title">Al cierre de la semana (según horario)</span>
+              <div>
+                <span>Bruto</span>
+                <span>{money(totalBruto)}</span>
               </div>
-            )}
-            {totalDescuentos > 0 && (
-              <div className="report-row">
-                <span className="report-row-label">Descuentos</span>
-                <strong className="report-row-amount">-{money(totalDescuentos)}</strong>
+              {totalExtras > 0 && (
+                <div>
+                  <span>Percepciones extra</span>
+                  <span>+{money(totalExtras)}</span>
+                </div>
+              )}
+              <div>
+                <span>Descuentos</span>
+                <span>-{money(totalDescuentos)}</span>
               </div>
-            )}
-            <div className="report-row total">
-              <span className="report-row-label">Neto a pagar</span>
-              <strong className="report-row-amount">{money(totalNeto)}</strong>
+              <div>
+                <span>Neto al cierre</span>
+                <span>{money(totalNeto)}</span>
+              </div>
             </div>
-          </div>
+          )}
         </>
       )}
 

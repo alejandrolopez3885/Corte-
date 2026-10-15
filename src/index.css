@@ -530,7 +530,6 @@ body {
 .nomina-emp-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
 .nomina-emp-head strong { font-size: 14.5px; }
 .nomina-emp-nombre { font-size: 14.5px; font-weight: 700; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.nomina-emp-total { font-family: 'Fraunces', serif; font-size: 18px; color: var(--accent); }
 .nomina-emp-sub { font-size: 12px; color: var(--ink-soft); margin: -4px 0 0; }
 .nomina-confirm-badge {
   display: inline-flex; align-items: center; gap: 3px; padding: 2px 8px; border-radius: 100px;
@@ -542,11 +541,22 @@ body {
   display: flex; align-items: center; gap: 8px; background: var(--good-soft); color: var(--good);
   padding: 10px 12px; border-radius: 12px; font-size: 13px; font-weight: 500;
 }
-.nomina-hasta-hoy {
-  display: flex; justify-content: space-between; align-items: center; gap: 8px;
-  background: var(--accent-soft); color: var(--accent); border-radius: 9px; padding: 7px 11px; font-size: 12.5px; font-weight: 500;
-}
-.nomina-hasta-hoy strong { font-family: 'Fraunces', serif; font-size: 15px; }
+.nomina-recibir { background: var(--accent); color: #fff; border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; }
+.nomina-recibir-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.nomina-recibir-top span { font-size: 13px; font-weight: 600; }
+.nomina-recibir-top strong { font-family: 'Fraunces', serif; font-size: 24px; }
+.nomina-recibir-calc { display: flex; flex-direction: column; gap: 3px; font-size: 12px; }
+.nomina-recibir-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; opacity: 0.9; }
+.nomina-recibir-row > span:nth-child(2) { flex-shrink: 0; font-variant-numeric: tabular-nums; }
+.nomina-recibir-item { flex: 1; min-width: 0; }
+.nomina-recibir-item em { opacity: 0.8; }
+.nomina-recibir-row .icon-btn { width: 26px; height: 26px; flex-shrink: 0; background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.3); color: #fff; }
+.nomina-recibir-row .icon-btn-spacer { width: 26px; height: 26px; flex-shrink: 0; }
+.nomina-cierre { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; color: var(--ink-soft); border-top: 1px dashed var(--border); padding-top: 8px; }
+.nomina-cierre-total { display: flex; flex-direction: column; gap: 4px; font-size: 12.5px; color: var(--ink-soft); padding: 2px 4px; }
+.nomina-cierre-total > div { display: flex; justify-content: space-between; }
+.nomina-cierre-total-title { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; }
+.report-row-amount.nomina-total-hoy { font-size: 20px; }
 .nomina-dias { display: flex; gap: 6px; overflow-x: auto; margin: 0 -14px; padding: 0 14px; }
 .nomina-dia {
   flex-shrink: 0; min-width: 56px; background: var(--surface-alt); border-radius: 9px;
@@ -557,24 +567,6 @@ body {
 .nomina-dia-label { font-size: 10px; color: var(--ink-soft); font-weight: 600; text-transform: uppercase; }
 .nomina-dia-valor { font-size: 12px; font-weight: 600; margin: 3px 0 1px; min-height: 14px; }
 .nomina-dia-monto { font-size: 11px; color: var(--ink-soft); }
-
-.nomina-descuentos {
-  display: flex; flex-direction: column; gap: 5px;
-  background: var(--surface-alt); border-radius: 10px; padding: 9px 11px;
-}
-.nomina-descuentos-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 12.5px; }
-.nomina-descuentos-row.bruto { color: var(--ink-soft); }
-.nomina-descuentos-row.extra .nomina-descuentos-monto { color: var(--good); }
-.nomina-descuentos-row.neto { font-weight: 600; padding-top: 4px; border-top: 1px solid var(--border); }
-.nomina-descuentos-item { flex: 1; min-width: 0; color: var(--ink-soft); }
-.nomina-descuentos-item strong { color: var(--ink); font-weight: 500; }
-.nomina-descuentos-monto { flex-shrink: 0; font-variant-numeric: tabular-nums; }
-.nomina-descuentos-row .icon-btn { width: 26px; height: 26px; flex-shrink: 0; }
-.nomina-descuentos-row .icon-btn-spacer { width: 26px; height: 26px; flex-shrink: 0; }
-.nomina-descuentos-tag {
-  display: inline-block; margin-left: 5px; font-size: 10px; font-weight: 600; text-transform: uppercase;
-  color: var(--ink-soft); background: var(--surface); border-radius: 100px; padding: 1px 6px; vertical-align: middle;
-}
 
 /* ---- Tendencias ---- */
 .tendencias-proyeccion {

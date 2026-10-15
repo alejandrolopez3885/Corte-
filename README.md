@@ -66,7 +66,8 @@ estando en Nómina te regresa al menú de Equipo):
   insumos de alta rotación de Bar o Cocina, sin acceso al Catálogo —
   igual que puede hacerlo el dueño desde Control de Bar/Cocina, pero sin
   poder editar productos, precios ni proveedores) y "Nómina" (ve su
-  propia nómina semanal, calculada igual que la del dueño, pero de solo
+  propia nómina semanal, calculada igual que la del dueño, con su "A
+  recibir hasta hoy" resaltado y el cierre de semana discreto, pero de solo
   lectura — sin poder agregar ni quitar descuentos o percepciones extra
   de nadie; sí tiene un botón "Recibí mi nómina correcta" para confirmar
   que el monto de esa semana está bien — ver el desglose más abajo, en
@@ -137,20 +138,35 @@ estando en Nómina te regresa al menú de Equipo):
   persona, se capturan descuentos itemizados — tardanza, adelanto de
   efectivo, comida u otro, cada uno con su propio concepto y monto — y
   percepciones extra itemizadas — finiquito, bono u otro, que solo
-  existen en la semana donde se capturan, no se repiten — y la tarjeta de
-  cada quien muestra bruto, cada extra (+), cada descuento (-) y el neto
-  a pagar; el total de la semana también se ve en bruto/extras/
-  descuentos/neto. Un gasto del corte diario categorizado "Nómina" o
+  existen en la semana donde se capturan, no se repiten. Un gasto del
+  corte diario categorizado "Nómina" o
   "Comida empleado" también se puede vincular a un empleado de Personal —
   por ejemplo, un adelanto que sale del corte de otra persona —, y ese
   gasto aparece solo como descuento en la nómina del empleado elegido,
-  marcado "Corte" y sin poder borrarse desde ahí — se edita o se quita
-  desde el gasto mismo en Corte. Cada quien también muestra "Generada
-  hasta hoy", el bruto acumulado solo de los días de esa semana cuya
-  fecha ya pasó (o es hoy) — útil para ver a media semana cuánta nómina
-  llevas, sin esperar a que termine; en una semana ya cerrada equivale al
-  bruto completo, y en una futura es $0 —, con su propio total para todo
-  el personal). Igual que en Horarios, hay botones "Imagen · Piso" /
+  marcado "(Corte)" y sin poder borrarse desde ahí — se edita o se quita
+  desde el gasto mismo en Corte.
+  La pantalla resalta lo que se debe **hasta hoy**, no la semana
+  completa: "Generada hasta hoy" es el bruto acumulado solo de los días
+  de esa semana cuya fecha ya pasó o es hoy (en una semana ya cerrada
+  equivale al bruto completo, y en una futura es $0), y "A recibir hasta
+  hoy" = generada hasta hoy + percepciones extra − descuentos. Arriba de
+  todo, debajo del selector, un resumen con el **Total a pagar hasta
+  hoy** de todo el personal (resaltado), y debajo de él la generada hasta
+  hoy, las percepciones extra (si hay) y los descuentos. En la tarjeta de
+  cada quien: nombre (con su etiqueta Confirmada/Pendiente), área,
+  sueldo diario y días trabajados; un recuadro verde con **A recibir
+  hasta hoy** en grande y su cuenta debajo — la generada hasta hoy, cada
+  percepción extra (+) y cada descuento (-), con su botón para quitarlo
+  (salvo los que vienen del Corte) —; las 7 casillas de la semana con el
+  código del horario y el monto de cada día; los botones para agregar
+  percepción extra o descuento; y al final, discreta en gris, la línea
+  "Al cierre de la semana (según horario)" con el neto de la semana
+  completa. Hasta abajo de la página, también discreto en gris, el
+  bloque "Al cierre de la semana (según horario)" con el bruto, las
+  percepciones extra, los descuentos y el neto al cierre de todo el
+  personal; justo antes queda el control de pagos (cuántos confirmaron,
+  total pagado y restante por pagar, calculados sobre el neto de la
+  semana completa)). Igual que en Horarios, hay botones "Imagen · Piso" /
   "Imagen · Cocina" / "Imagen · Las 2 áreas" (solo los que apliquen) que
   generan y descargan un PNG con esa parte de la nómina de la semana sin
   descuentos (bruto + percepciones extra si las hay, marcadas con un
