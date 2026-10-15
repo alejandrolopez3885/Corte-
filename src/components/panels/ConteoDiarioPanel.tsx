@@ -11,6 +11,7 @@ import {
   esCantidadValida,
   leerConteoTexto,
   normalizarNombre,
+  pluralizarUnidad,
   type LineaConteoTexto,
 } from "../../lib/dataModel";
 import { DAYS, DAY_SHORT } from "../../lib/types";
@@ -345,9 +346,10 @@ function ListaPorProveedor({
     const renglones = grupos
       .get(key)!
       .filter(({ linea }) => Number((pedido[normalizarNombre(linea.nombre)] || "0").replace(",", ".")) > 0)
-      .map(({ linea, insumo }) =>
-        `${linea.nombre} ${pedido[normalizarNombre(linea.nombre)].trim()} ${unidadPedido(linea, insumo)}`.trim()
-      );
+      .map(({ linea, insumo }) => {
+        const cantidad = pedido[normalizarNombre(linea.nombre)].trim();
+        return `${linea.nombre} ${cantidad} ${pluralizarUnidad(unidadPedido(linea, insumo), Number(cantidad.replace(",", ".")))}`.trim();
+      });
     await copiarAlPortapapeles([NOMBRE_NEGOCIO, ...renglones].join("\n"));
     // El botón no cambia (se puede volver a copiar las veces que sea): solo
     // un aviso discreto abajo que se va solo.

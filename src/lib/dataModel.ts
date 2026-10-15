@@ -973,3 +973,13 @@ export function esCantidadValida(valor: string): boolean {
 export function normalizarNombre(t: string): string {
   return t.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/\s+/g, " ").trim();
 }
+
+// "2 caja" → "2 cajas", "3 barril" → "3 barriles". Las abreviaturas (kg,
+// pz...) y las presentaciones con detalle ("pz, enteros") se dejan igual.
+const ABREVIATURAS = new Set(["kg", "g", "gr", "pz", "pza", "pzs", "lt", "l", "ml", "oz", "lb"]);
+export function pluralizarUnidad(unidad: string, cantidad: number): string {
+  const u = unidad.trim();
+  if (!u || cantidad === 1 || /[,(]/.test(u) || u.includes(" ")) return u;
+  if (ABREVIATURAS.has(u.toLowerCase().replace(/\.$/, "")) || /s$/i.test(u)) return u;
+  return /[aeiouáéíóú]$/i.test(u) ? `${u}s` : `${u}es`;
+}

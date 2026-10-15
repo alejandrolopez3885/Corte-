@@ -243,7 +243,9 @@ estando en Nómina te regresa al menú de Equipo):
   de cada proveedor (guardado o no el pedido) hay un botón "Copiar pedido
   [proveedor]" que copia al portapapeles el mensaje para WhatsApp —
   "Metroplex" (quién pide) y un renglón por producto con pedido mayor a 0
-  ("Papas a la francesa 1 caja"). El botón no cambia, para poder copiar
+  ("Papas a la francesa 1 caja", "Papas crisscut 2 cajas" — la
+  presentación va en plural cuando no es 1, salvo abreviaturas como kg o
+  pz). El botón no cambia, para poder copiar
   las veces que sea; solo aparece abajo un aviso discreto "✓ Pedido
   copiado" que se quita solo a los 2 segundos. En cuanto se
   guarda, el texto queda bloqueado; para corregirlo
