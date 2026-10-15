@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   Plus, Settings2, Users, Receipt, ArrowLeftRight, CircleDot, Circle, Pencil,
   Smartphone, BarChart3, LogOut, Truck, Trash2, Home, Store, LayoutDashboard, Contact, Clock, Wallet, ChartLine, Martini, ChefHat,
-  ShoppingCart, Handshake, Boxes, Package,
+  ShoppingCart, Handshake, Boxes, Package, Coins,
 } from "lucide-react";
 import { useAuth } from "../lib/auth.tsx";
 import { useAppData } from "../lib/useAppData";
@@ -32,6 +32,7 @@ import { DashboardPanel } from "../components/panels/DashboardPanel";
 import { EmpleadosPanel } from "../components/panels/EmpleadosPanel";
 import { HorariosPanel } from "../components/panels/HorariosPanel";
 import { NominaPanel } from "../components/panels/NominaPanel";
+import { PropinasPanel } from "../components/panels/PropinasPanel";
 import { TendenciasPanel } from "../components/panels/TendenciasPanel";
 import { ControlBarPanel } from "../components/panels/ControlBarPanel";
 import { ControlCocinaPanel } from "../components/panels/ControlCocinaPanel";
@@ -56,7 +57,7 @@ type ModalState =
   | { type: "deleteMonth"; monthKey: string }
   | null;
 
-type EquipoView = "menu" | "personal" | "horarios" | "nomina";
+type EquipoView = "menu" | "personal" | "horarios" | "nomina" | "propinas";
 
 type NegocioView = "menu" | "tendencias" | "controlBar" | "controlCocina" | "controlGeneral" | "inventario" | "pedidos";
 
@@ -138,7 +139,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
   if (!isOwner) {
     // Cuenta de equipo dada de alta desde Personal: tiene su propia
     // pantalla, acotada a las secciones que su checklist de permisos
-    // habilita (Horarios/Conteo diario/Nómina) y, si le asignaron algún
+    // habilita (Horarios/Conteo diario/Inventario/Nómina/Propinas) y, si le asignaron algún
     // día, "Corte" — acotado a esos días nada más.
     if (assignmentsStatus === "loading" || assignments === null) {
       return (
@@ -792,6 +793,15 @@ export default function CortesApp({ profile }: { profile: Profile }) {
                 <span>Calculada sola a partir de Horarios</span>
               </span>
             </button>
+            <button className="menu-item" onClick={() => setEquipoView("propinas")}>
+              <span className="menu-item-icon">
+                <Coins size={20} />
+              </span>
+              <span className="menu-item-text">
+                <strong>Propinas</strong>
+                <span>Consulta las propinas de cada día de la semana</span>
+              </span>
+            </button>
           </div>
         </div>
       )}
@@ -832,6 +842,16 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           nominaDescuentos={data.nominaDescuentos}
           onSaveDescuentos={saveNominaDescuentos}
           onGoToHorarios={() => setEquipoView("horarios")}
+        />
+      )}
+
+      {isOwner && activeTab === "equipo" && equipoView === "propinas" && (
+        <PropinasPanel
+          onBack={() => setEquipoView("menu")}
+          months={data.months}
+          monthKeys={monthKeys}
+          initialMonthKey={mostRecentMonthKey as string}
+          initialWeekIndex={mostRecentWeekIdx}
         />
       )}
 

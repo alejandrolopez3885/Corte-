@@ -467,7 +467,7 @@ export type Role = "owner" | "staff";
 // allá del acceso por día asignado (mesero) — ver EmpleadoEntry.staffProfileId
 // y PERMISOS_DISPONIBLES. Se agregan más conforme el dueño los vaya
 // necesitando, sin rehacer el checklist.
-export type PermisoStaff = "horarios" | "conteo_diario" | "inventario" | "nomina";
+export type PermisoStaff = "horarios" | "conteo_diario" | "inventario" | "nomina" | "propinas";
 
 export const PERMISOS_DISPONIBLES: { value: PermisoStaff; label: string; description: string }[] = [
   {
@@ -489,6 +489,11 @@ export const PERMISOS_DISPONIBLES: { value: PermisoStaff; label: string; descrip
     value: "nomina",
     label: "Nómina",
     description: "Ver su propia nómina semanal, calculada desde Horarios — sin editar descuentos ni percepciones extra de nadie.",
+  },
+  {
+    value: "propinas",
+    label: "Propinas",
+    description: "Consultar el total de propinas de cada día de la semana y cómo se reparte entre áreas — sin editar nada.",
   },
 ];
 

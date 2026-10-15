@@ -47,7 +47,7 @@ estando en Nómina te regresa al menú de Equipo):
   transferencias, ventas de apps y sus resúmenes. Arriba de los totales del
   día hay una tarjeta de asignación: quién tiene asignado ese día (si
   alguien) y quién capturó su corte — ver "Asignar día" más abajo.
-- **Equipo**: menú con 4 opciones — "Meseros" (catálogo de
+- **Equipo**: menú con 5 opciones — "Meseros" (catálogo de
   meseros — solo nombre, para elegir a quién le haces el corte en Corte;
   vive aquí porque también son parte de tu equipo, aunque su lista está
   separada de Personal), y como páginas propias "Personal" (la lista de tu
@@ -70,7 +70,10 @@ estando en Nómina te regresa al menú de Equipo):
   lectura — sin poder agregar ni quitar descuentos o percepciones extra
   de nadie; sí tiene un botón "Recibí mi nómina correcta" para confirmar
   que el monto de esa semana está bien — ver el desglose más abajo, en
-  la propia sección "Nómina"). Cada permiso se acota distinto: "Horarios" usa el área de
+  la propia sección "Nómina") y "Propinas" (la misma pantalla de
+  consulta que ve el dueño en Equipo > Propinas — totales del día de toda
+  la semana y su reparto por área, sin poder editar nada; no se acota por
+  área ni por persona). Cada permiso se acota distinto: "Horarios" usa el área de
   Personal del puesto (Gerencia/Piso/Cocina) y muestra el horario
   completo de esa área (todo el personal de Piso, o todo el de Cocina,
   no solo su propia fila); "Conteo diario" usa el catálogo de insumos
@@ -89,7 +92,7 @@ estando en Nómina te regresa al menú de Equipo):
   cualquier otro puesto con este permiso (mesero, barra, etc.) solo
   puede verlo, sin poder tocar las celdas, agregar/quitar personal,
   guardar ni descargar nada.
-  Sin puesto asignado, ningún permiso de estos tres se
+  Sin puesto asignado, ninguno de estos permisos se
   puede habilitar (aunque igual puede tener acceso a "Corte", que no
   depende de un puesto — ver **Asignar día** más abajo).
   Al entrar con su PIN, esa persona no ve las pestañas
@@ -177,11 +180,27 @@ estando en Nómina te regresa al menú de Equipo):
   sigue siendo una lista aparte del catálogo de Meseros — este es solo
   nombre, sin sueldo, para el corte.
 
+  **Propinas** (Equipo > Propinas): pantalla de solo consulta, con el
+  mismo selector de mes y semana que Nómina — la semana se muestra con
+  su número del año en estándar ISO (ej. "Semana 42"), y abajo el rango de
+  fechas de esa semana (ej. "12 – 18 oct"). Debajo, la lista de lunes a
+  domingo, cada día con su fecha y el total de propinas de ese día (la
+  suma de las propinas de todos los cortes de meseros de ese día; sin
+  desglose por mesero — un día sin corte sale en $0.00, en gris), y al
+  final el "Total semana". Debajo del total, un bloque "Cómo se reparte
+  (solo informativo)" con la parte de cada área, cada una con su color:
+  Cocina 1% (naranja), Barra 1% (azul) y Gerencia 1% (verde) — cada una
+  es un tercio del total de la semana (el 1% de la propina de 3%); si al
+  dividir sobra un centavo se lo lleva Gerencia, para que las tres sumen
+  exactamente el total. No afecta el corte, la nómina ni ningún otro
+  total. Una cuenta de equipo con el permiso "Propinas" ve esta misma
+  pantalla en su menú de inicio.
+
   **Asignar día**: desde el propio Corte diario (arriba de los totales del
   día) el dueño puede asignar ese día a alguien de Personal que ya tenga
   "Acceso a la app" creado — no crea una cuenta nueva, solo elige entre
   quienes ya la tienen. A esa persona le aparece "Corte" como una sección
-  más en su cuenta (junto a Horarios/Conteo diario/Nómina si también las
+  más en su cuenta (junto a Horarios/Conteo diario/Inventario/Nómina/Propinas si también las
   tiene), acotada solo a los días que le hayan asignado; ahí entra
   igual que el dueño a capturar meseros, gastos, transferencias y ventas
   de apps de ese día. La tarjeta de asignación en Corte diario muestra
@@ -331,7 +350,7 @@ Hay 2 tipos de cuenta:
   Personal** (nombre + PIN de 4 dígitos, sin correo — ver "Acceso a la
   app" más arriba) — no hace falta crearla en el dashboard de Supabase.
   Solo ve las secciones que su checklist de permisos habilita
-  (Horarios/Conteo diario/Nómina) más, si el dueño le asignó algún día
+  (Horarios/Conteo diario/Inventario/Nómina/Propinas) más, si el dueño le asignó algún día
   desde Corte diario (ver "Asignar día" más arriba), "Corte" — acotado
   solo a esos días. Esa persona entra desde "Soy del equipo, tengo un
   PIN" en la pantalla de inicio, elige su nombre y teclea su PIN.
