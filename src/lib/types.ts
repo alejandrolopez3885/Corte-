@@ -297,6 +297,9 @@ export interface InsumoEntry {
   // ser distinta a la del conteo (las papas se cuentan en kg y se piden por
   // caja). Sin valor, se usa la presentación del conteo.
   unidadPedido?: string;
+  // Cuánto trae 1 unidadPedido en la unidad en que se cuenta (1 caja =
+  // 10 kg) — para pasar lo pedido a kg/pz en Negocio > Pedidos.
+  equivalenciaPedido?: number;
   // Cómo lo escriben en las notas del Inventario ("6x6", "Lyncott") cuando no
   // se parece al nombre — se guardan al ligar un renglón no reconocido.
   apodos?: string[];
