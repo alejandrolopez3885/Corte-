@@ -33,6 +33,7 @@ export function ConteoDiarioPanel({
   onGuardar,
   pedidos,
   onGuardarPedido,
+  conPedido = true,
 }: {
   onBack?: () => void;
   backLabel: string;
@@ -51,6 +52,10 @@ export function ConteoDiarioPanel({
   // Cantidad a pedir por producto (nombre normalizado), por fecha.
   pedidos: Record<string, Record<string, number>>;
   onGuardarPedido: (fecha: string, pedido: Record<string, number>) => void;
+  // Bar por ahora no hace pedido desde aquí: al guardar el conteo solo se
+  // ve la lista de productos con su cantidad, sin casillas de "Pedir" ni
+  // botones de copiar.
+  conPedido?: boolean;
 }) {
   const [monthKey, setMonthKey] = useState(initialMonthKey);
   const [weekIndex, setWeekIndex] = useState(initialWeekIndex);
@@ -141,6 +146,7 @@ export function ConteoDiarioPanel({
           onGuardar={onGuardar}
           pedidoGuardado={pedidos[fecha]}
           onGuardarPedido={onGuardarPedido}
+          conPedido={conPedido}
         />
       )}
     </div>
@@ -159,6 +165,7 @@ function ConteoTextoForm({
   onGuardar,
   pedidoGuardado,
   onGuardarPedido,
+  conPedido,
 }: {
   fecha: string;
   guardado?: string;
@@ -168,6 +175,7 @@ function ConteoTextoForm({
   onGuardar: (fecha: string, texto: string) => void;
   pedidoGuardado?: Record<string, number>;
   onGuardarPedido: (fecha: string, pedido: Record<string, number>) => void;
+  conPedido: boolean;
 }) {
   const [texto, setTexto] = useState(guardado ?? plantilla);
   const [locked, setLocked] = useState(guardado !== undefined);
@@ -209,7 +217,9 @@ function ConteoTextoForm({
         Guardar conteo
       </button>
 
-      {locked && guardado !== undefined && (
+      {locked && guardado !== undefined && !conPedido && <ListaConteo lineas={leerConteoTexto(guardado)} />}
+
+      {locked && guardado !== undefined && conPedido && (
         <ListaPorProveedor
           fecha={fecha}
           lineas={leerConteoTexto(guardado)}
@@ -243,6 +253,29 @@ function ConteoTextoForm({
         </Sheet>
       )}
     </>
+  );
+}
+
+// Lo guardado como lista de solo lectura — cada producto con su cantidad,
+// en el mismo orden del texto. Para áreas que no hacen pedido desde aquí.
+function ListaConteo({ lineas }: { lineas: LineaConteoTexto[] }) {
+  return (
+    <div className="insumos-grupo">
+      <h3 className="insumos-grupo-titulo">Conteo del día</h3>
+      <div className="catalog-list">
+        {lineas.map((linea) => (
+          <div key={linea.etiqueta} className="catalog-row conteo-row">
+            <div>
+              <strong>{linea.nombre}</strong>
+            </div>
+            <span className="conteo-cantidad">
+              {linea.valor}
+              {linea.presentacion && <small> {linea.presentacion}</small>}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 

@@ -193,6 +193,7 @@ export default function StaffAccessShell({
           onGuardar={(fecha, texto) => onSaveConteoTexto(insumoArea, fecha, texto)}
           pedidos={data.pedidosDiarios[insumoArea]}
           onGuardarPedido={(fecha, pedido) => onSavePedidoDiario(insumoArea, fecha, pedido)}
+          conPedido={insumoArea !== "bar"}
         />
       </div>
     );

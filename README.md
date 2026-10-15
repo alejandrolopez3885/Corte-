@@ -284,7 +284,13 @@ estando en Nómina te regresa al menú de Equipo):
   producto le falta la cantidad, o trae algo que no sea solo un número
   (ej. "5kg" o "dos" — la presentación ya va entre paréntesis), aparece
   un aviso con esos productos y no se guarda hasta corregirlos (si no
-  hay, se pone 0). Ya guardado, debajo del texto aparece la lista
+  hay, se pone 0). En Bar, por ahora no se hace pedido desde aquí: ya
+  guardado el conteo, debajo del texto solo aparece la lista "Conteo del
+  día" con cada producto y su cantidad contada (con su presentación), en
+  el mismo orden del texto, de solo lectura — sin recuadros de "Pedir",
+  sin "Copiar pedido" ni "Guardar pedido"; lo único editable sigue siendo
+  el texto de arriba (con "Editar"), y al volver a guardarlo la lista se
+  actualiza sola. En Cocina, ya guardado, debajo del texto aparece la lista
   separada por proveedor con cada cantidad: cada producto se busca por
   su nombre en el catálogo del área (sin importar mayúsculas ni acentos)
   y toma el proveedor que tenga asignado ahí; lo que no está en el
@@ -348,7 +354,9 @@ estando en Nómina te regresa al menú de Equipo):
   existe como permiso "Inventario" en "Acceso a la app", para que el jefe
   de cocina lo capture desde su cuenta; y "Pedidos" — solo consulta: el
   total de lo pedido en la semana elegida (hasta hoy), sumando lo guardado
-  con "Guardar pedido" en el Conteo diario (Cocina y Bar, lunes a domingo)
+  con "Guardar pedido" en el Conteo diario de Cocina (lunes a domingo;
+  Bar ya no captura pedido ahí, aunque los que se hayan guardado antes
+  siguen contando)
   y en el Inventario del jueves y del domingo, separado por proveedor y
   producto. Debajo de cada producto se ve de dónde salió ("Lun 1 · Jue 2 ·
   Inv. Jue 1"). El total se pasa a la unidad en que se cuenta el producto

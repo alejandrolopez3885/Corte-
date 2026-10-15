@@ -74,6 +74,7 @@ export function ControlBarPanel({
         onGuardar={(fecha, texto) => onGuardarConteo("bar", fecha, texto)}
         pedidos={pedidosDiarios.bar}
         onGuardarPedido={(fecha, pedido) => onGuardarPedido("bar", fecha, pedido)}
+        conPedido={false}
       />
     );
   }
