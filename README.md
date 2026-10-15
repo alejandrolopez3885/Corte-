@@ -152,7 +152,13 @@ estando en Nómina te regresa al menú de Equipo):
   hoy" = generada hasta hoy + percepciones extra − descuentos. Arriba de
   todo, debajo del selector, un resumen con el **Total a pagar hasta
   hoy** de todo el personal (resaltado), y debajo de él la generada hasta
-  hoy, las percepciones extra (si hay) y los descuentos. En la tarjeta de
+  hoy, las percepciones extra (si hay) y los descuentos. En la vista del
+  dueño las tarjetas del personal son plegables y arrancan cerradas:
+  cerrada, cada persona es una sola fila con su nombre, su etiqueta
+  Confirmada/Pendiente, lo que le toca "A recibir hasta hoy" y una
+  flechita; tocar la fila la abre (o la cierra) y se pueden tener varias
+  abiertas a la vez. La vista del empleado siempre muestra su tarjeta
+  abierta. Abierta, en la tarjeta de
   cada quien: nombre (con su etiqueta Confirmada/Pendiente), área,
   sueldo diario y días trabajados; un recuadro verde con **A recibir
   hasta hoy** en grande y su cuenta debajo — la generada hasta hoy, cada

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowLeft, Check, Download, Trash2, Wallet } from "lucide-react";
+import { ArrowLeft, Check, ChevronDown, ChevronUp, Download, Trash2, Wallet } from "lucide-react";
 import { Empty, Field, Sheet, SumInput } from "../ui";
 import { computeNominaHastaHoyPorEmpleado, computeNominaSemana, computeWeekSummary, formatShortDayDate, formatWeekRange, isoWeekNumber, money, resolveWeekStartDate, sumFromText, todayIso, uid } from "../../lib/dataModel";
 import { downloadNominaImage } from "../../lib/nominaImage";
@@ -54,6 +54,10 @@ export function NominaPanel({
   const [weekIndex, setWeekIndex] = useState(initialWeekIndex);
   const [addingDescuentoFor, setAddingDescuentoFor] = useState<{ empleadoId: string; nombre: string } | null>(null);
   const [addingExtraFor, setAddingExtraFor] = useState<{ empleadoId: string; nombre: string } | null>(null);
+  // Tarjetas abiertas en la vista del dueño — todas arrancan cerradas
+  // (solo nombre y lo que le toca hasta hoy) para que la lista no sea tan
+  // larga. La vista del empleado (soloLectura) siempre va abierta.
+  const [abiertas, setAbiertas] = useState<string[]>([]);
 
   const soloLectura = !!soloEmpleadoId;
   const month = months[monthKey];
@@ -106,6 +110,10 @@ export function NominaPanel({
   const efectivoSemana = week ? computeWeekSummary(week).efectivoRecibido : 0;
   const nominaEfectivo = Math.max(0, Math.min(efectivoSemana, totalNeto));
   const nominaTransferencia = Math.round((totalNeto - nominaEfectivo) * 100) / 100;
+
+  function toggleAbierta(empleadoId: string) {
+    setAbiertas((cur) => (cur.includes(empleadoId) ? cur.filter((id) => id !== empleadoId) : [...cur, empleadoId]));
+  }
 
   function addDescuento(empleadoId: string, tipo: NominaDescuentoTipo, concepto: string, monto: number) {
     const descuentos = descuentosSemana?.descuentos || [];
@@ -272,130 +280,149 @@ export function NominaPanel({
               )}
             </div>
           )}
-          {reporte.map((e) => (
-            <div className="nomina-emp" key={e.empleadoId}>
-              <div className="nomina-emp-head">
-                <span className="nomina-emp-nombre">
-                  {e.nombre}
+          {reporte.map((e) => {
+            const abierta = soloLectura || abiertas.includes(e.empleadoId);
+            return (
+              <div className="nomina-emp" key={e.empleadoId}>
+                <div
+                  className={`nomina-emp-head ${soloLectura ? "" : "plegable"}`}
+                  onClick={soloLectura ? undefined : () => toggleAbierta(e.empleadoId)}
+                >
+                  <span className="nomina-emp-nombre">
+                    {e.nombre}
+                    {!soloLectura && (
+                      <span className={`nomina-confirm-badge ${e.confirmado ? "confirmado" : "pendiente"}`}>
+                        {e.confirmado ? (
+                          <>
+                            <Check size={11} /> Confirmada
+                          </>
+                        ) : (
+                          "Pendiente"
+                        )}
+                      </span>
+                    )}
+                  </span>
                   {!soloLectura && (
-                    <span className={`nomina-confirm-badge ${e.confirmado ? "confirmado" : "pendiente"}`}>
-                      {e.confirmado ? (
-                        <>
-                          <Check size={11} /> Confirmada
-                        </>
-                      ) : (
-                        "Pendiente"
-                      )}
+                    <span className="nomina-emp-head-right">
+                      <span className="nomina-emp-head-monto">
+                        <small>A recibir hasta hoy</small>
+                        <strong>{money(aRecibirHastaHoy(e))}</strong>
+                      </span>
+                      {abierta ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                     </span>
                   )}
-                </span>
-              </div>
-              {e.sueldoDiario === 0 ? (
-                <p className="nomina-emp-sub">Sin sueldo diario capturado en Personal.</p>
-              ) : (
-                <p className="nomina-emp-sub">
-                  {e.areaNombre} · {money(e.sueldoDiario)}/día · {e.diasTrabajados} días trabajados
-                  {e.offPagado ? " · descanso pagado" : ""}
-                </p>
-              )}
-              <div className="nomina-recibir">
-                <div className="nomina-recibir-top">
-                  <span>A recibir hasta hoy</span>
-                  <strong>{money(aRecibirHastaHoy(e))}</strong>
                 </div>
-                <div className="nomina-recibir-calc">
-                  <div className="nomina-recibir-row">
-                    <span className="nomina-recibir-item">Generada hasta hoy ({formatShortDayDate(today)})</span>
-                    <span>{money(hastaHoyPorEmpleado[e.empleadoId])}</span>
-                    {!soloLectura && (e.extras.length > 0 || e.descuentos.length > 0) && <span className="icon-btn-spacer" />}
-                  </div>
-                  {e.extras.map((x) => (
-                    <div className="nomina-recibir-row" key={x.id}>
-                      <span className="nomina-recibir-item">
-                        {NOMINA_EXTRA_TIPOS.find((t) => t.value === x.tipo)?.label}
-                        {x.concepto ? ` · ${x.concepto}` : ""}
-                      </span>
-                      <span>+{money(x.monto)}</span>
-                      {!soloLectura && (
-                        <button className="icon-btn" onClick={() => removeExtra(x.id)} aria-label="Quitar percepción extra">
-                          <Trash2 size={13} />
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                  {e.descuentos.map((d) => (
-                    <div className="nomina-recibir-row" key={d.id}>
-                      <span className="nomina-recibir-item">
-                        {NOMINA_DESCUENTO_TIPOS.find((t) => t.value === d.tipo)?.label}
-                        {d.concepto ? ` · ${d.concepto}` : ""}
-                        {d.origen === "corte" && <em> (Corte)</em>}
-                      </span>
-                      <span>-{money(d.monto)}</span>
-                      {!soloLectura &&
-                        (d.origen === "corte" ? (
-                          <span className="icon-btn-spacer" />
-                        ) : (
-                          <button className="icon-btn" onClick={() => removeDescuento(d.id)} aria-label="Quitar descuento">
-                            <Trash2 size={13} />
-                          </button>
+                {abierta && (
+                  <>
+                    {e.sueldoDiario === 0 ? (
+                      <p className="nomina-emp-sub">Sin sueldo diario capturado en Personal.</p>
+                    ) : (
+                      <p className="nomina-emp-sub">
+                        {e.areaNombre} · {money(e.sueldoDiario)}/día · {e.diasTrabajados} días trabajados
+                        {e.offPagado ? " · descanso pagado" : ""}
+                      </p>
+                    )}
+                    <div className="nomina-recibir">
+                      <div className="nomina-recibir-top">
+                        <span>A recibir hasta hoy</span>
+                        <strong>{money(aRecibirHastaHoy(e))}</strong>
+                      </div>
+                      <div className="nomina-recibir-calc">
+                        <div className="nomina-recibir-row">
+                          <span className="nomina-recibir-item">Generada hasta hoy ({formatShortDayDate(today)})</span>
+                          <span>{money(hastaHoyPorEmpleado[e.empleadoId])}</span>
+                          {!soloLectura && (e.extras.length > 0 || e.descuentos.length > 0) && <span className="icon-btn-spacer" />}
+                        </div>
+                        {e.extras.map((x) => (
+                          <div className="nomina-recibir-row" key={x.id}>
+                            <span className="nomina-recibir-item">
+                              {NOMINA_EXTRA_TIPOS.find((t) => t.value === x.tipo)?.label}
+                              {x.concepto ? ` · ${x.concepto}` : ""}
+                            </span>
+                            <span>+{money(x.monto)}</span>
+                            {!soloLectura && (
+                              <button className="icon-btn" onClick={() => removeExtra(x.id)} aria-label="Quitar percepción extra">
+                                <Trash2 size={13} />
+                              </button>
+                            )}
+                          </div>
                         ))}
+                        {e.descuentos.map((d) => (
+                          <div className="nomina-recibir-row" key={d.id}>
+                            <span className="nomina-recibir-item">
+                              {NOMINA_DESCUENTO_TIPOS.find((t) => t.value === d.tipo)?.label}
+                              {d.concepto ? ` · ${d.concepto}` : ""}
+                              {d.origen === "corte" && <em> (Corte)</em>}
+                            </span>
+                            <span>-{money(d.monto)}</span>
+                            {!soloLectura &&
+                              (d.origen === "corte" ? (
+                                <span className="icon-btn-spacer" />
+                              ) : (
+                                <button className="icon-btn" onClick={() => removeDescuento(d.id)} aria-label="Quitar descuento">
+                                  <Trash2 size={13} />
+                                </button>
+                              ))}
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  ))}
-                </div>
+                    <div className="nomina-dias">
+                      {e.dias.map((d) => (
+                        <div className={`nomina-dia ${d.monto === 0 ? "cero" : ""} ${d.esFestivo ? "festivo" : ""}`} key={d.day}>
+                          <div className="nomina-dia-label">{DAY_SHORT[d.day]}</div>
+                          <div className="nomina-dia-valor">{d.valor || "–"}</div>
+                          <div className="nomina-dia-monto">{money(d.monto)}</div>
+                        </div>
+                      ))}
+                    </div>
+      
+                    {!soloLectura && (
+                      <div className="field-row">
+                        <button
+                          className="link-btn"
+                          onClick={() => setAddingExtraFor({ empleadoId: e.empleadoId, nombre: e.nombre })}
+                        >
+                          + Agregar percepción extra
+                        </button>
+                        <button
+                          className="link-btn"
+                          onClick={() => setAddingDescuentoFor({ empleadoId: e.empleadoId, nombre: e.nombre })}
+                        >
+                          + Agregar descuento
+                        </button>
+                      </div>
+                    )}
+      
+                    <div className="nomina-cierre">
+                      <span>Al cierre de la semana (según horario)</span>
+                      <span>{money(e.neto)}</span>
+                    </div>
+      
+                    {soloLectura &&
+                      (e.confirmado ? (
+                        <div className="nomina-confirm-ok">
+                          <Check size={15} />
+                          <span>
+                            Confirmaste que recibiste tu nómina correcta
+                            {e.confirmadoEn &&
+                              ` el ${new Date(e.confirmadoEn).toLocaleString("es-MX", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}`}
+                            .
+                          </span>
+                        </div>
+                      ) : (
+                        <button
+                          className="btn-primary"
+                          onClick={() => onConfirmarNomina?.(monthKey, weekIndex, e.empleadoId, e.nombre)}
+                        >
+                          <Check size={16} /> Recibí mi nómina correcta
+                        </button>
+                      ))}
+                  </>
+                )}
               </div>
-              <div className="nomina-dias">
-                {e.dias.map((d) => (
-                  <div className={`nomina-dia ${d.monto === 0 ? "cero" : ""} ${d.esFestivo ? "festivo" : ""}`} key={d.day}>
-                    <div className="nomina-dia-label">{DAY_SHORT[d.day]}</div>
-                    <div className="nomina-dia-valor">{d.valor || "–"}</div>
-                    <div className="nomina-dia-monto">{money(d.monto)}</div>
-                  </div>
-                ))}
-              </div>
-
-              {!soloLectura && (
-                <div className="field-row">
-                  <button
-                    className="link-btn"
-                    onClick={() => setAddingExtraFor({ empleadoId: e.empleadoId, nombre: e.nombre })}
-                  >
-                    + Agregar percepción extra
-                  </button>
-                  <button
-                    className="link-btn"
-                    onClick={() => setAddingDescuentoFor({ empleadoId: e.empleadoId, nombre: e.nombre })}
-                  >
-                    + Agregar descuento
-                  </button>
-                </div>
-              )}
-
-              <div className="nomina-cierre">
-                <span>Al cierre de la semana (según horario)</span>
-                <span>{money(e.neto)}</span>
-              </div>
-
-              {soloLectura &&
-                (e.confirmado ? (
-                  <div className="nomina-confirm-ok">
-                    <Check size={15} />
-                    <span>
-                      Confirmaste que recibiste tu nómina correcta
-                      {e.confirmadoEn &&
-                        ` el ${new Date(e.confirmadoEn).toLocaleString("es-MX", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}`}
-                      .
-                    </span>
-                  </div>
-                ) : (
-                  <button
-                    className="btn-primary"
-                    onClick={() => onConfirmarNomina?.(monthKey, weekIndex, e.empleadoId, e.nombre)}
-                  >
-                    <Check size={16} /> Recibí mi nómina correcta
-                  </button>
-                ))}
-            </div>
-          ))}
+            );
+          })}
 
           {!soloLectura && (
             <div className="report-list">
