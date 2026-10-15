@@ -13,7 +13,7 @@ import {
 } from "../lib/dataModel";
 import { removeAssignmentByStaffAndDate, upsertAssignment, useStaffAssignments } from "../lib/staffAssignments";
 import { DAYS, DAY_SHORT } from "../lib/types";
-import type { AreaEntry, ConteoTextoArea, CreditoProveedores, DayData, DayName, EmpleadoEntry, Gasto, GastoCategoria, HorarioSemana, InsumoEntry, MeseroCatalogEntry, MeseroCut, NominaDescuentosSemana, PedidoSemanal, Profile, ProveedorCatalogEntry, PuestoEntry, Transferencia, WeekData } from "../lib/types";
+import type { AreaEntry, ConteoTextoArea, CreditoProveedores, DayData, DayName, EmpleadoEntry, Gasto, GastoCategoria, HorarioSemana, InsumoEntry, MeseroCatalogEntry, MeseroCut, NominaDescuentosSemana, Profile, ProveedorCatalogEntry, PuestoEntry, Transferencia, WeekData } from "../lib/types";
 import { Empty } from "../components/ui";
 import { MonthModal } from "../components/modals/MonthModal";
 import { MeseroModal, type MeseroFormValues } from "../components/modals/MeseroModal";
@@ -37,7 +37,7 @@ import { ControlBarPanel } from "../components/panels/ControlBarPanel";
 import { ControlCocinaPanel } from "../components/panels/ControlCocinaPanel";
 import { InsumosPanel } from "../components/panels/InsumosPanel";
 import { InventarioNotasPanel } from "../components/panels/InventarioNotasPanel";
-import { PedidosSemanalPanel } from "../components/panels/PedidosSemanalPanel";
+import { PedidosTotalPanel } from "../components/panels/PedidosTotalPanel";
 import StaffAccessShell from "./StaffAccessShell";
 
 type ModalState =
@@ -671,17 +671,6 @@ export default function CortesApp({ profile }: { profile: Profile }) {
     persist(next);
   }
 
-  // Pedidos semanales (Negocio > Pedidos) — mismas semanas que Inventario;
-  // la cantidad de Inventario que se muestra ahí es solo de lectura, no
-  // vive en esta estructura.
-  function savePedidoSemana(monthKey: string, weekIndex: number, pedido: PedidoSemanal) {
-    if (!data) return;
-    const next = structuredClone(data);
-    if (!next.pedidosSemanal[monthKey]) next.pedidosSemanal[monthKey] = { weeks: [null, null, null, null] };
-    next.pedidosSemanal[monthKey].weeks[weekIndex] = pedido;
-    persist(next);
-  }
-
   function toggleProveedorJueves(proveedorId: string, incluyeJueves: boolean) {
     if (!data) return;
     const next = structuredClone(data);
@@ -1045,7 +1034,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
       )}
 
       {isOwner && activeTab === "negocio" && negocioView === "pedidos" && (
-        <PedidosSemanalPanel
+        <PedidosTotalPanel
           onBack={() => setNegocioView("menu")}
           insumos={data.insumos}
           proveedores={data.proveedores}
@@ -1053,10 +1042,8 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           monthKeys={monthKeys}
           initialMonthKey={mostRecentMonthKey as string}
           initialWeekIndex={mostRecentWeekIdx}
-          pedidosSemanal={data.pedidosSemanal}
-          inventarioSemanal={data.inventarioSemanal}
-          onGuardarSemana={savePedidoSemana}
-          onEditarProveedores={() => setModal({ type: "proveedores" })}
+          pedidosDiarios={data.pedidosDiarios}
+          pedidosInventario={data.pedidosInventario}
         />
       )}
 

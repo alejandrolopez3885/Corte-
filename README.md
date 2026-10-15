@@ -256,7 +256,9 @@ estando en Nómina te regresa al menú de Equipo):
   vuelo desde el propio insumo), agrupados en la lista por proveedor, y
   una marca de "alta rotación" para que aparezca en el Conteo diario. Opcional,
   "Se pide por": la presentación en que se le pide al proveedor (caja,
-  bolsa, kg, pz…). La
+  bolsa, kg, pz…). Si es distinta a la unidad en que se cuenta,
+  aparece "¿Cuánto trae 1 [esa presentación]?" para convertir lo pedido a
+  kg/pz en Pedidos. La
   unidad de medida es un selector con solo dos opciones, Kg o Pieza — en
   Cocina se elige libremente (Kg por default), y en Bar queda fijo en
   Pieza y el selector se ve bloqueado, porque ahí siempre se cuenta por
@@ -286,18 +288,19 @@ estando en Nómina te regresa al menú de Equipo):
   jueves, solo los de proveedores marcados) y no aparecen en las notas,
   sin contar los de alta rotación, que van en el Conteo diario. También
   existe como permiso "Inventario" en "Acceso a la app", para que el jefe
-  de cocina lo capture desde su cuenta; y "Pedidos" — misma
-  estructura, filtros, switch Completo/Jueves y comportamiento de guardar/
-  bloquear/editar que Inventario, con las mismas semanas, pero la
-  cantidad que se captura y se guarda ahí es la que se va a pedir, no la
-  que hay en existencia. Junto a cada insumo se ve, solo de lectura,
-  "Inventario: N" con la cantidad que ya se contó en Inventario esa misma
-  semana (o "–" si no se ha contado) — nada más como referencia para
-  decidir cuánto pedir; nunca se guarda ni se puede editar desde Pedidos.
-  Ambas secciones son completamente independientes (mismos insumos, pero
-  cada una con su propio historial), así que guardar un pedido no toca el
-  inventario de esa semana ni viceversa. El manejo de si un pedido ya
-  llegó o no se deja para más adelante.
+  de cocina lo capture desde su cuenta; y "Pedidos" — solo consulta: el
+  total de lo pedido en la semana elegida (hasta hoy), sumando lo guardado
+  con "Guardar pedido" en el Conteo diario (Cocina y Bar, lunes a domingo)
+  y en el Inventario del jueves y del domingo, separado por proveedor y
+  producto. Debajo de cada producto se ve de dónde salió ("Lun 1 · Jue 2 ·
+  Inv. Jue 1"). El total se pasa a la unidad en que se cuenta el producto
+  (kg, o pz para lo que se cuenta por pieza) con la equivalencia del
+  Catálogo — "¿Cuánto trae 1 [Se pide por]?", ej. 1 caja = 10 kg —, para
+  que cuadre con el inventario inicial y final: 4 cajas × 10 kg = 40 kg. Si
+  a un producto le falta esa equivalencia, se queda en su presentación y
+  se marca en naranja. Arriba, qué días ya tienen pedido guardado (y aviso
+  de los que ya pasaron sin él). Con Mes/Semana se ve cualquier semana
+  anterior. La captura semanal que vivía antes aquí se quitó
 - **Dashboard**: reporte de resultados de la semana, solo para leer (con
   porcentajes sobre la venta total): Venta total, Gastos operativos (suma
   los de efectivo categorizados como Operación más los de transferencia),

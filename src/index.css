@@ -674,3 +674,26 @@ body {
 .inv-no-contados { background: var(--surface-alt); border-radius: 12px; padding: 10px 14px; font-size: 13px; color: var(--ink-soft); }
 .inv-no-contados summary { cursor: pointer; font-weight: 600; }
 .inv-no-contados p { margin: 8px 0 0; line-height: 1.5; }
+.equivalencia-row { display: flex; align-items: center; gap: 10px; }
+.equivalencia-row > *:first-child { width: 110px; }
+
+/* ---- Pedidos: total de la semana ---- */
+.pedidos-estado {
+  display: flex; flex-direction: column; gap: 6px; font-size: 12.5px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 10px 14px;
+}
+.pedidos-estado-fila { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.pedidos-estado-dias { display: flex; gap: 4px; }
+.pedidos-dia { width: 30px; text-align: center; border-radius: 6px; padding: 2px 0; font-size: 11px; }
+.pedidos-dia.ancho { width: 46px; }
+.pedidos-dia.ok { background: var(--good-soft); color: var(--good); font-weight: 600; }
+.pedidos-dia.falta { background: var(--surface-alt); color: var(--ink-soft); }
+.pedidos-dia.futuro { color: var(--border); }
+.pedidos-estado-aviso { display: flex; align-items: center; gap: 5px; color: var(--warn); }
+.pedidos-grupo-titulo { display: flex; justify-content: space-between; }
+.catalog-row .pedidos-fuente-inv { color: var(--accent); font-weight: 600; }
+.catalog-row .pedidos-total { font-weight: 600; font-size: 16px; color: var(--ink); text-align: right; white-space: nowrap; flex-shrink: 0; }
+.catalog-row .pedidos-total small { font-weight: 500; font-size: 13px; color: var(--ink-soft); }
+.catalog-row .pedidos-total em { display: block; font-style: normal; font-weight: 400; font-size: 11.5px; color: var(--ink-soft); }
+.pedidos-total-row.falta-equivalencia { border-color: var(--warn); background: var(--warn-soft); }
+.catalog-row.falta-equivalencia .pedidos-total em { color: var(--warn); }

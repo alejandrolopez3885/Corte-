@@ -941,6 +941,24 @@ export function computeVentaProyeccion(puntos: WeekTrendPoint[]): VentaProyeccio
 
 // Lista base del Conteo diario en texto: Cocina usa la lista fija que pidió
 // el dueño; Bar arma la suya con sus insumos de alta rotación.
+// Unidad de conteo para mostrar: "pieza" → "pz".
+export function unidadConteo(insumo: InsumoEntry): string {
+  return insumo.unidad === "pieza" ? "pz" : insumo.unidad;
+}
+
+// Si se pide en la misma unidad en que se cuenta (o no tiene "Se pide
+// por"), no hace falta equivalencia.
+export function pidePorOtraUnidad(insumo: InsumoEntry): boolean {
+  const u = normalizarNombre(insumo.unidadPedido || "");
+  if (!u) return false;
+  const base = unidadConteo(insumo);
+  const sinonimos: Record<string, string[]> = {
+    kg: ["kg", "kgs", "kilo", "kilos", "k"],
+    pz: ["pz", "pza", "pzas", "pzs", "pieza", "piezas"],
+  };
+  return !(sinonimos[base] || [base]).includes(u);
+}
+
 export function plantillaConteo(area: ConteoTextoArea, insumos: InsumoEntry[]): string {
   if (area === "cocina") return PLANTILLA_CONTEO_COCINA;
   return insumos
