@@ -180,14 +180,17 @@ estando en Nómina te regresa al menú de Equipo):
   pagar − nómina en efectivo). Si el efectivo alcanza para todo el neto,
   la nómina en efectivo es el neto completo y la transferencia queda en
   $0.00 (y si el efectivo calculado sale negativo, se toma como $0.00)).
-  Igual que en Horarios, hay botones "Imagen · Piso" /
-  "Imagen · Cocina" / "Imagen · Las 2 áreas" (solo los que apliquen) que
-  generan y descargan un PNG con esa parte de la nómina de la semana sin
+  A diferencia de Horarios (que tiene una imagen por área), aquí hay un
+  solo botón, "Copiar imagen de la nómina", que genera un PNG con la
+  nómina de la semana de todo el personal (todas las áreas) sin
   descuentos (bruto + percepciones extra si las hay, marcadas con un
   asterisco), agrupada por área con subtotales y un total general al
-  final, imitando la hoja de cálculo que se usaba antes para esto —
-  pensado para compartir por WhatsApp con quien paga cada área o con
-  quien paga todo. Solo en esa imagen el número
+  final, imitando la hoja de cálculo que se usaba antes para esto — y lo
+  copia al portapapeles para pegarlo directo en el chat de WhatsApp. Al
+  copiarla, el botón cambia unos segundos a "¡Copiada! Pégala en
+  WhatsApp"; si el navegador no permite copiar imágenes, el PNG se
+  descarga como antes y aparece el aviso "Tu navegador no permite copiar
+  imágenes — se descargó el PNG". Solo en esa imagen el número
   de semana es el de la semana del año (ISO), no el "Semana 1"-"4" del
   mes que se usa en toda la app — ej. la semana del 14 al 20 de
   septiembre se ve ahí como "Semana 38".

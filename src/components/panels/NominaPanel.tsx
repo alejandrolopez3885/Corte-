@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { ArrowLeft, Check, ChevronDown, ChevronUp, Download, Trash2, Wallet } from "lucide-react";
+import { ArrowLeft, Check, ChevronDown, ChevronUp, Copy, Trash2, Wallet } from "lucide-react";
 import { Empty, Field, Sheet, SumInput } from "../ui";
 import { computeNominaHastaHoyPorEmpleado, computeNominaSemana, computeWeekSummary, formatShortDayDate, formatWeekRange, isoWeekNumber, money, resolveWeekStartDate, sumFromText, todayIso, uid } from "../../lib/dataModel";
-import { downloadNominaImage } from "../../lib/nominaImage";
-import { DAY_SHORT, HORARIO_AREAS_FIJAS, NOMINA_DESCUENTO_TIPOS, NOMINA_EXTRA_TIPOS } from "../../lib/types";
+import { copyNominaImage } from "../../lib/nominaImage";
+import { DAY_SHORT, NOMINA_DESCUENTO_TIPOS, NOMINA_EXTRA_TIPOS } from "../../lib/types";
 import type {
   EmpleadoEntry,
   HorarioMonthData,
@@ -58,6 +58,9 @@ export function NominaPanel({
   // (solo nombre y lo que le toca hasta hoy) para que la lista no sea tan
   // larga. La vista del empleado (soloLectura) siempre va abierta.
   const [abiertas, setAbiertas] = useState<string[]>([]);
+  // Resultado del último "Copiar imagen" — se borra solo a los pocos
+  // segundos para que el botón vuelva a su texto normal.
+  const [copiaEstado, setCopiaEstado] = useState<"copiada" | "descargada" | null>(null);
 
   const soloLectura = !!soloEmpleadoId;
   const month = months[monthKey];
@@ -110,6 +113,18 @@ export function NominaPanel({
   const efectivoSemana = week ? computeWeekSummary(week).efectivoRecibido : 0;
   const nominaEfectivo = Math.max(0, Math.min(efectivoSemana, totalNeto));
   const nominaTransferencia = Math.round((totalNeto - nominaEfectivo) * 100) / 100;
+
+  // Una sola imagen con todo el personal (todas las áreas) — se copia al
+  // portapapeles para pegarla en WhatsApp.
+  async function copiarImagen() {
+    const copiada = await copyNominaImage(
+      reporte,
+      `Nómina · ${month.label} · Semana ${isoWeekNumber(weekStartDate)}`,
+      `${formatWeekRange(weekStartDate)} · Sueldo bruto, sin descuentos`
+    );
+    setCopiaEstado(copiada ? "copiada" : "descargada");
+    setTimeout(() => setCopiaEstado(null), copiada ? 3000 : 6000);
+  }
 
   function toggleAbierta(empleadoId: string) {
     setAbiertas((cur) => (cur.includes(empleadoId) ? cur.filter((id) => id !== empleadoId) : [...cur, empleadoId]));
@@ -244,41 +259,22 @@ export function NominaPanel({
             </div>
           )}
           {!soloLectura && (
-            <div className="field-row horario-descargas">
-              {HORARIO_AREAS_FIJAS.map((a) => {
-                const reporteArea = reporte.filter((e) => e.areaNombre.toLowerCase() === a.nombre.toLowerCase());
-                if (reporteArea.length === 0) return null;
-                return (
-                  <button
-                    key={a.id}
-                    className="link-btn"
-                    onClick={() =>
-                      downloadNominaImage(
-                        reporteArea,
-                        `Nómina · ${a.nombre} · ${month.label} · Semana ${isoWeekNumber(weekStartDate)}`,
-                        `${formatWeekRange(weekStartDate)} · Sueldo bruto, sin descuentos`
-                      )
-                    }
-                  >
-                    <Download size={15} /> Imagen · {a.nombre}
-                  </button>
-                );
-              })}
-              {new Set(reporte.map((e) => e.areaNombre)).size > 1 && (
-                <button
-                  className="link-btn"
-                  onClick={() =>
-                    downloadNominaImage(
-                      reporte,
-                      `Nómina · ${month.label} · Semana ${isoWeekNumber(weekStartDate)}`,
-                      `${formatWeekRange(weekStartDate)} · Sueldo bruto, sin descuentos`
-                    )
-                  }
-                >
-                  <Download size={15} /> Imagen · Las 2 áreas
-                </button>
-              )}
+            <div className="field-row">
+              <button className="link-btn" onClick={copiarImagen}>
+                {copiaEstado === "copiada" ? (
+                  <>
+                    <Check size={15} /> ¡Copiada! Pégala en WhatsApp
+                  </>
+                ) : (
+                  <>
+                    <Copy size={15} /> Copiar imagen de la nómina
+                  </>
+                )}
+              </button>
             </div>
+          )}
+          {!soloLectura && copiaEstado === "descargada" && (
+            <p className="hint">Tu navegador no permite copiar imágenes — se descargó el PNG.</p>
           )}
           {reporte.map((e) => {
             const abierta = soloLectura || abiertas.includes(e.empleadoId);
