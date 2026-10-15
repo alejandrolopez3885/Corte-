@@ -112,6 +112,9 @@ export interface NominaEmpleadoSemana {
   // NominaConfirmacion.
   confirmado: boolean;
   confirmadoEn?: string;
+  // Lo que se le pagó al marcarla (su "a recibir hasta hoy" de ese
+  // momento). Vacío en marcas viejas, de antes de que se guardara.
+  montoPagado?: number;
 }
 
 // Descuentos de nómina capturados a mano por empleado — tardanzas,
@@ -167,6 +170,10 @@ export interface NominaConfirmacion {
   empleadoId: string;
   nombre: string;
   confirmadoEn: string; // ISO datetime
+  // Lo que se le pagó al marcarla: su "a recibir hasta hoy" en ese
+  // momento. Si después trabaja más días, la diferencia queda en el
+  // restante por pagar.
+  monto?: number;
 }
 
 export interface NominaDescuentosSemana {

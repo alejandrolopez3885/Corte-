@@ -41,8 +41,9 @@ export function NominaPanel({
   onSaveDescuentos?: (monthKey: string, weekIndex: number, semana: NominaDescuentosSemana) => void;
   onGoToHorarios?: () => void;
   // Etiqueta Pendiente/Pagada de cada persona (solo dueño): un toque la
-  // marca como pagada esa semana y otro la regresa a pendiente.
-  onTogglePagado?: (monthKey: string, weekIndex: number, empleadoId: string, nombre: string) => void;
+  // marca como pagada esa semana guardando lo que le tocaba hasta ese
+  // momento (monto), y otro la regresa a pendiente.
+  onTogglePagado?: (monthKey: string, weekIndex: number, empleadoId: string, nombre: string, monto: number) => void;
   // Cuando se pasa, es la vista de una cuenta de equipo viendo solo su
   // propia nómina: se filtra a esa sola persona y queda de solo lectura
   // (sin agregar/quitar descuentos ni percepciones extra de nadie).
@@ -89,8 +90,6 @@ export function NominaPanel({
   const totalDescuentos = reporte.reduce((s, e) => s + e.totalDescuentos, 0);
   const totalNeto = reporte.reduce((s, e) => s + e.neto, 0);
   const pagados = reporte.filter((e) => e.confirmado);
-  const totalPagado = pagados.reduce((s, e) => s + e.neto, 0);
-  const totalPorPagar = totalNeto - totalPagado;
 
   const today = todayIso();
   const hastaHoyPorEmpleado = computeNominaHastaHoyPorEmpleado(monthKey, weekIndex, month, semana, empleados);
@@ -102,6 +101,12 @@ export function NominaPanel({
   const aRecibirHastaHoy = (e: (typeof reporte)[number]) =>
     Math.round(((hastaHoyPorEmpleado[e.empleadoId] || 0) + e.totalExtras - e.totalDescuentos) * 100) / 100;
   const totalARecibirHastaHoy = reporte.reduce((s, e) => s + aRecibirHastaHoy(e), 0);
+  // Lo pagado a cada quien es lo que se guardó al marcarla; las marcas
+  // viejas (sin monto) usan lo que le toca hasta hoy. El restante es lo
+  // que se debe hasta hoy menos lo ya pagado.
+  const montoPagado = (e: (typeof reporte)[number]) => e.montoPagado ?? aRecibirHastaHoy(e);
+  const totalPagado = Math.round(pagados.reduce((s, e) => s + montoPagado(e), 0) * 100) / 100;
+  const totalPorPagar = Math.round((totalARecibirHastaHoy - totalPagado) * 100) / 100;
 
   // Cómo se paga el neto de la semana: primero con el efectivo que debe
   // haber según el corte semanal (el calculado, no el contado — los
@@ -291,12 +296,12 @@ export function NominaPanel({
                         onClick={(ev) => {
                           // No abre ni cierra la tarjeta — solo cambia el estado de pago.
                           ev.stopPropagation();
-                          onTogglePagado?.(monthKey, weekIndex, e.empleadoId, e.nombre);
+                          onTogglePagado?.(monthKey, weekIndex, e.empleadoId, e.nombre, aRecibirHastaHoy(e));
                         }}
                       >
                         {e.confirmado ? (
                           <>
-                            <Check size={12} /> Pagada
+                            <Check size={12} /> Pagada {money(montoPagado(e))}
                           </>
                         ) : (
                           "Pendiente"
@@ -415,11 +420,17 @@ export function NominaPanel({
                 </strong>
               </div>
               <div className="report-row">
-                <span className="report-row-label">Total pagado</span>
+                <span className="report-row-label">
+                  Total pagado
+                  <em>lo que les pagaste al marcarlos</em>
+                </span>
                 <strong className="report-row-amount good">{money(totalPagado)}</strong>
               </div>
               <div className={`report-row total ${totalPorPagar > 0 ? "" : "positive"}`}>
-                <span className="report-row-label">Restante por pagar</span>
+                <span className="report-row-label">
+                  Restante por pagar
+                  <em>total a pagar hasta hoy − total pagado</em>
+                </span>
                 <strong className="report-row-amount">{money(totalPorPagar)}</strong>
               </div>
             </div>

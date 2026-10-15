@@ -721,7 +721,7 @@ export function computeNominaSemana(
       result.push({
         empleadoId: fila.empleadoId, nombre: fila.nombre, areaNombre: area.nombre, sueldoDiario,
         dias, diasTrabajados, offPagado, bruto, extras, totalExtras, descuentos, totalDescuentos, neto,
-        confirmado: !!confirmacion, confirmadoEn: confirmacion?.confirmadoEn,
+        confirmado: !!confirmacion, confirmadoEn: confirmacion?.confirmadoEn, montoPagado: confirmacion?.monto,
       });
     });
   });

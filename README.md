@@ -174,7 +174,8 @@ estando en Nómina te regresa al menú de Equipo):
   "Al cierre de la semana (según horario)" con el neto de la semana
   completa. Hasta abajo de la página (solo el dueño), primero el control
   de pagos (cuántos ya están pagados, total pagado y restante por pagar,
-  calculados sobre el neto de la semana completa) y después el bloque
+  calculados sobre lo que se debe hasta hoy — ver "Control de pagos" más
+  abajo) y después el bloque
   "Cómo se paga al cierre de la semana": Nómina bruto, Descuentos
   (adelantos, comidas, retardos), Percepciones extra (vacaciones,
   finiquito, bonos, etc.), **Neto a pagar** (resaltado), **Nómina en
@@ -204,16 +205,24 @@ estando en Nómina te regresa al menú de Equipo):
   de cada quien hay una etiqueta que se toca — por defecto dice
   "Pendiente" (gris); un toque la cambia a "✓ Pagada" (verde) para marcar
   que ya le pagaste esa semana, y otro toque la regresa a "Pendiente".
+  Al marcarla se guarda lo que le tocaba en ese momento (su "A recibir
+  hasta hoy") y la etiqueta lo muestra ("✓ Pagada $2,000.00"); si
+  después trabaja más días, la etiqueta se queda con lo que se le pagó y
+  la diferencia sigue en el restante por pagar. Regresarla a "Pendiente"
+  borra ese monto.
   Funciona con la tarjeta cerrada: tocar la etiqueta no abre ni cierra la
   tarjeta. Al final de la página, el apartado de pagos muestra "Ya
-  pagados" ("2 de 5"), el total pagado (el neto de la semana de quienes
-  están marcados) y el restante por pagar (lo de quienes no) — para
+  pagados" ("2 de 5"), el total pagado (la suma de lo que se guardó al
+  marcar a cada quien) y el restante por pagar (total a pagar hasta hoy −
+  total pagado; al cierre de la semana, si ya se le pagó todo a todos,
+  queda en $0) — para
   llevar el control de a quién ya le entregaste su pago. Es
   independiente de los descuentos/percepciones extra y no bloquea que
   sigas editando esa nómina. El empleado ya no confirma nada desde su
   cuenta (se quitó el botón "Recibí mi nómina correcta") ni ve este
   estado; las confirmaciones que se hicieron antes con ese botón cuentan
-  como "Pagada".
+  como "Pagada" y, como no tienen monto guardado, toman lo que le toca
+  hasta hoy hasta que se vuelvan a marcar.
   Personal
   sigue siendo una lista aparte del catálogo de Meseros — este es solo
   nombre, sin sueldo, para el corte.

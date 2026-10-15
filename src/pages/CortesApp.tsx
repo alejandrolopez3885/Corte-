@@ -661,14 +661,14 @@ export default function CortesApp({ profile }: { profile: Profile }) {
   // Se guarda en las mismas "confirmaciones" donde antes cada empleado
   // confirmaba "Recibí mi nómina correcta", así que esas cuentan como
   // pagadas.
-  function togglePagoNomina(monthKey: string, weekIndex: number, empleadoId: string, nombre: string) {
+  function togglePagoNomina(monthKey: string, weekIndex: number, empleadoId: string, nombre: string, monto: number) {
     if (!data) return;
     const next = structuredClone(data);
     if (!next.nominaDescuentos[monthKey]) next.nominaDescuentos[monthKey] = { weeks: [null, null, null, null] };
     const semana = next.nominaDescuentos[monthKey].weeks[weekIndex] || { descuentos: [], extras: [] };
     const yaPagado = (semana.confirmaciones || []).some((c) => c.empleadoId === empleadoId);
     const confirmaciones = (semana.confirmaciones || []).filter((c) => c.empleadoId !== empleadoId);
-    if (!yaPagado) confirmaciones.push({ empleadoId, nombre, confirmadoEn: new Date().toISOString() });
+    if (!yaPagado) confirmaciones.push({ empleadoId, nombre, confirmadoEn: new Date().toISOString(), monto });
     next.nominaDescuentos[monthKey].weeks[weekIndex] = { ...semana, confirmaciones };
     persist(next);
   }
