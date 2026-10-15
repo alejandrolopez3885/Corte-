@@ -155,7 +155,8 @@ estando en Nómina te regresa al menú de Equipo):
   de esa semana cuya fecha ya pasó o es hoy (en una semana ya cerrada
   equivale al bruto completo, y en una futura es $0), y "A recibir hasta
   hoy" = generada hasta hoy + percepciones extra − descuentos. Arriba de
-  todo, debajo del selector, un resumen con el **Total a pagar hasta
+  todo, debajo del selector y la fecha de la semana, el botón "Copiar
+  imagen de la nómina" (ver más abajo), y luego un resumen con el **Total a pagar hasta
   hoy** de todo el personal (resaltado), y debajo de él la generada hasta
   hoy, las percepciones extra (si hay) y los descuentos. En la vista del
   dueño las tarjetas del personal son plegables y arrancan cerradas:

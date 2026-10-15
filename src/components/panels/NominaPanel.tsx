@@ -234,6 +234,24 @@ export function NominaPanel({
       ) : (
         <>
           {!soloLectura && (
+            <div className="field-row">
+              <button className="link-btn" onClick={copiarImagen}>
+                {copiaEstado === "copiada" ? (
+                  <>
+                    <Check size={15} /> ¡Copiada! Pégala en WhatsApp
+                  </>
+                ) : (
+                  <>
+                    <Copy size={15} /> Copiar imagen de la nómina
+                  </>
+                )}
+              </button>
+            </div>
+          )}
+          {!soloLectura && copiaEstado === "descargada" && (
+            <p className="hint">Tu navegador no permite copiar imágenes — se descargó el PNG.</p>
+          )}
+          {!soloLectura && (
             <div className="report-list">
               <div className="report-row total">
                 <span className="report-row-label">
@@ -257,24 +275,6 @@ export function NominaPanel({
                 <strong className="report-row-amount">-{money(totalDescuentos)}</strong>
               </div>
             </div>
-          )}
-          {!soloLectura && (
-            <div className="field-row">
-              <button className="link-btn" onClick={copiarImagen}>
-                {copiaEstado === "copiada" ? (
-                  <>
-                    <Check size={15} /> ¡Copiada! Pégala en WhatsApp
-                  </>
-                ) : (
-                  <>
-                    <Copy size={15} /> Copiar imagen de la nómina
-                  </>
-                )}
-              </button>
-            </div>
-          )}
-          {!soloLectura && copiaEstado === "descargada" && (
-            <p className="hint">Tu navegador no permite copiar imágenes — se descargó el PNG.</p>
           )}
           {reporte.map((e) => {
             const abierta = soloLectura || abiertas.includes(e.empleadoId);
