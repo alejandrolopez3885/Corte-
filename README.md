@@ -265,37 +265,28 @@ estando en Nómina te regresa al menú de Equipo):
   ni la marca de "alta rotación" (que no aplica sin conteo diario propio):
   abre directo al catálogo, sin menú intermedio, porque es su única
   función. Es para insumos que gerencia maneja aparte, sin ser de Bar ni
-  de Cocina — desechables, limpieza y similares; y bajo "Compras", "Inventario" — la lista de insumos de
-  Bar, Cocina y General agrupada por proveedor (reemplaza la hoja de cálculo que
-  se usaba antes para esto), con los mismos filtros de Mes/Semana y un
-  campo de cantidad por insumo. Un switch "Completo" (domingo, cuenta
-  todos los proveedores) / "Jueves" (solo los proveedores marcados con
-  "también se cuenta los jueves", editable desde ahí mismo con un atajo
-  al catálogo de Proveedores) decide qué insumos se muestran — se evita
-  a propósito la palabra "pedido" en esta pantalla, porque todavía es
-  solo un conteo de inventario, no un manejo real de pedidos. Debajo hay
-  otro filtro, "Todas/Bar/Cocina/General", para contar un área a la vez
-  sin tener que ver la lista completa. Ya no se
-  guarda cada campo solo al salir de él: hay un botón "Guardar
-  inventario" para lo que esté visible en ese momento (semana + modo +
-  área), y en cuanto se guarda, esos campos quedan bloqueados para evitar
-  ediciones accidentales — para corregir hay que tocar "Editar", confirmar
-  un aviso de que no debería modificarse salvo que sea necesario, y recién
-  ahí se desbloquea; igual que ya funciona Conteo diario. El bloqueo es
-  por área dentro de la semana (compartido entre los modos Completo y
-  Jueves, pero independiente entre Bar/Cocina/General) — así guardar Bar
-  no bloquea Cocina ni General de la misma semana, y guardar cualquier
-  área nunca borra lo ya capturado en las demás. Los insumos de "alta
-  rotación" son un caso aparte: ese campo en Inventario nunca se captura
-  a mano — siempre queda bloqueado y refleja directo lo que haya en
-  Conteo diario de la fecha real de ese modo (el domingo de esa semana
-  para Completo, el jueves para Jueves), porque el conteo diario se hace
-  más tarde y es el dato más real; si todavía no se ha hecho el conteo
-  diario de ese día, se ve vacío. Esto aplica incluso con el resto del
-  Inventario desbloqueado para editar — la única forma de cambiar ese
-  número es en Conteo diario mismo. Al guardar, ese valor se copia igual
-  al historial de Inventario (para que Pedidos y los reportes lo sigan
-  viendo normal); y "Pedidos" — misma
+  de Cocina — desechables, limpieza y similares; y bajo "Compras", "Inventario" — el conteo completo del domingo y el
+  parcial del jueves (switch "Completo (domingo)" / "Jueves"), en notas
+  libres: el cuadro arranca vacío y quien cuenta escribe lo que va viendo,
+  un producto por renglón y como le salga (".6 consomé", "1k ajo en
+  polvo", "500 bolsas Johnster", "250 gms habanero"). Se guarda por la
+  fecha real del domingo o jueves de esa semana; un renglón con texto pero
+  sin número no deja guardar. Ya guardado (y bloqueado, con "Editar" igual
+  que el Conteo diario), cada renglón se lee — cantidad, unidad si la
+  escribió (k/kg, gms, paq, bolsa…) y nombre — y se busca en el catálogo
+  de Bar, Cocina y General por nombre o apodo, aunque esté abreviado, en
+  otro orden o en plural. Lo que no se reconoce (o tiene más de un
+  posible) aparece arriba en "No reconocidos" para elegir qué producto es
+  una sola vez: lo escrito se guarda como apodo de ese insumo y la
+  próxima vez sale solo. Lo reconocido se muestra separado por proveedor
+  con el mismo recuadro "Pedir", "Copiar pedido [proveedor]" y "Guardar
+  pedido" del Conteo diario (si un producto se anotó dos veces, se ven
+  juntas las dos cantidades). Al final, plegable, "No se contaron": los
+  productos del catálogo que tocaba contar ese día (todos el domingo; el
+  jueves, solo los de proveedores marcados) y no aparecen en las notas,
+  sin contar los de alta rotación, que van en el Conteo diario. También
+  existe como permiso "Inventario" en "Acceso a la app", para que el jefe
+  de cocina lo capture desde su cuenta; y "Pedidos" — misma
   estructura, filtros, switch Completo/Jueves y comportamiento de guardar/
   bloquear/editar que Inventario, con las mismas semanas, pero la
   cantidad que se captura y se guarda ahí es la que se va a pedir, no la

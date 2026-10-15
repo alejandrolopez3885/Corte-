@@ -246,7 +246,7 @@ function ConteoTextoForm({
   );
 }
 
-interface ErroresCaptura {
+export interface ErroresCaptura {
   titulo: string;
   faltan: string[];
   invalidas: string[];
@@ -254,7 +254,7 @@ interface ErroresCaptura {
 
 // Mismo aviso para el conteo y para el pedido: lo vacío y lo que no es
 // solo un número.
-function ErroresSheet({ errores, onClose }: { errores: ErroresCaptura; onClose: () => void }) {
+export function ErroresSheet({ errores, onClose }: { errores: ErroresCaptura; onClose: () => void }) {
   const { titulo, faltan, invalidas } = errores;
   return (
     <Sheet title={invalidas.length > 0 ? "Revisa los datos" : titulo} onClose={onClose}>
@@ -298,7 +298,7 @@ function ErroresSheet({ errores, onClose }: { errores: ErroresCaptura; onClose: 
 // Primer renglón de cada mensaje de pedido: quién pide (el restaurante).
 const NOMBRE_NEGOCIO = "Metroplex";
 
-function ListaPorProveedor({
+export function ListaPorProveedor({
   fecha,
   lineas,
   insumos,
@@ -338,7 +338,8 @@ function ListaPorProveedor({
   if (grupos.has("sin")) orden.push({ key: "sin", nombre: "Sin proveedor" });
 
   // "Se pide por" del catálogo; si no tiene, la misma presentación del conteo.
-  const unidadPedido = (linea: LineaConteoTexto, insumo?: InsumoEntry) => insumo?.unidadPedido || linea.presentacion || "";
+  const unidadPedido = (linea: LineaConteoTexto, insumo?: InsumoEntry) =>
+    insumo?.unidadPedido || linea.presentacion || (insumo ? (insumo.unidad === "pieza" ? "pz" : insumo.unidad) : "");
 
   // Mensaje para WhatsApp: el proveedor y un renglón por producto con
   // pedido mayor a 0 ("Papas a la francesa 1 caja").

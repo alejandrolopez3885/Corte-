@@ -297,6 +297,9 @@ export interface InsumoEntry {
   // ser distinta a la del conteo (las papas se cuentan en kg y se piden por
   // caja). Sin valor, se usa la presentación del conteo.
   unidadPedido?: string;
+  // Cómo lo escriben en las notas del Inventario ("6x6", "Lyncott") cuando no
+  // se parece al nombre — se guardan al ligar un renglón no reconocido.
+  apodos?: string[];
 }
 
 // Inventario semanal (Negocio > Inventario) — una fila por insumo, por
@@ -419,6 +422,12 @@ export interface AppData {
   // área, fecha real (ISO) -> producto (nombre normalizado) -> cantidad.
   // 0 significa que ese día no se pide ese producto.
   pedidosDiarios: Record<ConteoTextoArea, Record<string, Record<string, number>>>;
+  // Inventario del domingo/jueves en notas libres (Negocio > Inventario):
+  // fecha real del domingo o jueves (ISO) -> texto tal cual lo escribieron.
+  inventariosNotas: Record<string, string>;
+  // Lo que se pide desde ese inventario: fecha -> producto (nombre
+  // normalizado) -> cantidad; 0 = no se pide.
+  pedidosInventario: Record<string, Record<string, number>>;
   // Inventario semanal (Negocio > Inventario, mismas semanas que
   // Corte/Horarios) — lo que hay en existencia, no lo que se pide.
   inventarioSemanal: Record<string, InventarioSemanalMonthData>;
@@ -458,7 +467,7 @@ export type Role = "owner" | "staff";
 // allá del acceso por día asignado (mesero) — ver EmpleadoEntry.staffProfileId
 // y PERMISOS_DISPONIBLES. Se agregan más conforme el dueño los vaya
 // necesitando, sin rehacer el checklist.
-export type PermisoStaff = "horarios" | "conteo_diario" | "nomina";
+export type PermisoStaff = "horarios" | "conteo_diario" | "inventario" | "nomina";
 
 export const PERMISOS_DISPONIBLES: { value: PermisoStaff; label: string; description: string }[] = [
   {
@@ -470,6 +479,11 @@ export const PERMISOS_DISPONIBLES: { value: PermisoStaff; label: string; descrip
     value: "conteo_diario",
     label: "Conteo diario",
     description: "Capturar el conteo diario de insumos de alta rotación de su propia área (Bar o Cocina) — sin catálogo.",
+  },
+  {
+    value: "inventario",
+    label: "Inventario",
+    description: "Capturar el inventario del domingo y del jueves en notas, y el pedido que sale de ahí.",
   },
   {
     value: "nomina",

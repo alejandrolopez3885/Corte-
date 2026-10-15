@@ -13,7 +13,7 @@ import {
 } from "../lib/dataModel";
 import { removeAssignmentByStaffAndDate, upsertAssignment, useStaffAssignments } from "../lib/staffAssignments";
 import { DAYS, DAY_SHORT } from "../lib/types";
-import type { AreaEntry, ConteoTextoArea, CreditoProveedores, DayData, DayName, EmpleadoEntry, Gasto, GastoCategoria, HorarioSemana, InsumoEntry, InventarioSemanal, MeseroCatalogEntry, MeseroCut, NominaDescuentosSemana, PedidoSemanal, Profile, ProveedorCatalogEntry, PuestoEntry, Transferencia, WeekData } from "../lib/types";
+import type { AreaEntry, ConteoTextoArea, CreditoProveedores, DayData, DayName, EmpleadoEntry, Gasto, GastoCategoria, HorarioSemana, InsumoEntry, MeseroCatalogEntry, MeseroCut, NominaDescuentosSemana, PedidoSemanal, Profile, ProveedorCatalogEntry, PuestoEntry, Transferencia, WeekData } from "../lib/types";
 import { Empty } from "../components/ui";
 import { MonthModal } from "../components/modals/MonthModal";
 import { MeseroModal, type MeseroFormValues } from "../components/modals/MeseroModal";
@@ -36,7 +36,7 @@ import { TendenciasPanel } from "../components/panels/TendenciasPanel";
 import { ControlBarPanel } from "../components/panels/ControlBarPanel";
 import { ControlCocinaPanel } from "../components/panels/ControlCocinaPanel";
 import { InsumosPanel } from "../components/panels/InsumosPanel";
-import { InventarioSemanalPanel } from "../components/panels/InventarioSemanalPanel";
+import { InventarioNotasPanel } from "../components/panels/InventarioNotasPanel";
 import { PedidosSemanalPanel } from "../components/panels/PedidosSemanalPanel";
 import StaffAccessShell from "./StaffAccessShell";
 
@@ -176,6 +176,9 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           onSaveHorarioSemana={saveHorarioSemana}
           onSaveConteoTexto={guardarConteoTexto}
           onSavePedidoDiario={guardarPedidoDiario}
+          onSaveInventarioNotas={guardarInventarioNotas}
+          onSavePedidoInventario={guardarPedidoInventario}
+          onAsignarApodo={asignarApodoInsumo}
           onConfirmarNomina={confirmarNomina}
           onSignOut={signOut}
           assignments={assignmentsStatus === "error" ? [] : assignments}
@@ -383,6 +386,32 @@ export default function CortesApp({ profile }: { profile: Profile }) {
     if (!data) return;
     const next = structuredClone(data);
     next.insumos = next.insumos.filter((i) => i.id !== id);
+    persist(next);
+  }
+
+  function guardarInventarioNotas(fecha: string, texto: string) {
+    if (!data) return;
+    const next = structuredClone(data);
+    next.inventariosNotas[fecha] = texto;
+    persist(next);
+  }
+
+  function guardarPedidoInventario(fecha: string, pedido: Record<string, number>) {
+    if (!data) return;
+    const next = structuredClone(data);
+    next.pedidosInventario[fecha] = pedido;
+    persist(next);
+  }
+
+  // Liga un renglón no reconocido de las notas del Inventario con su insumo,
+  // guardando lo escrito como apodo para reconocerlo solo la próxima vez.
+  function asignarApodoInsumo(insumoId: string, apodo: string) {
+    if (!data) return;
+    const next = structuredClone(data);
+    const insumo = next.insumos.find((i) => i.id === insumoId);
+    if (!insumo) return;
+    const actuales = insumo.apodos || [];
+    if (!actuales.some((a) => a.toLowerCase() === apodo.toLowerCase())) insumo.apodos = [...actuales, apodo];
     persist(next);
   }
 
@@ -639,15 +668,6 @@ export default function CortesApp({ profile }: { profile: Profile }) {
     const confirmaciones = (semana.confirmaciones || []).filter((c) => c.empleadoId !== empleadoId);
     confirmaciones.push({ empleadoId, nombre, confirmadoEn: new Date().toISOString() });
     next.nominaDescuentos[monthKey].weeks[weekIndex] = { ...semana, confirmaciones };
-    persist(next);
-  }
-
-  // Inventario semanal (Negocio > Inventario) — mismas semanas que Horarios/Nómina.
-  function saveInventarioSemanal(monthKey: string, weekIndex: number, inventario: InventarioSemanal) {
-    if (!data) return;
-    const next = structuredClone(data);
-    if (!next.inventarioSemanal[monthKey]) next.inventarioSemanal[monthKey] = { weeks: [null, null, null, null] };
-    next.inventarioSemanal[monthKey].weeks[weekIndex] = inventario;
     persist(next);
   }
 
@@ -1006,17 +1026,20 @@ export default function CortesApp({ profile }: { profile: Profile }) {
       )}
 
       {isOwner && activeTab === "negocio" && negocioView === "inventario" && (
-        <InventarioSemanalPanel
+        <InventarioNotasPanel
           onBack={() => setNegocioView("menu")}
+          backLabel="Negocio"
           insumos={data.insumos}
           proveedores={data.proveedores}
           months={data.months}
           monthKeys={monthKeys}
           initialMonthKey={mostRecentMonthKey as string}
           initialWeekIndex={mostRecentWeekIdx}
-          inventarioSemanal={data.inventarioSemanal}
-          conteosDiarios={data.conteosDiarios}
-          onGuardarSemana={saveInventarioSemanal}
+          notas={data.inventariosNotas}
+          onGuardarNotas={guardarInventarioNotas}
+          pedidos={data.pedidosInventario}
+          onGuardarPedido={guardarPedidoInventario}
+          onAsignarApodo={asignarApodoInsumo}
           onEditarProveedores={() => setModal({ type: "proveedores" })}
         />
       )}

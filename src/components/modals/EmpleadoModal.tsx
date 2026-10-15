@@ -362,8 +362,11 @@ function PermisosChecklist({
         // aunque sí requiere tener un puesto asignado (de ahí sale su
         // sueldo diario).
         const esNomina = p.value === "nomina";
+        // Inventario es una sola nota con todo (Cocina, Bar y General), así
+        // que tampoco lleva área — basta con que tenga puesto.
+        const esInventario = p.value === "inventario";
         const habilitado = esConteoDiario ? !!insumoAreaLabel : !!areaActual;
-        const etiquetaArea = esConteoDiario ? insumoAreaLabel : esNomina ? undefined : areaActual?.nombre;
+        const etiquetaArea = esConteoDiario ? insumoAreaLabel : esNomina || esInventario ? undefined : areaActual?.nombre;
         return (
           <Toggle
             key={p.value}

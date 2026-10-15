@@ -662,3 +662,15 @@ body {
   animation: toast-in 0.15s ease-out;
 }
 @keyframes toast-in { from { opacity: 0; transform: translate(-50%, 6px); } }
+
+/* ---- Inventario en notas libres ---- */
+.inv-no-reconocidos {
+  display: flex; flex-direction: column; gap: 8px;
+  background: var(--warn-soft); border: 1px solid var(--warn); border-radius: 12px; padding: 12px 14px;
+}
+.inv-no-reconocidos > strong { display: flex; align-items: center; gap: 6px; color: var(--warn); }
+.inv-no-reconocido { display: flex; flex-direction: column; gap: 4px; }
+.inv-no-reconocido code { font-size: 13px; color: var(--ink-soft); }
+.inv-no-contados { background: var(--surface-alt); border-radius: 12px; padding: 10px 14px; font-size: 13px; color: var(--ink-soft); }
+.inv-no-contados summary { cursor: pointer; font-weight: 600; }
+.inv-no-contados p { margin: 8px 0 0; line-height: 1.5; }
