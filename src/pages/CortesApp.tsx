@@ -503,6 +503,21 @@ export default function CortesApp({ profile }: { profile: Profile }) {
     persist(next);
   }
 
+  // "Cargar varias": varias recetas de un jalón (las que ya existían por
+  // nombre llegan con su mismo id y se reemplazan).
+  function saveRecetas(recetas: Receta[]) {
+    if (!data || recetas.length === 0) return;
+    const next = structuredClone(data);
+    const lista = next.recetas || [];
+    recetas.forEach((receta) => {
+      const i = lista.findIndex((r) => r.id === receta.id);
+      if (i >= 0) lista[i] = receta;
+      else lista.push(receta);
+    });
+    next.recetas = lista;
+    persist(next);
+  }
+
   function removeReceta(id: string) {
     if (!data) return;
     const next = structuredClone(data);
@@ -1189,6 +1204,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           recetas={(data.recetas || []).filter((r) => r.area === (negocioView === "recetarioBar" ? "bar" : "cocina"))}
           onSave={saveReceta}
           onRemove={removeReceta}
+          onSaveVarias={saveRecetas}
         />
       )}
 

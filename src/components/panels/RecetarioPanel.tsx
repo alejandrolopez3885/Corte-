@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { ArrowLeft, BookOpen, ChevronRight, Pencil, Plus, Search } from "lucide-react";
+import { ArrowLeft, BookOpen, ChevronRight, Pencil, Plus, Search, Upload } from "lucide-react";
 import { Empty, Field, Sheet } from "../ui";
 import { normalizar } from "../../lib/gastosBusqueda";
 import { uid } from "../../lib/dataModel";
+import { EJEMPLO_RECETAS, leerRecetas, type RecetaLeida } from "../../lib/recetasTexto";
 import type { Receta } from "../../lib/types";
 
 // Recetario: lista de recetas con buscador y la receta completa en una
@@ -14,7 +15,7 @@ import type { Receta } from "../../lib/types";
 // renglón no empieza con una cantidad (ej. "Hielo al gusto"), se intenta
 // separar "al gusto"; si no, va todo como producto.
 const UNIDADES =
-  "oz|onzas?|ml|cl|lt?s?|litros?|g|gr|grs|gramos?|kg|pz|pzas?|piezas?|cdas?|cucharadas?|cditas?|cucharaditas?|dash(?:es)?|gotas?|tazas?|rodajas?|hojas?|ramitas?|chorritos?|shots?|tragos?";
+  "oz|onzas?|ml|cl|lt?s?|litros?|g|gr|grs|gramos?|kg|pz|pzas?|piezas?|cdas?|cucharadas?|cditas?|cucharaditas?|dash(?:es)?|gotas?|tazas?|rodajas?|hojas?|ramitas?|chorritos?|shots?|tragos?|tri[aá]ngulos?|pizcas?";
 const RE_MEDIDA = new RegExp(`^((?:\\d+(?:[.,]\\d+)?|[½¼¾⅓⅔]|\\d+\\/\\d+)(?:\\s*(?:[½¼¾⅓⅔]|\\d+\\/\\d+))?\\s*(?:(?:${UNIDADES})\\b\\.?)?)\\s+(.+)$`, "i");
 
 function partirIngrediente(renglon: string): { medida: string; producto: string } {
@@ -48,6 +49,7 @@ export function RecetarioPanel({
   area,
   onSave,
   onRemove,
+  onSaveVarias,
 }: {
   // Sin onBack (cuenta de equipo con una sola sección) no hay "regresar".
   onBack?: () => void;
@@ -58,7 +60,10 @@ export function RecetarioPanel({
   area?: Receta["area"];
   onSave?: (receta: Receta) => void;
   onRemove?: (id: string) => void;
+  // "Cargar varias": agrega/reemplaza varias recetas de un jalón.
+  onSaveVarias?: (recetas: Receta[]) => void;
 }) {
+  const [cargando, setCargando] = useState(false);
   const [busqueda, setBusqueda] = useState("");
   const [abiertaId, setAbiertaId] = useState<string | null>(null);
   const [editando, setEditando] = useState<Receta | "nueva" | null>(null);
@@ -90,6 +95,18 @@ export function RecetarioPanel({
             }
           : undefined
       }
+    />
+  );
+
+  const cargarVarias = cargando && onSaveVarias && (
+    <CargarVariasModal
+      existentes={recetas}
+      area={area || "bar"}
+      onClose={() => setCargando(false)}
+      onGuardar={(lista) => {
+        onSaveVarias(lista);
+        setCargando(false);
+      }}
     />
   );
 
@@ -178,6 +195,11 @@ export function RecetarioPanel({
           </button>
         )}
       </div>
+      {onSaveVarias && (
+        <button type="button" className="receta-cargar" onClick={() => setCargando(true)}>
+          <Upload size={14} /> Cargar varias
+        </button>
+      )}
       {recetas.length > 0 && (
         <div className="receta-buscar">
           <Search size={15} />
@@ -193,7 +215,7 @@ export function RecetarioPanel({
       {recetas.length === 0 ? (
         <Empty
           icon={<BookOpen size={26} strokeWidth={1.3} />}
-          text={editable ? "Aún no hay recetas. Agrega la primera con el botón +." : "Todavía no hay recetas. El dueño las irá agregando."}
+          text={editable ? "Aún no hay recetas. Agrega la primera con el botón + o carga varias de una vez." : "Todavía no hay recetas. El dueño las irá agregando."}
         />
       ) : lista.length === 0 ? (
         <p className="hint">No hay recetas que coincidan con "{busqueda}".</p>
@@ -220,6 +242,7 @@ export function RecetarioPanel({
         })
       )}
       {formulario}
+      {cargarVarias}
     </div>
   );
 }
@@ -304,6 +327,144 @@ function RecetaModal({
         }
       >
         Guardar receta
+      </button>
+    </Sheet>
+  );
+}
+
+// Pegar varias recetas en texto (formato en lib/recetasTexto.ts), revisar lo
+// que se entendió y agregarlas todas. Si un nombre ya existe en este
+// recetario, se elige si se reemplaza (misma receta, se conserva su id) o
+// se salta.
+function CargarVariasModal({
+  existentes,
+  area,
+  onClose,
+  onGuardar,
+}: {
+  existentes: Receta[];
+  area: Receta["area"];
+  onClose: () => void;
+  onGuardar: (recetas: Receta[]) => void;
+}) {
+  const [texto, setTexto] = useState("");
+  const [leidas, setLeidas] = useState<RecetaLeida[] | null>(null);
+  const [saltar, setSaltar] = useState<Set<number>>(new Set());
+  const [verEjemplo, setVerEjemplo] = useState(false);
+
+  const clave = (n: string) => normalizar(n);
+  const existente = (r: RecetaLeida) => existentes.find((e) => clave(e.nombre) === clave(r.nombre));
+
+  if (leidas) {
+    const repetidas = leidas.filter((r) => existente(r)).length;
+    const aGuardar = leidas.filter((_, i) => !saltar.has(i));
+    return (
+      <Sheet title="Cargar varias recetas" onClose={onClose}>
+        {leidas.length === 0 ? (
+          <p className="hint">
+            No se encontró ninguna receta. Cada receta tiene que empezar con un renglón que empiece con "#" y el nombre.
+          </p>
+        ) : (
+          <p className="receta-carga-resumen">
+            <strong>
+              {leidas.length} {leidas.length === 1 ? "receta" : "recetas"}
+            </strong>{" "}
+            encontradas · {leidas.length - repetidas} {leidas.length - repetidas === 1 ? "nueva" : "nuevas"}
+            {repetidas > 0 && ` · ${repetidas} ya ${repetidas === 1 ? "existe" : "existen"}`}
+          </p>
+        )}
+        <div className="receta-carga-lista">
+          {leidas.map((r, i) => {
+            const ya = existente(r);
+            const nIng = renglones(r.ingredientes).length;
+            const nPasos = renglones(r.preparacion).length;
+            return (
+              <div key={i} className={`receta-carga-item${ya ? " repetida" : ""}`}>
+                <span>
+                  <strong>{r.nombre}</strong>
+                  <small>
+                    {ya
+                      ? "Ya existe en el recetario"
+                      : `${nIng} ${nIng === 1 ? "ingrediente" : "ingredientes"} · ${nPasos} ${nPasos === 1 ? "paso" : "pasos"}`}
+                  </small>
+                </span>
+                {ya ? (
+                  <span className="receta-carga-opciones">
+                    {(["Reemplazar", "Saltar"] as const).map((op) => {
+                      const activo = op === "Saltar" ? saltar.has(i) : !saltar.has(i);
+                      return (
+                        <button
+                          key={op}
+                          type="button"
+                          className={activo ? "activo" : ""}
+                          onClick={() =>
+                            setSaltar((prev) => {
+                              const next = new Set(prev);
+                              if (op === "Saltar") next.add(i);
+                              else next.delete(i);
+                              return next;
+                            })
+                          }
+                        >
+                          {op}
+                        </button>
+                      );
+                    })}
+                  </span>
+                ) : (
+                  <span className="receta-carga-nueva">Nueva</span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+        <button
+          className="btn-primary"
+          disabled={aGuardar.length === 0}
+          onClick={() =>
+            onGuardar(
+              aGuardar.map((r) => {
+                const ya = existente(r);
+                return { ...r, id: ya?.id || uid(), area: ya?.area || area };
+              })
+            )
+          }
+        >
+          Agregar {aGuardar.length} {aGuardar.length === 1 ? "receta" : "recetas"}
+        </button>
+        <button type="button" className="link-btn receta-carga-volver" onClick={() => setLeidas(null)}>
+          <ArrowLeft size={14} /> Volver a editar el texto
+        </button>
+      </Sheet>
+    );
+  }
+
+  return (
+    <Sheet title="Cargar varias recetas" onClose={onClose}>
+      <p className="hint">
+        Pega todas las recetas. Cada una empieza con "#" y el nombre; abajo van Vaso, Ingredientes (uno por renglón),
+        Utensilios, Preparación (un paso por renglón) y Notas. Las secciones que no pongas se quedan vacías.
+      </p>
+      <textarea
+        className="text-input receta-textarea receta-carga-texto"
+        rows={14}
+        value={texto}
+        onChange={(e) => setTexto(e.target.value)}
+        placeholder={EJEMPLO_RECETAS}
+      />
+      <button type="button" className="link-btn" onClick={() => setVerEjemplo((v) => !v)}>
+        {verEjemplo ? "Ocultar ejemplo del formato" : "Ver ejemplo del formato"}
+      </button>
+      {verEjemplo && <pre className="receta-carga-ejemplo">{EJEMPLO_RECETAS}</pre>}
+      <button
+        className="btn-primary"
+        disabled={!texto.trim()}
+        onClick={() => {
+          setSaltar(new Set());
+          setLeidas(leerRecetas(texto));
+        }}
+      >
+        Revisar
       </button>
     </Sheet>
   );

@@ -509,6 +509,15 @@ estando en Nómina te regresa al menú de Equipo):
   medida sola; también entiende "Hielo al gusto"), Utensilios (como
   etiquetas), Preparación (pasos numerados) y Decoración / notas. El dueño
   agrega recetas con el "+" y las edita o borra con el lápiz de cada una;
+  con **"Cargar varias"** pega muchas de un jalón en texto — cada receta
+  empieza con un renglón "# Nombre" y abajo van "Vaso:" (o
+  "Presentación:"), "Ingredientes:" (uno por renglón), "Utensilios:",
+  "Preparación:" (un paso por renglón) y "Notas:", cada sección en el
+  mismo renglón o en los de abajo; las que no se pongan quedan vacías.
+  "Revisar" muestra lo que entendió (cuántas recetas, ingredientes y pasos
+  de cada una) y, si un nombre ya existe en ese recetario, deja elegir
+  "Reemplazar" (se actualiza la misma receta) o "Saltar"; "Agregar N
+  recetas" las guarda todas. Hay un "Ver ejemplo del formato" ahí mismo;
   las cuentas de equipo con el permiso "Recetario" ven un solo
   "Recetario" desde su Inicio, con las recetas de Bar y de Cocina
   (separadas con un encabezado por área cuando hay de las dos; si solo hay
@@ -779,7 +788,7 @@ src/
   components/
     ui.tsx        Sheet, Field, inputs, Toggle, Empty
     ConceptoInput.tsx  cuadro de concepto de gasto con autocompletado y ortografía
-    panels/RecetarioPanel.tsx  Recetario (dueño edita, equipo consulta)
+    panels/RecetarioPanel.tsx  Recetario (dueño edita y carga varias, equipo consulta); formato en lib/recetasTexto.ts
     NovedadesAlEntrar.tsx  slider de novedades al entrar (cuentas de equipo); lista en lib/novedades.ts
     modals/       un modal por acción (mesero, gasto, transferencia, etc.)
   pages/

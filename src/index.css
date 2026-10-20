@@ -1097,3 +1097,34 @@ button.pill { cursor: pointer; }
 .tend-barras.con-etq, .tend-ejes.con-etq { padding-left: 43px; }
 .receta-grupo { font-size: 12px; font-weight: 600; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.04em; margin: 14px 0 6px; }
 .tend-revisar-titulo small { font-size: 11.5px; font-weight: 500; text-transform: none; letter-spacing: 0; color: var(--ink-soft); }
+.receta-cargar {
+  display: inline-flex; align-items: center; gap: 6px; align-self: flex-start; margin-top: 8px;
+  border: 1px solid var(--border); background: var(--surface); color: var(--accent); border-radius: 100px;
+  padding: 7px 13px; font-size: 13px; font-weight: 500; font-family: inherit; cursor: pointer;
+}
+.receta-carga-texto { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; min-height: 260px; }
+.receta-carga-ejemplo {
+  margin: 0; background: var(--surface-alt); border-radius: 12px; padding: 10px 12px; font-size: 12px;
+  white-space: pre-wrap; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.receta-carga-resumen { margin: 0; font-size: 14px; }
+.receta-carga-resumen strong { color: var(--good); }
+.receta-carga-lista { display: flex; flex-direction: column; gap: 6px; max-height: 45vh; overflow-y: auto; }
+.receta-carga-item {
+  display: flex; justify-content: space-between; align-items: center; gap: 10px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 9px 12px; font-size: 13.5px;
+}
+.receta-carga-item > span:first-child { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.receta-carga-item small { color: var(--ink-soft); font-size: 11.5px; }
+.receta-carga-item.repetida { background: var(--warn-soft); border-color: transparent; }
+.receta-carga-nueva { color: var(--good); font-weight: 600; font-size: 12.5px; flex-shrink: 0; }
+.receta-carga-opciones { display: flex; gap: 4px; flex-shrink: 0; }
+.receta-carga-opciones button {
+  font-size: 11.5px; padding: 4px 9px; border-radius: 100px; border: 1px solid var(--border); background: var(--surface);
+  font-family: inherit; cursor: pointer; color: var(--ink);
+}
+.receta-carga-opciones button.activo { background: var(--accent); border-color: var(--accent); color: white; }
+.receta-carga-volver { display: flex; align-items: center; gap: 5px; justify-content: center; align-self: center; }
+.receta-card .card-name { flex: 1; min-width: 0; }
+.receta-card-vaso { display: block; max-width: 48%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.receta-card-vaso svg { vertical-align: -2px; }
