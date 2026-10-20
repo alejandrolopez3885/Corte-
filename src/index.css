@@ -951,3 +951,39 @@ button.pill { cursor: pointer; }
 .fijos-referencia { color: var(--ink-soft); }
 .report-row-servicio { padding-left: 46px; }
 .report-row-servicio .report-row-label em { display: inline; font-style: normal; color: var(--ink-soft); font-size: 0.9em; }
+
+/* ---- Tendencias: semana en curso, cierre, día a día, patrones ---- */
+.tendencias-subtitulo { margin: 14px 0 0; font-size: 13px; font-weight: 600; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.04em; }
+.tend-card { display: flex; flex-direction: column; gap: 8px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 12px 14px; }
+.tend-card h4 { margin: 0; font-size: 12px; font-weight: 600; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.04em; }
+.tend-hero strong { font-family: 'Fraunces', serif; font-size: 30px; font-weight: 600; }
+.tend-hero span { font-size: 13px; color: var(--ink-soft); }
+.tend-cambio { font-weight: 600; white-space: nowrap; margin-left: 2px; }
+.tend-cambio.sube { color: var(--good); }
+.tend-cambio.baja { color: var(--bad); }
+.tend-dos { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.tend-mini { display: flex; flex-direction: column; gap: 2px; background: var(--surface-alt); border-radius: 10px; padding: 8px 10px; font-size: 12px; color: var(--ink-soft); }
+.tend-mini strong { font-size: 17px; color: var(--ink); }
+.tend-mini small { font-size: 11.5px; }
+.tend-progreso { position: relative; height: 10px; border-radius: 6px; background: var(--surface-alt); }
+.tend-progreso i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--accent); border-radius: 6px; }
+.tend-progreso s { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--ink); text-decoration: none; }
+.tend-nota { font-size: 12px; color: var(--ink-soft); }
+.tend-leyenda { display: flex; flex-wrap: wrap; gap: 12px; font-size: 11.5px; color: var(--ink-soft); }
+.tend-leyenda i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 4px; vertical-align: -1px; }
+.tend-barras { display: flex; align-items: flex-end; gap: 7px; height: 110px; border-bottom: 1px solid var(--border); padding: 0 2px; }
+.tend-barras.bajo { height: 80px; }
+.tend-grupo { flex: 1; display: flex; gap: 2px; align-items: flex-end; height: 100%; }
+.tend-grupo i { flex: 1; display: block; border-radius: 4px 4px 0 0; min-height: 0; }
+.tend-esta { background: var(--accent); }
+.tend-pasada { background: #B9C2B2; }
+.tend-est { background: transparent; border: 1.5px dashed var(--accent); border-bottom: none; box-sizing: border-box; }
+.tend-leyenda .tend-est { border-bottom: 1.5px dashed var(--accent); }
+.tend-ejes { display: flex; gap: 7px; padding: 0 2px; font-size: 10.5px; color: var(--ink-soft); }
+.tend-ejes span { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 1px; }
+.tend-ejes .tend-cambio { font-size: 9.5px; margin: 0; }
+.tend-tabla { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.tend-tabla th { text-align: right; font-weight: 500; color: var(--ink-soft); padding: 4px 2px; }
+.tend-tabla td { text-align: right; padding: 6px 2px; border-top: 1px solid var(--surface-alt); }
+.tend-tabla th:first-child, .tend-tabla td:first-child { text-align: left; }
+.tend-tabla tr.estimada td { font-weight: 600; }

@@ -1,6 +1,7 @@
 import { ArrowLeft, ChartLine, Minus, TrendingDown, TrendingUp } from "lucide-react";
 import { Empty } from "../ui";
-import { computeVentaProyeccion, computeVentaTrend, money, round2 } from "../../lib/dataModel";
+import { addDaysIso, computeVentaTrend, formatWeekRange, money, round2, todayIso } from "../../lib/dataModel";
+import { computeTendenciasSemana, type TendenciasSemana } from "../../lib/tendencias";
 import type { EmpleadoEntry, HorarioMonthData, MeseroCatalogEntry, MonthData, MontoFijoSemanal, WeekTrendPoint } from "../../lib/types";
 
 const ACCENT = "#1F5D4C";
@@ -32,8 +33,14 @@ export function TendenciasPanel({
   meseros: MeseroCatalogEntry[];
   montosFijos?: MontoFijoSemanal[];
 }) {
-  const puntos = computeVentaTrend(months, horarios, empleados, meseros, montosFijos);
-  const proyeccion = computeVentaProyeccion(puntos);
+  // Solo semanas ya cerradas: la semana en curso va aparte, comparada por
+  // los mismos días (si no, siempre parecería una caída).
+  const hoy = todayIso();
+  const puntos = computeVentaTrend(months, horarios, empleados, meseros, montosFijos).filter(
+    (p) => addDaysIso(p.weekStartDate, 6) < hoy
+  );
+  const t = computeTendenciasSemana(months, hoy);
+  const proyeccion = t.proyeccionRitmo !== null && t.diasContados < 7 ? { monto: t.proyeccionRitmo } : null;
 
   return (
     <div className="page-section">
@@ -42,45 +49,32 @@ export function TendenciasPanel({
       </button>
       <h2 className="page-title">Tendencias</h2>
       <p className="hint">
-        Comparativo semana tras semana de todo tu historial capturado, con una proyección de venta para la próxima semana —
-        para ver la salud del negocio y tomar mejores decisiones.
+        Cómo va la semana contra las anteriores, cómo cerraría y cómo se ha movido el negocio semana a semana.
       </p>
 
-      {puntos.length === 0 ? (
+      {t.semanasBase === 0 && t.hastaHoy === 0 ? (
         <Empty
           icon={<ChartLine size={26} strokeWidth={1.3} />}
           text="Aún no hay semanas con venta capturada. En cuanto registres cortes, aquí vas a poder comparar semana a semana y ver una proyección."
         />
       ) : (
         <>
-          {proyeccion && <ProyeccionCard proyeccion={proyeccion} />}
-          <KpiGrid puntos={puntos} />
-          <VentaChartCard puntos={puntos} proyeccion={proyeccion} />
-          <TablaSemanas puntos={puntos} />
+          <SemanaEnCurso t={t} />
+          <CierreSemana t={t} />
+          <DiaADia t={t} />
+          <SemanasCompletas t={t} />
+          <PatronSemanal t={t} />
+          <MezclaCobro t={t} />
+          {puntos.length > 0 && (
+            <>
+              <h3 className="tendencias-subtitulo">Resultados por semana cerrada</h3>
+              <KpiGrid puntos={puntos} />
+              <VentaChartCard puntos={puntos} proyeccion={proyeccion} />
+              <TablaSemanas puntos={puntos} />
+            </>
+          )}
         </>
       )}
-    </div>
-  );
-}
-
-function ProyeccionCard({
-  proyeccion,
-}: {
-  proyeccion: { monto: number; confiable: boolean; semanasBase: number; tendenciaSemanal: number };
-}) {
-  return (
-    <div className={`tendencias-proyeccion ${proyeccion.confiable ? "" : "poco-confiable"}`}>
-      <span className="tendencias-proyeccion-label">Proyección de venta · próxima semana</span>
-      <strong className="tendencias-proyeccion-monto">{money(proyeccion.monto)}</strong>
-      <span className="tendencias-proyeccion-sub">
-        {proyeccion.confiable
-          ? `Basada en tus últimas ${proyeccion.semanasBase} semanas, con una tendencia promedio de ${
-              proyeccion.tendenciaSemanal >= 0 ? "+" : ""
-            }${money(proyeccion.tendenciaSemanal)} por semana.`
-          : `Todavía es poco confiable — solo tienes ${proyeccion.semanasBase} semana${
-              proyeccion.semanasBase > 1 ? "s" : ""
-            } capturada${proyeccion.semanasBase > 1 ? "s" : ""}. Con 3 o más semanas la proyección mejora bastante.`}
-      </span>
     </div>
   );
 }
@@ -239,6 +233,230 @@ function TablaSemanas({ puntos }: { puntos: WeekTrendPoint[] }) {
           })}
         </tbody>
       </table>
+    </div>
+  );
+}
+
+const DIA_CORTO: Record<string, string> = {
+  Lunes: "Lun", Martes: "Mar", Miércoles: "Mié", Jueves: "Jue", Viernes: "Vie", Sábado: "Sáb", Domingo: "Dom",
+};
+const INICIAL: Record<string, string> = { Lunes: "L", Martes: "M", Miércoles: "M", Jueves: "J", Viernes: "V", Sábado: "S", Domingo: "D" };
+
+function Cambio({ v, sufijo = "%" }: { v: number | null; sufijo?: string }) {
+  if (v === null) return null;
+  return (
+    <span className={`tend-cambio ${v > 0 ? "sube" : v < 0 ? "baja" : ""}`}>
+      {v > 0 ? "▲" : v < 0 ? "▼" : "="} {Math.abs(Math.round(v * 10) / 10)}
+      {sufijo}
+    </span>
+  );
+}
+const pct = (a: number, b: number) => (b > 0 ? round2(((a - b) / b) * 100) : null);
+
+function SemanaEnCurso({ t }: { t: TendenciasSemana }) {
+  const dias = t.dias.slice(0, t.diasContados);
+  const rango =
+    t.diasContados === 0
+      ? "Todavía sin venta capturada esta semana"
+      : t.diasContados === 1
+        ? DIA_CORTO[dias[0].dia]
+        : `${DIA_CORTO[dias[0].dia]} – ${DIA_CORTO[dias[dias.length - 1].dia]}`;
+  return (
+    <div className="tend-card tend-hero">
+      <h4>Venta hasta hoy · {rango}</h4>
+      <strong>{money(t.hastaHoy)}</strong>
+      {t.diasContados > 0 && (
+        <>
+          <span>
+            vs. mismos días semana pasada <Cambio v={pct(t.hastaHoy, t.mismosDiasSemanaPasada)} /> ({money(t.mismosDiasSemanaPasada)})
+          </span>
+          {t.semanasBase > 1 && (
+            <span>
+              vs. promedio de las últimas {t.semanasBase} semanas <Cambio v={pct(t.hastaHoy, t.mismosDiasPromedio)} /> (
+              {money(t.mismosDiasPromedio)})
+            </span>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+function CierreSemana({ t }: { t: TendenciasSemana }) {
+  if (t.semanasBase === 0 || t.diasContados === 7) return null;
+  const restantes = t.dias.slice(t.diasContados);
+  const nombreResto =
+    restantes.length === 1 ? DIA_CORTO[restantes[0].dia] : `${DIA_CORTO[restantes[0].dia]}–${DIA_CORTO[restantes[restantes.length - 1].dia]}`;
+  const referencia = Math.max(t.semanaPasadaTotal, t.proyeccionRitmo ?? 0, t.hastaHoy) || 1;
+  const faltan = round2(t.semanaPasadaTotal - t.hastaHoy);
+  return (
+    <div className="tend-card">
+      <h4>¿Cómo cerraría la semana?</h4>
+      <div className="tend-dos">
+        <div className="tend-mini">
+          <span>Al ritmo actual</span>
+          <strong>{t.proyeccionRitmo !== null ? money(t.proyeccionRitmo) : "—"}</strong>
+          <small>
+            {t.diasContados === 0
+              ? "Sin venta todavía: igual a la histórica"
+              : `Estos días suelen ser el ${t.pesoDiasTranscurridos}% de la semana`}
+          </small>
+        </div>
+        <div className="tend-mini">
+          <span>Histórica</span>
+          <strong>{t.proyeccionHistorica !== null ? money(t.proyeccionHistorica) : "—"}</strong>
+          <small>Lo que llevas + promedio de {nombreResto}</small>
+        </div>
+      </div>
+      {t.semanaPasadaTotal > 0 && (
+        <>
+          <div className="tend-progreso" role="img" aria-label={`Llevas ${money(t.hastaHoy)} de ${money(t.semanaPasadaTotal)} de la semana pasada`}>
+            <i style={{ width: `${Math.min(100, (t.hastaHoy / referencia) * 100)}%` }} />
+            <s style={{ left: `${Math.min(100, (t.semanaPasadaTotal / referencia) * 100)}%` }} title="Semana pasada" />
+          </div>
+          <small className="tend-nota">
+            {faltan > 0 ? (
+              <>
+                Para igualar la semana pasada ({money(t.semanaPasadaTotal)}) faltan <b>{money(faltan)}</b>
+              </>
+            ) : (
+              <>Ya superaste la semana pasada ({money(t.semanaPasadaTotal)})</>
+            )}
+          </small>
+        </>
+      )}
+    </div>
+  );
+}
+
+function DiaADia({ t }: { t: TendenciasSemana }) {
+  const max = Math.max(1, ...t.dias.flatMap((d) => [d.actual ?? d.estimado, d.semanaPasada]));
+  return (
+    <div className="tend-card">
+      <h4>Día a día vs. semana pasada</h4>
+      <div className="tend-leyenda">
+        <span>
+          <i className="tend-esta" /> Esta semana
+        </span>
+        <span>
+          <i className="tend-pasada" /> Semana pasada
+        </span>
+        <span>
+          <i className="tend-est" /> Estimado
+        </span>
+      </div>
+      <div className="tend-barras">
+        {t.dias.map((d) => {
+          const esEstimado = d.actual === null;
+          const valor = d.actual ?? d.estimado;
+          return (
+            <div key={d.dia} className="tend-grupo">
+              <i
+                className={esEstimado ? "tend-est" : "tend-esta"}
+                style={{ height: `${(valor / max) * 100}%` }}
+                title={`${d.dia} esta semana: ${money(valor)}${esEstimado ? " (estimado)" : ""}`}
+              />
+              <i className="tend-pasada" style={{ height: `${(d.semanaPasada / max) * 100}%` }} title={`${d.dia} semana pasada: ${money(d.semanaPasada)}`} />
+            </div>
+          );
+        })}
+      </div>
+      <div className="tend-ejes">
+        {t.dias.map((d) => (
+          <span key={d.dia}>
+            {INICIAL[d.dia]}
+            <Cambio v={d.cambio} />
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function SemanasCompletas({ t }: { t: TendenciasSemana }) {
+  if (t.semanas.length === 0) return null;
+  return (
+    <div className="tend-card">
+      <h4>Semanas</h4>
+      <table className="tend-tabla">
+        <thead>
+          <tr>
+            <th>Semana</th>
+            <th>Venta</th>
+            <th>vs. anterior</th>
+          </tr>
+        </thead>
+        <tbody>
+          {t.semanas.map((s) => (
+            <tr key={s.lunes} className={s.estimada ? "estimada" : ""}>
+              <td>
+                {formatWeekRange(s.lunes)}
+                {s.estimada ? "*" : ""}
+              </td>
+              <td>{money(s.venta)}</td>
+              <td>
+                <Cambio v={s.cambio} />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <small className="tend-nota">
+        {t.semanas.some((s) => s.estimada) ? "* estimada al ritmo actual · " : ""}Promedio {t.semanasBase} semanas: {money(t.promedioSemanas)} · Mejor:{" "}
+        {money(t.mejorSemana)}
+      </small>
+    </div>
+  );
+}
+
+function PatronSemanal({ t }: { t: TendenciasSemana }) {
+  const conVenta = t.patron.filter((p) => p.promedio > 0);
+  if (conVenta.length === 0) return null;
+  const max = Math.max(...t.patron.map((p) => p.promedio));
+  const mejor = conVenta.reduce((a, b) => (b.promedio > a.promedio ? b : a));
+  const peor = conVenta.reduce((a, b) => (b.promedio < a.promedio ? b : a));
+  return (
+    <div className="tend-card">
+      <h4>Venta promedio por día de la semana</h4>
+      <div className="tend-barras bajo">
+        {t.patron.map((p) => (
+          <div key={p.dia} className="tend-grupo">
+            <i className="tend-esta" style={{ height: `${(p.promedio / max) * 100}%` }} title={`${p.dia}: ${money(p.promedio)} (${p.pct}%)`} />
+          </div>
+        ))}
+      </div>
+      <div className="tend-ejes">
+        {t.patron.map((p) => (
+          <span key={p.dia}>{INICIAL[p.dia]}</span>
+        ))}
+      </div>
+      <small className="tend-nota">
+        Tu mejor día: <b>{mejor.dia.toLowerCase()}</b> ({mejor.pct}% de la semana) · el más flojo: {peor.dia.toLowerCase()} ({peor.pct}%)
+      </small>
+    </div>
+  );
+}
+
+function MezclaCobro({ t }: { t: TendenciasSemana }) {
+  const { tarjetasPct, appsPct, tarjetasAntes, appsAntes } = t.mezcla;
+  if (tarjetasPct === null || appsPct === null) return null;
+  const pts = (a: number, b: number | null) => (b === null ? null : round2(a - b));
+  return (
+    <div className="tend-card">
+      <h4>Cómo se cobra esta semana</h4>
+      <div className="tend-dos">
+        <div className="tend-mini">
+          <span>Tarjetas</span>
+          <strong>{tarjetasPct}%</strong>
+          <Cambio v={pts(tarjetasPct, tarjetasAntes)} sufijo=" pts" />
+        </div>
+        <div className="tend-mini">
+          <span>Apps</span>
+          <strong>{appsPct}%</strong>
+          <Cambio v={pts(appsPct, appsAntes)} sufijo=" pts" />
+        </div>
+      </div>
+      <small className="tend-nota">% de la venta hasta hoy, contra los mismos días de la semana pasada.</small>
     </div>
   );
 }

@@ -353,15 +353,22 @@ estando en Nómina te regresa al menú de Equipo):
   no perder esa referencia ni el historial ya guardado en Inventario);
   agrupadas bajo "Control de gastos",
   Control de gastos en efectivo y Control de gastos en transferencia; y
-  bajo "Análisis", "Tendencias" — comparativo semana tras semana de todo
-  el historial capturado (sin importar el mes) con una proyección de
-  venta para la próxima semana (promedio ponderado de las últimas hasta 4
-  semanas, con más peso a las recientes, ajustado por la tendencia
-  promedio de esa ventana; con menos de 3 semanas de base se marca como
-  poco confiable), una cuadrícula de KPIs con su cambio semana a semana y
-  minigráfica (Venta total, Utilidad, Margen, Gastos totales, Nómina), una
-  gráfica de venta con la proyección marcada aparte, y una tabla detallada
-  por semana; también bajo "Análisis", "Actividad" — la
+  bajo "Análisis", "Tendencias" — cómo va
+  el negocio, por fecha real (semanas de lunes a domingo): **venta hasta
+  hoy** de la semana en curso contra los mismos días de la semana pasada y
+  contra el promedio de esos días en las últimas 4 semanas (el día de hoy
+  cuenta solo si ya tiene corte); **¿cómo cerraría la semana?**, con dos
+  proyecciones — al ritmo actual (lo que llevas ÷ lo que suelen pesar esos
+  días en tu semana) e histórica (lo que llevas + el promedio de los días
+  que faltan) —, una barra de avance y cuánto falta para igualar la semana
+  pasada; **día a día** contra el mismo día de la semana pasada (los que
+  faltan, estimados y punteados); **semanas** con su % contra la anterior,
+  promedio y mejor semana (la actual, estimada); **venta promedio por día
+  de la semana** (mejor y peor día) y **cómo se cobra** (% en tarjetas y en
+  apps contra la semana pasada). Debajo, los resultados por semana ya
+  cerrada (venta, utilidad, margen, gastos y nómina, con su cambio y
+  minigráfica, gráfica y tabla) — la semana en curso ya no entra ahí, para
+  que no parezca una caída solo porque no ha terminado; también bajo "Análisis", "Actividad" — la
   bitácora de toda la app, ordenada en tres pestañas y por semana (con
   flechas para ir a semanas anteriores): **Resumen** (cuántos cambios,
   personas activas e inicios de sesión, comparado con la semana anterior;
