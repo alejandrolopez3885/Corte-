@@ -12,6 +12,24 @@ function esHoyJueves(): boolean {
   return new Date(`${todayIso()}T00:00:00`).getDay() === 4;
 }
 
+// Del catálogo que tocaba contar (todos el domingo; el jueves, solo los de
+// proveedores marcados) y no aparece en las notas — sin los de alta
+// rotación, que se cuentan aparte en el Conteo diario.
+function faltantesPorContar(
+  insumos: InsumoEntry[],
+  proveedores: ProveedorCatalogEntry[],
+  modo: Modo,
+  contados: Set<string>
+): InsumoEntry[] {
+  const proveedoresDelModo = new Set(proveedores.filter((p) => modo === "completo" || p.incluyeJueves).map((p) => p.id));
+  return insumos.filter(
+    (i) =>
+      !i.altaRotacion &&
+      !contados.has(i.id) &&
+      (modo === "completo" || (i.proveedorId !== undefined && proveedoresDelModo.has(i.proveedorId)))
+  );
+}
+
 // Inventario completo (domingo) / parcial (jueves) en notas libres: el
 // cuadro arranca vacío y quien cuenta escribe lo que va viendo, un producto
 // por renglón. Ya guardado, cada renglón se liga con el catálogo para
@@ -166,18 +184,41 @@ function NotasForm({
   const [locked, setLocked] = useState(guardado !== undefined);
   const [pidiendoConfirmacion, setPidiendoConfirmacion] = useState(false);
   const [errores, setErrores] = useState<ErroresCaptura | null>(null);
+  const [faltantes, setFaltantes] = useState<InsumoEntry[] | null>(null);
+  const [marcados, setMarcados] = useState<Set<string>>(new Set());
 
   // Solo bloquea un renglón con texto pero sin cantidad; lo que no se
-  // reconoce en el catálogo se resuelve después de guardar.
+  // reconoce en el catálogo se resuelve después de guardar. Si falta por
+  // contar algo del catálogo, antes se pregunta si es que no hay.
   function guardar() {
     if (!texto.trim()) return;
-    const { sinCantidad } = leerNotasInventario(texto, insumos);
+    const { renglones, sinCantidad } = leerNotasInventario(texto, insumos);
     if (sinCantidad.length > 0) {
       setErrores({ titulo: "Renglones sin cantidad", faltan: sinCantidad, invalidas: [] });
       return;
     }
-    onGuardarNotas(fecha, texto);
+    const contados = new Set(renglones.flatMap((r) => (r.insumoId ? [r.insumoId] : [])));
+    const faltan = faltantesPorContar(insumos, proveedores, modo, contados);
+    if (faltan.length > 0) {
+      setFaltantes(faltan);
+      setMarcados(new Set(faltan.map((i) => i.id)));
+      return;
+    }
+    guardarTexto(texto);
+  }
+
+  function guardarTexto(t: string) {
+    setTexto(t);
+    onGuardarNotas(fecha, t);
     setLocked(true);
+  }
+
+  // Los marcados como "no hay" se agregan al final de las notas en 0, para
+  // que salgan en la lista de abajo y se puedan pedir.
+  function guardarConCeros() {
+    const ceros = (faltantes || []).filter((i) => marcados.has(i.id)).map((i) => `0 ${i.nombre}`);
+    setFaltantes(null);
+    guardarTexto(ceros.length > 0 ? `${texto.trimEnd()}\n${ceros.join("\n")}` : texto);
   }
 
   return (
@@ -221,6 +262,25 @@ function NotasForm({
       )}
 
       {errores && <ErroresSheet errores={errores} onClose={() => setErrores(null)} />}
+
+      {faltantes && (
+        <FaltanPorContarSheet
+          modo={modo}
+          faltantes={faltantes}
+          proveedores={proveedores}
+          marcados={marcados}
+          onToggle={(id) =>
+            setMarcados((m) => {
+              const n = new Set(m);
+              if (n.has(id)) n.delete(id);
+              else n.add(id);
+              return n;
+            })
+          }
+          onGuardar={guardarConCeros}
+          onClose={() => setFaltantes(null)}
+        />
+      )}
 
       {pidiendoConfirmacion && (
         <Sheet title="Editar inventario guardado" onClose={() => setPidiendoConfirmacion(false)}>
@@ -285,15 +345,9 @@ function Resultado({
     return { nombre: insumo.nombre, presentacion, etiqueta: insumo.nombre, valor };
   });
 
-  // Del catálogo que tocaba contar y no aparece en las notas — solo para
-  // revisar; los de alta rotación se cuentan aparte en el Conteo diario.
-  const proveedoresDelModo = new Set(proveedores.filter((p) => modo === "completo" || p.incluyeJueves).map((p) => p.id));
-  const noSeContaron = insumos.filter(
-    (i) =>
-      !i.altaRotacion &&
-      !porInsumo.has(i.id) &&
-      (modo === "completo" || (i.proveedorId !== undefined && proveedoresDelModo.has(i.proveedorId)))
-  );
+  // Lo que tocaba contar y no aparece en las notas (ni se marcó como "no
+  // hay" al guardar) — solo para revisar.
+  const noSeContaron = faltantesPorContar(insumos, proveedores, modo, new Set(porInsumo.keys()));
 
   const ordenados = [...insumos].sort((a, b) => a.nombre.localeCompare(b.nombre));
 
@@ -344,5 +398,63 @@ function Resultado({
         </details>
       )}
     </>
+  );
+}
+
+// Aviso al guardar: lo que tocaba contar y no está en las notas, separado
+// por proveedor y todo marcado de inicio. Los marcados se guardan en 0
+// ("no hay"); se desmarca lo que sí hay y solo faltó anotar.
+function FaltanPorContarSheet({
+  modo,
+  faltantes,
+  proveedores,
+  marcados,
+  onToggle,
+  onGuardar,
+  onClose,
+}: {
+  modo: Modo;
+  faltantes: InsumoEntry[];
+  proveedores: ProveedorCatalogEntry[];
+  marcados: Set<string>;
+  onToggle: (id: string) => void;
+  onGuardar: () => void;
+  onClose: () => void;
+}) {
+  const grupos = [
+    ...proveedores.map((p) => ({ key: p.id, nombre: p.nombre, items: faltantes.filter((i) => i.proveedorId === p.id) })),
+    {
+      key: "sin",
+      nombre: "Sin proveedor",
+      items: faltantes.filter((i) => !i.proveedorId || !proveedores.some((p) => p.id === i.proveedorId)),
+    },
+  ].filter((g) => g.items.length > 0);
+
+  return (
+    <Sheet title={`Faltan por contar (${faltantes.length})`} onClose={onClose}>
+      <p className="hint">
+        Estos productos tocaba contarlos {modo === "completo" ? "el domingo" : "el jueves"} y no están en tus notas. Los
+        marcados se guardan como <strong>0 (no hay)</strong> y salen abajo para que puedas pedirlos.
+      </p>
+      <div className="faltan-lista">
+        {grupos.map((g) => (
+          <div key={g.key} className="faltan-grupo">
+            <span className="insumos-grupo-titulo">{g.nombre}</span>
+            {g.items.map((i) => (
+              <label key={i.id} className="faltan-item">
+                <input type="checkbox" checked={marcados.has(i.id)} onChange={() => onToggle(i.id)} />
+                {i.nombre}
+              </label>
+            ))}
+          </div>
+        ))}
+      </div>
+      <button className="btn-primary" onClick={onGuardar}>
+        {marcados.size > 0 ? "No hay — guardar marcados en 0" : "Guardar sin los que faltan"}
+      </button>
+      <button className="btn-secundario" onClick={onClose}>
+        Volver a contar
+      </button>
+    </Sheet>
   );
 }

@@ -441,7 +441,20 @@ estando en Nómina te regresa al menú de Equipo):
   un producto por renglón y como le salga (".6 consomé", "1k ajo en
   polvo", "500 bolsas Johnster", "250 gms habanero"). Se guarda por la
   fecha real del domingo o jueves de esa semana; un renglón con texto pero
-  sin número no deja guardar. Ya guardado (y bloqueado, con "Editar" igual
+  sin número no deja guardar. Al tocar "Guardar inventario" también se
+  revisa qué productos del catálogo tocaba contar ese día (todos el
+  domingo; el jueves, solo los de proveedores marcados; sin los de alta
+  rotación) y no aparecen en las notas: si falta alguno, sale el aviso
+  "Faltan por contar" con esos productos separados por proveedor, cada uno
+  con su casilla, todas marcadas de inicio. "No hay — guardar marcados en
+  0" guarda y agrega al final de las notas un renglón "0 [producto]" por
+  cada marcado (ej. "0 Zanahoria"), para que salgan en la lista de abajo
+  con conteo 0 y su recuadro "Pedir" — así el pedido sale completo aunque
+  no se haya anotado lo que no había. Lo que se desmarca (porque sí hay y
+  solo faltó anotarlo) no se agrega y queda en "No se contaron"; si se
+  desmarca todo, el botón dice "Guardar sin los que faltan". "Volver a
+  contar" cierra el aviso sin guardar. Si no falta nada, se guarda
+  directo. Ya guardado (y bloqueado, con "Editar" igual
   que el Conteo diario), cada renglón se lee — cantidad, unidad si la
   escribió (k/kg, gms, paq, bolsa…) y nombre — y se busca en el catálogo
   de Bar, Cocina y General por nombre o apodo, aunque esté abreviado, en
@@ -454,7 +467,8 @@ estando en Nómina te regresa al menú de Equipo):
   juntas las dos cantidades). Al final, plegable, "No se contaron": los
   productos del catálogo que tocaba contar ese día (todos el domingo; el
   jueves, solo los de proveedores marcados) y no aparecen en las notas,
-  sin contar los de alta rotación, que van en el Conteo diario. También
+  sin contar los de alta rotación, que van en el Conteo diario (lo que se
+  marcó como "no hay" al guardar ya no sale aquí). También
   existe como permiso "Inventario" en "Acceso a la app", para que el jefe
   de cocina lo capture desde su cuenta; y "Pedidos" — solo consulta: el
   total de lo pedido en la semana elegida (hasta hoy), sumando lo guardado
