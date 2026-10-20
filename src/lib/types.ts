@@ -108,10 +108,13 @@ export interface NominaEmpleadoSemana {
   descuentos: NominaDescuento[];
   totalDescuentos: number;
   neto: number;
-  // Si esta persona ya confirmó ("Recibí mi nómina correcta") que recibió
-  // el monto correcto de esta semana — ver NominaConfirmacion.
+  // Si el dueño ya la marcó como pagada esta semana — ver
+  // NominaConfirmacion.
   confirmado: boolean;
   confirmadoEn?: string;
+  // Lo que se le pagó al marcarla (su "a recibir hasta hoy" de ese
+  // momento). Vacío en marcas viejas, de antes de que se guardara.
+  montoPagado?: number;
 }
 
 // Descuentos de nómina capturados a mano por empleado — tardanzas,
@@ -159,14 +162,18 @@ export interface NominaExtra {
   monto: number;
 }
 
-// Confirmación de que un empleado recibió su nómina de la semana tal cual
-// se calculó (monto correcto) — la captura la propia persona desde su
-// cuenta con el permiso "Nómina", tocando "Recibí mi nómina correcta".
-// Sirve para que el dueño vea, al pagar, quién ya confirmó y quién no.
+// Marca de que el dueño ya le pagó a un empleado su nómina de la semana —
+// la pone y la quita tocando la etiqueta Pendiente/Pagada en Equipo >
+// Nómina. (Antes la capturaba el propio empleado con "Recibí mi nómina
+// correcta"; esas marcas viejas cuentan como pagadas.)
 export interface NominaConfirmacion {
   empleadoId: string;
   nombre: string;
   confirmadoEn: string; // ISO datetime
+  // Lo que se le pagó al marcarla: su "a recibir hasta hoy" en ese
+  // momento. Si después trabaja más días, la diferencia queda en el
+  // restante por pagar.
+  monto?: number;
 }
 
 export interface NominaDescuentosSemana {
@@ -470,7 +477,7 @@ export type Role = "owner" | "staff";
 // allá del acceso por día asignado (mesero) — ver EmpleadoEntry.staffProfileId
 // y PERMISOS_DISPONIBLES. Se agregan más conforme el dueño los vaya
 // necesitando, sin rehacer el checklist.
-export type PermisoStaff = "horarios" | "conteo_diario" | "inventario" | "nomina";
+export type PermisoStaff = "horarios" | "conteo_diario" | "inventario" | "nomina" | "propinas";
 
 export const PERMISOS_DISPONIBLES: { value: PermisoStaff; label: string; description: string }[] = [
   {
@@ -492,6 +499,11 @@ export const PERMISOS_DISPONIBLES: { value: PermisoStaff; label: string; descrip
     value: "nomina",
     label: "Nómina",
     description: "Ver su propia nómina semanal, calculada desde Horarios — sin editar descuentos ni percepciones extra de nadie.",
+  },
+  {
+    value: "propinas",
+    label: "Propinas",
+    description: "Consultar el total de propinas de cada día de la semana y cómo se reparte entre áreas — sin editar nada.",
   },
 ];
 

@@ -47,7 +47,7 @@ estando en Nómina te regresa al menú de Equipo):
   transferencias, ventas de apps y sus resúmenes. Arriba de los totales del
   día hay una tarjeta de asignación: quién tiene asignado ese día (si
   alguien) y quién capturó su corte — ver "Asignar día" más abajo.
-- **Equipo**: menú con 4 opciones — "Meseros" (catálogo de
+- **Equipo**: menú con 5 opciones — "Meseros" (catálogo de
   meseros — solo nombre, para elegir a quién le haces el corte en Corte;
   vive aquí porque también son parte de tu equipo, aunque su lista está
   separada de Personal), y como páginas propias "Personal" (la lista de tu
@@ -66,11 +66,14 @@ estando en Nómina te regresa al menú de Equipo):
   insumos de alta rotación de Bar o Cocina, sin acceso al Catálogo —
   igual que puede hacerlo el dueño desde Control de Bar/Cocina, pero sin
   poder editar productos, precios ni proveedores) y "Nómina" (ve su
-  propia nómina semanal, calculada igual que la del dueño, pero de solo
+  propia nómina semanal, calculada igual que la del dueño, con su "A
+  recibir hasta hoy" resaltado y el cierre de semana discreto, pero de solo
   lectura — sin poder agregar ni quitar descuentos o percepciones extra
-  de nadie; sí tiene un botón "Recibí mi nómina correcta" para confirmar
-  que el monto de esa semana está bien — ver el desglose más abajo, en
-  la propia sección "Nómina"). Cada permiso se acota distinto: "Horarios" usa el área de
+  de nadie, y sin ver si ya se le pagó — ver el desglose más abajo, en
+  la propia sección "Nómina") y "Propinas" (la misma pantalla de
+  consulta que ve el dueño en Equipo > Propinas — totales del día de toda
+  la semana y su reparto por área, sin poder editar nada; no se acota por
+  área ni por persona). Cada permiso se acota distinto: "Horarios" usa el área de
   Personal del puesto (Gerencia/Piso/Cocina) y muestra el horario
   completo de esa área (todo el personal de Piso, o todo el de Cocina,
   no solo su propia fila); "Conteo diario" usa el catálogo de insumos
@@ -89,7 +92,7 @@ estando en Nómina te regresa al menú de Equipo):
   cualquier otro puesto con este permiso (mesero, barra, etc.) solo
   puede verlo, sin poder tocar las celdas, agregar/quitar personal,
   guardar ni descargar nada.
-  Sin puesto asignado, ningún permiso de estos tres se
+  Sin puesto asignado, ninguno de estos permisos se
   puede habilitar (aunque igual puede tener acceso a "Corte", que no
   depende de un puesto — ver **Asignar día** más abajo).
   Al entrar con su PIN, esa persona no ve las pestañas
@@ -119,12 +122,17 @@ estando en Nómina te regresa al menú de Equipo):
   quien trabaje ese día (cualquier valor salvo OFF) se le paga 1 turno
   extra además de lo que le tocaba; el descanso pagado en un día festivo
   no cuenta como trabajado, así que no recibe el extra. En cuanto un
-  horario queda guardado aparecen botones "Imagen · Piso" / "Imagen ·
-  Cocina" / "Imagen · Las 2 áreas" (solo los que aplican — si un área no
-  tiene personal capturado, no sale su botón) que generan y descargan un
-  PNG con esa parte del horario, agrupado por área igual que la hoja de
-  cálculo que se usaba antes para esto — pensado para compartir por
-  WhatsApp con cada encargado de área)
+  horario queda guardado aparecen botones "Copiar imagen · Piso" /
+  "Copiar imagen · Cocina" / "Copiar imagen · Las 2 áreas" (solo los que
+  aplican — si un área no tiene personal capturado, no sale su botón) que
+  generan un PNG con esa parte del horario, agrupado por área igual que
+  la hoja de cálculo que se usaba antes para esto, y lo copian al
+  portapapeles para pegarlo directo en el chat de WhatsApp de cada
+  encargado de área — igual que la imagen de Nómina: el botón tocado
+  cambia unos segundos a "¡Copiada! Pégala en WhatsApp", y si el
+  navegador no permite copiar imágenes, el PNG se descarga como antes con
+  el aviso "Tu navegador no permite copiar imágenes — se descargó el
+  PNG")
   y "Nómina" (calculada sola a partir de Horarios y el sueldo diario de
   cada quien: Z paga doble, O/X y cualquier hora capturada pagan 1x, el
   descanso OFF solo se paga si esa semana se trabajaron los otros 6 días
@@ -134,54 +142,112 @@ estando en Nómina te regresa al menú de Equipo):
   persona, se capturan descuentos itemizados — tardanza, adelanto de
   efectivo, comida u otro, cada uno con su propio concepto y monto — y
   percepciones extra itemizadas — finiquito, bono u otro, que solo
-  existen en la semana donde se capturan, no se repiten — y la tarjeta de
-  cada quien muestra bruto, cada extra (+), cada descuento (-) y el neto
-  a pagar; el total de la semana también se ve en bruto/extras/
-  descuentos/neto. Un gasto del corte diario categorizado "Nómina" o
+  existen en la semana donde se capturan, no se repiten. Un gasto del
+  corte diario categorizado "Nómina" o
   "Comida empleado" también se puede vincular a un empleado de Personal —
   por ejemplo, un adelanto que sale del corte de otra persona —, y ese
   gasto aparece solo como descuento en la nómina del empleado elegido,
-  marcado "Corte" y sin poder borrarse desde ahí — se edita o se quita
-  desde el gasto mismo en Corte. Cada quien también muestra "Generada
-  hasta hoy", el bruto acumulado solo de los días de esa semana cuya
-  fecha ya pasó (o es hoy) — útil para ver a media semana cuánta nómina
-  llevas, sin esperar a que termine; en una semana ya cerrada equivale al
-  bruto completo, y en una futura es $0 —, con su propio total para todo
-  el personal). Igual que en Horarios, hay botones "Imagen · Piso" /
-  "Imagen · Cocina" / "Imagen · Las 2 áreas" (solo los que apliquen) que
-  generan y descargan un PNG con esa parte de la nómina de la semana sin
+  marcado "(Corte)" y sin poder borrarse desde ahí — se edita o se quita
+  desde el gasto mismo en Corte.
+  La pantalla resalta lo que se debe **hasta hoy**, no la semana
+  completa: "Generada hasta hoy" es el bruto acumulado solo de los días
+  de esa semana cuya fecha ya pasó o es hoy (en una semana ya cerrada
+  equivale al bruto completo, y en una futura es $0), y "A recibir hasta
+  hoy" = generada hasta hoy + percepciones extra − descuentos. Arriba de
+  todo, debajo del selector y la fecha de la semana, el botón "Copiar
+  imagen de la nómina" (ver más abajo), y luego un resumen con el **Total a pagar hasta
+  hoy** de todo el personal (resaltado), y debajo de él la generada hasta
+  hoy, las percepciones extra (si hay) y los descuentos. En la vista del
+  dueño las tarjetas del personal son plegables y arrancan cerradas:
+  cerrada, cada persona es una sola fila con su nombre, su etiqueta
+  Pendiente/Pagada, lo que le toca "A recibir hasta hoy" y una
+  flechita; tocar la fila la abre (o la cierra) y se pueden tener varias
+  abiertas a la vez. La vista del empleado siempre muestra su tarjeta
+  abierta. Abierta, en la tarjeta de
+  cada quien: nombre (con su etiqueta Pendiente/Pagada), área,
+  sueldo diario y días trabajados; un recuadro verde con **A recibir
+  hasta hoy** en grande y su cuenta debajo — la generada hasta hoy, cada
+  percepción extra (+) y cada descuento (-), con su botón para quitarlo
+  (salvo los que vienen del Corte) —; las 7 casillas de la semana con el
+  código del horario y el monto de cada día; los botones para agregar
+  percepción extra o descuento; y al final, discreta en gris, la línea
+  "Al cierre de la semana (según horario)" con el neto de la semana
+  completa. Hasta abajo de la página (solo el dueño), primero el control
+  de pagos (cuántos ya están pagados, total pagado y restante por pagar,
+  calculados sobre lo que se debe hasta hoy — ver "Control de pagos" más
+  abajo) y después el bloque
+  "Cómo se paga al cierre de la semana": Nómina bruto, Descuentos
+  (adelantos, comidas, retardos), Percepciones extra (vacaciones,
+  finiquito, bonos, etc.), **Neto a pagar** (resaltado), **Nómina en
+  efectivo** — el "Efectivo recibido (calculado)" del resumen semanal de
+  Corte de esa misma semana, o sea lo que debe haber según el corte, no
+  el efectivo real que se contó; los adelantos que salieron del corte ya
+  vienen restados ahí como gasto — y **Nómina en transferencia** (neto a
+  pagar − nómina en efectivo). Si el efectivo alcanza para todo el neto,
+  la nómina en efectivo es el neto completo y la transferencia queda en
+  $0.00 (y si el efectivo calculado sale negativo, se toma como $0.00)).
+  A diferencia de Horarios (que tiene una imagen por área), aquí hay un
+  solo botón, "Copiar imagen de la nómina", que genera un PNG con la
+  nómina de la semana de todo el personal (todas las áreas) sin
   descuentos (bruto + percepciones extra si las hay, marcadas con un
   asterisco), agrupada por área con subtotales y un total general al
-  final, imitando la hoja de cálculo que se usaba antes para esto —
-  pensado para compartir por WhatsApp con quien paga cada área o con
-  quien paga todo. Solo en esa imagen el número
+  final, imitando la hoja de cálculo que se usaba antes para esto — y lo
+  copia al portapapeles para pegarlo directo en el chat de WhatsApp. Al
+  copiarla, el botón cambia unos segundos a "¡Copiada! Pégala en
+  WhatsApp"; si el navegador no permite copiar imágenes, el PNG se
+  descarga como antes y aparece el aviso "Tu navegador no permite copiar
+  imágenes — se descargó el PNG". Solo en esa imagen el número
   de semana es el de la semana del año (ISO), no el "Semana 1"-"4" del
   mes que se usa en toda la app — ej. la semana del 14 al 20 de
   septiembre se ve ahí como "Semana 38".
 
-  Cada quien con el permiso "Nómina" puede confirmar, desde su propia
-  cuenta, que el monto de esa semana es correcto — con un botón "Recibí
-  mi nómina correcta" que solo aparece si todavía no lo ha confirmado; al
-  tocarlo, se guarda quién y cuándo (fecha y hora), y el botón se
-  reemplaza por un aviso con esa fecha. El dueño ve el resultado en
-  Equipo > Nómina: junto al nombre de cada quien aparece una etiqueta
-  "Confirmada" (verde) o "Pendiente" (neutral), y arriba de los totales
-  de siempre hay un apartado nuevo con cuántos confirmaron ("2 de 5"), el
-  total ya pagado (solo lo de quienes confirmaron) y el restante por
-  pagar (lo de quienes no) — para llevar el control de a quién ya le
-  entregaste su pago sin tener que preguntarle uno por uno. Es
-  independiente de los descuentos/percepciones extra: no se puede
-  confirmar ni revocar desde Equipo, y no bloquea que el dueño siga
-  editando esa nómina si hace falta.
+  Control de pagos: en Equipo > Nómina (solo el dueño), junto al nombre
+  de cada quien hay una etiqueta que se toca — por defecto dice
+  "Pendiente" (gris); un toque la cambia a "✓ Pagada" (verde) para marcar
+  que ya le pagaste esa semana, y otro toque la regresa a "Pendiente".
+  Al marcarla se guarda lo que le tocaba en ese momento (su "A recibir
+  hasta hoy") y la etiqueta lo muestra ("✓ Pagada $2,000.00"); si
+  después trabaja más días, la etiqueta se queda con lo que se le pagó y
+  la diferencia sigue en el restante por pagar. Regresarla a "Pendiente"
+  borra ese monto.
+  Funciona con la tarjeta cerrada: tocar la etiqueta no abre ni cierra la
+  tarjeta. Al final de la página, el apartado de pagos muestra "Ya
+  pagados" ("2 de 5"), el total pagado (la suma de lo que se guardó al
+  marcar a cada quien) y el restante por pagar (total a pagar hasta hoy −
+  total pagado; al cierre de la semana, si ya se le pagó todo a todos,
+  queda en $0) — para
+  llevar el control de a quién ya le entregaste su pago. Es
+  independiente de los descuentos/percepciones extra y no bloquea que
+  sigas editando esa nómina. El empleado ya no confirma nada desde su
+  cuenta (se quitó el botón "Recibí mi nómina correcta") ni ve este
+  estado; las confirmaciones que se hicieron antes con ese botón cuentan
+  como "Pagada" y, como no tienen monto guardado, toman lo que le toca
+  hasta hoy hasta que se vuelvan a marcar.
   Personal
   sigue siendo una lista aparte del catálogo de Meseros — este es solo
   nombre, sin sueldo, para el corte.
+
+  **Propinas** (Equipo > Propinas): pantalla de solo consulta, con el
+  mismo selector de mes y semana que Nómina ("Semana 1" a "4" dentro del
+  mes, como el resto de la app), y abajo el rango de fechas de esa semana
+  (ej. "12 – 18 oct"). Debajo, la lista de lunes a
+  domingo, cada día con su fecha y el total de propinas de ese día (la
+  suma de las propinas de todos los cortes de meseros de ese día; sin
+  desglose por mesero — un día sin corte sale en $0.00, en gris), y al
+  final el "Total semana". Debajo del total, un bloque "Cómo se reparte
+  (solo informativo)" con la parte de cada área, cada una con su color:
+  Cocina 1% (naranja), Barra 1% (azul) y Gerencia 1% (verde) — cada una
+  es un tercio del total de la semana (el 1% de la propina de 3%); si al
+  dividir sobra un centavo se lo lleva Gerencia, para que las tres sumen
+  exactamente el total. No afecta el corte, la nómina ni ningún otro
+  total. Una cuenta de equipo con el permiso "Propinas" ve esta misma
+  pantalla en su menú de inicio.
 
   **Asignar día**: desde el propio Corte diario (arriba de los totales del
   día) el dueño puede asignar ese día a alguien de Personal que ya tenga
   "Acceso a la app" creado — no crea una cuenta nueva, solo elige entre
   quienes ya la tienen. A esa persona le aparece "Corte" como una sección
-  más en su cuenta (junto a Horarios/Conteo diario/Nómina si también las
+  más en su cuenta (junto a Horarios/Conteo diario/Inventario/Nómina/Propinas si también las
   tiene), acotada solo a los días que le hayan asignado; ahí entra
   igual que el dueño a capturar meseros, gastos, transferencias y ventas
   de apps de ese día. La tarjeta de asignación en Corte diario muestra
@@ -238,7 +304,13 @@ estando en Nómina te regresa al menú de Equipo):
   producto le falta la cantidad, o trae algo que no sea solo un número
   (ej. "5kg" o "dos" — la presentación ya va entre paréntesis), aparece
   un aviso con esos productos y no se guarda hasta corregirlos (si no
-  hay, se pone 0). Ya guardado, debajo del texto aparece la lista
+  hay, se pone 0). En Bar, por ahora no se hace pedido desde aquí: ya
+  guardado el conteo, debajo del texto solo aparece la lista "Conteo del
+  día" con cada producto y su cantidad contada (con su presentación), en
+  el mismo orden del texto, de solo lectura — sin recuadros de "Pedir",
+  sin "Copiar pedido" ni "Guardar pedido"; lo único editable sigue siendo
+  el texto de arriba (con "Editar"), y al volver a guardarlo la lista se
+  actualiza sola. En Cocina, ya guardado, debajo del texto aparece la lista
   separada por proveedor con cada cantidad: cada producto se busca por
   su nombre en el catálogo del área (sin importar mayúsculas ni acentos)
   y toma el proveedor que tenga asignado ahí; lo que no está en el
@@ -302,7 +374,9 @@ estando en Nómina te regresa al menú de Equipo):
   existe como permiso "Inventario" en "Acceso a la app", para que el jefe
   de cocina lo capture desde su cuenta; y "Pedidos" — solo consulta: el
   total de lo pedido en la semana elegida (hasta hoy), sumando lo guardado
-  con "Guardar pedido" en el Conteo diario (Cocina y Bar, lunes a domingo)
+  con "Guardar pedido" en el Conteo diario de Cocina (lunes a domingo;
+  Bar ya no captura pedido ahí, aunque los que se hayan guardado antes
+  siguen contando)
   y en el Inventario del jueves y del domingo, separado por proveedor y
   producto. Debajo de cada producto se ve de dónde salió ("Lun 1 · Jue 2 ·
   Inv. Jue 1"). El total se pasa a la unidad en que se cuenta el producto
@@ -346,7 +420,7 @@ Hay 2 tipos de cuenta:
   Personal** (nombre + PIN de 4 dígitos, sin correo — ver "Acceso a la
   app" más arriba) — no hace falta crearla en el dashboard de Supabase.
   Solo ve las secciones que su checklist de permisos habilita
-  (Horarios/Conteo diario/Nómina) más, si el dueño le asignó algún día
+  (Horarios/Conteo diario/Inventario/Nómina/Propinas) más, si el dueño le asignó algún día
   desde Corte diario (ver "Asignar día" más arriba), "Corte" — acotado
   solo a esos días. Esa persona entra desde "Soy del equipo, tengo un
   PIN" en la pantalla de inicio, elige su nombre y teclea su PIN.

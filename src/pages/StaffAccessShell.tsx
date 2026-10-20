@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChefHat, ClipboardList, Clock, Home, LogOut, Martini, Package, Wallet } from "lucide-react";
+import { ChefHat, ClipboardList, Clock, Coins, Home, LogOut, Martini, Package, Wallet } from "lucide-react";
 import { formatAssignedDate, insumoAreaForPuesto, plantillaConteo, mostRecentWeekIndex, puedeEditarHorarios } from "../lib/dataModel";
 import { HORARIO_AREAS_FIJAS, PERMISOS_DISPONIBLES } from "../lib/types";
 import type { AppData, ConteoTextoArea, HorarioSemana, PermisoStaff, Profile, StaffAssignment } from "../lib/types";
@@ -7,6 +7,7 @@ import { HorariosPanel } from "../components/panels/HorariosPanel";
 import { ConteoDiarioPanel } from "../components/panels/ConteoDiarioPanel";
 import { InventarioNotasPanel } from "../components/panels/InventarioNotasPanel";
 import { NominaPanel } from "../components/panels/NominaPanel";
+import { PropinasPanel } from "../components/panels/PropinasPanel";
 
 type StaffView = "menu" | PermisoStaff | "corte";
 
@@ -26,7 +27,7 @@ function ShellHeader({ subtitle, onSignOut }: { subtitle?: string; onSignOut: ()
 
 // Pantalla para cuentas de equipo dadas de alta desde Personal — solo ve
 // las secciones que tiene habilitadas: las de su checklist de permisos
-// (Horarios/Conteo diario/Nómina, acotadas a su propia área o persona) y,
+// (Horarios/Conteo diario/Inventario/Nómina/Propinas, acotadas a su propia área o persona) y,
 // si le asignaron algún día, "Corte" (acotado a esos días). Con una sola
 // sección en total entra directo a ella; con dos o más, primero ve un
 // menú para elegir.
@@ -39,7 +40,6 @@ export default function StaffAccessShell({
   onSaveInventarioNotas,
   onSavePedidoInventario,
   onAsignarApodo,
-  onConfirmarNomina,
   onSignOut,
   assignments,
   onPickCorteDate,
@@ -52,7 +52,6 @@ export default function StaffAccessShell({
   onSaveInventarioNotas: (fecha: string, texto: string) => void;
   onSavePedidoInventario: (fecha: string, pedido: Record<string, number>) => void;
   onAsignarApodo: (insumoId: string, apodo: string) => void;
-  onConfirmarNomina: (monthKey: string, weekIndex: number, empleadoId: string, nombre: string) => void;
   onSignOut: () => void;
   assignments: StaffAssignment[];
   onPickCorteDate: (date: string) => void;
@@ -192,6 +191,7 @@ export default function StaffAccessShell({
           onGuardar={(fecha, texto) => onSaveConteoTexto(insumoArea, fecha, texto)}
           pedidos={data.pedidosDiarios[insumoArea]}
           onGuardarPedido={(fecha, pedido) => onSavePedidoDiario(insumoArea, fecha, pedido)}
+          conPedido={insumoArea !== "bar"}
         />
       </div>
     );
@@ -235,14 +235,29 @@ export default function StaffAccessShell({
           horarios={data.horarios}
           nominaDescuentos={data.nominaDescuentos}
           soloEmpleadoId={empleado.id}
-          onConfirmarNomina={onConfirmarNomina}
           onGoToHorarios={permisos.includes("horarios") ? () => setView("horarios") : undefined}
         />
       </div>
     );
   }
 
-  const ICONOS: Record<PermisoStaff, typeof Clock> = { horarios: Clock, conteo_diario: ClipboardList, inventario: Package, nomina: Wallet };
+  if (view === "propinas" && permisos.includes("propinas")) {
+    return (
+      <div className="app-shell">
+        <ShellHeader subtitle={area?.nombre} onSignOut={onSignOut} />
+        <PropinasPanel
+          onBack={backToMenu}
+          backLabel="Inicio"
+          months={data.months}
+          monthKeys={monthKeys}
+          initialMonthKey={mostRecentMonthKey as string}
+          initialWeekIndex={mostRecentWeekIdx}
+        />
+      </div>
+    );
+  }
+
+  const ICONOS: Record<PermisoStaff, typeof Clock> = { horarios: Clock, conteo_diario: ClipboardList, inventario: Package, nomina: Wallet, propinas: Coins };
 
   return (
     <div className="app-shell">

@@ -1,7 +1,7 @@
 import { DAYS, DAY_SHORT } from "./types";
 import type { NominaEmpleadoSemana } from "./types";
 import { money } from "./dataModel";
-import { downloadCanvasAsPng } from "./imageExport";
+import { copyCanvasAsPng } from "./imageExport";
 
 const COL_NOMBRE = 210;
 const COL_BASE = 110;
@@ -41,12 +41,13 @@ function agruparPorArea(reporte: NominaEmpleadoSemana[]): { nombre: string; empl
   return grupos;
 }
 
-// Genera y descarga una imagen PNG con el desglose de nómina de la
-// semana sin descuentos (bruto + percepciones extra, como finiquitos o
-// bonos, si hay), agrupado por área con subtotales — pensado para
-// compartir por WhatsApp con quien paga, igual que la hoja de cálculo
-// que se usaba antes para esto.
-export function downloadNominaImage(reporte: NominaEmpleadoSemana[], titulo: string, subtitulo: string): void {
+// Genera una imagen PNG con el desglose de nómina de la semana sin
+// descuentos (bruto + percepciones extra, como finiquitos o bonos, si
+// hay), agrupado por área con subtotales — pensado para compartir por
+// WhatsApp con quien paga, igual que la hoja de cálculo que se usaba
+// antes para esto. La copia al portapapeles para pegarla directo en el
+// chat; si el navegador no lo permite, la descarga (devuelve false).
+export function copyNominaImage(reporte: NominaEmpleadoSemana[], titulo: string, subtitulo: string): Promise<boolean> {
   const grupos = agruparPorArea(reporte);
   const hayExtras = reporte.some((e) => e.totalExtras > 0);
   const height =
@@ -61,7 +62,7 @@ export function downloadNominaImage(reporte: NominaEmpleadoSemana[], titulo: str
   canvas.width = WIDTH * scale;
   canvas.height = height * scale;
   const ctx = canvas.getContext("2d");
-  if (!ctx) return;
+  if (!ctx) return Promise.resolve(false);
   ctx.scale(scale, scale);
 
   ctx.fillStyle = "#ffffff";
@@ -197,5 +198,5 @@ export function downloadNominaImage(reporte: NominaEmpleadoSemana[], titulo: str
     ctx.fillText("* incluye percepciones extra de esta semana (finiquito, bono)", 12, y + FOOTNOTE_H / 2);
   }
 
-  downloadCanvasAsPng(canvas, titulo);
+  return copyCanvasAsPng(canvas, titulo);
 }

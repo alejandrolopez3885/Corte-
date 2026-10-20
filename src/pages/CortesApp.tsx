@@ -1,5 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeftRight, BarChart3, Boxes, ChartLine, ChefHat, Circle, CircleDot, Clock, Contact, Handshake, History, Home, LayoutDashboard, LogOut, Martini, Package, Pencil, Plus, Receipt, Settings2, ShoppingCart, Smartphone, Store, Trash2, Truck, Users, Wallet } from "lucide-react";
+import {
+  Plus, Settings2, Users, Receipt, ArrowLeftRight, CircleDot, Circle, Pencil,
+  Smartphone, BarChart3, LogOut, Truck, Trash2, Home, Store, LayoutDashboard, Contact, Clock, Wallet, ChartLine, Martini, ChefHat,
+  ShoppingCart, Handshake, Boxes, Package, Coins, History,
+} from "lucide-react";
 import { useAuth } from "../lib/auth.tsx";
 import { useAppData } from "../lib/useAppData";
 import {
@@ -28,6 +32,7 @@ import { DashboardPanel } from "../components/panels/DashboardPanel";
 import { EmpleadosPanel } from "../components/panels/EmpleadosPanel";
 import { HorariosPanel } from "../components/panels/HorariosPanel";
 import { NominaPanel } from "../components/panels/NominaPanel";
+import { PropinasPanel } from "../components/panels/PropinasPanel";
 import { TendenciasPanel } from "../components/panels/TendenciasPanel";
 import { ControlBarPanel } from "../components/panels/ControlBarPanel";
 import { ControlCocinaPanel } from "../components/panels/ControlCocinaPanel";
@@ -53,7 +58,7 @@ type ModalState =
   | { type: "deleteMonth"; monthKey: string }
   | null;
 
-type EquipoView = "menu" | "personal" | "horarios" | "nomina";
+type EquipoView = "menu" | "personal" | "horarios" | "nomina" | "propinas";
 
 type NegocioView = "menu" | "tendencias" | "bitacora" | "controlBar" | "controlCocina" | "controlGeneral" | "inventario" | "pedidos";
 
@@ -135,7 +140,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
   if (!isOwner) {
     // Cuenta de equipo dada de alta desde Personal: tiene su propia
     // pantalla, acotada a las secciones que su checklist de permisos
-    // habilita (Horarios/Conteo diario/Nómina) y, si le asignaron algún
+    // habilita (Horarios/Conteo diario/Inventario/Nómina/Propinas) y, si le asignaron algún
     // día, "Corte" — acotado a esos días nada más.
     if (assignmentsStatus === "loading" || assignments === null) {
       return (
@@ -176,7 +181,6 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           onSaveInventarioNotas={guardarInventarioNotas}
           onSavePedidoInventario={guardarPedidoInventario}
           onAsignarApodo={asignarApodoInsumo}
-          onConfirmarNomina={confirmarNomina}
           onSignOut={signOut}
           assignments={assignmentsStatus === "error" ? [] : assignments}
           onPickCorteDate={(date) => setSelectedAssignedDate(date)}
@@ -653,17 +657,19 @@ export default function CortesApp({ profile }: { profile: Profile }) {
     persist(next);
   }
 
-  // "Recibí mi nómina correcta" — lo dispara la propia persona desde su
-  // vista de Nómina de solo lectura. Independiente de saveNominaDescuentos
-  // porque no debe poder tocar descuentos ni percepciones extra de nadie,
-  // solo agregar/actualizar su propia confirmación de esa semana.
-  function confirmarNomina(monthKey: string, weekIndex: number, empleadoId: string, nombre: string) {
+  // Etiqueta Pendiente/Pagada de Nómina — la toca el dueño para marcar a
+  // quién ya le pagó esa semana (y otra vez para regresarlo a pendiente).
+  // Se guarda en las mismas "confirmaciones" donde antes cada empleado
+  // confirmaba "Recibí mi nómina correcta", así que esas cuentan como
+  // pagadas.
+  function togglePagoNomina(monthKey: string, weekIndex: number, empleadoId: string, nombre: string, monto: number) {
     if (!data) return;
     const next = structuredClone(data);
     if (!next.nominaDescuentos[monthKey]) next.nominaDescuentos[monthKey] = { weeks: [null, null, null, null] };
     const semana = next.nominaDescuentos[monthKey].weeks[weekIndex] || { descuentos: [], extras: [] };
+    const yaPagado = (semana.confirmaciones || []).some((c) => c.empleadoId === empleadoId);
     const confirmaciones = (semana.confirmaciones || []).filter((c) => c.empleadoId !== empleadoId);
-    confirmaciones.push({ empleadoId, nombre, confirmadoEn: new Date().toISOString() });
+    if (!yaPagado) confirmaciones.push({ empleadoId, nombre, confirmadoEn: new Date().toISOString(), monto });
     next.nominaDescuentos[monthKey].weeks[weekIndex] = { ...semana, confirmaciones };
     persist(next);
   }
@@ -778,6 +784,15 @@ export default function CortesApp({ profile }: { profile: Profile }) {
                 <span>Calculada sola a partir de Horarios</span>
               </span>
             </button>
+            <button className="menu-item" onClick={() => setEquipoView("propinas")}>
+              <span className="menu-item-icon">
+                <Coins size={20} />
+              </span>
+              <span className="menu-item-text">
+                <strong>Propinas</strong>
+                <span>Consulta las propinas de cada día de la semana</span>
+              </span>
+            </button>
           </div>
         </div>
       )}
@@ -818,6 +833,17 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           nominaDescuentos={data.nominaDescuentos}
           onSaveDescuentos={saveNominaDescuentos}
           onGoToHorarios={() => setEquipoView("horarios")}
+          onTogglePagado={togglePagoNomina}
+        />
+      )}
+
+      {isOwner && activeTab === "equipo" && equipoView === "propinas" && (
+        <PropinasPanel
+          onBack={() => setEquipoView("menu")}
+          months={data.months}
+          monthKeys={monthKeys}
+          initialMonthKey={mostRecentMonthKey as string}
+          initialWeekIndex={mostRecentWeekIdx}
         />
       )}
 

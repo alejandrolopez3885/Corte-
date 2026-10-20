@@ -1,6 +1,6 @@
 import { DAYS, DAY_SHORT } from "./types";
 import type { HorarioArea, HorarioSemana } from "./types";
-import { downloadCanvasAsPng } from "./imageExport";
+import { copyCanvasAsPng } from "./imageExport";
 
 const COL_NOMBRE = 220;
 const COL_DIA = 90;
@@ -15,13 +15,15 @@ const AREA_COLORS = ["#8BC34A", "#F39C12", "#26A69A", "#5C6BC0", "#EC7063", "#AF
 const NEGRO = "#111111";
 const DIA_BG = "#F1F8E9";
 
-// Genera y descarga una imagen PNG con el horario semanal, agrupado por
+// Genera una imagen PNG con el horario semanal, agrupado por
 // área — igual estructura que la hoja de cálculo que se usaba antes para
 // esto. `soloAreaId` limita la imagen a una sola área (ej. para el jefe
 // de cocina); sin eso, incluye todas las áreas con personal capturado.
-export function downloadHorarioImage(semana: HorarioSemana, titulo: string, subtitulo: string, soloAreaId?: string): void {
+// La copia al portapapeles para pegarla en WhatsApp; si el navegador no lo
+// permite, la descarga (devuelve false).
+export function copyHorarioImage(semana: HorarioSemana, titulo: string, subtitulo: string, soloAreaId?: string): Promise<boolean> {
   const grupos: HorarioArea[] = semana.areas.filter((a) => (!soloAreaId || a.id === soloAreaId) && a.filas.length > 0);
-  if (grupos.length === 0) return;
+  if (grupos.length === 0) return Promise.resolve(false);
 
   const height = TITLE_H + grupos.reduce((s, g) => s + AREA_BAND_H + COL_HEADER_H + g.filas.length * ROW_H, 0);
 
@@ -30,7 +32,7 @@ export function downloadHorarioImage(semana: HorarioSemana, titulo: string, subt
   canvas.width = WIDTH * scale;
   canvas.height = height * scale;
   const ctx = canvas.getContext("2d");
-  if (!ctx) return;
+  if (!ctx) return Promise.resolve(false);
   ctx.scale(scale, scale);
 
   ctx.fillStyle = "#ffffff";
@@ -106,5 +108,5 @@ export function downloadHorarioImage(semana: HorarioSemana, titulo: string, subt
     });
   });
 
-  downloadCanvasAsPng(canvas, titulo);
+  return copyCanvasAsPng(canvas, titulo);
 }

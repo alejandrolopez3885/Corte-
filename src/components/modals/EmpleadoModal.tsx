@@ -365,8 +365,11 @@ function PermisosChecklist({
         // Inventario es una sola nota con todo (Cocina, Bar y General), así
         // que tampoco lleva área — basta con que tenga puesto.
         const esInventario = p.value === "inventario";
+        // Propinas es la misma consulta para todos (totales del día de toda
+        // la semana), tampoco lleva área.
+        const esPropinas = p.value === "propinas";
         const habilitado = esConteoDiario ? !!insumoAreaLabel : !!areaActual;
-        const etiquetaArea = esConteoDiario ? insumoAreaLabel : esNomina || esInventario ? undefined : areaActual?.nombre;
+        const etiquetaArea = esConteoDiario ? insumoAreaLabel : esNomina || esInventario || esPropinas ? undefined : areaActual?.nombre;
         return (
           <Toggle
             key={p.value}
