@@ -43,6 +43,7 @@ import { PedidosTotalPanel } from "../components/panels/PedidosTotalPanel";
 import { ActividadPanel } from "../components/panels/ActividadPanel";
 import { useRegistrarVista } from "../lib/bitacora";
 import StaffAccessShell from "./StaffAccessShell";
+import { NovedadesAlEntrar } from "../components/NovedadesAlEntrar";
 
 type ModalState =
   | { type: "month" }
@@ -194,8 +195,11 @@ export default function CortesApp({ profile }: { profile: Profile }) {
       );
     }
     if (!selectedAssignedDate) {
+      const tieneCorte = assignmentsStatus !== "error" && assignments.length > 0;
       return (
-        <StaffAccessShell
+        <>
+          <NovedadesAlEntrar profile={profile} data={data} tieneCorte={tieneCorte} />
+          <StaffAccessShell
           profile={profile}
           data={data}
           onSaveHorarioSemana={saveHorarioSemana}
@@ -207,7 +211,8 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           onSignOut={signOut}
           assignments={assignmentsStatus === "error" ? [] : assignments}
           onPickCorteDate={(date) => setSelectedAssignedDate(date)}
-        />
+          />
+        </>
       );
     }
   }

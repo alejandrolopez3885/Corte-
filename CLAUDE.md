@@ -10,3 +10,7 @@
 - Los PNG de vista previa no se suben al repo.
 - Todo en español (textos de la app, README, commits).
 - El README describe cada pantalla a detalle: actualizarlo junto con el código.
+- Si un cambio lo ve el personal (cuentas de equipo), agregar en el mismo
+  cambio su novedad en `src/lib/novedades.ts` (fecha y hora de publicación,
+  sección, título corto, una frase y su dibujito) para que se le avise al
+  entrar.
