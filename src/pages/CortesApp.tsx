@@ -817,6 +817,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
 
   return (
     <div className={`app-shell ${isOwner ? "with-bottom-nav" : ""}`}>
+      {isOwner && <NovedadesAlEntrar profile={profile} data={data} tieneCorte={false} />}
       <header className="topbar">
         <div className="brand">
           <span className="brand-mark">Cortes</span>

@@ -565,7 +565,12 @@ Corte desde marzo. Para saberlo, cada persona guarda en su propia cuenta
 última vez que entró con acceso a cada sección; para Corte también cuenta
 el "Corte hecho por" de cada día. El personal nunca consulta el historial
 de cambios. Al cerrarlas queda además un renglón "Novedades" en el
-historial (solo el dueño lo ve). El dueño no recibe el slider. Las
+historial (solo el dueño lo ve). El dueño también recibe el slider al
+entrar, con las novedades de todas las secciones (aunque él haya pedido
+el cambio): le salen todas las que todavía no ha cerrado, y al cerrarlas
+ya no vuelven a salir. Lo visto se guarda en su cuenta, no en el aparato:
+si las cierra en la computadora, ya no le salen en el celular. Lo que ve
+el dueño no queda en el historial. Las
 novedades viven en `src/lib/novedades.ts`; hoy hay 4. De Corte: sumar
 montos con "+", el nombre del gasto que se completa solo y la categoría
 obligatoria (con la nueva Servicio). De Inventario: el aviso "Faltan por

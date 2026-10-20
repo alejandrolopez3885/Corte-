@@ -2,8 +2,8 @@ import { supabase } from "./supabaseClient";
 import { DAYS } from "./types";
 import type { AppData, PermisoStaff, Profile } from "./types";
 
-// Novedades: lo que cambió en la app, explicado en corto al personal la
-// primera vez que entra después del cambio (ver NovedadesAlEntrar). Cada
+// Novedades: lo que cambió en la app, explicado en corto al personal (y al
+// dueño) la primera vez que entra después del cambio (ver NovedadesAlEntrar). Cada
 // cambio que vea el personal agrega aquí su novedad, con la fecha y hora
 // en que se publicó y la sección a la que pertenece.
 //
@@ -11,7 +11,8 @@ import type { AppData, PermisoStaff, Profile } from "./types";
 // entraba a ella antes del cambio (si nunca la ha usado, para esa persona
 // todo es nuevo). Cada quien guarda en su propia cuenta solo qué
 // novedades ya vio y la última vez que entró con acceso a cada sección —
-// el personal nunca consulta el historial de cambios.
+// el personal nunca consulta el historial de cambios. El dueño ve todas,
+// de todas las secciones, hasta que las cierra.
 
 export type SeccionNovedad = "corte" | PermisoStaff;
 
@@ -105,8 +106,12 @@ function ultimoCorteHecho(data: AppData, profile: Profile): string | null {
 // Novedades que le tocan a esta persona ahora mismo, de la más vieja a la
 // más nueva.
 export async function novedadesPendientes(profile: Profile, data: AppData, tieneCorte: boolean): Promise<Novedad[]> {
-  if (profile.role === "owner") return [];
   const estado = await leerEstado();
+  // El dueño ve todas las novedades de todas las secciones (aunque él haya
+  // pedido el cambio), una sola vez cada una.
+  if (profile.role === "owner") {
+    return NOVEDADES.filter((n) => !estado.vistas.includes(n.id)).sort((a, b) => a.fecha.localeCompare(b.fecha));
+  }
   const secciones = seccionesConAcceso(profile, tieneCorte);
   const corteHecho = tieneCorte ? ultimoCorteHecho(data, profile) : null;
   return NOVEDADES.filter((n) => {
@@ -127,14 +132,17 @@ export async function novedadesPendientes(profile: Profile, data: AppData, tiene
 // Guarda qué vio y, para cada sección a la que hoy tiene acceso, que entró
 // ahora. Se llama al entrar (haya o no novedades) y al cerrar el slider.
 export async function registrarEntrada(profile: Profile, tieneCorte: boolean, vistas: Novedad[] = []) {
-  if (profile.role === "owner") return;
+  const esDueno = profile.role === "owner";
+  // El dueño solo guarda cuáles ya vio (sin entradas ni historial).
+  if (esDueno && vistas.length === 0) return;
   const estado = await leerEstado();
   const ahora = new Date().toISOString();
   const ultimoAcceso = { ...estado.ultimoAcceso };
-  seccionesConAcceso(profile, tieneCorte).forEach((s) => (ultimoAcceso[s] = ahora));
+  if (!esDueno) seccionesConAcceso(profile, tieneCorte).forEach((s) => (ultimoAcceso[s] = ahora));
   const ids = [...new Set([...estado.vistas, ...vistas.map((n) => n.id)])];
   const { error } = await supabase.auth.updateUser({ data: { novedades: { vistas: ids, ultimoAcceso } } });
   if (error) console.error("No se pudo guardar el estado de las novedades", error);
+  if (esDueno) return;
   // Queda también en el historial (solo agregar; el personal no lo lee).
   if (vistas.length > 0) {
     await supabase

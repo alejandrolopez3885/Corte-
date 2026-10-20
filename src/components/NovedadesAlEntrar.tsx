@@ -5,7 +5,7 @@ import type { Novedad, VisualNovedad } from "../lib/novedades";
 import type { AppData, Profile } from "../lib/types";
 
 // Lo primero que ve una cuenta de equipo al entrar si hay algo nuevo en las
-// secciones a las que tiene acceso: una tarjeta por novedad con un dibujito
+// secciones a las que tiene acceso (el dueño, en todas): una tarjeta por novedad con un dibujito
 // de cómo se usa, "Siguiente" entre ellas y "Entendido" en la última. Se
 // cierra en cualquier momento con la ✕ o tocando fuera, y ya no vuelve a
 // salir. Ver lib/novedades.ts.
@@ -15,7 +15,7 @@ export function NovedadesAlEntrar({ profile, data, tieneCorte }: { profile: Prof
   const revisado = useRef(false);
 
   useEffect(() => {
-    if (revisado.current || profile.role === "owner") return;
+    if (revisado.current) return;
     revisado.current = true;
     novedadesPendientes(profile, data, tieneCorte).then((lista) => {
       if (lista.length > 0) setNovedades(lista);
