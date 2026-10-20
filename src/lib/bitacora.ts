@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { supabase } from "./supabaseClient";
 import { dateForDay, formatAssignedDate, money } from "./dataModel";
-import { DAY_SHORT } from "./types";
+import { DAY_SHORT, GASTO_CATEGORIAS } from "./types";
 import type { AppData, DayName, MonthData, Profile } from "./types";
 
 // Bitácora (Negocio > Análisis > Historial de cambios): quién cambió qué y
@@ -13,6 +13,9 @@ import type { AppData, DayName, MonthData, Profile } from "./types";
 
 export interface CambioBitacora {
   accion: "cambió" | "agregó" | "eliminó";
+  // Al agregar/eliminar algo con varios montos (ej. el corte de un mesero),
+  // cada uno con su valor.
+  campos?: { campo: string; valor: string }[];
   campo?: string;
   antes?: string;
   despues?: string;
@@ -89,6 +92,8 @@ function comparar(a: Json, b: Json, path: string[], out: Hoja[]) {
 }
 
 const CAMPOS: Record<string, string> = {
+  tarjetasDesglose: "Montos de tarjetas", transferenciaDesglose: "Montos de transferencia", desglose: "Montos",
+  ventaAppsDesglose: "Montos de ventas de apps",
   venta: "Venta", tarjetas: "Tarjetas", transferencia: "Transferencia", propina: "Propina", propinaTipo: "Tipo de propina",
   gastosTotal: "Gastos", total: "Total", concepto: "Concepto", estado: "Estado", categoria: "Categoría",
   persona: "Persona", nombre: "Nombre", precio: "Precio", unidad: "Unidad", proveedorId: "Proveedor",
@@ -104,8 +109,12 @@ const CAMPOS_DINERO = new Set([
   "monto", "operativos", "fijos", "comisionDidi", "comisionUber", "comisionRappi", "sueldoDiario",
 ]);
 
+const fmtNum = (n: number) => n.toLocaleString("es-MX", { maximumFractionDigits: 2 });
+
 function textoValor(v: Json, campo?: string): string {
   if (v === undefined || v === null || v === "") return "—";
+  // Montos sueltos que se sumaron: "300 + 450 + 750".
+  if (campo && /desglose$/i.test(campo) && Array.isArray(v)) return v.map((n) => fmtNum(Number(n))).join(" + ");
   if (typeof v === "boolean") return v ? "Sí" : "No";
   if (typeof v === "number") return campo && CAMPOS_DINERO.has(campo) ? money(v) : String(v);
   if (typeof v === "string") return v.length > 300 ? `${v.slice(0, 300)}…` : v;
@@ -116,6 +125,37 @@ function textoValor(v: Json, campo?: string): string {
 }
 
 // "Gasto “Hielo” $85", "Mesero Juan", "Insumo Pollo"…
+const PROPINA_TIPO: Record<string, string> = { p3: "3%", p2: "2%", manual: "Manual", none: "Sin propina" };
+
+// Todos los montos de un elemento que se agregó/eliminó, para no perder
+// nada: el corte de un mesero completo, una transferencia con sus montos
+// sueltos, un gasto con su categoría.
+function camposElemento(v: Json, tipoLista: string): { campo: string; valor: string }[] | undefined {
+  if (!esObjeto(v)) return undefined;
+  const conDesglose = (monto: Json, desglose: Json) =>
+    `${textoValor(monto, "total")}${Array.isArray(desglose) && desglose.length > 1 ? ` (${textoValor(desglose, "desglose")})` : ""}`;
+  if (tipoLista === "Mesero") {
+    return [
+      { campo: "Venta", valor: textoValor(v.venta, "venta") },
+      { campo: "Tarjetas", valor: conDesglose(v.tarjetas, v.tarjetasDesglose) },
+      { campo: "Transferencia", valor: conDesglose(v.transferencia, v.transferenciaDesglose) },
+      {
+        campo: "Propina",
+        valor: `${PROPINA_TIPO[String(v.propinaTipo)] || (v.aplicaPropina ? "3%" : "—")} · ${textoValor(v.propina, "propina")}`,
+      },
+      { campo: "Gastos", valor: textoValor(v.gastosTotal, "gastosTotal") },
+      { campo: "Entrega", valor: textoValor(v.total, "total") },
+    ];
+  }
+  if (tipoLista === "Transferencia" && Array.isArray(v.desglose) && v.desglose.length > 1) {
+    return [{ campo: "Montos", valor: textoValor(v.desglose, "desglose") }];
+  }
+  if (tipoLista === "Gasto" && typeof v.categoria === "string") {
+    return [{ campo: "Categoría", valor: GASTO_CATEGORIAS.find((c) => c.value === v.categoria)?.label || v.categoria }];
+  }
+  return undefined;
+}
+
 function resumenElemento(v: Json, tipoLista: string): string {
   if (!esObjeto(v)) return textoValor(v);
   const nombre = (v.nombre ?? v.concepto ?? v.persona ?? v.numero) as string | undefined;
@@ -156,7 +196,13 @@ function ubicar(h: Hoja, prev: AppData, next: AppData): { seccion: string; donde
       const diaPrev = prev.months?.[mk]?.weeks?.[Number(w)]?.days?.[day as DayName];
       if (lista === "meseros") {
         const cut = (dia?.meseros || []).find((x) => x.id === id) || (diaPrev?.meseros || []).find((x) => x.id === id);
-        return conFecha({ seccion: "Corte", donde: `${base} · Mesero ${cut?.nombre || ""}`.trim(), campo: campo ? CAMPOS[campo] || campo : undefined, lista: "Mesero" });
+        const ETIQUETA_MESERO: Record<string, string> = { total: "Entrega", gastosTotal: "Gastos" };
+        return conFecha({
+          seccion: "Corte",
+          donde: `${base} · Mesero ${cut?.nombre || ""}`.trim(),
+          campo: campo ? ETIQUETA_MESERO[campo] || CAMPOS[campo] || campo : undefined,
+          lista: "Mesero",
+        });
       }
       if (lista === "gastos" || lista === "transferencias") {
         const items = [...(dia?.[lista] || []), ...(diaPrev?.[lista] || [])] as unknown as Record<string, Json>[];
@@ -250,9 +296,24 @@ export function describirCambios(prev: AppData, next: AppData): Grupo[] {
       g.cambios.push({ accion: "cambió", campo: u.campo, antes: textoValor(h.antes, ultimo), despues: textoValor(h.despues, ultimo) });
     } else {
       const valor = h.tipo === "agregó" ? h.despues : h.antes;
-      const texto = u.lista && esObjeto(valor) ? resumenElemento(valor, u.lista) : `${u.campo ? `${u.campo}: ` : ""}${textoValor(valor, ultimo)}`;
-      g.cambios.push({ accion: h.tipo, texto });
+      const elemento = !!u.lista && esObjeto(valor);
+      const texto = elemento
+        ? u.lista === "Mesero"
+          ? `Corte de ${(valor as Record<string, Json>).nombre ?? "mesero"}`
+          : resumenElemento(valor, u.lista!)
+        : `${u.campo ? `${u.campo}: ` : ""}${textoValor(valor, ultimo)}`;
+      const campos = elemento ? camposElemento(valor, u.lista!) : undefined;
+      g.cambios.push({ accion: h.tipo, texto, ...(campos ? { campos } : {}) });
     }
+  });
+  // Al editar el corte de un mesero, su transferencia se quita y se vuelve a
+  // crear igual: un "eliminó" y un "agregó" idénticos no son un cambio real.
+  grupos.forEach((g) => {
+    const firma = (c: CambioBitacora) => JSON.stringify([c.texto, c.campos]);
+    const quitados = g.cambios.filter((c) => c.accion === "eliminó").map(firma);
+    const agregados = g.cambios.filter((c) => c.accion === "agregó").map(firma);
+    const iguales = new Set(quitados.filter((f) => agregados.includes(f)));
+    if (iguales.size > 0) g.cambios = g.cambios.filter((c) => c.accion === "cambió" || !iguales.has(firma(c)));
   });
   return [...grupos.values()].filter((g) => g.cambios.length > 0);
 }
@@ -325,6 +386,28 @@ export function useRegistrarVista(profile: Profile | null, pantalla: string | nu
         if (error && error.code !== "23514") console.error("No se pudo registrar la pantalla", error);
       });
   }, [profile, pantalla]);
+}
+
+// Todo lo registrado sobre un día del corte (por su fecha), para "Historial
+// de este día" dentro del Corte.
+export async function cargarBitacoraDelDia(ownerId: string, fecha: string) {
+  return supabase
+    .from("bitacora")
+    .select("*")
+    .eq("owner_id", ownerId)
+    .eq("ref_fecha", fecha)
+    .eq("seccion", "Corte")
+    .order("creado_en", { ascending: false });
+}
+
+export async function contarBitacoraDelDia(ownerId: string, fecha: string) {
+  const { count } = await supabase
+    .from("bitacora")
+    .select("id", { count: "exact", head: true })
+    .eq("owner_id", ownerId)
+    .eq("ref_fecha", fecha)
+    .eq("seccion", "Corte");
+  return count || 0;
 }
 
 export async function cargarBitacora(ownerId: string, desdeIso: string, hastaIso: string) {

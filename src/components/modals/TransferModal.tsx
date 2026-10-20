@@ -6,6 +6,7 @@ import type { MeseroCatalogEntry, Transferencia } from "../../lib/types";
 export interface TransferFormValues {
   persona: string;
   total: string;
+  desglose?: number[];
 }
 
 export function TransferModal({
@@ -23,6 +24,7 @@ export function TransferModal({
 }) {
   const [persona, setPersona] = useState(editing?.persona || "");
   const [total, setTotal] = useState(editing ? String(editing.total) : "");
+  const [desglose, setDesglose] = useState<number[] | undefined>(editing?.desglose);
 
   return (
     <Sheet title={editing ? "Editar transferencia" : "Nueva transferencia"} onClose={onClose} onDelete={onDelete}>
@@ -35,12 +37,12 @@ export function TransferModal({
         </datalist>
       </Field>
       <Field label="Total">
-        <SumInput value={total} onChange={setTotal} placeholder="0.00 o 300+300+300" sumar />
+        <SumInput value={total} onChange={setTotal} onPartes={setDesglose} placeholder="0.00 o 300+300+300" sumar />
       </Field>
       <button
         className="btn-primary"
         disabled={!persona || !total}
-        onClick={() => onSave({ persona, total: String(sumFromText(total)) }, editing?.id)}
+        onClick={() => onSave({ persona, total: String(sumFromText(total)), desglose }, editing?.id)}
       >
         Guardar transferencia
       </button>

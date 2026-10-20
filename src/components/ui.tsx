@@ -54,10 +54,14 @@ export function SumInput({
   onChange,
   placeholder,
   sumar,
+  onPartes,
 }: {
   value: string;
   onChange: (v: string) => void;
   placeholder?: string;
+  // Recibe los montos sueltos al sumar ("300+450" → [300, 450]); undefined
+  // si quedó un solo monto.
+  onPartes?: (partes: number[] | undefined) => void;
   // Muestra el botón "+" y la suma en vivo — para campos donde se suman montos.
   sumar?: boolean;
 }) {
@@ -74,7 +78,10 @@ export function SumInput({
     const sum = sumFromTextLocal(text);
     const next = text.trim() === "" ? "" : String(sum);
     setText(next);
-    if (variasPartes || next !== value) onChange(next);
+    if (variasPartes || next !== value) {
+      onChange(next);
+      onPartes?.(variasPartes && montos.length > 1 ? montos : undefined);
+    }
   }
 
   function agregarMas() {

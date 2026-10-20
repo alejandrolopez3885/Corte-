@@ -40,8 +40,8 @@ import { ControlCocinaPanel } from "../components/panels/ControlCocinaPanel";
 import { InsumosPanel } from "../components/panels/InsumosPanel";
 import { InventarioNotasPanel } from "../components/panels/InventarioNotasPanel";
 import { PedidosTotalPanel } from "../components/panels/PedidosTotalPanel";
-import { ActividadPanel } from "../components/panels/ActividadPanel";
-import { useRegistrarVista } from "../lib/bitacora";
+import { ActividadPanel, HistorialDiaSheet } from "../components/panels/ActividadPanel";
+import { contarBitacoraDelDia, useRegistrarVista } from "../lib/bitacora";
 import StaffAccessShell from "./StaffAccessShell";
 
 type ModalState =
@@ -105,6 +105,27 @@ export default function CortesApp({ profile }: { profile: Profile }) {
     : (modal && NOMBRE_MODAL[modal.type]) ||
       (activeTab === "corte" ? "Corte" : activeTab === "dashboard" ? "Dashboard" : activeTab === "equipo" ? NOMBRE_EQUIPO[equipoView] : NOMBRE_NEGOCIO[negocioView]);
   useRegistrarVista(profile, pantalla);
+
+  // "Historial de este día" (solo el dueño): cuántos cambios tiene registrados
+  // el día abierto del corte. Se vuelve a contar poco después de cada
+  // guardado, cuando la bitácora ya lo anotó.
+  const [historialDia, setHistorialDia] = useState<string | null>(null);
+  const [cambiosDelDia, setCambiosDelDia] = useState(0);
+  const fechaDiaActivo =
+    isOwner && data && activeMonth && data.months[activeMonth] ? dateForDay(activeMonth, activeWeek, data.months[activeMonth], activeDay) : null;
+  useEffect(() => {
+    if (!fechaDiaActivo) return;
+    let cancelado = false;
+    const t = setTimeout(() => {
+      contarBitacoraDelDia(profile.id, fechaDiaActivo).then((n) => {
+        if (!cancelado) setCambiosDelDia(n);
+      });
+    }, 1500);
+    return () => {
+      cancelado = true;
+      clearTimeout(t);
+    };
+  }, [fechaDiaActivo, data, profile.id]);
 
   // Dueño: al cargar, ubica el mes/semana/día más reciente.
   useEffect(() => {
@@ -477,6 +498,8 @@ export default function CortesApp({ profile }: { profile: Profile }) {
         meseroId: form.meseroId,
         nombre: form.nombre,
         venta, tarjetas, transferencia, propinaTipo: form.propinaTipo, propina, gastosTotal, total,
+        ...(form.tarjetasDesglose ? { tarjetasDesglose: form.tarjetasDesglose } : {}),
+        ...(transferencia > 0 && form.transferDesglose ? { transferenciaDesglose: form.transferDesglose } : {}),
       };
       if (editingId) {
         const i = d.meseros.findIndex((m) => m.id === editingId);
@@ -503,6 +526,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           total: transferencia,
           origen: "mesero",
           meseroCutId: entry.id,
+          ...(form.transferDesglose ? { desglose: form.transferDesglose } : {}),
         });
       }
     });
@@ -652,7 +676,12 @@ export default function CortesApp({ profile }: { profile: Profile }) {
 
   function saveTransfer(form: TransferFormValues, editingId?: string) {
     updateDay((d) => {
-      const entry = { id: editingId || uid(), persona: form.persona, total: parseFloat(form.total) || 0 };
+      const entry = {
+        id: editingId || uid(),
+        persona: form.persona,
+        total: parseFloat(form.total) || 0,
+        ...(form.desglose ? { desglose: form.desglose } : {}),
+      };
       if (editingId) {
         const i = d.transferencias.findIndex((t) => t.id === editingId);
         d.transferencias[i] = entry;
@@ -752,9 +781,11 @@ export default function CortesApp({ profile }: { profile: Profile }) {
     persist(next);
   }
 
-  function saveVentaApps(rawValue: string) {
+  function saveVentaApps(rawValue: string, desglose?: number[]) {
     updateDay((d) => {
       d.ventaApps = sumFromText(rawValue);
+      if (desglose) d.ventaAppsDesglose = desglose;
+      else delete d.ventaAppsDesglose;
     });
     setModal(null);
   }
@@ -1280,6 +1311,11 @@ export default function CortesApp({ profile }: { profile: Profile }) {
                 </button>
               </div>
             )}
+            {isOwner && day && activeDayDate && (
+              <button className="link-btn historial-dia-btn" onClick={() => setHistorialDia(activeDayDate)}>
+                <History size={15} /> Historial de este día{cambiosDelDia > 0 ? ` (${cambiosDelDia} ${cambiosDelDia === 1 ? "cambio" : "cambios"})` : ""}
+              </button>
+            )}
 
             {totals && (
               <section className="summary">
@@ -1492,7 +1528,8 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           catalog={data.meseros}
         />
       )}
-      {modal?.type === "apps" && day && <AppsModal onClose={() => setModal(null)} onSave={saveVentaApps} value={day.ventaApps || 0} />}
+      {historialDia && <HistorialDiaSheet ownerId={profile.id} fecha={historialDia} onClose={() => setHistorialDia(null)} />}
+      {modal?.type === "apps" && day && <AppsModal onClose={() => setModal(null)} onSave={saveVentaApps} value={day.ventaApps || 0} desglose={day.ventaAppsDesglose} />}
       {modal?.type === "weekSummary" && month && activeMonth && (
         <WeekSummaryModal
           onClose={() => setModal(null)}

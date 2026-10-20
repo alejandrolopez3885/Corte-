@@ -109,7 +109,17 @@ transferencias, ventas de apps, efectivo real y el control de gastos en
 transferencia) tienen un botón "+" junto al campo, porque el teclado
 numérico del celular no tiene coma: se escribe "300", "+", "450"… y
 debajo se ve la suma en vivo ("= $875.50 · 3 montos"); al salir del campo
-queda solo el total. Desde computadora también se puede separar con coma.
+queda solo el total. Desde computadora también se puede separar con coma. Los
+montos sueltos que se sumaron se guardan junto con el total (tarjetas y
+transferencia del mesero, transferencias y ventas de apps), para poder
+revisarlos contra los vouchers.
+
+En Corte, debajo de "Asignado a…", el dueño tiene "Historial de este día
+(N cambios)": todo lo registrado sobre ese día del corte — quién, a qué
+hora y qué montos. Al agregar el corte de un mesero queda anotado completo
+(venta, tarjetas con sus montos sueltos, transferencia, propina, gastos y
+entrega); al editarlo, solo lo que cambió, antes → después. Lo mismo se ve
+en Negocio > Análisis > Actividad.
 
 - **Frontend**: React + Vite + TypeScript.
 - **Backend**: Supabase (Auth + Postgres).
