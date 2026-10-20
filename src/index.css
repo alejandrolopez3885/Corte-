@@ -1048,3 +1048,4 @@ button.pill { cursor: pointer; }
 .tend-ranking i { display: block; height: 8px; border-radius: 0 4px 4px 0; background: var(--accent); }
 .tend-ranking strong { text-align: right; }
 .tend-barras.con-etq, .tend-ejes.con-etq { padding-left: 43px; }
+.receta-grupo { font-size: 12px; font-weight: 600; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.04em; margin: 14px 0 6px; }

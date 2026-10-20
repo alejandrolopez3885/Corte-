@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Plus, Settings2, Users, Receipt, ArrowLeftRight, CircleDot, Circle, Pencil,
-  Smartphone, BarChart3, LogOut, Truck, Trash2, Home, Store, LayoutDashboard, Contact, Clock, Wallet, ChartLine, Martini, ChefHat,
+  Smartphone, BarChart3, LogOut, Truck, Trash2, Home, Store, LayoutDashboard, Contact, Clock, Wallet, ChartLine, Martini, ChefHat, BookOpen,
   ShoppingCart, Handshake, Boxes, Package, Coins, History,
 } from "lucide-react";
 import { useAuth } from "../lib/auth.tsx";
@@ -37,6 +37,7 @@ import { PropinasPanel } from "../components/panels/PropinasPanel";
 import { TendenciasPanel } from "../components/panels/TendenciasPanel";
 import { ControlBarPanel } from "../components/panels/ControlBarPanel";
 import { ControlCocinaPanel } from "../components/panels/ControlCocinaPanel";
+import { RecetarioPanel } from "../components/panels/RecetarioPanel";
 import { InsumosPanel } from "../components/panels/InsumosPanel";
 import { InventarioNotasPanel } from "../components/panels/InventarioNotasPanel";
 import { PedidosTotalPanel } from "../components/panels/PedidosTotalPanel";
@@ -63,7 +64,9 @@ type ModalState =
 
 type EquipoView = "menu" | "personal" | "horarios" | "nomina" | "propinas";
 
-type NegocioView = "menu" | "tendencias" | "bitacora" | "controlBar" | "controlCocina" | "controlGeneral" | "inventario" | "pedidos";
+type NegocioView =
+  | "menu" | "tendencias" | "bitacora" | "controlBar" | "controlCocina" | "controlGeneral" | "inventario" | "pedidos"
+  | "recetarioBar" | "recetarioCocina";
 
 type OwnerTab = "corte" | "equipo" | "negocio" | "dashboard";
 
@@ -94,6 +97,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
   const NOMBRE_NEGOCIO: Record<NegocioView, string> = {
     menu: "Negocio", tendencias: "Tendencias", bitacora: "Actividad", controlBar: "Control de Bar", controlCocina: "Control de Cocina",
     controlGeneral: "Control General", inventario: "Inventario", pedidos: "Pedidos",
+    recetarioBar: "Recetario de Bar", recetarioCocina: "Recetario de Cocina",
   };
   const NOMBRE_MODAL: Partial<Record<string, string>> = {
     gastosSummary: "Control de gastos en efectivo", creditoProveedores: "Control de gastos en transferencia",
@@ -480,7 +484,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
     persist(next);
   }
 
-  // Recetario (Negocio > Control de Bar > Recetario).
+  // Recetario (Negocio > Bar/Cocina > Recetario).
   function saveReceta(receta: Receta) {
     if (!data) return;
     const next = structuredClone(data);
@@ -1071,6 +1075,15 @@ export default function CortesApp({ profile }: { profile: Profile }) {
                 <span>Catálogo y conteo diario de insumos</span>
               </span>
             </button>
+            <button className="menu-item" onClick={() => setNegocioView("recetarioBar")}>
+              <span className="menu-item-icon">
+                <BookOpen size={20} />
+              </span>
+              <span className="menu-item-text">
+                <strong>Recetario de Bar</strong>
+                <span>Recetas de bebidas: medidas, vaso y preparación</span>
+              </span>
+            </button>
           </div>
 
           <h3 className="menu-subtitle">Cocina</h3>
@@ -1082,6 +1095,15 @@ export default function CortesApp({ profile }: { profile: Profile }) {
               <span className="menu-item-text">
                 <strong>Control de Cocina</strong>
                 <span>Catálogo y conteo diario de insumos</span>
+              </span>
+            </button>
+            <button className="menu-item" onClick={() => setNegocioView("recetarioCocina")}>
+              <span className="menu-item-icon">
+                <BookOpen size={20} />
+              </span>
+              <span className="menu-item-text">
+                <strong>Recetario de Cocina</strong>
+                <span>Recetas de platillos: porciones, utensilios y preparación</span>
               </span>
             </button>
           </div>
@@ -1133,9 +1155,19 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           onGuardarConteo={guardarConteoTexto}
           pedidosDiarios={data.pedidosDiarios}
           onGuardarPedido={guardarPedidoDiario}
-          recetas={data.recetas || []}
-          onSaveReceta={saveReceta}
-          onRemoveReceta={removeReceta}
+        />
+      )}
+
+      {isOwner && activeTab === "negocio" && (negocioView === "recetarioBar" || negocioView === "recetarioCocina") && (
+        <RecetarioPanel
+          key={negocioView}
+          onBack={() => setNegocioView("menu")}
+          backLabel="Negocio"
+          titulo={negocioView === "recetarioBar" ? "Recetario de Bar" : "Recetario de Cocina"}
+          area={negocioView === "recetarioBar" ? "bar" : "cocina"}
+          recetas={(data.recetas || []).filter((r) => r.area === (negocioView === "recetarioBar" ? "bar" : "cocina"))}
+          onSave={saveReceta}
+          onRemove={removeReceta}
         />
       )}
 

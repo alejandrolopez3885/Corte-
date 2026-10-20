@@ -465,14 +465,14 @@ export interface AppData {
   // Meta de venta semanal (Negocio > Tendencias) — un solo monto para todas
   // las semanas.
   metaSemanal?: number;
-  // Recetario (Negocio > Control de Bar > Recetario): las recetas que
+  // Recetario (Negocio > Bar/Cocina > Recetario): las recetas que
   // captura el dueño y consulta el personal con el permiso "Recetario".
   recetas?: Receta[];
 }
 
 export interface Receta {
   id: string;
-  // Por ahora solo Bar; Cocina vendrá después.
+  // Recetario de Bar o de Cocina (en Cocina "vaso" se muestra como "Presentación").
   area: "bar" | "cocina";
   nombre: string;
   vaso: string;
