@@ -26,6 +26,14 @@ function partirIngrediente(renglon: string): { medida: string; producto: string 
   return { medida: "", producto: r };
 }
 
+const AREAS: { value: Receta["area"]; label: string }[] = [
+  { value: "bar", label: "Bar" },
+  { value: "cocina", label: "Cocina" },
+];
+
+// En Cocina no hay vaso: el mismo campo se llama "Presentación".
+const etiquetaVaso = (area: Receta["area"]) => (area === "cocina" ? "Presentación" : "Vaso");
+
 const renglones = (t: string) =>
   t
     .split("\n")
@@ -57,6 +65,7 @@ export function RecetarioPanel({
   const editable = !!onSave;
 
   const abierta = recetas.find((r) => r.id === abiertaId);
+  const hayDosAreas = AREAS.every((a) => recetas.some((r) => r.area === a.value));
   const q = normalizar(busqueda);
   const lista = [...recetas]
     .filter((r) => !q || normalizar(`${r.nombre} ${r.ingredientes}`).includes(q))
@@ -107,7 +116,7 @@ export function RecetarioPanel({
         <div className="receta-detalle">
           {abierta.vaso && (
             <div className="receta-caja">
-              <h5>Vaso</h5>
+              <h5>{etiquetaVaso(abierta.area)}</h5>
               <p>{abierta.vaso}</p>
             </div>
           )}
@@ -176,7 +185,7 @@ export function RecetarioPanel({
             className="text-input"
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
-            placeholder="Buscar bebida o ingrediente…"
+            placeholder={area === "bar" ? "Buscar bebida o ingrediente…" : area === "cocina" ? "Buscar platillo o ingrediente…" : "Buscar receta o ingrediente…"}
             autoComplete="off"
           />
         </div>
@@ -189,16 +198,26 @@ export function RecetarioPanel({
       ) : lista.length === 0 ? (
         <p className="hint">No hay recetas que coincidan con "{busqueda}".</p>
       ) : (
-        <div className="card-list">
-          {lista.map((r) => (
-            <button key={r.id} className="card receta-card" onClick={() => setAbiertaId(r.id)}>
-              <span className="card-name">{r.nombre}</span>
-              <span className="receta-card-vaso">
-                {r.vaso} <ChevronRight size={14} />
-              </span>
-            </button>
-          ))}
-        </div>
+        // Con recetas de Bar y de Cocina (vista del personal), separadas por área.
+        (hayDosAreas ? AREAS : [null]).map((a) => {
+          const deArea = a ? lista.filter((r) => r.area === a.value) : lista;
+          if (deArea.length === 0) return null;
+          return (
+            <div key={a?.value || "todas"}>
+              {a && <h3 className="receta-grupo">{a.label}</h3>}
+              <div className="card-list">
+                {deArea.map((r) => (
+                  <button key={r.id} className="card receta-card" onClick={() => setAbiertaId(r.id)}>
+                    <span className="card-name">{r.nombre}</span>
+                    <span className="receta-card-vaso">
+                      {r.vaso} <ChevronRight size={14} />
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          );
+        })
       )}
       {formulario}
     </div>
@@ -224,14 +243,21 @@ function RecetaModal({
   const [utensilios, setUtensilios] = useState(editing?.utensilios || "");
   const [preparacion, setPreparacion] = useState(editing?.preparacion || "");
   const [notas, setNotas] = useState(editing?.notas || "");
+  const areaReceta = editing?.area || area;
+  const esCocina = areaReceta === "cocina";
 
   return (
     <Sheet title={editing ? "Editar receta" : "Nueva receta"} onClose={onClose} onDelete={onDelete}>
       <Field label="Nombre">
-        <input className="text-input" value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Ej. Margarita" />
+        <input className="text-input" value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder={esCocina ? "Ej. Enchiladas verdes" : "Ej. Margarita"} />
       </Field>
-      <Field label="Vaso">
-        <input className="text-input" value={vaso} onChange={(e) => setVaso(e.target.value)} placeholder="Ej. Copa margarita, escarchada con sal" />
+      <Field label={etiquetaVaso(areaReceta)}>
+        <input
+          className="text-input"
+          value={vaso}
+          onChange={(e) => setVaso(e.target.value)}
+          placeholder={esCocina ? "Ej. Plato extendido, con arroz al lado" : "Ej. Copa margarita, escarchada con sal"}
+        />
       </Field>
       <Field label="Ingredientes (uno por renglón: medida y producto)">
         <textarea
@@ -239,11 +265,11 @@ function RecetaModal({
           rows={5}
           value={ingredientes}
           onChange={(e) => setIngredientes(e.target.value)}
-          placeholder={"2 oz Tequila blanco\n1 oz Triple sec\n1 oz Jugo de limón"}
+          placeholder={esCocina ? "3 pz Tortilla\n150 g Pollo deshebrado\n120 ml Salsa verde" : "2 oz Tequila blanco\n1 oz Triple sec\n1 oz Jugo de limón"}
         />
       </Field>
       <Field label="Utensilios (separados por coma)">
-        <input className="text-input" value={utensilios} onChange={(e) => setUtensilios(e.target.value)} placeholder="Ej. Coctelera, Jigger, Colador" />
+        <input className="text-input" value={utensilios} onChange={(e) => setUtensilios(e.target.value)} placeholder={esCocina ? "Ej. Sartén, Pinzas, Cucharón" : "Ej. Coctelera, Jigger, Colador"} />
       </Field>
       <Field label="Preparación (un paso por renglón)">
         <textarea
@@ -251,11 +277,15 @@ function RecetaModal({
           rows={4}
           value={preparacion}
           onChange={(e) => setPreparacion(e.target.value)}
-          placeholder={"Escarchar la copa con sal.\nAgitar todo con hielo 10 segundos.\nColar a la copa."}
+          placeholder={
+            esCocina
+              ? "Calentar las tortillas.\nRellenar con pollo y enrollar.\nBañar con salsa y gratinar."
+              : "Escarchar la copa con sal.\nAgitar todo con hielo 10 segundos.\nColar a la copa."
+          }
         />
       </Field>
       <Field label="Decoración / notas (opcional)">
-        <input className="text-input" value={notas} onChange={(e) => setNotas(e.target.value)} placeholder="Ej. Rodaja de limón" />
+        <input className="text-input" value={notas} onChange={(e) => setNotas(e.target.value)} placeholder={esCocina ? "Ej. Crema, queso y cebolla morada" : "Ej. Rodaja de limón"} />
       </Field>
       <button
         className="btn-primary"
@@ -263,7 +293,7 @@ function RecetaModal({
         onClick={() =>
           onSave({
             id: editing?.id || uid(),
-            area: editing?.area || area,
+            area: areaReceta,
             nombre: nombre.trim(),
             vaso: vaso.trim(),
             ingredientes,

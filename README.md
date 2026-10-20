@@ -162,8 +162,8 @@ estando en Nómina te regresa al menú de Equipo):
   la propia sección "Nómina") y "Propinas" (la misma pantalla de
   consulta que ve el dueño en Equipo > Propinas — totales del día de toda
   la semana y su reparto por área, sin poder editar nada; no se acota por
-  área ni por persona) y "Recetario" (consulta de las recetas de bebidas
-  que captura el dueño en Control de Bar > Recetario, sin poder editar
+  área ni por persona) y "Recetario" (consulta de las recetas de Bar y Cocina
+  que captura el dueño en Negocio > Bar/Cocina > Recetario, sin poder editar
   nada; lo ve cualquiera que tenga el permiso, sin importar su puesto o
   área, y es el único permiso que se puede habilitar aunque la persona no
   tenga puesto asignado). Cada permiso se acota distinto: "Horarios" usa el área de
@@ -441,8 +441,7 @@ estando en Nómina te regresa al menú de Equipo):
   copiado" que se quita solo a los 2 segundos. En cuanto se
   guarda, el texto queda bloqueado; para corregirlo
   hay que tocar "Editar", confirmar un aviso, y recién
-  ahí se desbloquea), "Catálogo" después y, solo en Control de Bar,
-  "Recetario" al final (ver más abajo): cada insumo tiene nombre, un
+  ahí se desbloquea) y "Catálogo" después: cada insumo tiene nombre, un
   precio de referencia opcional y un proveedor opcional (el mismo
   catálogo de proveedores en ambas áreas, y se puede crear uno nuevo al
   vuelo desde el propio insumo), agrupados en la lista por proveedor, y
@@ -454,17 +453,22 @@ estando en Nómina te regresa al menú de Equipo):
   unidad de medida es un selector con solo dos opciones, Kg o Pieza — en
   Cocina se elige libremente (Kg por default), y en Bar queda fijo en
   Pieza y el selector se ve bloqueado, porque ahí siempre se cuenta por
-  pieza. El **Recetario** de Control de Bar es la lista de recetas de
-  bebidas en orden alfabético, con buscador (por nombre o ingrediente) y
+  pieza. Bajo "Bar" y bajo "Cocina" hay además, como opción propia
+  junto a su Control (separada del control de insumos), un **Recetario
+  de Bar** y un **Recetario de Cocina**: la lista de recetas en orden
+  alfabético, con buscador (por nombre o ingrediente) y
   el vaso de cada una a la derecha; al tocar una se ve completa en una
-  sola pantalla: Vaso, Ingredientes (cada uno con su medida a la derecha —
+  sola pantalla: Vaso (en Cocina se llama "Presentación", ej. plato
+  extendido), Ingredientes (cada uno con su medida a la derecha —
   se escriben uno por renglón, "2 oz Tequila blanco", y la app separa la
   medida sola; también entiende "Hielo al gusto"), Utensilios (como
   etiquetas), Preparación (pasos numerados) y Decoración / notas. El dueño
   agrega recetas con el "+" y las edita o borra con el lápiz de cada una;
-  las cuentas de equipo con el permiso "Recetario" ven exactamente lo
-  mismo desde su Inicio, pero sin "+" ni lápiz. Por ahora es texto
-  sencillo, sin fotos, y solo de Bar; bajo "General", "Control General" — mismo Catálogo (nombre,
+  las cuentas de equipo con el permiso "Recetario" ven un solo
+  "Recetario" desde su Inicio, con las recetas de Bar y de Cocina
+  (separadas con un encabezado por área cuando hay de las dos; si solo hay
+  de una, la lista sin encabezados), pero sin "+" ni lápiz. Por ahora es
+  texto sencillo, sin fotos; bajo "General", "Control General" — mismo Catálogo (nombre,
   unidad libre entre Kg/Pieza, precio, proveedor), pero sin Conteo diario
   ni la marca de "alta rotación" (que no aplica sin conteo diario propio):
   abre directo al catálogo, sin menú intermedio, porque es su única

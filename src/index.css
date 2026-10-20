@@ -1007,3 +1007,4 @@ button.pill { cursor: pointer; }
 .receta-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .receta-chips span { font-size: 12.5px; padding: 4px 10px; border-radius: 100px; background: var(--surface-alt); }
 .receta-textarea { resize: vertical; font-family: inherit; line-height: 1.5; }
+.receta-grupo { font-size: 12px; font-weight: 600; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.04em; margin: 14px 0 6px; }

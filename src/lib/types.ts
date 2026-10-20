@@ -462,14 +462,14 @@ export interface AppData {
   // historial: cada cambio aplica desde esa semana (fecha ISO del lunes)
   // en adelante. Vacío o sin definir = MONTO_FIJO_SEMANAL_INICIAL.
   montosFijosSemanales?: MontoFijoSemanal[];
-  // Recetario (Negocio > Control de Bar > Recetario): las recetas que
+  // Recetario (Negocio > Bar/Cocina > Recetario): las recetas que
   // captura el dueño y consulta el personal con el permiso "Recetario".
   recetas?: Receta[];
 }
 
 export interface Receta {
   id: string;
-  // Por ahora solo Bar; Cocina vendrá después.
+  // Recetario de Bar o de Cocina (en Cocina "vaso" se muestra como "Presentación").
   area: "bar" | "cocina";
   nombre: string;
   vaso: string;
