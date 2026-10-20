@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Delete, ArrowLeft } from "lucide-react";
+import { registrarAcceso } from "../lib/bitacora";
 import { getStaffDirectory, signInWithPin, PIN_LENGTH, type StaffDirectoryEntry } from "../lib/staffAccounts";
 
 const KEYPAD = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "", "0", "del"];
@@ -27,6 +28,8 @@ export default function PinLogin({ onBack }: { onBack: () => void }) {
       if (error) {
         setError("PIN incorrecto.");
         setPin("");
+      } else {
+        registrarAcceso("login");
       }
     });
   }, [pin, selected]);

@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "./supabaseClient";
+import { registrarAcceso } from "./bitacora";
 import type { Profile } from "./types";
 
 interface AuthState {
@@ -53,6 +54,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   async function signOut() {
+    await registrarAcceso("logout");
     await supabase.auth.signOut();
   }
 

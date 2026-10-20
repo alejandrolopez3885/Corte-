@@ -206,7 +206,19 @@ estando en Nómina te regresa al menú de Equipo):
   poco confiable), una cuadrícula de KPIs con su cambio semana a semana y
   minigráfica (Venta total, Utilidad, Margen, Gastos totales, Nómina), una
   gráfica de venta con la proyección marcada aparte, y una tabla detallada
-  por semana; bajo "Bar", "Control de Bar"; y bajo "Cocina", "Control de
+  por semana; también bajo "Análisis", "Historial de cambios" — la
+  bitácora de toda la app: cada guardado (Corte, Conteo diario,
+  Inventario y pedidos, Catálogo, Proveedores, Equipo, Horarios, Nómina,
+  cuentas y permisos de acceso) queda registrado con quién lo hizo
+  (incluido el dueño), fecha y hora, dónde ("Corte Lun 19 · Mesero Juan")
+  y qué cambió (antes tachado → después, o qué se agregó/eliminó; en los
+  textos del conteo y las notas, solo los renglones que cambiaron), más
+  cada inicio y cierre de sesión. Se ve por semana (fecha del cambio),
+  agrupado por día, con filtros de sección y persona; solo lo ve el
+  dueño. Vive en su propia tabla de Supabase (`bitacora`, ver
+  `supabase/migration_007_bitacora.sql`, que hay que correr una vez) en la
+  que solo se pueden agregar renglones: nadie puede editarla ni borrarla
+  desde la app. Registra desde que se activó; lo anterior no existe; bajo "Bar", "Control de Bar"; y bajo "Cocina", "Control de
   Cocina" — las dos abren primero a un menú propio (para poder ir sumando
   ahí compras como opción hermana más adelante), con dos piezas
   construidas, en este orden: "Conteo diario" primero — un recuadro de

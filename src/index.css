@@ -697,3 +697,21 @@ body {
 .catalog-row .pedidos-total em { display: block; font-style: normal; font-weight: 400; font-size: 11.5px; color: var(--ink-soft); }
 .pedidos-total-row.falta-equivalencia { border-color: var(--warn); background: var(--warn-soft); }
 .catalog-row.falta-equivalencia .pedidos-total em { color: var(--warn); }
+
+/* ---- Historial de cambios (bitácora) ---- */
+.bitacora-dia { display: flex; flex-direction: column; gap: 8px; }
+.bitacora-dia-titulo { margin: 10px 0 0; font-size: 13px; font-weight: 600; color: var(--ink-soft); }
+.bitacora-evento {
+  display: flex; flex-direction: column; gap: 4px; font-size: 13.5px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 10px 14px;
+}
+.bitacora-evento.acceso { background: var(--surface-alt); }
+.bitacora-evento-top { display: flex; justify-content: space-between; gap: 10px; font-size: 12px; color: var(--ink-soft); }
+.bitacora-quien { display: flex; align-items: center; gap: 5px; font-weight: 600; color: var(--ink); font-size: 13px; }
+.bitacora-donde { font-size: 12.5px; color: var(--ink-soft); }
+.bitacora-cambio { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px; overflow-wrap: anywhere; }
+.bitacora-antes { text-decoration: line-through; color: var(--bad); }
+.bitacora-despues { color: var(--good); font-weight: 600; }
+.bitacora-tag { font-size: 11px; padding: 1px 8px; border-radius: 100px; }
+.bitacora-tag.agrego { background: var(--good-soft); color: var(--good); }
+.bitacora-tag.elimino { background: var(--bad-soft); color: var(--bad); }

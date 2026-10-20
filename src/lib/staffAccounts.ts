@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { supabase } from "./supabaseClient";
+import { registrarEvento } from "./bitacora";
 import type { PermisoStaff } from "./types";
 
 export const PIN_LENGTH = 4;
@@ -106,14 +107,21 @@ export async function createStaffAccount(options: {
   });
   if (directoryError) throw directoryError;
 
+  registrarEvento("Equipo", `Acceso a la app · ${displayName.trim()}`, [
+    { accion: "agregó", texto: `Cuenta con PIN${permisos?.length ? ` (permisos: ${permisos.join(", ")})` : ""}` },
+  ]);
   return { id: newId };
 }
 
 // Cambia qué secciones puede ver/usar una cuenta de equipo ya creada desde
 // Personal — no cambia su PIN ni su nombre.
 export async function updateStaffPermisos(profileId: string, permisos: PermisoStaff[]): Promise<void> {
+  const { data: antes } = await supabase.from("profiles").select("display_name, permisos").eq("id", profileId).maybeSingle();
   const { error } = await supabase.from("profiles").update({ permisos }).eq("id", profileId);
   if (error) throw error;
+  registrarEvento("Equipo", `Acceso a la app · ${antes?.display_name || "Cuenta de equipo"}`, [
+    { accion: "cambió", campo: "Permisos", antes: (antes?.permisos || []).join(", ") || "—", despues: permisos.join(", ") || "—" },
+  ]);
 }
 
 // Quita el acceso de una cuenta dada de alta desde Personal. Borra su fila
@@ -123,6 +131,10 @@ export async function updateStaffPermisos(profileId: string, permisos: PermisoSt
 // servicio de Supabase, que esta app no usa): si necesita volver a tener
 // acceso, se da de alta de nuevo con un PIN nuevo.
 export async function revokeStaffAccess(profileId: string): Promise<void> {
+  const { data: antes } = await supabase.from("profiles").select("display_name").eq("id", profileId).maybeSingle();
   const { error } = await supabase.from("profiles").delete().eq("id", profileId);
   if (error) throw error;
+  registrarEvento("Equipo", `Acceso a la app · ${antes?.display_name || "Cuenta de equipo"}`, [
+    { accion: "eliminó", texto: "Acceso a la app (cuenta con PIN)" },
+  ]);
 }

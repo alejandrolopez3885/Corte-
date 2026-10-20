@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { registrarAcceso } from "../lib/bitacora";
 import PinLogin from "./PinLogin";
 
 export default function Login() {
@@ -23,6 +24,7 @@ function OwnerLogin({ onSwitchToPin }: { onSwitchToPin: () => void }) {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
     if (error) setError("Correo o contraseña incorrectos.");
+    else registrarAcceso("login");
   }
 
   return (

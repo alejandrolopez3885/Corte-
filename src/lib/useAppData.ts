@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "./supabaseClient";
 import { defaultData, migrateAppData } from "./dataModel";
+import { registrarCambios } from "./bitacora";
 import type { AppData, Profile } from "./types";
 
 export type SaveState = "idle" | "saving" | "saved" | "error";
@@ -19,6 +20,9 @@ export function useAppData(profile: Profile | null) {
   // lleguen de otros dispositivos — el nuestro los va a sobrescribir en
   // cuanto termine, y aplicar el remoto a medias solo causaría un parpadeo.
   const pendingWrite = useRef<AppData | null>(null);
+  // Último estado que ya está en la base (cargado, guardado por nosotros o
+  // recibido en vivo) — contra él se calcula qué cambió para la bitácora.
+  const guardado = useRef<AppData | null>(null);
   const targetOwnerId = profile ? ownerIdFor(profile) : null;
 
   useEffect(() => {
@@ -43,6 +47,7 @@ export function useAppData(profile: Profile | null) {
       if (row) {
         const { data: migrated, changed } = migrateAppData(row.data as AppData);
         setData(migrated);
+        guardado.current = migrated;
         if (changed) {
           supabase
             .from("app_data")
@@ -63,6 +68,7 @@ export function useAppData(profile: Profile | null) {
           return;
         }
         setData(fresh);
+        guardado.current = fresh;
       }
       setStatus("ready");
     })();
@@ -83,6 +89,7 @@ export function useAppData(profile: Profile | null) {
         (payload) => {
           if (pendingWrite.current) return;
           setData(payload.new.data as AppData);
+          guardado.current = payload.new.data as AppData;
         }
       )
       .subscribe();
@@ -105,10 +112,16 @@ export function useAppData(profile: Profile | null) {
           .eq("owner_id", targetOwnerId);
         pendingWrite.current = null;
         setSaveState(error ? "error" : "saved");
-        if (error) console.error("No se pudo guardar", error);
+        if (error) {
+          console.error("No se pudo guardar", error);
+          return;
+        }
+        const antes = guardado.current;
+        guardado.current = next;
+        if (antes && profile) registrarCambios(profile, antes, next);
       }, 400);
     },
-    [targetOwnerId]
+    [targetOwnerId, profile]
   );
 
   return { data, status, saveState, persist };

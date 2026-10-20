@@ -1,9 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import {
-  Plus, Settings2, Users, Receipt, ArrowLeftRight, CircleDot, Circle, Pencil,
-  Smartphone, BarChart3, LogOut, Truck, Trash2, Home, Store, LayoutDashboard, Contact, Clock, Wallet, ChartLine, Martini, ChefHat,
-  ShoppingCart, Handshake, Boxes, Package,
-} from "lucide-react";
+import { ArrowLeftRight, BarChart3, Boxes, ChartLine, ChefHat, Circle, CircleDot, Clock, Contact, Handshake, History, Home, LayoutDashboard, LogOut, Martini, Package, Pencil, Plus, Receipt, Settings2, ShoppingCart, Smartphone, Store, Trash2, Truck, Users, Wallet } from "lucide-react";
 import { useAuth } from "../lib/auth.tsx";
 import { useAppData } from "../lib/useAppData";
 import {
@@ -38,6 +34,7 @@ import { ControlCocinaPanel } from "../components/panels/ControlCocinaPanel";
 import { InsumosPanel } from "../components/panels/InsumosPanel";
 import { InventarioNotasPanel } from "../components/panels/InventarioNotasPanel";
 import { PedidosTotalPanel } from "../components/panels/PedidosTotalPanel";
+import { BitacoraPanel } from "../components/panels/BitacoraPanel";
 import StaffAccessShell from "./StaffAccessShell";
 
 type ModalState =
@@ -58,7 +55,7 @@ type ModalState =
 
 type EquipoView = "menu" | "personal" | "horarios" | "nomina";
 
-type NegocioView = "menu" | "tendencias" | "controlBar" | "controlCocina" | "controlGeneral" | "inventario" | "pedidos";
+type NegocioView = "menu" | "tendencias" | "bitacora" | "controlBar" | "controlCocina" | "controlGeneral" | "inventario" | "pedidos";
 
 type OwnerTab = "corte" | "equipo" | "negocio" | "dashboard";
 
@@ -888,6 +885,15 @@ export default function CortesApp({ profile }: { profile: Profile }) {
                 <span>Comparativo semanal y proyección de venta</span>
               </span>
             </button>
+            <button className="menu-item" onClick={() => setNegocioView("bitacora")}>
+              <span className="menu-item-icon">
+                <History size={20} />
+              </span>
+              <span className="menu-item-text">
+                <strong>Historial de cambios</strong>
+                <span>Quién cambió qué en la app y cuándo, y quién entró</span>
+              </span>
+            </button>
           </div>
 
           <h3 className="menu-subtitle">Compras</h3>
@@ -960,6 +966,17 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           horarios={data.horarios}
           empleados={data.empleados}
           meseros={data.meseros}
+        />
+      )}
+
+      {isOwner && activeTab === "negocio" && negocioView === "bitacora" && (
+        <BitacoraPanel
+          onBack={() => setNegocioView("menu")}
+          ownerId={profile.id}
+          months={data.months}
+          monthKeys={monthKeys}
+          initialMonthKey={mostRecentMonthKey as string}
+          initialWeekIndex={mostRecentWeekIdx}
         />
       )}
 
