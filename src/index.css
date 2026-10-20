@@ -663,6 +663,17 @@ body {
 .inv-no-contados { background: var(--surface-alt); border-radius: 12px; padding: 10px 14px; font-size: 13px; color: var(--ink-soft); }
 .inv-no-contados summary { cursor: pointer; font-weight: 600; }
 .inv-no-contados p { margin: 8px 0 0; line-height: 1.5; }
+.faltan-lista { display: flex; flex-direction: column; gap: 12px; }
+.faltan-grupo { display: flex; flex-direction: column; gap: 6px; }
+.faltan-item {
+  display: flex; align-items: center; gap: 10px; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; padding: 10px 14px; font-size: 15px; cursor: pointer;
+}
+.faltan-item input { width: 18px; height: 18px; accent-color: var(--accent); flex-shrink: 0; }
+.btn-secundario {
+  background: none; border: 1px solid var(--border); border-radius: 100px; color: var(--ink);
+  padding: 12px 20px; font-size: 15px; font-weight: 600; width: 100%; cursor: pointer;
+}
 
 /* ---- Propinas (solo consulta) ---- */
 .propinas-dias { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
