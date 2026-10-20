@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { X } from "lucide-react";
 import { Sheet, Field, NumInput, SumInput } from "../ui";
+import { ConceptoInput } from "../ConceptoInput";
 import { money, round2, sumFromText, uid } from "../../lib/dataModel";
+import type { NombreHistorial } from "../../lib/gastosBusqueda";
 import type { Gasto, MeseroCatalogEntry, MeseroCut, PropinaTipo } from "../../lib/types";
 
 export interface MeseroFormValues {
@@ -28,6 +30,7 @@ export function MeseroModal({
   editing,
   catalog,
   existingGastos,
+  historial,
 }: {
   onClose: () => void;
   onSave: (form: MeseroFormValues, editingId?: string) => void;
@@ -35,6 +38,7 @@ export function MeseroModal({
   editing?: MeseroCut;
   catalog: MeseroCatalogEntry[];
   existingGastos: Gasto[];
+  historial: NombreHistorial[];
 }) {
   const [meseroId, setMeseroId] = useState(editing?.meseroId || "");
   const [nombre, setNombre] = useState(editing?.nombre || "");
@@ -178,10 +182,10 @@ export function MeseroModal({
       {gastos.map((g) => (
         <div key={g.id} className="gasto-row">
           <Field label="Concepto">
-            <input
-              className="text-input"
+            <ConceptoInput
               value={g.concepto}
-              onChange={(e) => updateGastoRow(g.id, "concepto", e.target.value)}
+              onChange={(v) => updateGastoRow(g.id, "concepto", v)}
+              historial={historial}
               placeholder="Ej. compra de hielo"
             />
           </Field>

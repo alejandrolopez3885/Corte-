@@ -775,3 +775,78 @@ body {
 .actividad-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .actividad-chips button { display: flex; align-items: center; gap: 4px; font: inherit; font-size: 12.5px; padding: 6px 11px; border-radius: 100px; background: var(--surface); border: 1px solid var(--border); color: var(--ink); cursor: pointer; }
 .actividad-chips button.on { background: var(--accent); border-color: var(--accent); color: white; }
+
+/* Autocompletado del concepto de un gasto */
+.concepto-input { position: relative; display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 0; }
+.concepto-sugerencias {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+}
+.concepto-sugerencia {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 10px; width: 100%;
+  background: none; border: none; border-bottom: 1px solid var(--surface-alt); padding: 9px 12px;
+  font-size: 14px; font-family: inherit; color: var(--ink); text-align: left; cursor: pointer;
+}
+.concepto-sugerencia:last-child { border-bottom: none; }
+.concepto-sugerencia:first-child { background: var(--accent-soft); }
+.concepto-sugerencia small { color: var(--ink-soft); font-size: 11.5px; flex-shrink: 0; }
+.concepto-correccion {
+  background: var(--warn-soft); color: #7a4b17; border: none; border-radius: 10px; padding: 7px 10px;
+  font-size: 12.5px; font-family: inherit; text-align: left; cursor: pointer;
+}
+.concepto-correccion strong { text-decoration: underline; }
+.gasto-form-actions { display: flex; gap: 14px; align-items: center; }
+
+/* Búsqueda de tickets en Control de gastos en efectivo */
+.buscar-gastos { display: flex; flex-direction: column; gap: 8px; }
+.buscar-caja { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+.buscar-titulo { display: flex; justify-content: space-between; align-items: center; font-size: 12.5px; font-weight: 600; }
+.buscar-titulo > span { display: flex; align-items: center; gap: 6px; }
+.buscar-limpiar { display: flex; align-items: center; gap: 3px; font-size: 12.5px; padding: 0; }
+.buscar-cuadros { display: flex; gap: 8px; }
+.buscar-texto { flex: 1.7; min-width: 0; }
+.buscar-monto { flex: 1; min-width: 0; }
+.buscar-cuadros input:disabled { background: var(--surface-alt); opacity: 0.7; }
+.buscar-pills { display: flex; gap: 6px; flex-wrap: wrap; }
+.pill {
+  font-size: 11.5px; padding: 3px 9px; border-radius: 100px; background: var(--accent-soft); color: var(--accent);
+  font-weight: 500; border: none; font-family: inherit;
+}
+button.pill { cursor: pointer; }
+.buscar-res-head { font-size: 12.5px; color: var(--ink-soft); font-weight: 500; margin: 2px 0 0; }
+.buscar-msg { border-radius: 12px; padding: 9px 12px; font-size: 13px; }
+.buscar-msg.aviso { background: var(--warn-soft); color: #7a4b17; }
+.buscar-msg.error { background: var(--bad-soft); color: #7d2a20; }
+.buscar-msg.bien { background: var(--good-soft); color: #1f5a3a; }
+.buscar-cercanos { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 6px; }
+.resultado-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 10px 12px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.resultado-card.atenuado { opacity: 0.6; }
+.resultado-top { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.resultado-concepto { font-weight: 500; font-size: 14px; }
+.resultado-monto { font-weight: 600; font-size: 14.5px; }
+.resultado-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.resultado-meta .estado-chip { margin-right: 0; padding: 4px 10px; font-size: 12px; }
+.resultado-meta .gasto-edit-btn { margin-left: auto; }
+.resultado-dia { font-weight: 600; font-size: 12.5px; }
+.btn-chico {
+  border: 1px solid var(--border); background: var(--surface); color: var(--ink); border-radius: 10px;
+  padding: 8px 12px; font-size: 13px; font-weight: 500; font-family: inherit; cursor: pointer;
+}
+.btn-chico.primario { background: var(--accent); border-color: var(--accent); color: white; }
+.agregar-dashed {
+  display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%;
+  border: 1.5px dashed var(--border); background: none; color: var(--accent); border-radius: 12px;
+  padding: 10px; font-size: 13px; font-weight: 500; font-family: inherit; cursor: pointer;
+}
+.agregar-form {
+  background: var(--surface); border: 1.5px solid var(--accent); border-radius: 14px; padding: 12px;
+  display: flex; flex-direction: column; gap: 12px;
+}
+.agregar-form-titulo { display: flex; align-items: center; gap: 6px; font-weight: 600; font-size: 13.5px; color: var(--accent); }
+.buscar-resumen {
+  display: flex; justify-content: space-between; gap: 10px; background: var(--surface-alt); border-radius: 12px;
+  padding: 9px 12px; font-size: 13px;
+}

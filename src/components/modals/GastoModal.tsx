@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Sheet, Field, NumInput, Toggle } from "../ui";
+import { ConceptoInput } from "../ConceptoInput";
 import { GASTO_CATEGORIAS } from "../../lib/types";
+import type { NombreHistorial } from "../../lib/gastosBusqueda";
 import type { EmpleadoEntry, Gasto, GastoCategoria, GastoEstado, MeseroCatalogEntry } from "../../lib/types";
 
 export interface GastoFormValues {
@@ -27,6 +29,7 @@ export function GastoModal({
   editing,
   empleados,
   meseros,
+  historial,
 }: {
   onClose: () => void;
   onSave: (form: GastoFormValues, editingId?: string) => void;
@@ -34,8 +37,46 @@ export function GastoModal({
   editing?: Gasto;
   empleados: EmpleadoEntry[];
   meseros: MeseroCatalogEntry[];
+  historial: NombreHistorial[];
 }) {
-  const [concepto, setConcepto] = useState(editing?.concepto || "");
+  return (
+    <Sheet title={editing ? "Editar gasto" : "Nuevo gasto"} onClose={onClose} onDelete={onDelete}>
+      <GastoForm
+        onSave={(form) => onSave(form, editing?.id)}
+        editing={editing}
+        empleados={empleados}
+        meseros={meseros}
+        historial={historial}
+      />
+    </Sheet>
+  );
+}
+
+// Los campos de un gasto, igual en Corte que al agregarlo desde la
+// búsqueda de Control de gastos en efectivo.
+export function GastoForm({
+  onSave,
+  onCancel,
+  editing,
+  conceptoInicial,
+  empleados,
+  meseros,
+  historial,
+  saveLabel = "Guardar gasto",
+  bloqueado = false,
+}: {
+  onSave: (form: GastoFormValues) => void;
+  onCancel?: () => void;
+  editing?: Gasto;
+  conceptoInicial?: string;
+  empleados: EmpleadoEntry[];
+  meseros: MeseroCatalogEntry[];
+  historial: NombreHistorial[];
+  saveLabel?: string;
+  // Para que quien lo usa pueda pedir algo más antes de guardar (ej. el día).
+  bloqueado?: boolean;
+}) {
+  const [concepto, setConcepto] = useState(editing?.concepto || conceptoInicial || "");
   const [total, setTotal] = useState(editing ? String(editing.total) : "");
   const [estado, setEstado] = useState<GastoEstado>(editing?.estado || "pendiente");
   const [categoria, setCategoria] = useState<GastoCategoria | "">(editing?.categoria || "");
@@ -49,9 +90,9 @@ export function GastoModal({
   const meseroElegido = meseros.find((m) => m.id === meseroId);
 
   return (
-    <Sheet title={editing ? "Editar gasto" : "Nuevo gasto"} onClose={onClose} onDelete={onDelete}>
+    <>
       <Field label="Concepto">
-        <input className="text-input" value={concepto} onChange={(e) => setConcepto(e.target.value)} placeholder="Ej. compra de servilletas" />
+        <ConceptoInput value={concepto} onChange={setConcepto} historial={historial} placeholder="Ej. compra de servilletas" />
       </Field>
       <Field label="Total">
         <NumInput value={total} onChange={(e) => setTotal(e.target.value)} placeholder="0.00" />
@@ -109,13 +150,20 @@ export function GastoModal({
         label="Ya está ingresado"
       />
       {!canMarkIngresado && <p className="hint">Elige una categoría para poder marcarlo como ingresado.</p>}
-      <button
-        className="btn-primary"
-        disabled={!concepto || !total}
-        onClick={() => onSave({ concepto, total, estado, categoria, empleadoId, meseroId }, editing?.id)}
-      >
-        Guardar gasto
-      </button>
-    </Sheet>
+      <div className="gasto-form-actions">
+        {onCancel && (
+          <button type="button" className="link-btn" onClick={onCancel}>
+            Cancelar
+          </button>
+        )}
+        <button
+          className="btn-primary"
+          disabled={bloqueado || !concepto.trim() || !total}
+          onClick={() => onSave({ concepto: concepto.trim(), total, estado, categoria, empleadoId, meseroId })}
+        >
+          {saveLabel}
+        </button>
+      </div>
+    </>
   );
 }

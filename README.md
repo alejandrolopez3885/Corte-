@@ -34,6 +34,56 @@ restado del corte de un mesero ese día, el cambio en el monto se traslada a
 ese corte (se ajustan sus gastos y su total) — a diferencia de mover un
 gasto de día, aquí el gasto se queda ligado al mismo mesero.
 
+Arriba de esa pantalla hay una **búsqueda de tickets**, pensada para el
+final de la semana: con el ticket físico en la mano se busca el gasto y
+ahí mismo se revisa y se corrige, sin cambiar de sección. Solo busca en la
+semana elegida (nunca muestra nada de otras semanas). Tiene dos cuadros que
+se usan uno u otro — mientras uno tiene algo escrito, el otro queda
+desactivado:
+
+- **Nombre, proveedor, día**: se escribe por ejemplo `coca jueves` o
+  `coca 16` — el día puede ir con nombre (`jueves`, `jue`) o con el número
+  del día del mes, siempre que caiga en la semana elegida (si no, se avisa
+  y se busca en toda la semana). La búsqueda no distingue mayúsculas,
+  acentos, guiones ni el orden de las palabras, y tolera errores chicos de
+  escritura (`cocacola`, `coliflr`, `walmart coliflor` encuentra
+  "Coliflor (Walmart)"). Solo con el día (`jueves`) muestra todos los
+  gastos de ese día.
+  - Si el gasto está ese día, sale con su monto, categoría y estado.
+  - Si no está ese día pero sí en otros de la semana, salen esos: los
+    **Pendientes** con el botón "Mover a jueves" (puede ser el mismo ticket
+    capturado en otro día — se mueve el mismo gasto, no se duplica) y los
+    **Ingresados** atenuados, porque su comprobante ya se subió y no pueden
+    ser ese ticket.
+  - Si no hay ninguno igual, se muestran los más parecidos ("¿Será alguno
+    de estos?").
+  - Siempre hay un botón "Ninguno es — agregar nuevo gasto el jueves", y si
+    no se encontró nada parecido el formulario sale abierto de una vez: los
+    mismos campos que el gasto de Corte, con el día ya puesto (o para
+    elegirlo, si no se escribió) y el nombre escrito bien.
+  - Abajo, el total de ese gasto en la semana ("Coca Cola esta semana: 3
+    gastos · $362.00").
+- **Monto**: muestra todos los gastos de la semana con ese monto exacto;
+  si no hay ninguno, ofrece los montos más cercanos para tocarlos.
+
+En cada resultado se puede confirmar (Ingresado), elegir la categoría,
+editar concepto y monto (lápiz) y moverlo de día — con las mismas reglas
+que el listado de abajo. Desde la búsqueda nunca se borra un gasto. Al
+confirmar, mover o agregar, la búsqueda se limpia sola, lista para el
+siguiente ticket.
+
+**Autocompletado del concepto**: en todos los lugares donde se escribe el
+nombre de un gasto (Nuevo gasto en Corte, gastos dentro del corte de un
+mesero, editar y agregar desde la búsqueda) se sugieren los nombres que ya
+existen en el historial de gastos, el más usado arriba y con su forma bien
+escrita (las variantes "coca cola", "Coca-Cola" y "cocacola" se juntan en
+la más usada). Si el nombre es nuevo, se revisa la ortografía con
+LanguageTool (servicio gratis, sin clave) más una lista propia de marcas,
+tiendas y productos comunes, y aparece "¿Quisiste decir …?". Nunca se
+cambia el texto solo: siempre hay que tocar la sugerencia. Si LanguageTool
+no responde, simplemente no aparece la sugerencia de ortografía; el
+autocompletado del historial funciona igual.
+
 - **Frontend**: React + Vite + TypeScript.
 - **Backend**: Supabase (Auth + Postgres).
 - **Hosting sugerido**: Vercel.
@@ -558,9 +608,11 @@ que recargues.
 
 ```
 src/
-  lib/            dataModel (lógica pura), types, supabaseClient, auth, useAppData
+  lib/            dataModel (lógica pura), types, supabaseClient, auth, useAppData,
+                  gastosBusqueda (búsqueda de tickets, historial de nombres, ortografía)
   components/
     ui.tsx        Sheet, Field, inputs, Toggle, Empty
+    ConceptoInput.tsx  cuadro de concepto de gasto con autocompletado y ortografía
     modals/       un modal por acción (mesero, gasto, transferencia, etc.)
   pages/
     Login.tsx

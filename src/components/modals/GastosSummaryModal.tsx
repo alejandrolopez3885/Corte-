@@ -3,7 +3,10 @@ import { Check, Pencil } from "lucide-react";
 import { Sheet, Field, NumInput } from "../ui";
 import { computeWeekGastos, dateForDay, formatShortDayDate, formatWeekRange, money, resolveWeekStartDate } from "../../lib/dataModel";
 import { DAYS, GASTO_CATEGORIAS } from "../../lib/types";
-import type { DayName, GastoCategoria, MonthData } from "../../lib/types";
+import type { DayName, EmpleadoEntry, GastoCategoria, MeseroCatalogEntry, MonthData } from "../../lib/types";
+import type { NombreHistorial } from "../../lib/gastosBusqueda";
+import { BuscarGastos } from "./BuscarGastos";
+import type { GastoFormValues } from "./GastoModal";
 
 export function GastosSummaryModal({
   onClose,
@@ -15,6 +18,10 @@ export function GastosSummaryModal({
   onSetCategoria,
   onMoverGasto,
   onEditarGasto,
+  onAgregarGasto,
+  empleados,
+  meseros,
+  historial,
 }: {
   onClose: () => void;
   months: Record<string, MonthData>;
@@ -25,6 +32,10 @@ export function GastosSummaryModal({
   onSetCategoria: (monthKey: string, weekIndex: number, dayName: DayName, id: string, categoria: GastoCategoria | "") => void;
   onMoverGasto: (monthKey: string, weekIndex: number, fromDay: DayName, toDay: DayName, id: string) => void;
   onEditarGasto: (monthKey: string, weekIndex: number, dayName: DayName, id: string, concepto: string, total: number) => void;
+  onAgregarGasto: (monthKey: string, weekIndex: number, dayName: DayName, form: GastoFormValues) => void;
+  empleados: EmpleadoEntry[];
+  meseros: MeseroCatalogEntry[];
+  historial: NombreHistorial[];
 }) {
   const [monthKey, setMonthKey] = useState(initialMonthKey);
   const [weekIndex, setWeekIndex] = useState(initialWeekIndex);
@@ -76,6 +87,22 @@ export function GastosSummaryModal({
         </Field>
       </div>
       <p className="hint">{formatWeekRange(weekStartDate)}</p>
+
+      <BuscarGastos
+        key={`${monthKey}-${weekIndex}`}
+        monthKey={monthKey}
+        weekIndex={weekIndex}
+        month={month}
+        week={week}
+        onToggleEstado={onToggleEstado}
+        onSetCategoria={onSetCategoria}
+        onMoverGasto={onMoverGasto}
+        onEditarGasto={onEditarGasto}
+        onAgregarGasto={onAgregarGasto}
+        empleados={empleados}
+        meseros={meseros}
+        historial={historial}
+      />
 
       <div className="summary-grid-modal">
         <div className="summary-item highlight" style={{ gridColumn: "1 / -1" }}>

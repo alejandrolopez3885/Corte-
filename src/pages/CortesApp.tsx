@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Plus, Settings2, Users, Receipt, ArrowLeftRight, CircleDot, Circle, Pencil,
   Smartphone, BarChart3, LogOut, Truck, Trash2, Home, Store, LayoutDashboard, Contact, Clock, Wallet, ChartLine, Martini, ChefHat,
@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../lib/auth.tsx";
 import { useAppData } from "../lib/useAppData";
+import { historialNombres } from "../lib/gastosBusqueda";
 import {
   addDaysIso, buildMonth, dateForDay, formatAssignedDate, formatDayNumber, formatLongDayDate, formatWeekRange,
   mondayOnOrBefore, money, mostRecentDayInWeek, mostRecentWeekIndex, resolveAssignmentLocation, resolveWeekStartDate,
@@ -70,6 +71,8 @@ export default function CortesApp({ profile }: { profile: Profile }) {
 
   const isOwner = profile.role === "owner";
   const { data, status, saveState, persist } = useAppData(profile);
+  // Nombres de todos los gastos capturados, para autocompletar el concepto.
+  const historialGastos = useMemo(() => (data ? historialNombres(data) : []), [data]);
 
   const [activeMonth, setActiveMonth] = useState<string | null>(null);
   const [activeWeek, setActiveWeek] = useState(0);
@@ -617,6 +620,26 @@ export default function CortesApp({ profile }: { profile: Profile }) {
         cut.total = round2(cut.total - delta);
       }
     }
+    persist(next);
+  }
+
+  // Agregar un gasto desde la búsqueda de "Control de gastos en
+  // efectivo", cuando el ticket no está capturado en ningún día.
+  function agregarGastoEnSemana(monthKey: string, weekIndex: number, dayName: DayName, form: GastoFormValues) {
+    if (!data) return;
+    const next = structuredClone(data);
+    const ligableAEmpleado = form.categoria === "nomina" || form.categoria === "comida_empleado";
+    const ligableAMesero = form.categoria === "cancelaciones";
+    next.months[monthKey].weeks[weekIndex].days[dayName].gastos.push({
+      id: uid(),
+      concepto: form.concepto,
+      total: parseFloat(form.total) || 0,
+      estado: form.estado,
+      origen: "manual",
+      categoria: form.categoria || undefined,
+      empleadoId: ligableAEmpleado ? form.empleadoId || undefined : undefined,
+      meseroId: ligableAMesero ? form.meseroId || undefined : undefined,
+    });
     persist(next);
   }
 
@@ -1435,6 +1458,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           editing={modal.editing}
           catalog={data.meseros}
           existingGastos={modal.editing ? day.gastos.filter((g) => g.meseroCutId === (modal.editing as MeseroCut).id) : []}
+          historial={historialGastos}
         />
       )}
       {modal?.type === "gasto" && (
@@ -1445,6 +1469,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           editing={modal.editing}
           empleados={data.empleados}
           meseros={data.meseros}
+          historial={historialGastos}
         />
       )}
       {modal?.type === "transfer" && (
@@ -1480,6 +1505,10 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           onSetCategoria={setGastoCategoriaInWeek}
           onMoverGasto={moverGastoEnSemana}
           onEditarGasto={editarGastoEnSemana}
+          onAgregarGasto={agregarGastoEnSemana}
+          empleados={data.empleados}
+          meseros={data.meseros}
+          historial={historialGastos}
         />
       )}
       {modal?.type === "creditoProveedores" && monthKeys.length > 0 && (
