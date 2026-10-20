@@ -2,10 +2,11 @@ import { useState } from "react";
 import { ChevronDown, ChevronUp, Download } from "lucide-react";
 import { Field } from "../ui";
 import {
-  META_GASTOS_OPERATIVOS_PCT, computeDashboardReport, computeNominaTotalHastaHoy, formatShortDayDate, formatWeekRange, isoWeekNumber,
+  META_GASTOS_OPERATIVOS_PCT, computeDashboardReport, dateForDay, computeNominaTotalHastaHoy, formatShortDayDate, formatWeekRange, isoWeekNumber,
   money, resolveMontoFijo, resolveWeekStartDate, todayIso,
 } from "../../lib/dataModel";
 import { downloadDashboardImage } from "../../lib/dashboardImage";
+import { DAY_SHORT } from "../../lib/types";
 import type { EmpleadoEntry, HorarioMonthData, MeseroCatalogEntry, MonthData, MontoFijoSemanal } from "../../lib/types";
 
 // Categorías donde además del total conviene ver el detalle de cada gasto
@@ -159,6 +160,22 @@ export function DashboardPanel({
               <span className="report-row-pct">{report.pct.gastosFijosEfectivo}%</span>
               <strong className="report-row-amount">{money(report.gastosFijosEfectivo)}</strong>
             </div>
+            {report.gastosFijosServicios.length === 0 ? (
+              <p className="report-row-sub-empty hint">Sin servicios pagados en efectivo esta semana.</p>
+            ) : (
+              report.gastosFijosServicios.map((g, i) => (
+                <div key={i} className="report-row report-row-sub report-row-servicio">
+                  <span className="report-row-label">
+                    {g.concepto}{" "}
+                    <em>
+                      · {DAY_SHORT[g.dia]} {formatShortDayDate(dateForDay(monthKey, weekIndex, month, g.dia)).split(" ")[0]}
+                    </em>
+                  </span>
+                  <span className="report-row-pct" />
+                  <strong className="report-row-amount">{money(g.total)}</strong>
+                </div>
+              ))
+            )}
           </>
         )}
         <button type="button" className="report-row report-row-toggle" onClick={() => setShowComisiones((v) => !v)}>

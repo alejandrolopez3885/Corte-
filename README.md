@@ -24,10 +24,12 @@ categoría **Servicio** (luz, gas, teléfono, agua, internet...). Así lo
 pagado en efectivo más lo pagado por transferencia siempre suman el monto
 fijo — ej. si se pagaron $500 de teléfono en efectivo, Gastos fijos queda
 en $24,000. Debajo se ve el desglose (monto fijo − cada Servicio en
-efectivo = Gastos fijos en transferencia) y se recalcula solo cada vez que
+efectivo, con su nombre y día — ej. "− Teléfono · Mar 14" = Gastos fijos en
+transferencia) y se recalcula solo cada vez que
 se agrega, cambia o mueve un gasto de Servicio, sin tener que entrar a
 guardar. Con el lápiz se cambia el número solo para esa semana: queda
-marcado "editado a mano" y se puede "Volver al automático". "Cambiar" el
+marcado "editado a mano" y se puede "Volver al automático"; abajo se siguen
+listando, como referencia, los Servicios pagados en efectivo esa semana. "Cambiar" el
 monto fijo semanal aplica desde esa semana en adelante (las semanas
 anteriores se quedan con el monto que tenían). Las semanas que ya tenían
 Gastos fijos guardado antes de este cambio se quedan con su número, como
@@ -499,8 +501,9 @@ estando en Nómina te regresa al menú de Equipo):
   porcentajes sobre la venta total): Venta total, Gastos operativos (suma
   los de efectivo categorizados como Operación más los de transferencia),
   Gastos fijos (desplegable: lo pagado en transferencia más los gastos en
-  efectivo categorizados como Servicio — siempre suman el monto fijo
-  semanal, salvo que se haya editado a mano), las 3 comisiones de apps, el
+  efectivo categorizados como Servicio, con cada uno listado por nombre,
+  día y monto — siempre suman el monto fijo semanal, salvo que se haya
+  editado a mano), las 3 comisiones de apps, el
   resto de categorías de gastos en efectivo desglosadas una por una
   (Nómina, Cortesía, Retiro,
   Mantenimiento, Comida empleado, Envíos, Cancelaciones — con su propio
