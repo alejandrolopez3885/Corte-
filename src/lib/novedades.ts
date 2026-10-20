@@ -15,7 +15,7 @@ import type { AppData, PermisoStaff, Profile } from "./types";
 
 export type SeccionNovedad = "corte" | PermisoStaff;
 
-export type VisualNovedad = "sumar" | "autocompletar" | "categoria";
+export type VisualNovedad = "sumar" | "autocompletar" | "categoria" | "faltan";
 
 export interface Novedad {
   id: string;
@@ -50,6 +50,14 @@ export const NOVEDADES: Novedad[] = [
     titulo: "Cada gasto lleva categoría",
     texto: "Al guardar un gasto hay que elegir su categoría. Nueva: **Servicio** (luz, gas, teléfono).",
     visual: "categoria",
+  },
+  {
+    id: "faltan-por-contar",
+    fecha: "2026-10-20T07:10:00Z",
+    seccion: "inventario",
+    titulo: "Lo que no hay también se pide",
+    texto: "Si no anotas un producto, al guardar la app te pregunta. Marca **No hay** y sale en 0 para pedirlo.",
+    visual: "faltan",
   },
 ];
 

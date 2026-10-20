@@ -566,9 +566,10 @@ Corte desde marzo. Para saberlo, cada persona guarda en su propia cuenta
 el "Corte hecho por" de cada día. El personal nunca consulta el historial
 de cambios. Al cerrarlas queda además un renglón "Novedades" en el
 historial (solo el dueño lo ve). El dueño no recibe el slider. Las
-novedades viven en `src/lib/novedades.ts`; hoy hay 3, de Corte: sumar
+novedades viven en `src/lib/novedades.ts`; hoy hay 4. De Corte: sumar
 montos con "+", el nombre del gasto que se completa solo y la categoría
-obligatoria (con la nueva Servicio).
+obligatoria (con la nueva Servicio). De Inventario: el aviso "Faltan por
+contar" al guardar, para que lo que no hay salga en 0 y se pueda pedir.
 
 ## 1. Crear el proyecto en Supabase
 

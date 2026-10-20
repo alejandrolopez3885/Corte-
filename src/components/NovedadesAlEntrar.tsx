@@ -111,6 +111,26 @@ function Visual({ tipo }: { tipo: VisualNovedad }) {
       </>
     );
   }
+  if (tipo === "faltan") {
+    return (
+      <>
+        <span className="nv-etiqueta">Faltan por contar</span>
+        <div className="nv-lista">
+          <div>
+            <span>☑ Zanahoria</span>
+            <small>no hay → 0</small>
+          </div>
+          <div>
+            <span>☑ Cilantro</span>
+            <small>no hay → 0</small>
+          </div>
+        </div>
+        <span className="nv-suma">
+          Zanahoria <strong>0 kg</strong> · Pedir <strong>5 kg</strong>
+        </span>
+      </>
+    );
+  }
   return (
     <>
       <span className="nv-etiqueta">Categoría</span>
