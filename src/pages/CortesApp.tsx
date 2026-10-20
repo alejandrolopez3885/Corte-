@@ -39,7 +39,8 @@ import { ControlCocinaPanel } from "../components/panels/ControlCocinaPanel";
 import { InsumosPanel } from "../components/panels/InsumosPanel";
 import { InventarioNotasPanel } from "../components/panels/InventarioNotasPanel";
 import { PedidosTotalPanel } from "../components/panels/PedidosTotalPanel";
-import { BitacoraPanel } from "../components/panels/BitacoraPanel";
+import { ActividadPanel } from "../components/panels/ActividadPanel";
+import { useRegistrarVista } from "../lib/bitacora";
 import StaffAccessShell from "./StaffAccessShell";
 
 type ModalState =
@@ -82,6 +83,25 @@ export default function CortesApp({ profile }: { profile: Profile }) {
   const ownerInitialized = useRef(false);
   const locatedForDate = useRef<string | null>(null);
   const { assignments, status: assignmentsStatus } = useStaffAssignments(isOwner ? null : profile.id);
+
+  // Qué pantalla tiene abierta (para Negocio > Análisis > Actividad). Las
+  // cuentas de equipo fuera del corte las registra StaffAccessShell.
+  const NOMBRE_EQUIPO: Record<EquipoView, string> = { menu: "Equipo", personal: "Personal", horarios: "Horarios", nomina: "Nómina", propinas: "Propinas" };
+  const NOMBRE_NEGOCIO: Record<NegocioView, string> = {
+    menu: "Negocio", tendencias: "Tendencias", bitacora: "Actividad", controlBar: "Control de Bar", controlCocina: "Control de Cocina",
+    controlGeneral: "Control General", inventario: "Inventario", pedidos: "Pedidos",
+  };
+  const NOMBRE_MODAL: Partial<Record<string, string>> = {
+    gastosSummary: "Control de gastos en efectivo", creditoProveedores: "Control de gastos en transferencia",
+    weekSummary: "Resumen semanal", proveedores: "Proveedores",
+  };
+  const pantalla = !isOwner
+    ? selectedAssignedDate
+      ? "Corte"
+      : null
+    : (modal && NOMBRE_MODAL[modal.type]) ||
+      (activeTab === "corte" ? "Corte" : activeTab === "dashboard" ? "Dashboard" : activeTab === "equipo" ? NOMBRE_EQUIPO[equipoView] : NOMBRE_NEGOCIO[negocioView]);
+  useRegistrarVista(profile, pantalla);
 
   // Dueño: al cargar, ubica el mes/semana/día más reciente.
   useEffect(() => {
@@ -916,8 +936,8 @@ export default function CortesApp({ profile }: { profile: Profile }) {
                 <History size={20} />
               </span>
               <span className="menu-item-text">
-                <strong>Historial de cambios</strong>
-                <span>Quién cambió qué en la app y cuándo, y quién entró</span>
+                <strong>Actividad</strong>
+                <span>Quién usa la app, qué cambió y cuándo — alertas y uso por persona</span>
               </span>
             </button>
           </div>
@@ -996,14 +1016,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
       )}
 
       {isOwner && activeTab === "negocio" && negocioView === "bitacora" && (
-        <BitacoraPanel
-          onBack={() => setNegocioView("menu")}
-          ownerId={profile.id}
-          months={data.months}
-          monthKeys={monthKeys}
-          initialMonthKey={mostRecentMonthKey as string}
-          initialWeekIndex={mostRecentWeekIdx}
-        />
+        <ActividadPanel onBack={() => setNegocioView("menu")} ownerId={profile.id} />
       )}
 
       {isOwner && activeTab === "negocio" && negocioView === "controlBar" && (

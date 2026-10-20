@@ -723,3 +723,55 @@ body {
 .bitacora-tag { font-size: 11px; padding: 1px 8px; border-radius: 100px; }
 .bitacora-tag.agrego { background: var(--good-soft); color: var(--good); }
 .bitacora-tag.elimino { background: var(--bad-soft); color: var(--bad); }
+
+/* ---- Actividad (Resumen / Personas / Historial) ---- */
+.actividad-semana { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.actividad-semana strong { font-size: 14px; }
+.actividad-kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.actividad-kpi { display: flex; flex-direction: column; gap: 2px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 10px; }
+.actividad-kpi strong { font-family: 'Fraunces', serif; font-size: 24px; font-weight: 600; }
+.actividad-kpi span { font-size: 11.5px; color: var(--ink-soft); }
+.actividad-kpi small { font-size: 11px; color: var(--ink-soft); }
+.actividad-kpi small.sube { color: var(--good); }
+.actividad-kpi small.baja { color: var(--bad); }
+.actividad-card { display: flex; flex-direction: column; gap: 8px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; }
+.actividad-card h4 { margin: 0; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-soft); }
+.actividad-alerta {
+  display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; cursor: pointer;
+  font: inherit; font-size: 13px; border: none; border-radius: 10px; padding: 9px 11px;
+  background: var(--warn-soft); color: var(--warn);
+}
+.actividad-alerta.grave { background: var(--bad-soft); color: var(--bad); }
+.actividad-alerta span { margin-left: auto; font-weight: 600; white-space: nowrap; }
+.actividad-barras { display: flex; align-items: flex-end; gap: 8px; height: 96px; border-bottom: 1px solid var(--border); padding: 0 4px; }
+.actividad-barra { flex: 1; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 2px; }
+.actividad-barra span { font-size: 10.5px; color: var(--ink-soft); }
+.actividad-barra i { display: block; width: 100%; min-height: 0; background: var(--accent); border-radius: 4px 4px 0 0; }
+.actividad-barras-dias { display: flex; gap: 8px; padding: 0 4px; font-size: 11px; color: var(--ink-soft); }
+.actividad-barras-dias span { flex: 1; text-align: center; }
+.actividad-ranking {
+  display: grid; grid-template-columns: 112px 1fr 32px; align-items: center; gap: 8px;
+  background: none; border: none; padding: 2px 0; font: inherit; font-size: 12.5px; color: var(--ink); text-align: left; cursor: pointer;
+}
+.actividad-ranking:disabled { cursor: default; }
+.actividad-ranking span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.actividad-ranking i { display: block; height: 8px; border-radius: 0 4px 4px 0; background: var(--accent); }
+.actividad-ranking strong { text-align: right; }
+.actividad-persona { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; }
+.actividad-persona-top { display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 12px; background: none; border: none; font: inherit; color: inherit; text-align: left; cursor: pointer; }
+.actividad-persona-top .girado { transform: rotate(90deg); }
+.actividad-avatar { width: 36px; height: 36px; flex-shrink: 0; border-radius: 50%; background: var(--accent-soft); color: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: 700; }
+.actividad-persona-info { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.actividad-persona-info strong { font-size: 14.5px; }
+.actividad-persona-info span { font-size: 12px; color: var(--ink-soft); }
+.actividad-punto { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--border); margin-right: 5px; }
+.actividad-punto.on { background: var(--good); }
+.actividad-persona-detalle { display: flex; flex-direction: column; gap: 6px; padding: 0 12px 12px 58px; }
+.actividad-horas { display: grid; grid-template-columns: repeat(24, 1fr); gap: 2px; height: 36px; align-items: end; border-bottom: 1px solid var(--border); }
+.actividad-horas i { display: block; background: var(--accent); border-radius: 2px 2px 0 0; }
+.actividad-horas-eje { display: flex; justify-content: space-between; font-size: 10.5px; color: var(--ink-soft); }
+.actividad-busqueda { display: flex; align-items: center; gap: 8px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 0 12px; color: var(--ink-soft); }
+.actividad-busqueda input { flex: 1; border: none; outline: none; background: none; font: inherit; font-size: 14px; padding: 10px 0; color: var(--ink); min-width: 0; }
+.actividad-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.actividad-chips button { display: flex; align-items: center; gap: 4px; font: inherit; font-size: 12.5px; padding: 6px 11px; border-radius: 100px; background: var(--surface); border: 1px solid var(--border); color: var(--ink); cursor: pointer; }
+.actividad-chips button.on { background: var(--accent); border-color: var(--accent); color: white; }

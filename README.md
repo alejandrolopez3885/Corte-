@@ -272,19 +272,26 @@ estando en Nómina te regresa al menú de Equipo):
   poco confiable), una cuadrícula de KPIs con su cambio semana a semana y
   minigráfica (Venta total, Utilidad, Margen, Gastos totales, Nómina), una
   gráfica de venta con la proyección marcada aparte, y una tabla detallada
-  por semana; también bajo "Análisis", "Historial de cambios" — la
-  bitácora de toda la app: cada guardado (Corte, Conteo diario,
-  Inventario y pedidos, Catálogo, Proveedores, Equipo, Horarios, Nómina,
-  cuentas y permisos de acceso) queda registrado con quién lo hizo
-  (incluido el dueño), fecha y hora, dónde ("Corte Lun 19 · Mesero Juan")
-  y qué cambió (antes tachado → después, o qué se agregó/eliminó; en los
-  textos del conteo y las notas, solo los renglones que cambiaron), más
-  cada inicio y cierre de sesión. Se ve por semana (fecha del cambio),
-  agrupado por día, con filtros de sección y persona; solo lo ve el
-  dueño. Vive en su propia tabla de Supabase (`bitacora`, ver
-  `supabase/migration_007_bitacora.sql`, que hay que correr una vez) en la
-  que solo se pueden agregar renglones: nadie puede editarla ni borrarla
-  desde la app. Registra desde que se activó; lo anterior no existe; bajo "Bar", "Control de Bar"; y bajo "Cocina", "Control de
+  por semana; también bajo "Análisis", "Actividad" — la
+  bitácora de toda la app, ordenada en tres pestañas y por semana (con
+  flechas para ir a semanas anteriores): **Resumen** (cuántos cambios,
+  personas activas e inicios de sesión, comparado con la semana anterior;
+  "Para revisar": cosas eliminadas, cambios entre 2 y 6 a.m. y cambios a
+  cortes/conteos de días anteriores, cada uno con "Ver ›" al historial ya
+  filtrado; cambios por día; pantallas más abiertas y cuáles nadie abrió;
+  secciones con más cambios), **Personas** (cada quien con su último uso,
+  cuántos cambios y qué secciones usa; al tocarla, a qué horas usa la app,
+  sus sesiones y "Ver su historial") e **Historial** (cada cambio con quién,
+  hora, dónde y qué — antes tachado → después, o qué se agregó/eliminó —,
+  búsqueda por texto y chips por sección, Sesiones, Pantallas y Solo
+  eliminaciones). Se registra cada guardado de cualquier sección, cada
+  inicio y cierre de sesión, los cambios de cuentas y permisos del equipo y
+  qué pantalla abre cada quien (solo el nombre de la pantalla). Solo lo ve
+  el dueño. Vive en su propia tabla de Supabase (`bitacora`: correr una vez
+  `supabase/migration_007_bitacora.sql` y `supabase/migration_008_bitacora_actividad.sql`)
+  en la que solo se pueden agregar renglones: nadie puede editarla ni
+  borrarla desde la app. Lo anterior a activarla se puede recuperar en
+  parte con `supabase/rellenar_historial.sql`; bajo "Bar", "Control de Bar"; y bajo "Cocina", "Control de
   Cocina" — las dos abren primero a un menú propio (para poder ir sumando
   ahí compras como opción hermana más adelante), con dos piezas
   construidas, en este orden: "Conteo diario" primero — un recuadro de

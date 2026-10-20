@@ -5,6 +5,7 @@ import { HORARIO_AREAS_FIJAS, PERMISOS_DISPONIBLES } from "../lib/types";
 import type { AppData, ConteoTextoArea, HorarioSemana, PermisoStaff, Profile, StaffAssignment } from "../lib/types";
 import { HorariosPanel } from "../components/panels/HorariosPanel";
 import { ConteoDiarioPanel } from "../components/panels/ConteoDiarioPanel";
+import { useRegistrarVista } from "../lib/bitacora";
 import { InventarioNotasPanel } from "../components/panels/InventarioNotasPanel";
 import { NominaPanel } from "../components/panels/NominaPanel";
 import { PropinasPanel } from "../components/panels/PropinasPanel";
@@ -63,6 +64,10 @@ export default function StaffAccessShell({
     if (totalSecciones !== 1) return "menu";
     return permisos.length === 1 ? permisos[0] : "corte";
   });
+
+  // Pantalla abierta, para Actividad (el corte lo registra CortesApp).
+  const etiquetaPermiso = (v: StaffView) => PERMISOS_DISPONIBLES.find((p) => p.value === v)?.label;
+  useRegistrarVista(profile, view === "menu" ? "Inicio (equipo)" : view === "corte" ? null : etiquetaPermiso(view) || view);
 
   const empleado = data.empleados.find((e) => e.id === profile.empleado_id);
   const puesto = empleado?.puestoId ? data.puestos.find((p) => p.id === empleado.puestoId) : undefined;

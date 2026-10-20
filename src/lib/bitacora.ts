@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { supabase } from "./supabaseClient";
 import { dateForDay, formatAssignedDate, money } from "./dataModel";
 import { DAY_SHORT } from "./types";
@@ -23,16 +24,18 @@ export interface RenglonBitacora {
   owner_id: string;
   actor_id: string;
   actor_nombre: string | null;
-  tipo: "cambio" | "login" | "logout";
+  tipo: "cambio" | "login" | "logout" | "vista";
   seccion: string | null;
   donde: string | null;
   detalle: CambioBitacora[] | null;
+  ref_fecha?: string | null;
   creado_en: string;
 }
 
 interface Grupo {
   seccion: string;
   donde: string;
+  fecha?: string; // fecha del corte/día al que se refiere
   cambios: CambioBitacora[];
 }
 
@@ -128,7 +131,7 @@ const AREA: Record<string, string> = { cocina: "Cocina", bar: "Bar" };
 
 // Traduce la ruta de un cambio a: en qué sección, dónde exactamente y
 // cómo se llama el campo.
-function ubicar(h: Hoja, prev: AppData, next: AppData): { seccion: string; donde: string; campo?: string; lista?: string } {
+function ubicar(h: Hoja, prev: AppData, next: AppData): { seccion: string; donde: string; campo?: string; lista?: string; fecha?: string } {
   const p = h.path;
   const mes = (mk: string): MonthData | undefined => next.months?.[mk] ?? prev.months?.[mk];
   const buscar = (lista: string, id: string): Record<string, Json> | undefined =>
@@ -147,35 +150,36 @@ function ubicar(h: Hoja, prev: AppData, next: AppData): { seccion: string; donde
         return { seccion: "Corte", donde: `Corte · ${semana}`, campo: p.slice(4).map((k) => CAMPOS[k] || k).join(" · ") };
       }
       const fecha = m ? dateForDay(mk, Number(w), m, day as DayName) : "";
+      const conFecha = <T extends object>(x: T) => ({ ...x, fecha: fecha || undefined });
       const base = `Corte ${DAY_SHORT[day as DayName] || day}${fecha ? ` ${fechaCorta(fecha).replace(/^[^ ]+ /, "")}` : ""}`;
       const dia = m?.weeks?.[Number(w)]?.days?.[day as DayName];
       const diaPrev = prev.months?.[mk]?.weeks?.[Number(w)]?.days?.[day as DayName];
       if (lista === "meseros") {
         const cut = (dia?.meseros || []).find((x) => x.id === id) || (diaPrev?.meseros || []).find((x) => x.id === id);
-        return { seccion: "Corte", donde: `${base} · Mesero ${cut?.nombre || ""}`.trim(), campo: campo ? CAMPOS[campo] || campo : undefined, lista: "Mesero" };
+        return conFecha({ seccion: "Corte", donde: `${base} · Mesero ${cut?.nombre || ""}`.trim(), campo: campo ? CAMPOS[campo] || campo : undefined, lista: "Mesero" });
       }
       if (lista === "gastos" || lista === "transferencias") {
         const items = [...(dia?.[lista] || []), ...(diaPrev?.[lista] || [])] as unknown as Record<string, Json>[];
         const item = items.find((x) => x.id === id);
         const nombreItem = (item?.concepto ?? item?.persona) as string | undefined;
         const etiqueta = lista === "gastos" ? "Gasto" : "Transferencia";
-        return {
+        return conFecha({
           seccion: "Corte",
           donde: `${base} · ${lista === "gastos" ? "Gastos" : "Transferencias"}`,
           campo: campo ? `${etiqueta}${nombreItem ? ` “${nombreItem}”` : ""} · ${CAMPOS[campo] || campo}` : undefined,
           lista: etiqueta,
-        };
+        });
       }
-      return { seccion: "Corte", donde: base, campo: lista ? CAMPOS[lista] || lista : undefined };
+      return conFecha({ seccion: "Corte", donde: base, campo: lista ? CAMPOS[lista] || lista : undefined });
     }
     case "conteosDiariosTexto":
-      return { seccion: "Conteo diario", donde: `Conteo diario ${AREA[p[1]] || p[1]} · ${p[2] ? fechaCorta(p[2]) : ""}`, campo: "Conteo" };
+      return { seccion: "Conteo diario", donde: `Conteo diario ${AREA[p[1]] || p[1]} · ${p[2] ? fechaCorta(p[2]) : ""}`, campo: "Conteo", fecha: p[2] };
     case "pedidosDiarios":
-      return { seccion: "Conteo diario", donde: `Pedido diario ${AREA[p[1]] || p[1]} · ${p[2] ? fechaCorta(p[2]) : ""}`, campo: p[3] };
+      return { seccion: "Conteo diario", donde: `Pedido diario ${AREA[p[1]] || p[1]} · ${p[2] ? fechaCorta(p[2]) : ""}`, campo: p[3], fecha: p[2] };
     case "inventariosNotas":
-      return { seccion: "Inventario", donde: `Inventario · ${p[1] ? fechaCorta(p[1]) : ""}`, campo: "Notas" };
+      return { seccion: "Inventario", donde: `Inventario · ${p[1] ? fechaCorta(p[1]) : ""}`, campo: "Notas", fecha: p[1] };
     case "pedidosInventario":
-      return { seccion: "Inventario", donde: `Pedido de inventario · ${p[1] ? fechaCorta(p[1]) : ""}`, campo: p[2] };
+      return { seccion: "Inventario", donde: `Pedido de inventario · ${p[1] ? fechaCorta(p[1]) : ""}`, campo: p[2], fecha: p[1] };
     case "conteosDiarios":
       return { seccion: "Conteo diario", donde: `Conteo diario · ${p[1] ? fechaCorta(p[1]) : ""}`, campo: p[2] };
     case "insumos":
@@ -238,7 +242,7 @@ export function describirCambios(prev: AppData, next: AppData): Grupo[] {
     if (ultimo === "hechoPor" || h.path.includes("hechoPor")) return;
     const u = ubicar(h, prev, next);
     const key = `${u.seccion}|${u.donde}`;
-    if (!grupos.has(key)) grupos.set(key, { seccion: u.seccion, donde: u.donde, cambios: [] });
+    if (!grupos.has(key)) grupos.set(key, { seccion: u.seccion, donde: u.donde, fecha: u.fecha, cambios: [] });
     const g = grupos.get(key)!;
     if (h.tipo === "cambió" && typeof h.antes === "string" && typeof h.despues === "string" && (h.antes.includes("\n") || h.despues.includes("\n"))) {
       g.cambios.push(...cambiosDeTexto(h.antes, h.despues, u.campo || "Texto"));
@@ -264,17 +268,21 @@ function nombreDe(profile: Profile): string {
 export async function registrarCambios(profile: Profile, prev: AppData, next: AppData) {
   const grupos = describirCambios(prev, next);
   if (grupos.length === 0) return;
-  const { error } = await supabase.from("bitacora").insert(
-    grupos.map((g) => ({
-      owner_id: ownerIdDe(profile),
-      actor_id: profile.id,
-      actor_nombre: nombreDe(profile),
-      tipo: "cambio",
-      seccion: g.seccion,
-      donde: g.donde,
-      detalle: g.cambios,
-    }))
-  );
+  const filas = grupos.map((g) => ({
+    owner_id: ownerIdDe(profile),
+    actor_id: profile.id,
+    actor_nombre: nombreDe(profile),
+    tipo: "cambio",
+    seccion: g.seccion,
+    donde: g.donde,
+    detalle: g.cambios,
+    ...(g.fecha ? { ref_fecha: g.fecha } : {}),
+  }));
+  let { error } = await supabase.from("bitacora").insert(filas);
+  // Sin migration_008 todavía no existe ref_fecha: se guarda sin ella.
+  if (error && /ref_fecha/.test(error.message)) {
+    ({ error } = await supabase.from("bitacora").insert(filas.map(({ ref_fecha: _omit, ...resto }) => resto)));
+  }
   if (error) console.error("No se pudo guardar en la bitácora", error);
 }
 
@@ -304,6 +312,21 @@ export function registrarEvento(seccion: string, donde: string, cambios: CambioB
   return insertarConSesion({ tipo: "cambio", seccion, donde, detalle: cambios });
 }
 
+// Qué pantalla abrió cada quien (solo el nombre, nada de lo que vio). Se
+// registra cada vez que cambia de pantalla.
+export function useRegistrarVista(profile: Profile | null, pantalla: string | null) {
+  useEffect(() => {
+    if (!profile || !pantalla) return;
+    supabase
+      .from("bitacora")
+      .insert({ owner_id: ownerIdDe(profile), actor_id: profile.id, actor_nombre: nombreDe(profile), tipo: "vista", seccion: pantalla })
+      .then(({ error }) => {
+        // Si todavía no se corre migration_008, 'vista' no está permitido — se ignora.
+        if (error && error.code !== "23514") console.error("No se pudo registrar la pantalla", error);
+      });
+  }, [profile, pantalla]);
+}
+
 export async function cargarBitacora(ownerId: string, desdeIso: string, hastaIso: string) {
   return supabase
     .from("bitacora")
@@ -312,5 +335,5 @@ export async function cargarBitacora(ownerId: string, desdeIso: string, hastaIso
     .gte("creado_en", desdeIso)
     .lt("creado_en", hastaIso)
     .order("creado_en", { ascending: false })
-    .limit(2000);
+    .limit(10000);
 }
