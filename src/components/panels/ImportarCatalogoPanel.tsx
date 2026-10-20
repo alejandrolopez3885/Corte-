@@ -95,6 +95,8 @@ export function ImportarCatalogoPanel({
   };
   const porImportar = cuenta.nuevo + cuenta.cambia;
 
+  const parecidoDe = (i: number) => cambios?.[i]?.parecido;
+
   const visibles = efectivos.filter((c) =>
     filtro === "todos" ? c.tipo !== "igual" : filtro === "pendiente" ? c.pendiente && c.tipo !== "igual" : c.tipo === filtro
   );
@@ -211,9 +213,7 @@ export function ImportarCatalogoPanel({
                   <div className="importar-item" key={c.i}>
                     <div className="importar-item-top">
                       <strong>{c.fila.nombre}</strong>
-                      {c.parecido ? (
-                        <span className="importar-tag warn">¿Es el mismo?</span>
-                      ) : c.tipo === "nuevo" ? (
+                      {c.tipo === "nuevo" ? (
                         <span className="importar-tag good">Nuevo</span>
                       ) : c.tipo === "cambia" ? (
                         <span className="importar-tag warn">Cambia</span>
@@ -222,9 +222,13 @@ export function ImportarCatalogoPanel({
                       )}
                       {c.pendiente && <span className="importar-tag bad">Pendiente</span>}
                     </div>
-                    {c.parecido && (
+                    {/* La pregunta se queda aunque se conteste "No", para poder cambiar de opinión. */}
+                    {parecidoDe(c.i) && (
                       <div className="importar-parecido">
-                        <span>Parecido a tu “{c.parecido.nombre}”</span>
+                        <span>
+                          ¿Es el mismo que tu “{parecidoDe(c.i)!.nombre}”?{" "}
+                          <b>{noEsElMismo[c.i] ? "Se crea como insumo nuevo, aparte." : `Se actualiza tu “${parecidoDe(c.i)!.nombre}”.`}</b>
+                        </span>
                         <div className="actividad-chips">
                           <button className={!noEsElMismo[c.i] ? "on" : ""} onClick={() => setNoEsElMismo((m) => ({ ...m, [c.i]: false }))}>
                             Sí, actualizarlo
