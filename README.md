@@ -535,6 +535,27 @@ Hay 2 tipos de cuenta:
   meses/semanas): a nivel de base de datos el staff puede leer y escribir
   el mismo registro `app_data` que el dueño.
 
+**Novedades al entrar (cuentas de equipo)**: cuando algo cambia en una
+sección que usa el personal, lo primero que ve esa persona al entrar es una
+tarjeta encima de la pantalla con un dibujito de cómo se usa, un título y
+una frase corta. Si hay varias, se pasan con "Siguiente" (con puntitos que
+marcan cuántas son) y la última dice "Entendido"; se cierra en cualquier
+momento con la ✕ o tocando fuera, y ya no vuelve a salir. A cada quien solo
+le salen las novedades de secciones a las que hoy tiene acceso (Corte =
+tiene algún día asignado; las demás, sus permisos) y que ya usaba antes
+del cambio: si nunca ha entrado a esa sección, para esa persona todo es
+nuevo y no ve nada. Ej. si alguien hizo su último corte en marzo y en
+noviembre se le vuelve a asignar un día, al entrar ve todo lo que cambió en
+Corte desde marzo. Para saberlo, cada persona guarda en su propia cuenta
+(en Supabase Auth, sin tablas nuevas) solo qué novedades ya vio y la
+última vez que entró con acceso a cada sección; para Corte también cuenta
+el "Corte hecho por" de cada día. El personal nunca consulta el historial
+de cambios. Al cerrarlas queda además un renglón "Novedades" en el
+historial (solo el dueño lo ve). El dueño no recibe el slider. Las
+novedades viven en `src/lib/novedades.ts`; hoy hay 3, de Corte: sumar
+montos con "+", el nombre del gasto que se completa solo y la categoría
+obligatoria (con la nueva Servicio).
+
 ## 1. Crear el proyecto en Supabase
 
 1. Ve a [supabase.com](https://supabase.com) → **New project**.
@@ -653,6 +674,7 @@ src/
   components/
     ui.tsx        Sheet, Field, inputs, Toggle, Empty
     ConceptoInput.tsx  cuadro de concepto de gasto con autocompletado y ortografía
+    NovedadesAlEntrar.tsx  slider de novedades al entrar (cuentas de equipo); lista en lib/novedades.ts
     modals/       un modal por acción (mesero, gasto, transferencia, etc.)
   pages/
     Login.tsx
