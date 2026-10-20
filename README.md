@@ -913,6 +913,21 @@ que recargues.
    `VITE_SUPABASE_ANON_KEY` con los mismos valores de tu `.env`.
 4. Deploy. Cada push a la rama conectada vuelve a desplegar automáticamente.
 
+## Ícono de la app
+
+El ícono es un **Anubis geométrico** de perfil (cabeza negra con facetas,
+interior de orejas y collar en dorado, y el ojo de Horus en trazos dorados
+finos) sobre fondo **rojo sólido**: Anubis es el que pesa y cuadra, y el
+ojo de Horus el que todo lo ve — el guardián de las cuentas. Vive en
+`public/`: `favicon.svg` (pestaña del navegador, con esquinas
+redondeadas), `apple-touch-icon.png` (180 px, el que usa el iPhone al
+agregar la app a la pantalla de inicio), `icon-192.png` e `icon-512.png`
+(Android) e `icon-maskable-512.png` (Android, con margen para que el
+celular lo recorte en círculo o en la forma que use), declarados en
+`manifest.webmanifest` y en `index.html`. Para que un celular que ya tenía
+la app en su pantalla de inicio muestre el ícono nuevo, hay que quitar ese
+acceso y volver a agregarlo.
+
 ## Estructura del proyecto
 
 ```
