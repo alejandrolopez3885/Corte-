@@ -1,18 +1,20 @@
 import type { DashboardReport } from "./dataModel";
-import { META_GASTOS_OPERATIVOS_PCT, money, round2 } from "./dataModel";
+import { META_GASTOS_OPERATIVOS_PCT, META_MARGEN_OPERATIVO_PCT, META_NOMINA_PCT, TOLERANCIA_AMARILLO_PCT, money, round2 } from "./dataModel";
 import { copyCanvasAsPng } from "./imageExport";
 
-// Imagen del resultado semanal para mandar al grupo del jefe: se lee como una
-// cuenta, de la venta a la utilidad después del retiro.
+// Imagen del resultado semanal para mandar al grupo del jefe, con la misma
+// cuenta que la app de ellos: se lee de la venta a la utilidad.
 //
 //   Venta semanal
-//   − Gastos operativos      (verde si está en la meta, rojo si se pasó)
-//   − Nómina
-//   = Margen operativo
+//   − Gastos operativos      (meta: 42% o menos)
+//   − Nómina                 (meta: 16% o menos)
 //   − Otros gastos           (fijos, comisiones de apps y banco, otras categorías)
-//   = Utilidad antes de retiro
-//   − Retiro
+//   = Utilidad operativa ($) y Margen operativo (%, meta: 15% o más)
+//   − Retiro                 (los "gastos externos": no operativos)
 //   = Utilidad después de retiro   (la misma "Utilidad" del Dashboard)
+//
+// Semáforo: verde en la meta, amarillo cerca (a 3 puntos o menos), rojo
+// fuera.
 
 const NOMBRE_NEGOCIO = "Metroplex";
 const WIDTH = 460;
@@ -23,6 +25,7 @@ const TEXTO = "#333333";
 const SUAVE = "#888888";
 const VERDE = "#2E7D53";
 const VERDE_SUAVE = "#DCEEDF";
+const AMARILLO = "#B8752D";
 const ACENTO = "#1F5D4C";
 const ACENTO_SUAVE = "#EEF3EC";
 const ROJO = "#A23B2E";
@@ -33,10 +36,9 @@ export interface ResultadoSemanal {
   ventaSemanaPasada: number | null;
   gastosOperativos: number;
   nomina: number;
-  margen: number;
   otros: number;
   otrosDesglose: { label: string; monto: number }[];
-  antesDeRetiro: number;
+  utilidadOperativa: number;
   retiro: number;
   despuesDeRetiro: number;
 }
@@ -46,25 +48,31 @@ export function resultadoSemanal(report: DashboardReport, ventaSemanaPasada: num
   const otrasCategorias = round2(
     report.otrosCategorias.filter((c) => c.key !== "nomina" && c.key !== "retiro").reduce((s, c) => s + c.total, 0)
   );
-  const margen = round2(report.ventaTotal - report.gastosOperativos - report.nomina);
-  const antesDeRetiro = round2(report.utilidad + retiro);
+  // Utilidad operativa = venta − todos los gastos menos el retiro.
+  const utilidadOperativa = round2(report.utilidad + retiro);
   return {
     venta: report.ventaTotal,
     ventaSemanaPasada,
     gastosOperativos: report.gastosOperativos,
     nomina: report.nomina,
-    margen,
-    otros: round2(margen - antesDeRetiro),
+    otros: round2(report.ventaTotal - report.gastosOperativos - report.nomina - utilidadOperativa),
     otrosDesglose: [
       { label: "Fijos", monto: report.gastosFijos },
       { label: "Comisiones apps", monto: report.comisionesApps },
       { label: "Banco", monto: report.comisionTarjetas },
       { label: "Otros", monto: otrasCategorias },
     ].filter((x) => x.monto > 0),
-    antesDeRetiro,
+    utilidadOperativa,
     retiro,
     despuesDeRetiro: report.utilidad,
   };
+}
+
+// Verde en la meta, amarillo a 3 puntos o menos, rojo fuera. `maximo`: la
+// meta es un tope (gastos, nómina); si no, es un mínimo (margen).
+function semaforo(pct: number, meta: number, maximo: boolean): string {
+  const fuera = maximo ? pct - meta : meta - pct;
+  return fuera <= 0 ? VERDE : fuera <= TOLERANCIA_AMARILLO_PCT ? AMARILLO : ROJO;
 }
 
 const sinCentavos = (n: number) => `$${Math.round(n).toLocaleString("es-MX")}`;
@@ -84,27 +92,41 @@ function renglones(ctx: CanvasRenderingContext2D, texto: string, ancho: number):
   return out;
 }
 
-type Tipo = "resta" | "subtotal" | "final";
-interface Fila {
-  tipo: Tipo;
-  label: string;
-  nota?: string;
-  monto: number;
-  colorPct?: string;
+type Fila =
+  | { tipo: "resta" | "final"; label: string; nota?: string; monto: number; colorPct?: string }
+  | { tipo: "recuadros" };
+
+function recuadro(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number) {
+  ctx.beginPath();
+  // roundRect no existe en navegadores viejos: ahí va cuadrado.
+  if (ctx.roundRect) ctx.roundRect(x, y, w, h, 12);
+  else ctx.rect(x, y, w, h);
+  ctx.fillStyle = "#ffffff";
+  ctx.fill();
+  ctx.strokeStyle = "#dfe7dc";
+  ctx.lineWidth = 1;
+  ctx.stroke();
 }
 
 // Dibuja la imagen y la copia al portapapeles (o la descarga si el
 // navegador no deja): true si se copió.
 export function copyDashboardImage(r: ResultadoSemanal, subtitulo: string, nota: string): Promise<boolean> {
-  const pct = (n: number) => (r.venta > 0 ? `${Math.round((n / r.venta) * 100)}%` : "—");
-  const enMeta = r.venta > 0 && (r.gastosOperativos / r.venta) * 100 <= META_GASTOS_OPERATIVOS_PCT;
+  const pctNum = (n: number) => (r.venta > 0 ? (n / r.venta) * 100 : 0);
+  const pct = (n: number) => (r.venta > 0 ? `${Math.round(pctNum(n))}%` : "—");
+  const margen = pctNum(r.utilidadOperativa);
+  const colorMargen = r.venta > 0 ? semaforo(margen, META_MARGEN_OPERATIVO_PCT, false) : SUAVE;
   const filas: Fila[] = [
-    { tipo: "resta", label: "Gastos operativos", nota: `Meta: ${META_GASTOS_OPERATIVOS_PCT}% o menos`, monto: r.gastosOperativos, colorPct: enMeta ? VERDE : ROJO },
-    { tipo: "resta", label: "Nómina", monto: r.nomina },
-    { tipo: "subtotal", label: "Margen operativo", nota: "Venta − gastos operativos − nómina", monto: r.margen },
+    {
+      tipo: "resta",
+      label: "Gastos operativos",
+      nota: `Meta: ${META_GASTOS_OPERATIVOS_PCT}% o menos`,
+      monto: r.gastosOperativos,
+      colorPct: semaforo(pctNum(r.gastosOperativos), META_GASTOS_OPERATIVOS_PCT, true),
+    },
+    { tipo: "resta", label: "Nómina", nota: `Meta: ${META_NOMINA_PCT}% o menos`, monto: r.nomina, colorPct: semaforo(pctNum(r.nomina), META_NOMINA_PCT, true) },
     { tipo: "resta", label: "Otros gastos", nota: r.otrosDesglose.map((x) => `${x.label} ${sinCentavos(x.monto)}`).join(" · "), monto: r.otros },
-    { tipo: "subtotal", label: "Utilidad antes de retiro", monto: r.antesDeRetiro },
-    { tipo: "resta", label: "Retiro", monto: r.retiro },
+    { tipo: "recuadros" },
+    { tipo: "resta", label: "Retiro", nota: "Gastos externos (no operativos)", monto: r.retiro },
     { tipo: "final", label: "Utilidad después de retiro", monto: r.despuesDeRetiro },
   ];
 
@@ -114,14 +136,16 @@ export function copyDashboardImage(r: ResultadoSemanal, subtitulo: string, nota:
   const anchoLabel = WIDTH - PAD * 2 - 190;
   // Alto de cada fila según cuántos renglones ocupa su nota.
   const notas = filas.map((f) => {
-    if (!f.nota) return [];
+    if (f.tipo === "recuadros" || !f.nota) return [];
     medir.font = "11px Arial";
     return renglones(medir, f.nota, anchoLabel);
   });
-  const altoFila = (f: Fila, i: number) => (f.tipo === "final" ? 64 : 44) + notas[i].length * 14 - (notas[i].length ? 6 : 0);
+  const RECUADROS = 104;
+  const altoFila = (f: Fila, i: number) =>
+    f.tipo === "recuadros" ? RECUADROS : (f.tipo === "final" ? 64 : 44) + notas[i].length * 14 - (notas[i].length ? 6 : 0);
   const HEAD = 92;
   const VENTA = r.ventaSemanaPasada !== null ? 104 : 84;
-  const PIE = 30;
+  const PIE = 44;
   const height = HEAD + VENTA + filas.reduce((s, f, i) => s + altoFila(f, i), 0) + PIE;
 
   canvas.width = WIDTH * scale;
@@ -170,37 +194,67 @@ export function copyDashboardImage(r: ResultadoSemanal, subtitulo: string, nota:
   ctx.fillStyle = "#eeeeee";
   ctx.fillRect(0, y - 1, WIDTH, 1);
 
-  // Filas
   filas.forEach((f, i) => {
     const h = altoFila(f, i);
+
+    // Utilidad operativa ($) y Margen operativo (%), como en la app del jefe.
+    if (f.tipo === "recuadros") {
+      ctx.fillStyle = ACENTO_SUAVE;
+      ctx.fillRect(0, y, WIDTH, h);
+      const w = (WIDTH - PAD * 2 - 10) / 2;
+      const cajas = [
+        { titulo: "Utilidad operativa", valor: money(r.utilidadOperativa), nota: "Venta − todos los gastos, sin el retiro", color: r.utilidadOperativa >= 0 ? ACENTO : ROJO },
+        {
+          titulo: "Margen operativo",
+          valor: r.venta > 0 ? `${margen.toFixed(2)}%` : "—",
+          nota: `Sobre ventas totales · meta ${META_MARGEN_OPERATIVO_PCT}% o más`,
+          color: colorMargen,
+        },
+      ];
+      cajas.forEach((c, k) => {
+        const x = PAD + k * (w + 10);
+        recuadro(ctx, x, y + 12, w, h - 24);
+        ctx.textAlign = "left";
+        ctx.fillStyle = "#5b7d70";
+        ctx.font = "bold 12px Arial";
+        ctx.fillText(c.titulo, x + 12, y + 34);
+        ctx.fillStyle = c.color;
+        ctx.font = "bold 22px Arial";
+        ctx.fillText(c.valor, x + 12, y + 62);
+        ctx.fillStyle = SUAVE;
+        ctx.font = "10px Arial";
+        renglones(ctx, c.nota, w - 24).forEach((linea, n) => ctx.fillText(linea, x + 12, y + 78 + n * 12));
+      });
+      y += h;
+      return;
+    }
+
     const final = f.tipo === "final";
     const positivo = f.monto >= 0;
-    if (f.tipo === "subtotal") ctx.fillStyle = ACENTO_SUAVE;
-    else if (final) ctx.fillStyle = positivo ? VERDE_SUAVE : ROJO_SUAVE;
-    else ctx.fillStyle = "#ffffff";
+    ctx.fillStyle = final ? (positivo ? VERDE_SUAVE : ROJO_SUAVE) : "#ffffff";
     ctx.fillRect(0, y, WIDTH, h);
     ctx.fillStyle = "#f0f0f0";
     ctx.fillRect(0, y + h - 1, WIDTH, 1);
 
-    const colorFuerte = final ? (positivo ? VERDE : ROJO) : f.tipo === "subtotal" ? ACENTO : NEGRO;
+    const colorFuerte = final ? (positivo ? VERDE : ROJO) : NEGRO;
     const base = y + (final ? 38 : 27) - (notas[i].length ? 6 : 0);
 
     // Etiqueta y nota
     ctx.textAlign = "left";
-    ctx.fillStyle = f.tipo === "resta" ? TEXTO : colorFuerte;
-    ctx.font = final ? "bold 15px Arial" : f.tipo === "subtotal" ? "bold 14px Arial" : "14px Arial";
+    ctx.fillStyle = final ? colorFuerte : TEXTO;
+    ctx.font = final ? "bold 15px Arial" : "14px Arial";
     ctx.fillText(final ? f.label.toUpperCase() : f.label, PAD, base);
     ctx.font = "11px Arial";
-    ctx.fillStyle = f.tipo === "subtotal" ? "#5b7d70" : SUAVE;
+    ctx.fillStyle = SUAVE;
     notas[i].forEach((linea, k) => ctx.fillText(linea, PAD, base + 15 + k * 14));
 
     // % y monto
     const medio = y + h / 2 + 5;
     ctx.textAlign = "right";
-    ctx.font = f.tipo === "resta" && !f.colorPct ? "12.5px Arial" : "bold 12.5px Arial";
-    ctx.fillStyle = f.colorPct || (f.tipo === "resta" ? "#666666" : colorFuerte);
+    ctx.font = f.colorPct || final ? "bold 12.5px Arial" : "12.5px Arial";
+    ctx.fillStyle = f.colorPct || (final ? colorFuerte : "#666666");
     ctx.fillText(pct(f.monto), WIDTH - PAD - (final ? 150 : 130), medio);
-    ctx.font = final ? "bold 22px Arial" : f.tipo === "subtotal" ? "bold 15px Arial" : "bold 14px Arial";
+    ctx.font = final ? "bold 22px Arial" : "bold 14px Arial";
     ctx.fillStyle = colorFuerte;
     const monto = money(f.monto);
     ctx.fillText(monto, WIDTH - PAD, medio + (final ? 3 : 0));
@@ -213,13 +267,27 @@ export function copyDashboardImage(r: ResultadoSemanal, subtitulo: string, nota:
     y += h;
   });
 
-  // Pie
+  // Pie: qué significa cada color y la nota de la semana.
   ctx.fillStyle = "#fafafa";
   ctx.fillRect(0, y, WIDTH, PIE);
   ctx.textAlign = "left";
+  ctx.font = "bold 10.5px Arial";
+  let x = PAD;
+  [
+    { color: VERDE, texto: "En meta" },
+    { color: AMARILLO, texto: `Cerca (${TOLERANCIA_AMARILLO_PCT} pts o menos)` },
+    { color: ROJO, texto: "Fuera de meta" },
+  ].forEach((l) => {
+    ctx.fillStyle = l.color;
+    ctx.beginPath();
+    ctx.arc(x + 4, y + 15, 4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillText(l.texto, x + 12, y + 19);
+    x += 12 + ctx.measureText(l.texto).width + 16;
+  });
   ctx.fillStyle = SUAVE;
   ctx.font = "italic 10.5px Arial";
-  ctx.fillText(nota, PAD, y + 19);
+  ctx.fillText(nota, PAD, y + 35);
 
   return copyCanvasAsPng(canvas, `Resultado ${NOMBRE_NEGOCIO} ${subtitulo}`);
 }

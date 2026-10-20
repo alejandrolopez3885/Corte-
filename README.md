@@ -738,20 +738,25 @@ estando en Nómina te regresa al menú de Equipo):
   que genera un PNG y lo copia al portapapeles para pegarlo en el grupo de
   WhatsApp del jefe (el botón cambia unos segundos a "¡Copiada! Pégala en
   WhatsApp"; si el navegador no deja copiar imágenes, el PNG se descarga y
-  aparece el aviso). La imagen se lee como una cuenta: encabezado negro
-  "Resultado semanal · Metroplex · Semana [ISO] · [fechas y año]" (con
-  "hasta hoy (día)" si la semana no ha terminado); la **venta semanal** en
-  grande con su cambio contra la venta de la semana pasada (por fecha
-  real; ▲ verde o ▼ rojo); − **gastos operativos** (su % verde si está en
-  la meta de 42% o menos, rojo si se pasó); − **nómina**; = **margen
-  operativo** (venta − gastos operativos − nómina, resaltado); − **otros
-  gastos** en un renglón, con su desglose chico (fijos, comisiones de
-  apps, banco y las demás categorías, sin la nómina en efectivo ni el
-  retiro); = **utilidad antes de retiro**; − **retiro** (los gastos con
-  categoría Retiro); y = **utilidad después de retiro** en grande, en
-  verde si es positiva o rojo si no — es la misma Utilidad del reporte.
-  Cada renglón lleva su % sobre la venta, y al pie una nota (en una semana
-  en curso, que los números son hasta hoy).
+  aparece el aviso). La imagen hace la misma cuenta que la app del jefe:
+  encabezado negro "Resultado semanal · Metroplex · Semana [ISO] ·
+  [fechas y año]" (con "hasta hoy (día)" si la semana no ha terminado); la
+  **venta semanal** en grande con su cambio contra la venta de la semana
+  pasada (por fecha real; ▲ verde o ▼ rojo); − **gastos operativos** (meta
+  42% o menos); − **nómina** (meta 16% o menos); − **otros gastos** en un
+  renglón, con su desglose chico (fijos, comisiones de apps, banco y las
+  demás categorías, sin la nómina en efectivo ni el retiro); dos
+  recuadros: **Utilidad operativa** en pesos (venta − todos los gastos,
+  sin el retiro) y **Margen operativo** en % con 2 decimales (utilidad
+  operativa ÷ venta, meta 15% o más); − **retiro** ("gastos externos", no
+  operativos: los gastos con categoría Retiro); y = **utilidad después de
+  retiro** en grande, en verde si es positiva o rojo si no — es la misma
+  Utilidad del reporte. Cada renglón lleva su % sobre la venta. Semáforo
+  en gastos operativos, nómina y margen operativo: verde en la meta,
+  amarillo cerca (a 3 puntos o menos: gastos operativos hasta 45%, nómina
+  hasta 19%, margen desde 12%) y rojo fuera. Al pie, qué significa cada
+  color y una nota (en una semana en curso, que los números son hasta
+  hoy).
 
 Hay 2 tipos de cuenta:
 

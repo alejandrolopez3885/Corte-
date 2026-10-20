@@ -916,6 +916,12 @@ export type DashboardReport = ReturnType<typeof computeDashboardReport>;
 // considera saludable — usado tanto en la pantalla del Dashboard como en
 // su imagen descargable para pintar ese número en verde/rojo.
 export const META_GASTOS_OPERATIVOS_PCT = 42;
+// Metas de la imagen del resultado semanal (Dashboard): nómina 16% o menos
+// de la venta y margen operativo 15% o más. Cerca de la meta (a 3 puntos o
+// menos) se pinta en amarillo.
+export const META_NOMINA_PCT = 16;
+export const META_MARGEN_OPERATIVO_PCT = 15;
+export const TOLERANCIA_AMARILLO_PCT = 3;
 
 // --- Tendencias y proyección de venta (Negocio > Tendencias) -----------
 // Un resumen de salud del negocio por cada semana ya capturada (con
