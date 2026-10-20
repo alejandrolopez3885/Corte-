@@ -1214,3 +1214,19 @@ button.pill { cursor: pointer; }
 .ini-pagos-fila.total { border-top: 1px solid var(--border); padding-top: 8px; margin-top: 2px; font-size: 15px; color: var(--ink); }
 .ini-pagos-fila.total strong { font-size: 18px; color: var(--accent); }
 .ini-nota { margin: 0; font-size: 12px; color: var(--ink-soft); background: var(--surface-alt); border-radius: 10px; padding: 8px 12px; }
+
+/* ---- Proveedores: unir repetidos ---- */
+.prov-repetidos { display: flex; flex-direction: column; gap: 8px; background: var(--warn-soft); border-radius: 14px; padding: 12px 14px; }
+.prov-repetidos > strong { display: flex; align-items: center; gap: 6px; color: var(--warn); font-size: 14px; }
+.prov-repetidos .hint { margin: 0; font-size: 12px; }
+.prov-par { display: flex; align-items: center; justify-content: space-between; gap: 8px; background: var(--surface); border-radius: 10px; padding: 8px 10px; font-size: 13.5px; }
+.prov-par-btn { background: var(--accent); color: white; border: none; border-radius: 100px; padding: 5px 12px; font-weight: 600; font-size: 12.5px; cursor: pointer; flex-shrink: 0; }
+.prov-cuantos { font-size: 12px; color: var(--ink-soft); font-weight: 400; margin-left: 6px; }
+.prov-acciones { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.prov-acciones .link-btn { font-weight: 600; padding: 0; }
+.prov-opcion { display: flex; align-items: center; gap: 10px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 10px 14px; font-size: 14.5px; cursor: pointer; }
+.prov-opcion.sel { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.prov-opcion input { accent-color: var(--accent); width: 18px; height: 18px; }
+.prov-resultado { background: var(--accent-soft); color: var(--accent); border-radius: 12px; padding: 10px 14px; font-size: 13.5px; line-height: 1.45; }
+.prov-resultado strong { color: var(--ink); }
+.prov-cancelar { text-align: center; }

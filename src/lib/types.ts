@@ -268,6 +268,9 @@ export interface ProveedorCatalogEntry {
   // viernes), aparte del pedido completo de todos los proveedores que se
   // cuenta cada domingo (Negocio > Pedidos a proveedores).
   incluyeJueves?: boolean;
+  // Nombres de proveedores repetidos que se unieron a este ("Johster"):
+  // Importar catálogo los reconoce como este mismo proveedor.
+  apodos?: string[];
 }
 
 // Catálogo de insumos de Bar/Cocina/General — el primer paso de Control de

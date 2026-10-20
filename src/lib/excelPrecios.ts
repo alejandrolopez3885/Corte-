@@ -158,6 +158,12 @@ const dinero = (n?: number) => (n === undefined ? "—" : `$${n.toFixed(2)}`);
 
 export function compararCatalogo(filas: FilaPrecio[], insumos: InsumoEntry[], proveedores: ProveedorCatalogEntry[]): CambioCatalogo[] {
   const nombreProv = (id?: string) => proveedores.find((p) => p.id === id)?.nombre || "";
+  // Mismo proveedor por nombre o por uno de sus nombres unidos.
+  const esProv = (id: string | undefined, nombre: string) => {
+    const p = proveedores.find((x) => x.id === id);
+    const clave = normalizarNombre(nombre);
+    return !!p && [p.nombre, ...(p.apodos || [])].some((n) => normalizarNombre(n) === clave);
+  };
   const usados = new Set<string>();
   return filas.map((f) => {
     const clave = normalizarNombre(f.nombre);
@@ -183,7 +189,7 @@ export function compararCatalogo(filas: FilaPrecio[], insumos: InsumoEntry[], pr
     if ((existente.unidadPedido || "").toLowerCase() !== pide)
       diferencias.push({ campo: "Se pide por", antes: existente.unidadPedido || existente.unidad, despues: pide || unidad });
     if (existente.unidad !== unidad) diferencias.push({ campo: "Unidad", antes: existente.unidad, despues: unidad });
-    if (normalizarNombre(nombreProv(existente.proveedorId)) !== normalizarNombre(f.proveedor))
+    if (!esProv(existente.proveedorId, f.proveedor) && !(!existente.proveedorId && !f.proveedor))
       diferencias.push({ campo: "Proveedor", antes: nombreProv(existente.proveedorId) || "—", despues: f.proveedor });
     return {
       ...base,

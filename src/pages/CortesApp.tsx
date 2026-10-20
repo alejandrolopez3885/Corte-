@@ -511,7 +511,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
     const proveedorDe = (nombre: string) => {
       if (!nombre) return undefined;
       const clave = normalizarNombre(nombre);
-      let p = next.proveedores.find((x) => normalizarNombre(x.nombre) === clave);
+      let p = next.proveedores.find((x) => [x.nombre, ...(x.apodos || [])].some((n) => normalizarNombre(n) === clave));
       if (!p) {
         p = { id: uid(), nombre };
         next.proveedores.push(p);
@@ -937,6 +937,29 @@ export default function CortesApp({ profile }: { profile: Profile }) {
     if (data.insumos.some((i) => i.proveedorId === id)) return;
     const next = structuredClone(data);
     next.proveedores = next.proveedores.filter((p) => p.id !== id);
+    persist(next);
+  }
+
+  // Une un proveedor repetido (seVa) con el que se queda: sus insumos (y
+  // facturas) pasan al que se queda, su nombre queda como apodo para que
+  // Importar catálogo no lo vuelva a crear, y si alguno se contaba los
+  // jueves, el que se queda también.
+  function unirProveedores(quedaId: string, seVaId: string) {
+    if (!data || quedaId === seVaId) return;
+    const next = structuredClone(data);
+    const queda = next.proveedores.find((p) => p.id === quedaId);
+    const seVa = next.proveedores.find((p) => p.id === seVaId);
+    if (!queda || !seVa) return;
+    next.insumos.forEach((i) => {
+      if (i.proveedorId === seVaId) i.proveedorId = quedaId;
+    });
+    next.facturas.forEach((f) => {
+      if (f.proveedorId === seVaId) f.proveedorId = quedaId;
+    });
+    const apodos = [...(queda.apodos || []), seVa.nombre, ...(seVa.apodos || [])];
+    queda.apodos = apodos.filter((a, i) => normalizarNombre(a) !== normalizarNombre(queda.nombre) && apodos.findIndex((b) => normalizarNombre(b) === normalizarNombre(a)) === i);
+    if (seVa.incluyeJueves) queda.incluyeJueves = true;
+    next.proveedores = next.proveedores.filter((p) => p.id !== seVaId);
     persist(next);
   }
 
@@ -1868,6 +1891,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           onSave={addProveedor}
           onToggleJueves={toggleProveedorJueves}
           onRemove={removeProveedor}
+          onUnir={unirProveedores}
         />
       )}
       {modal?.type === "asignarDia" && day && activeDayDate && (

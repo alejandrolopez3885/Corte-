@@ -438,7 +438,23 @@ estando en Nómina te regresa al menú de Equipo):
   marca de "también se pide los jueves" — el mismo proveedor que se elige
   en el Catálogo de Bar/Cocina y que agrupa la lista en Inventario; no se
   puede eliminar un proveedor mientras tenga algún insumo asignado, para
-  no perder esa referencia ni el historial ya guardado en Inventario);
+  no perder esa referencia ni el historial ya guardado en Inventario).
+  Cada proveedor muestra cuántos insumos tiene. Para los repetidos (ej.
+  "Compras Johnster" y "Johster", que suelen salir de Importar catálogo
+  cuando el Excel trae el nombre escrito distinto): arriba sale "Posibles
+  repetidos" con los pares de nombre parecido — un error de dedo o uno
+  contenido en otro ("Pan"/"Panadería"), sin contar palabras genéricas
+  como "Compras" — cada uno con "Unir"; y en cada proveedor, "Unir con…"
+  para los que no se parecen en el nombre (Pollo y JD Alimentos). Al unir
+  se elige qué nombre se queda (de inicio, el que tiene más insumos), con
+  un aviso de qué va a pasar y "Unir en [nombre]": los insumos del otro
+  (y sus facturas) pasan al que se queda, el otro desaparece de la lista,
+  si cualquiera de los dos se contaba los jueves el que se queda también,
+  y el nombre que desaparece se guarda como otro nombre del que se queda
+  ("También se llama: Johster") — Importar catálogo reconoce esos nombres
+  como el mismo proveedor, para no volver a crear el repetido. El historial
+  de Inventario y Pedidos no cambia (se guarda por producto). No se
+  deshace con un botón;
   agrupadas bajo "Control de gastos",
   Control de gastos en efectivo y Control de gastos en transferencia; y
   bajo "Análisis", "Tendencias" — la
