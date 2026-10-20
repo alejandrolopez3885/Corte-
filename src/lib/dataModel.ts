@@ -785,7 +785,7 @@ export function resolveMontoFijo(montos: MontoFijoSemanal[] | undefined, weekSta
 
 export function resolveGastosFijos(week: WeekData, montoFijo: number) {
   const servicios = DAYS.flatMap((d) =>
-    week.days[d].gastos.filter((g) => g.categoria === "servicio").map((g) => ({ concepto: g.concepto, total: g.total }))
+    week.days[d].gastos.filter((g) => g.categoria === "servicio").map((g) => ({ concepto: g.concepto, total: g.total, dia: d }))
   );
   const servicioEfectivo = round2(servicios.reduce((s, g) => s + g.total, 0));
   const automatico = round2(Math.max(0, montoFijo - servicioEfectivo));
@@ -882,6 +882,7 @@ export function computeDashboardReport(week: WeekData, nominaCalculada: number, 
     gastosFijos,
     gastosFijosTransferencia,
     gastosFijosEfectivo,
+    gastosFijosServicios: fijos.servicios,
     comisionesApps,
     comisionDidi,
     comisionUber,

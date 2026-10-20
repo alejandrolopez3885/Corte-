@@ -937,3 +937,6 @@ button.pill { cursor: pointer; }
 .nv-chips { display: flex; flex-wrap: wrap; gap: 5px; }
 .nv-chips span { font-size: 11.5px; padding: 3px 9px; border-radius: 100px; background: var(--surface-alt); color: var(--ink-soft); }
 .nv-chips span.nuevo { background: var(--accent); color: white; }
+.fijos-referencia { color: var(--ink-soft); }
+.report-row-servicio { padding-left: 46px; }
+.report-row-servicio .report-row-label em { display: inline; font-style: normal; color: var(--ink-soft); font-size: 0.9em; }

@@ -2,9 +2,10 @@ import { useEffect, useState } from "react";
 import { Pencil, RotateCcw } from "lucide-react";
 import { Sheet, Field, SumInput } from "../ui";
 import {
-  computeComisionTarjetas, formatWeekRange, money, resolveGastosFijos, resolveMontoFijo, resolveWeekStartDate, round2, sumFromText,
+  computeComisionTarjetas, dateForDay, formatShortDayDate, formatWeekRange, money, resolveGastosFijos, resolveMontoFijo, resolveWeekStartDate, round2, sumFromText,
 } from "../../lib/dataModel";
-import type { CreditoProveedores, MonthData, MontoFijoSemanal } from "../../lib/types";
+import { DAY_SHORT } from "../../lib/types";
+import type { CreditoProveedores, DayName, MonthData, MontoFijoSemanal } from "../../lib/types";
 
 export function CreditoProveedoresModal({
   onClose,
@@ -55,6 +56,9 @@ export function CreditoProveedoresModal({
   const week = month?.weeks[weekIndex];
   const weekStartDate = month ? resolveWeekStartDate(monthKey, weekIndex, month) : null;
   const comisionBancaria = week ? computeComisionTarjetas(week) : 0;
+
+  const diaCorto = (d: DayName) =>
+    month ? `${DAY_SHORT[d]} ${formatShortDayDate(dateForDay(monthKey, weekIndex, month, d)).split(" ")[0]}` : DAY_SHORT[d];
 
   const montoFijoGuardado = weekStartDate ? resolveMontoFijo(montosFijos, weekStartDate) : 0;
   const montoFijoEditado = montoFijoNuevo !== null && montoFijoNuevo.trim() !== "" ? sumFromText(montoFijoNuevo) : null;
@@ -179,7 +183,9 @@ export function CreditoProveedoresModal({
           </div>
           {calculoFijos.servicios.map((g, i) => (
             <div key={i} className="fijos-menos">
-              <span>− Servicio en efectivo ({g.concepto})</span>
+              <span>
+                − {g.concepto} · {diaCorto(g.dia)}
+              </span>
               <span>−{money(g.total)}</span>
             </div>
           ))}
@@ -187,6 +193,21 @@ export function CreditoProveedoresModal({
             <span>Gastos fijos en transferencia</span>
             <span>{money(fijosAutomatico)}</span>
           </div>
+        </div>
+      )}
+      {!editandoFijos && fijosManual && calculoFijos && calculoFijos.servicios.length > 0 && (
+        <div className="fijos-desglose">
+          <div className="fijos-referencia">
+            <span>Servicio pagado en efectivo esta semana</span>
+          </div>
+          {calculoFijos.servicios.map((g, i) => (
+            <div key={i} className="fijos-menos">
+              <span>
+                {g.concepto} · {diaCorto(g.dia)}
+              </span>
+              <span>{money(g.total)}</span>
+            </div>
+          ))}
         </div>
       )}
       {montoFijoNuevo === null ? (
