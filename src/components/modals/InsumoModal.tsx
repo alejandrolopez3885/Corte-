@@ -28,6 +28,7 @@ export function InsumoModal({
   const [nuevoProveedor, setNuevoProveedor] = useState("");
   const [altaRotacion, setAltaRotacion] = useState(editing?.altaRotacion || false);
   const [unidadPedido, setUnidadPedido] = useState(editing?.unidadPedido || "");
+  const [pendiente, setPendiente] = useState(editing?.pendiente);
   const [equivalenciaText, setEquivalenciaText] = useState(editing?.equivalenciaPedido ? String(editing.equivalenciaPedido) : "");
 
   // Si se está creando un proveedor nuevo, tiene que ir en el mismo guardado
@@ -57,6 +58,8 @@ export function InsumoModal({
         altaRotacion,
         unidadPedido: unidadPedido.trim() || undefined,
         equivalenciaPedido: necesitaEquivalencia ? sumFromText(equivalenciaText) || undefined : undefined,
+        apodos: editing?.apodos,
+        pendiente,
       },
       nuevoProveedorEntry
     );
@@ -65,6 +68,16 @@ export function InsumoModal({
 
   return (
     <Sheet title={editing ? "Editar insumo" : "Nuevo insumo"} onClose={onClose} onDelete={onDelete}>
+      {pendiente && (
+        <div className="insumo-pendiente">
+          <span>
+            <strong>Pendiente del Excel:</strong> {pendiente}
+          </span>
+          <button className="link-btn" onClick={() => setPendiente(undefined)}>
+            Ya lo completé
+          </button>
+        </div>
+      )}
       <Field label="Nombre">
         <input
           className="text-input"
@@ -111,7 +124,7 @@ export function InsumoModal({
           </span>
         </Field>
       )}
-      <Field label="Precio de referencia (opcional, por unidad)">
+      <Field label={`Precio de referencia (opcional, por ${unidadPedido.trim() || (esBar ? "pieza" : unidad)})`}>
         <SumInput value={precioText} onChange={setPrecioText} placeholder="0.00" />
       </Field>
       <Field label="Proveedor (opcional)">

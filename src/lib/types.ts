@@ -317,6 +317,10 @@ export interface InsumoEntry {
   // Cómo lo escriben en las notas del Inventario ("6x6", "Lyncott") cuando no
   // se parece al nombre — se guardan al ligar un renglón no reconocido.
   apodos?: string[];
+  // Dato que el Excel de precios base marca como pendiente o por confirmar
+  // ("contenido del paquete pendiente") — llega con Importar catálogo y se
+  // quita desde el insumo cuando ya se completó.
+  pendiente?: string;
 }
 
 // Inventario semanal (Negocio > Inventario) — una fila por insumo, por

@@ -73,9 +73,10 @@ export function InsumosPanel({
                     <strong>{i.nombre}</strong>
                     <span>
                       {i.unidad}
-                      {i.precio ? ` · ${money(i.precio)}` : ""}
+                      {i.precio ? ` · ${money(i.precio)}${i.unidadPedido ? ` por ${i.unidadPedido}` : ""}` : ""}
                       {i.altaRotacion ? " · alta rotación" : ""}
                     </span>
+                    {i.pendiente && <em className="insumo-pendiente-tag">Pendiente: {i.pendiente}</em>}
                   </div>
                 </button>
               ))}

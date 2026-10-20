@@ -1169,3 +1169,40 @@ button.pill { cursor: pointer; }
   background: var(--good-soft); color: var(--good); border-radius: 16px; padding: 22px; font-size: 13px;
 }
 .ini-todo-bien strong { font-size: 18px; color: var(--ink); }
+
+/* Negocio > Compras > Importar catálogo */
+.importar-drop { position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 20px; border: 2px dashed var(--accent); border-radius: 14px; background: var(--accent-soft); color: var(--accent); text-align: center; cursor: pointer; }
+.importar-drop input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.importar-drop strong { font-size: 14.5px; }
+.importar-drop span { font-size: 12px; color: var(--ink-soft); }
+.importar-archivo { display: flex; align-items: center; gap: 8px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; font-size: 13px; }
+.importar-archivo span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.importar-archivo em { font-style: normal; color: var(--good); font-weight: 600; }
+.importar-error { margin: 0; padding: 10px 12px; border-radius: 12px; background: var(--bad-soft); color: var(--bad); font-size: 13px; }
+.importar-listo { margin: 0; padding: 10px 12px; border-radius: 12px; background: var(--good-soft); color: var(--good); font-size: 13px; font-weight: 600; }
+.importar-kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.importar-kpis div { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 10px; }
+.importar-kpis b { display: block; font-family: Fraunces, serif; font-size: 22px; }
+.importar-kpis span { font-size: 12px; color: var(--ink-soft); }
+.importar-kpis .good b { color: var(--good); }
+.importar-kpis .warn b { color: var(--warn); }
+.importar-pendientes { display: flex; gap: 8px; align-items: flex-start; padding: 10px 12px; border-radius: 12px; background: var(--bad-soft); color: var(--bad); font-size: 13px; }
+.importar-pendientes div { display: flex; flex-direction: column; gap: 2px; }
+.importar-pendientes span { font-size: 12px; }
+.importar-lista { display: flex; flex-direction: column; gap: 6px; }
+.importar-item { display: flex; flex-direction: column; gap: 5px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 9px 11px; font-size: 13px; }
+.importar-item-top { display: flex; align-items: center; gap: 6px; }
+.importar-item-top strong { flex: 1; min-width: 0; }
+.importar-tag { font-size: 10.5px; font-weight: 600; padding: 1px 7px; border-radius: 100px; background: var(--surface-alt); color: var(--ink-soft); white-space: nowrap; }
+.importar-tag.good { background: var(--good-soft); color: var(--good); }
+.importar-tag.warn { background: var(--warn-soft); color: var(--warn); }
+.importar-tag.bad { background: var(--bad-soft); color: var(--bad); }
+.importar-meta { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; font-size: 12px; color: var(--ink-soft); }
+.importar-meta b { color: var(--ink); }
+.importar-meta s { color: var(--bad); }
+.importar-meta .importar-nuevo { color: var(--good); }
+.importar-area { font: inherit; font-size: 12px; padding: 4px 8px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--ink); }
+.importar-parecido { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: var(--ink-soft); }
+.importar-nota { font-size: 12px; font-style: italic; color: var(--bad); }
+.insumo-pendiente { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; padding: 10px 12px; border-radius: 12px; background: var(--bad-soft); color: var(--bad); font-size: 13px; }
+.catalog-row .insumo-pendiente-tag { display: block; font-size: 12px; font-style: normal; color: var(--bad); }

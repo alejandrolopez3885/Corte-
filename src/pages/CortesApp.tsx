@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Plus, Settings2, Users, Receipt, ArrowLeftRight, CircleDot, Circle, Pencil,
   Smartphone, BarChart3, LogOut, Truck, Trash2, Home, Store, LayoutDashboard, Contact, Clock, Wallet, ChartLine, Martini, ChefHat, BookOpen,
-  ShoppingCart, Handshake, Boxes, Package, Coins, History, Lock,
+  ShoppingCart, Handshake, Boxes, Package, Coins, History, Lock, FileUp,
 } from "lucide-react";
 import { useAuth } from "../lib/auth.tsx";
 import { useAppData } from "../lib/useAppData";
@@ -10,7 +10,7 @@ import { historialNombres } from "../lib/gastosBusqueda";
 import {
   addDaysIso, buildMonth, dateForDay, formatAssignedDate, formatDayNumber, formatLongDayDate, formatWeekRange,
   mondayOnOrBefore, money, mostRecentDayInWeek, mostRecentWeekIndex, resolveAssignmentLocation, resolveWeekStartDate,
-  round2, sumFromText, todayIso, uid,
+  normalizarNombre, round2, sumFromText, todayIso, uid,
 } from "../lib/dataModel";
 import { removeAssignmentByStaffAndDate, upsertAssignment, useStaffAssignments } from "../lib/staffAssignments";
 import { DAYS, DAY_SHORT } from "../lib/types";
@@ -44,6 +44,7 @@ import { RecetarioPanel } from "../components/panels/RecetarioPanel";
 import { InsumosPanel } from "../components/panels/InsumosPanel";
 import { InventarioNotasPanel } from "../components/panels/InventarioNotasPanel";
 import { PedidosTotalPanel } from "../components/panels/PedidosTotalPanel";
+import { ImportarCatalogoPanel, type ImportacionCatalogo } from "../components/panels/ImportarCatalogoPanel";
 import { ActividadPanel, HistorialDiaSheet } from "../components/panels/ActividadPanel";
 import { contarBitacoraDelDia, useRegistrarVista } from "../lib/bitacora";
 import StaffAccessShell from "./StaffAccessShell";
@@ -71,7 +72,7 @@ type EquipoView = "menu" | "personal" | "horarios" | "nomina" | "propinas";
 
 type NegocioView =
   | "menu" | "tendencias" | "bitacora" | "controlBar" | "controlCocina" | "controlGeneral" | "inventario" | "pedidos"
-  | "recetarioBar" | "recetarioCocina";
+  | "recetarioBar" | "recetarioCocina" | "importarCatalogo";
 
 type OwnerTab = "inicio" | "corte" | "equipo" | "negocio" | "dashboard";
 
@@ -105,7 +106,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
   const NOMBRE_NEGOCIO: Record<NegocioView, string> = {
     menu: "Negocio", tendencias: "Tendencias", bitacora: "Actividad", controlBar: "Control de Bar", controlCocina: "Control de Cocina",
     controlGeneral: "Control General", inventario: "Inventario", pedidos: "Pedidos",
-    recetarioBar: "Recetario de Bar", recetarioCocina: "Recetario de Cocina",
+    recetarioBar: "Recetario de Bar", recetarioCocina: "Recetario de Cocina", importarCatalogo: "Importar catálogo",
   };
   const NOMBRE_MODAL: Partial<Record<string, string>> = {
     gastosSummary: "Control de gastos en efectivo", creditoProveedores: "Control de gastos en transferencia",
@@ -497,6 +498,49 @@ export default function CortesApp({ profile }: { profile: Profile }) {
     const idx = next.insumos.findIndex((i) => i.id === entry.id);
     if (idx >= 0) next.insumos[idx] = entry;
     else next.insumos.push(entry);
+    persist(next);
+  }
+
+  // Negocio > Compras > Importar catálogo: crea los proveedores que falten
+  // (por nombre) y agrega/actualiza los insumos en un solo persist. De los
+  // existentes solo cambia precio, presentación, unidad y proveedor — su
+  // área, equivalencia, apodos y alta rotación se quedan.
+  function importarCatalogo(imp: ImportacionCatalogo) {
+    if (!data) return;
+    const next = structuredClone(data);
+    const proveedorDe = (nombre: string) => {
+      if (!nombre) return undefined;
+      const clave = normalizarNombre(nombre);
+      let p = next.proveedores.find((x) => normalizarNombre(x.nombre) === clave);
+      if (!p) {
+        p = { id: uid(), nombre };
+        next.proveedores.push(p);
+      }
+      return p.id;
+    };
+    imp.insumos.forEach((f) => {
+      const existente = f.existenteId ? next.insumos.find((i) => i.id === f.existenteId) : undefined;
+      const proveedorId = proveedorDe(f.proveedor);
+      if (existente) {
+        existente.precio = f.precio;
+        existente.unidad = f.unidad;
+        existente.unidadPedido = f.unidadPedido;
+        if (!f.unidadPedido) delete existente.equivalenciaPedido;
+        existente.proveedorId = proveedorId;
+        if (f.pendiente) existente.pendiente = f.pendiente;
+      } else {
+        next.insumos.push({
+          id: uid(),
+          area: f.area,
+          nombre: f.nombre,
+          unidad: f.unidad,
+          precio: f.precio,
+          proveedorId,
+          unidadPedido: f.unidadPedido,
+          ...(f.pendiente ? { pendiente: f.pendiente } : {}),
+        });
+      }
+    });
     persist(next);
   }
 
@@ -1155,6 +1199,15 @@ export default function CortesApp({ profile }: { profile: Profile }) {
                 <span>Cuánto pedirle a cada proveedor, con el inventario como referencia</span>
               </span>
             </button>
+            <button className="menu-item" onClick={() => setNegocioView("importarCatalogo")}>
+              <span className="menu-item-icon">
+                <FileUp size={20} />
+              </span>
+              <span className="menu-item-text">
+                <strong>Importar catálogo</strong>
+                <span>Desde el Excel de precios base de Johnster</span>
+              </span>
+            </button>
           </div>
 
           <h3 className="menu-subtitle">Bar</h3>
@@ -1317,6 +1370,15 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           onGuardarPedido={guardarPedidoInventario}
           onAsignarApodo={asignarApodoInsumo}
           onEditarProveedores={() => setModal({ type: "proveedores" })}
+        />
+      )}
+
+      {isOwner && activeTab === "negocio" && negocioView === "importarCatalogo" && (
+        <ImportarCatalogoPanel
+          onBack={() => setNegocioView("menu")}
+          insumos={data.insumos}
+          proveedores={data.proveedores}
+          onImportar={importarCatalogo}
         />
       )}
 

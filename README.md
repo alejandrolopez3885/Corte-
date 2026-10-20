@@ -613,7 +613,34 @@ estando en Nómina te regresa al menú de Equipo):
   a un producto le falta esa equivalencia, se queda en su presentación y
   se marca en naranja. Arriba, qué días ya tienen pedido guardado (y aviso
   de los que ya pasaron sin él). Con Mes/Semana se ve cualquier semana
-  anterior. La captura semanal que vivía antes aquí se quitó
+  anterior. La captura semanal que vivía antes aquí se quitó;
+  y "Importar catálogo": se elige el Excel de inventario de Johnster
+  (.xlsx o .xlsm) y la app lee ahí mismo su hoja "PRECIOS BASE" (nada se
+  sube a ningún lado). Compara cada insumo contra el catálogo por nombre (o
+  por sus apodos) y muestra un resumen: insumos nuevos, los que tienen
+  precio o datos distintos, los iguales y los proveedores que todavía no
+  existen. Abajo, con filtros Todos / Nuevos / Cambian / Pendientes, la
+  lista agrupada por sección del Excel: en los que cambian se ve antes →
+  después (precio, "Se pide por", unidad y proveedor); en los nuevos, su
+  presentación, su precio y un selector de área ya propuesto (cervezas,
+  refrescos, vinos, licores, mixers, concentrados y limonadas → Bar;
+  desechables, limpieza, higiene y varios → General, salvo especias como
+  ajo, pimienta o paprika que van a Cocina; lo demás → Cocina). Si un
+  nombre se parece a uno del catálogo ("criscutt" vs. "crisscut") pregunta
+  "¿Es el mismo?": "Sí, actualizarlo" o "No, crear nuevo". Los que el Excel
+  marca PENDIENTE o POR CONFIRMAR llevan la etiqueta "Pendiente" con su
+  nota. Nada se guarda hasta tocar "Importar N cambios": entonces se crean
+  los proveedores que falten y se agregan o actualizan los insumos. El
+  precio se guarda tal cual el Excel, por presentación de compra (por kg,
+  por millar, por paquete…), y la presentación queda como "Se pide por"
+  (kg y pieza no, porque son la unidad en que se cuenta). De los insumos que
+  ya existían solo cambian precio, "Se pide por", unidad y proveedor — su
+  área, apodos y alta rotación se quedan —; los del catálogo que no vienen
+  en el Excel no se tocan. Se puede volver a importar cada vez que se
+  actualicen los precios. Un insumo con dato pendiente lo dice en rojo en
+  su Catálogo y arriba de su ficha ("Pendiente del Excel: …"), con "Ya lo
+  completé" para quitar el aviso. En el Catálogo, el precio de referencia
+  es por su "Se pide por" (o por kg/pieza si no tiene).
 - **Dashboard**: reporte de resultados de la semana, solo para leer (con
   porcentajes sobre la venta total): Venta total, Gastos operativos (suma
   los de efectivo categorizados como Operación más los de transferencia),
@@ -826,6 +853,7 @@ src/
     ui.tsx        Sheet, Field, inputs, Toggle, Empty
     ConceptoInput.tsx  cuadro de concepto de gasto con autocompletado y ortografía
     panels/InicioPanel.tsx  Inicio del dueño (alertas); cálculo en lib/inicio.ts
+    panels/ImportarCatalogoPanel.tsx  Negocio > Compras > Importar catálogo; lectura del Excel en lib/excelPrecios.ts
     panels/RecetarioPanel.tsx  Recetario (dueño edita y carga varias, equipo consulta); formato en lib/recetasTexto.ts
     NovedadesAlEntrar.tsx  slider de novedades al entrar (cuentas de equipo); lista en lib/novedades.ts
     modals/       un modal por acción (mesero, gasto, transferencia, etc.)
