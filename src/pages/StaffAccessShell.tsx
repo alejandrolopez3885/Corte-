@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChefHat, ClipboardList, Clock, Coins, Home, LogOut, Martini, Package, Wallet } from "lucide-react";
+import { BookOpen, ChefHat, ClipboardList, Clock, Coins, Home, LogOut, Martini, Package, Wallet } from "lucide-react";
 import { formatAssignedDate, insumoAreaForPuesto, plantillaConteo, mostRecentWeekIndex, puedeEditarHorarios } from "../lib/dataModel";
 import { HORARIO_AREAS_FIJAS, PERMISOS_DISPONIBLES } from "../lib/types";
 import type { AppData, ConteoTextoArea, HorarioSemana, PermisoStaff, Profile, StaffAssignment } from "../lib/types";
@@ -9,6 +9,7 @@ import { useRegistrarVista } from "../lib/bitacora";
 import { InventarioNotasPanel } from "../components/panels/InventarioNotasPanel";
 import { NominaPanel } from "../components/panels/NominaPanel";
 import { PropinasPanel } from "../components/panels/PropinasPanel";
+import { RecetarioPanel } from "../components/panels/RecetarioPanel";
 
 type StaffView = "menu" | PermisoStaff | "corte";
 
@@ -262,7 +263,19 @@ export default function StaffAccessShell({
     );
   }
 
-  const ICONOS: Record<PermisoStaff, typeof Clock> = { horarios: Clock, conteo_diario: ClipboardList, inventario: Package, nomina: Wallet, propinas: Coins };
+  // Recetario: lo mismo para cualquier puesto o área — solo consulta.
+  if (view === "recetario" && permisos.includes("recetario")) {
+    return (
+      <div className="app-shell">
+        <ShellHeader subtitle={area?.nombre} onSignOut={onSignOut} />
+        <RecetarioPanel onBack={backToMenu} backLabel="Inicio" titulo="Recetario" recetas={data.recetas || []} />
+      </div>
+    );
+  }
+
+  const ICONOS: Record<PermisoStaff, typeof Clock> = {
+    horarios: Clock, conteo_diario: ClipboardList, inventario: Package, nomina: Wallet, propinas: Coins, recetario: BookOpen,
+  };
 
   return (
     <div className="app-shell">

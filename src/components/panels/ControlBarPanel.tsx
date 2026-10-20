@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { ArrowLeft, ClipboardList, Martini, Package } from "lucide-react";
+import { ArrowLeft, BookOpen, ClipboardList, Martini, Package } from "lucide-react";
 import { InsumosPanel } from "./InsumosPanel";
+import { RecetarioPanel } from "./RecetarioPanel";
 import { ConteoDiarioPanel } from "./ConteoDiarioPanel";
 import { plantillaConteo } from "../../lib/dataModel";
-import type { ConteoTextoArea, InsumoEntry, MonthData, ProveedorCatalogEntry } from "../../lib/types";
+import type { ConteoTextoArea, InsumoEntry, MonthData, ProveedorCatalogEntry, Receta } from "../../lib/types";
 
-type ControlBarView = "menu" | "catalogo" | "conteo";
+type ControlBarView = "menu" | "catalogo" | "conteo" | "recetario";
 
 export function ControlBarPanel({
   onBack,
@@ -21,6 +22,9 @@ export function ControlBarPanel({
   onGuardarConteo,
   pedidosDiarios,
   onGuardarPedido,
+  recetas,
+  onSaveReceta,
+  onRemoveReceta,
 }: {
   onBack: () => void;
   insumos: InsumoEntry[];
@@ -35,6 +39,9 @@ export function ControlBarPanel({
   onGuardarConteo: (area: ConteoTextoArea, fecha: string, texto: string) => void;
   pedidosDiarios: Record<ConteoTextoArea, Record<string, Record<string, number>>>;
   onGuardarPedido: (area: ConteoTextoArea, fecha: string, pedido: Record<string, number>) => void;
+  recetas: Receta[];
+  onSaveReceta: (receta: Receta) => void;
+  onRemoveReceta: (id: string) => void;
 }) {
   const [view, setView] = useState<ControlBarView>("menu");
   const insumosBar = insumos.filter((i) => i.area === "bar");
@@ -52,6 +59,20 @@ export function ControlBarPanel({
         proveedores={proveedores}
         onSaveInsumo={onSaveInsumo}
         onRemoveInsumo={onRemoveInsumo}
+      />
+    );
+  }
+
+  if (view === "recetario") {
+    return (
+      <RecetarioPanel
+        onBack={() => setView("menu")}
+        backLabel="Control de Bar"
+        titulo="Recetario"
+        recetas={recetas.filter((r) => r.area === "bar")}
+        area="bar"
+        onSave={onSaveReceta}
+        onRemove={onRemoveReceta}
       />
     );
   }
@@ -102,6 +123,15 @@ export function ControlBarPanel({
           <span className="menu-item-text">
             <strong>Catálogo</strong>
             <span>Productos, precio, unidad y proveedor</span>
+          </span>
+        </button>
+        <button className="menu-item" onClick={() => setView("recetario")}>
+          <span className="menu-item-icon">
+            <BookOpen size={20} />
+          </span>
+          <span className="menu-item-text">
+            <strong>Recetario</strong>
+            <span>Recetas de bebidas: medidas, vaso, utensilios y preparación</span>
           </span>
         </button>
       </div>

@@ -162,7 +162,11 @@ estando en Nómina te regresa al menú de Equipo):
   la propia sección "Nómina") y "Propinas" (la misma pantalla de
   consulta que ve el dueño en Equipo > Propinas — totales del día de toda
   la semana y su reparto por área, sin poder editar nada; no se acota por
-  área ni por persona). Cada permiso se acota distinto: "Horarios" usa el área de
+  área ni por persona) y "Recetario" (consulta de las recetas de bebidas
+  que captura el dueño en Control de Bar > Recetario, sin poder editar
+  nada; lo ve cualquiera que tenga el permiso, sin importar su puesto o
+  área, y es el único permiso que se puede habilitar aunque la persona no
+  tenga puesto asignado). Cada permiso se acota distinto: "Horarios" usa el área de
   Personal del puesto (Gerencia/Piso/Cocina) y muestra el horario
   completo de esa área (todo el personal de Piso, o todo el de Cocina,
   no solo su propia fila); "Conteo diario" usa el catálogo de insumos
@@ -181,7 +185,7 @@ estando en Nómina te regresa al menú de Equipo):
   cualquier otro puesto con este permiso (mesero, barra, etc.) solo
   puede verlo, sin poder tocar las celdas, agregar/quitar personal,
   guardar ni descargar nada.
-  Sin puesto asignado, ninguno de estos permisos se
+  Sin puesto asignado, ninguno de estos permisos (salvo Recetario) se
   puede habilitar (aunque igual puede tener acceso a "Corte", que no
   depende de un puesto — ver **Asignar día** más abajo).
   Al entrar con su PIN, esa persona no ve las pestañas
@@ -437,7 +441,8 @@ estando en Nómina te regresa al menú de Equipo):
   copiado" que se quita solo a los 2 segundos. En cuanto se
   guarda, el texto queda bloqueado; para corregirlo
   hay que tocar "Editar", confirmar un aviso, y recién
-  ahí se desbloquea) y "Catálogo" después: cada insumo tiene nombre, un
+  ahí se desbloquea), "Catálogo" después y, solo en Control de Bar,
+  "Recetario" al final (ver más abajo): cada insumo tiene nombre, un
   precio de referencia opcional y un proveedor opcional (el mismo
   catálogo de proveedores en ambas áreas, y se puede crear uno nuevo al
   vuelo desde el propio insumo), agrupados en la lista por proveedor, y
@@ -449,7 +454,17 @@ estando en Nómina te regresa al menú de Equipo):
   unidad de medida es un selector con solo dos opciones, Kg o Pieza — en
   Cocina se elige libremente (Kg por default), y en Bar queda fijo en
   Pieza y el selector se ve bloqueado, porque ahí siempre se cuenta por
-  pieza; bajo "General", "Control General" — mismo Catálogo (nombre,
+  pieza. El **Recetario** de Control de Bar es la lista de recetas de
+  bebidas en orden alfabético, con buscador (por nombre o ingrediente) y
+  el vaso de cada una a la derecha; al tocar una se ve completa en una
+  sola pantalla: Vaso, Ingredientes (cada uno con su medida a la derecha —
+  se escriben uno por renglón, "2 oz Tequila blanco", y la app separa la
+  medida sola; también entiende "Hielo al gusto"), Utensilios (como
+  etiquetas), Preparación (pasos numerados) y Decoración / notas. El dueño
+  agrega recetas con el "+" y las edita o borra con el lápiz de cada una;
+  las cuentas de equipo con el permiso "Recetario" ven exactamente lo
+  mismo desde su Inicio, pero sin "+" ni lápiz. Por ahora es texto
+  sencillo, sin fotos, y solo de Bar; bajo "General", "Control General" — mismo Catálogo (nombre,
   unidad libre entre Kg/Pieza, precio, proveedor), pero sin Conteo diario
   ni la marca de "alta rotación" (que no aplica sin conteo diario propio):
   abre directo al catálogo, sin menú intermedio, porque es su única
@@ -541,7 +556,7 @@ Hay 2 tipos de cuenta:
   Personal** (nombre + PIN de 4 dígitos, sin correo — ver "Acceso a la
   app" más arriba) — no hace falta crearla en el dashboard de Supabase.
   Solo ve las secciones que su checklist de permisos habilita
-  (Horarios/Conteo diario/Inventario/Nómina/Propinas) más, si el dueño le asignó algún día
+  (Horarios/Conteo diario/Inventario/Nómina/Propinas/Recetario) más, si el dueño le asignó algún día
   desde Corte diario (ver "Asignar día" más arriba), "Corte" — acotado
   solo a esos días. Esa persona entra desde "Soy del equipo, tengo un
   PIN" en la pantalla de inicio, elige su nombre y teclea su PIN.
@@ -704,6 +719,7 @@ src/
   components/
     ui.tsx        Sheet, Field, inputs, Toggle, Empty
     ConceptoInput.tsx  cuadro de concepto de gasto con autocompletado y ortografía
+    panels/RecetarioPanel.tsx  Recetario (dueño edita, equipo consulta)
     NovedadesAlEntrar.tsx  slider de novedades al entrar (cuentas de equipo); lista en lib/novedades.ts
     modals/       un modal por acción (mesero, gasto, transferencia, etc.)
   pages/

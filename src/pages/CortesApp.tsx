@@ -14,7 +14,7 @@ import {
 } from "../lib/dataModel";
 import { removeAssignmentByStaffAndDate, upsertAssignment, useStaffAssignments } from "../lib/staffAssignments";
 import { DAYS, DAY_SHORT } from "../lib/types";
-import type { AreaEntry, ConteoTextoArea, CreditoProveedores, DayData, DayName, EmpleadoEntry, Gasto, GastoCategoria, HorarioSemana, InsumoEntry, MeseroCatalogEntry, MeseroCut, NominaDescuentosSemana, Profile, ProveedorCatalogEntry, PuestoEntry, Transferencia, WeekData } from "../lib/types";
+import type { AreaEntry, ConteoTextoArea, CreditoProveedores, DayData, DayName, EmpleadoEntry, Gasto, GastoCategoria, HorarioSemana, InsumoEntry, MeseroCatalogEntry, MeseroCut, NominaDescuentosSemana, Profile, ProveedorCatalogEntry, PuestoEntry, Receta, Transferencia, WeekData } from "../lib/types";
 import { Empty } from "../components/ui";
 import { MonthModal } from "../components/modals/MonthModal";
 import { MeseroModal, type MeseroFormValues } from "../components/modals/MeseroModal";
@@ -469,6 +469,25 @@ export default function CortesApp({ profile }: { profile: Profile }) {
     if (!data) return;
     const next = structuredClone(data);
     next.pedidosDiarios[area][fecha] = pedido;
+    persist(next);
+  }
+
+  // Recetario (Negocio > Control de Bar > Recetario).
+  function saveReceta(receta: Receta) {
+    if (!data) return;
+    const next = structuredClone(data);
+    const lista = next.recetas || [];
+    const i = lista.findIndex((r) => r.id === receta.id);
+    if (i >= 0) lista[i] = receta;
+    else lista.push(receta);
+    next.recetas = lista;
+    persist(next);
+  }
+
+  function removeReceta(id: string) {
+    if (!data) return;
+    const next = structuredClone(data);
+    next.recetas = (next.recetas || []).filter((r) => r.id !== id);
     persist(next);
   }
 
@@ -1104,6 +1123,9 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           onGuardarConteo={guardarConteoTexto}
           pedidosDiarios={data.pedidosDiarios}
           onGuardarPedido={guardarPedidoDiario}
+          recetas={data.recetas || []}
+          onSaveReceta={saveReceta}
+          onRemoveReceta={removeReceta}
         />
       )}
 

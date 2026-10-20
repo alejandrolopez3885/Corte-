@@ -462,6 +462,24 @@ export interface AppData {
   // historial: cada cambio aplica desde esa semana (fecha ISO del lunes)
   // en adelante. Vacío o sin definir = MONTO_FIJO_SEMANAL_INICIAL.
   montosFijosSemanales?: MontoFijoSemanal[];
+  // Recetario (Negocio > Control de Bar > Recetario): las recetas que
+  // captura el dueño y consulta el personal con el permiso "Recetario".
+  recetas?: Receta[];
+}
+
+export interface Receta {
+  id: string;
+  // Por ahora solo Bar; Cocina vendrá después.
+  area: "bar" | "cocina";
+  nombre: string;
+  vaso: string;
+  // Uno por renglón: "2 oz Tequila blanco" (medida y producto).
+  ingredientes: string;
+  // Separados por coma.
+  utensilios: string;
+  // Un paso por renglón.
+  preparacion: string;
+  notas: string;
 }
 
 export interface MontoFijoSemanal {
@@ -500,7 +518,7 @@ export type Role = "owner" | "staff";
 // allá del acceso por día asignado (mesero) — ver EmpleadoEntry.staffProfileId
 // y PERMISOS_DISPONIBLES. Se agregan más conforme el dueño los vaya
 // necesitando, sin rehacer el checklist.
-export type PermisoStaff = "horarios" | "conteo_diario" | "inventario" | "nomina" | "propinas";
+export type PermisoStaff = "horarios" | "conteo_diario" | "inventario" | "nomina" | "propinas" | "recetario";
 
 export const PERMISOS_DISPONIBLES: { value: PermisoStaff; label: string; description: string }[] = [
   {
@@ -527,6 +545,11 @@ export const PERMISOS_DISPONIBLES: { value: PermisoStaff; label: string; descrip
     value: "propinas",
     label: "Propinas",
     description: "Consultar el total de propinas de cada día de la semana y cómo se reparte entre áreas — sin editar nada.",
+  },
+  {
+    value: "recetario",
+    label: "Recetario",
+    description: "Consultar las recetas de bebidas: medidas, vaso, utensilios y preparación — sin editar nada.",
   },
 ];
 

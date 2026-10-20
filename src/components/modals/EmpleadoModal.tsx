@@ -368,8 +368,12 @@ function PermisosChecklist({
         // Propinas es la misma consulta para todos (totales del día de toda
         // la semana), tampoco lleva área.
         const esPropinas = p.value === "propinas";
-        const habilitado = esConteoDiario ? !!insumoAreaLabel : !!areaActual;
-        const etiquetaArea = esConteoDiario ? insumoAreaLabel : esNomina || esInventario || esPropinas ? undefined : areaActual?.nombre;
+        // Recetario es la misma consulta para cualquier puesto o área, y ni
+        // siquiera necesita puesto asignado.
+        const esRecetario = p.value === "recetario";
+        const habilitado = esRecetario ? true : esConteoDiario ? !!insumoAreaLabel : !!areaActual;
+        const etiquetaArea =
+          esConteoDiario ? insumoAreaLabel : esNomina || esInventario || esPropinas || esRecetario ? undefined : areaActual?.nombre;
         return (
           <Toggle
             key={p.value}
