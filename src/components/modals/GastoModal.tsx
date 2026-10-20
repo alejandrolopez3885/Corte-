@@ -1,3 +1,4 @@
+import { TriangleAlert } from "lucide-react";
 import { useState } from "react";
 import { Sheet, Field, NumInput, Toggle } from "../ui";
 import { ConceptoInput } from "../ConceptoInput";
@@ -82,6 +83,8 @@ export function GastoForm({
   const [categoria, setCategoria] = useState<GastoCategoria | "">(editing?.categoria || "");
   const [empleadoId, setEmpleadoId] = useState(editing?.empleadoId || "");
   const [meseroId, setMeseroId] = useState(editing?.meseroId || "");
+  // La categoría es obligatoria: el aviso sale al intentar guardar sin ella.
+  const [faltaCategoria, setFaltaCategoria] = useState(false);
 
   const canMarkIngresado = estado === "ingresado" || !!categoria;
   const ligableAEmpleado = categoria !== "" && CATEGORIAS_LIGABLES_A_EMPLEADO.has(categoria);
@@ -99,13 +102,13 @@ export function GastoForm({
       </Field>
       <Field label="Categoría">
         <select
-          className="categoria-select"
+          className={`categoria-select ${faltaCategoria && !categoria ? "campo-faltante" : ""}`}
           style={{ width: "100%" }}
           value={categoria}
           disabled={estado === "ingresado"}
           onChange={(e) => setCategoria(e.target.value as GastoCategoria | "")}
         >
-          <option value="">Sin categoría</option>
+          <option value="">Selecciona una categoría</option>
           {GASTO_CATEGORIAS.map((c) => (
             <option key={c.value} value={c.value}>
               {c.label}
@@ -151,6 +154,11 @@ export function GastoForm({
         label="Ya está ingresado"
       />
       {!canMarkIngresado && <p className="hint">Elige una categoría para poder marcarlo como ingresado.</p>}
+      {faltaCategoria && !categoria && (
+        <p className="aviso-faltante">
+          <TriangleAlert size={15} /> Es importante seleccionar la categoría.
+        </p>
+      )}
       <div className="gasto-form-actions">
         {onCancel && (
           <button type="button" className="link-btn" onClick={onCancel}>
@@ -160,7 +168,13 @@ export function GastoForm({
         <button
           className="btn-primary"
           disabled={bloqueado || !concepto.trim() || !total}
-          onClick={() => onSave({ concepto: concepto.trim(), total, estado, categoria, empleadoId, meseroId })}
+          onClick={() => {
+            if (!categoria) {
+              setFaltaCategoria(true);
+              return;
+            }
+            onSave({ concepto: concepto.trim(), total, estado, categoria, empleadoId, meseroId });
+          }}
         >
           {saveLabel}
         </button>

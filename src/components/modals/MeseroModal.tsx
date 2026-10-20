@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { X } from "lucide-react";
+import { X, TriangleAlert } from "lucide-react";
 import { Sheet, Field, NumInput, SumInput } from "../ui";
 import { ConceptoInput } from "../ConceptoInput";
 import { money, round2, sumFromText, uid } from "../../lib/dataModel";
@@ -53,6 +53,10 @@ export function MeseroModal({
   const [gastos, setGastos] = useState<GastoRow[]>([]);
   const [showTransfer, setShowTransfer] = useState(!!editing?.transferencia);
   const [transferMonto, setTransferMonto] = useState(editing?.transferencia ? String(editing.transferencia) : "");
+  // Aviso arriba de "Guardar corte" cuando falta algo obligatorio.
+  const [intentoGuardar, setIntentoGuardar] = useState(false);
+  const faltaMesero = !nombre;
+  const faltaVenta = !venta;
 
   function handleSelect(id: string) {
     const m = catalog.find((c) => c.id === id);
@@ -87,7 +91,11 @@ export function MeseroModal({
         {catalog.length === 0 ? (
           <p className="hint">Aún no tienes meseros en tu lista. Pide al encargado que los agregue.</p>
         ) : (
-          <select className="text-input" value={meseroId} onChange={(e) => handleSelect(e.target.value)}>
+          <select
+            className={`text-input ${intentoGuardar && faltaMesero ? "campo-faltante" : ""}`}
+            value={meseroId}
+            onChange={(e) => handleSelect(e.target.value)}
+          >
             <option value="" disabled>
               Selecciona un mesero
             </option>
@@ -127,7 +135,7 @@ export function MeseroModal({
           <NumInput value={venta} onChange={(e) => setVenta(e.target.value)} placeholder="0.00" />
         </Field>
         <Field label="Total tarjetas">
-          <SumInput value={tarjetas} onChange={setTarjetas} placeholder="0.00 o 300,300,300" />
+          <SumInput value={tarjetas} onChange={setTarjetas} placeholder="0.00 o 300+300+300" sumar />
         </Field>
       </div>
 
@@ -205,15 +213,24 @@ export function MeseroModal({
 
       {showTransfer && (
         <Field label="Monto de la transferencia">
-          <SumInput value={transferMonto} onChange={setTransferMonto} placeholder="0.00 o 300,300,300" />
+          <SumInput value={transferMonto} onChange={setTransferMonto} placeholder="0.00 o 300+300+300" sumar />
         </Field>
       )}
       {showTransfer && <p className="hint">Se agregará a Transferencias a nombre de {nombre || "este mesero"}.</p>}
 
+      {intentoGuardar && (faltaMesero || faltaVenta) && (
+        <p className="aviso-faltante">
+          <TriangleAlert size={15} />{" "}
+          {faltaMesero ? "Selecciona el mesero para poder guardar el corte." : "Escribe la venta para poder guardar el corte."}
+        </p>
+      )}
       <button
         className="btn-primary"
-        disabled={!nombre || !venta}
-        onClick={() =>
+        onClick={() => {
+          if (faltaMesero || faltaVenta) {
+            setIntentoGuardar(true);
+            return;
+          }
           onSave(
             {
               meseroId,
@@ -226,8 +243,8 @@ export function MeseroModal({
               transferMonto: showTransfer ? transferMonto : "",
             },
             editing?.id
-          )
-        }
+          );
+        }}
       >
         Guardar corte
       </button>

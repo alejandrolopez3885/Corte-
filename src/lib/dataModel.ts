@@ -12,7 +12,7 @@ export const round2 = (n: number): number => Math.round((n + Number.EPSILON) * 1
 export function sumFromText(text: string | number | null | undefined): number {
   if (!text && text !== 0) return 0;
   const parts = String(text)
-    .split(",")
+    .split(/[,+]/)
     .map((s) => parseFloat(s.trim()))
     .filter((n) => !isNaN(n));
   if (parts.length === 0) return 0;

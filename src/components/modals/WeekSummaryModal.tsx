@@ -98,7 +98,7 @@ export function WeekSummaryModal({
 
       <div className="real-cash">
         <Field label="Efectivo real (lo que contaste)">
-          <SumInput value={realText} onChange={setRealText} placeholder="0.00 o 300,300,300" />
+          <SumInput value={realText} onChange={setRealText} placeholder="0.00 o 300+300+300" sumar />
         </Field>
         <button className="link-btn" onClick={commitReal}>
           Guardar efectivo real

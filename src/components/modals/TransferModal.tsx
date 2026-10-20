@@ -35,7 +35,7 @@ export function TransferModal({
         </datalist>
       </Field>
       <Field label="Total">
-        <SumInput value={total} onChange={setTotal} placeholder="0.00 o 300,300,300" />
+        <SumInput value={total} onChange={setTotal} placeholder="0.00 o 300+300+300" sumar />
       </Field>
       <button
         className="btn-primary"

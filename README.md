@@ -100,6 +100,17 @@ cambia el texto solo: siempre hay que tocar la sugerencia. Si LanguageTool
 no responde, simplemente no aparece la sugerencia de ortografía; el
 autocompletado del historial funciona igual.
 
+Al capturar un corte, "Guardar corte" avisa arriba del botón si falta
+elegir el mesero (o la venta), con el selector marcado en rojo; y al
+guardar un gasto en efectivo la categoría es obligatoria ("Es importante
+seleccionar la categoría") — lo demás que es opcional no pide nada. Los
+campos donde se suman varios montos (tarjetas y transferencia del mesero,
+transferencias, ventas de apps, efectivo real y el control de gastos en
+transferencia) tienen un botón "+" junto al campo, porque el teclado
+numérico del celular no tiene coma: se escribe "300", "+", "450"… y
+debajo se ve la suma en vivo ("= $875.50 · 3 montos"); al salir del campo
+queda solo el total. Desde computadora también se puede separar con coma.
+
 - **Frontend**: React + Vite + TypeScript.
 - **Backend**: Supabase (Auth + Postgres).
 - **Hosting sugerido**: Vercel.

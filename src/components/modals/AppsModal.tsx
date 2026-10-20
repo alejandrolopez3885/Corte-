@@ -15,7 +15,7 @@ export function AppsModal({
     <Sheet title="Ventas de apps" onClose={onClose}>
       <p className="hint">Este total se suma a la venta del día, pero no forma parte del efectivo a entregar.</p>
       <Field label="Total del día">
-        <SumInput value={text} onChange={setText} placeholder="0.00 o 150,200,80" />
+        <SumInput value={text} onChange={setText} placeholder="0.00 o 150+200+80" sumar />
       </Field>
       <button className="btn-primary" onClick={() => onSave(text)}>
         Guardar

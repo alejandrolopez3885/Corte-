@@ -1,4 +1,4 @@
-import { useEffect, useState, type InputHTMLAttributes, type ReactNode } from "react";
+import { useEffect, useRef, useState, type InputHTMLAttributes, type ReactNode } from "react";
 import { X, Trash2 } from "lucide-react";
 
 export function Sheet({
@@ -46,30 +46,45 @@ export function NumInput(props: InputHTMLAttributes<HTMLInputElement>) {
   return <input type="text" inputMode="decimal" className="num-input" {...props} />;
 }
 
+// Campo que suma varios montos: "300,450,125.50" o "300+450+125.50" (el
+// teclado numérico del celular no tiene coma, por eso el botón "+"). Al
+// salir del campo queda solo el total.
 export function SumInput({
   value,
   onChange,
   placeholder,
+  sumar,
 }: {
   value: string;
   onChange: (v: string) => void;
   placeholder?: string;
+  // Muestra el botón "+" y la suma en vivo — para campos donde se suman montos.
+  sumar?: boolean;
 }) {
   const [text, setText] = useState(value ?? "");
+  const inputRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
     setText(value ?? "");
   }, [value]);
 
+  const montos = partirMontos(text);
+  const variasPartes = /[,+]/.test(text);
+
   function commit() {
-    const hasComma = text.includes(",");
     const sum = sumFromTextLocal(text);
     const next = text.trim() === "" ? "" : String(sum);
     setText(next);
-    if (hasComma || next !== value) onChange(next);
+    if (variasPartes || next !== value) onChange(next);
   }
 
-  return (
+  function agregarMas() {
+    setText((t) => (t.trim() === "" || /[+,]\s*$/.test(t) ? t : `${t}+`));
+    inputRef.current?.focus();
+  }
+
+  const input = (
     <input
+      ref={inputRef}
       type="text"
       inputMode="decimal"
       className="num-input"
@@ -79,14 +94,43 @@ export function SumInput({
       placeholder={placeholder}
     />
   );
+  if (!sumar) return input;
+  return (
+    <span className="sum-input">
+      <span className="sum-input-fila">
+        {input}
+        <button
+          type="button"
+          className="sum-input-mas"
+          aria-label="Sumar otro monto"
+          // Sin esto, tocar "+" saca el foco del campo y lo suma antes de tiempo.
+          onPointerDown={(e) => e.preventDefault()}
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={agregarMas}
+        >
+          +
+        </button>
+      </span>
+      {variasPartes && montos.length > 0 && (
+        <span className="sum-input-total">
+          = {sumFromTextLocal(text).toLocaleString("es-MX", { style: "currency", currency: "MXN" })}
+          <span> · {montos.length} {montos.length === 1 ? "monto" : "montos"}</span>
+        </span>
+      )}
+    </span>
+  );
+}
+
+function partirMontos(text: string): number[] {
+  return text
+    .split(/[,+]/)
+    .map((s) => parseFloat(s.trim()))
+    .filter((n) => !isNaN(n));
 }
 
 function sumFromTextLocal(text: string): number {
   if (!text) return 0;
-  const parts = text
-    .split(",")
-    .map((s) => parseFloat(s.trim()))
-    .filter((n) => !isNaN(n));
+  const parts = partirMontos(text);
   if (parts.length === 0) return 0;
   return Math.round((parts.reduce((a, b) => a + b, 0) + Number.EPSILON) * 100) / 100;
 }

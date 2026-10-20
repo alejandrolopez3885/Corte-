@@ -121,12 +121,12 @@ export function CreditoProveedoresModal({
       {weekStartDate && <p className="hint">{formatWeekRange(weekStartDate)}</p>}
 
       <Field label="Gastos operativos en transferencia">
-        <SumInput value={operativos} onChange={setOperativos} placeholder="0.00" />
+        <SumInput value={operativos} onChange={setOperativos} placeholder="0.00" sumar />
       </Field>
       {editandoFijos ? (
         <div className="fijos-edit">
           <Field label="Gastos fijos (solo esta semana)">
-            <SumInput value={fijosBorrador} onChange={setFijosBorrador} placeholder="0.00" />
+            <SumInput value={fijosBorrador} onChange={setFijosBorrador} placeholder="0.00" sumar />
           </Field>
           <div className="gasto-row-edit-actions">
             <button type="button" className="link-btn" onClick={() => setEditandoFijos(false)}>
@@ -202,13 +202,13 @@ export function CreditoProveedoresModal({
         </Field>
       )}
       <Field label="Comisión DIDI">
-        <SumInput value={comisionDidi} onChange={setComisionDidi} placeholder="0.00" />
+        <SumInput value={comisionDidi} onChange={setComisionDidi} placeholder="0.00" sumar />
       </Field>
       <Field label="Comisión UBER">
-        <SumInput value={comisionUber} onChange={setComisionUber} placeholder="0.00" />
+        <SumInput value={comisionUber} onChange={setComisionUber} placeholder="0.00" sumar />
       </Field>
       <Field label="Comisión RAPPI">
-        <SumInput value={comisionRappi} onChange={setComisionRappi} placeholder="0.00" />
+        <SumInput value={comisionRappi} onChange={setComisionRappi} placeholder="0.00" sumar />
       </Field>
       <Field label="Comisión bancaria (3% de tarjetas, no editable)">
         <div className="readonly-value">{money(comisionBancaria)}</div>

@@ -866,3 +866,23 @@ button.pill { cursor: pointer; }
 .fijos-monto { margin: -6px 0 0; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
 .fijos-monto .link-btn { padding: 0; font-size: 12px; }
 .fijos-valor > span { font-size: 16px; color: var(--ink); }
+
+/* ---- Campo que suma montos con "+" ---- */
+.sum-input { display: flex; flex-direction: column; gap: 4px; }
+.sum-input-fila { display: flex; gap: 8px; }
+.sum-input-fila .num-input { flex: 1; min-width: 0; }
+.sum-input-mas {
+  width: 48px; flex-shrink: 0; border-radius: 10px; border: 1.5px solid var(--accent);
+  background: var(--accent-soft); color: var(--accent); font: inherit; font-size: 24px; font-weight: 600; line-height: 1; cursor: pointer;
+}
+.sum-input-mas:active { transform: scale(0.95); }
+.sum-input-total { font-size: 13px; font-weight: 600; color: var(--accent); }
+.sum-input-total span { font-weight: 400; color: var(--ink-soft); }
+
+/* ---- Campo obligatorio que falta al guardar ---- */
+.campo-faltante { border-color: var(--bad) !important; box-shadow: 0 0 0 2px var(--bad-soft); }
+.aviso-faltante {
+  display: flex; align-items: center; gap: 6px; margin: 0;
+  background: var(--bad-soft); color: var(--bad); border-radius: 10px; padding: 9px 12px; font-size: 13.5px;
+}
+.aviso-faltante svg { flex-shrink: 0; }
