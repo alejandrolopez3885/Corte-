@@ -1207,3 +1207,10 @@ button.pill { cursor: pointer; }
 .importar-nota { font-size: 12px; font-style: italic; color: var(--bad); }
 .insumo-pendiente { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; padding: 10px 12px; border-radius: 12px; background: var(--bad-soft); color: var(--bad); font-size: 13px; }
 .catalog-row .insumo-pendiente-tag { display: block; font-size: 12px; font-style: normal; color: var(--bad); }
+.ini-pagos { display: flex; flex-direction: column; gap: 6px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 14px; }
+.ini-pagos .hint { margin: 0; }
+.ini-pagos-fila { display: flex; justify-content: space-between; gap: 10px; font-size: 13.5px; color: var(--ink-soft); }
+.ini-pagos-fila strong { color: var(--ink); font-weight: 600; white-space: nowrap; }
+.ini-pagos-fila.total { border-top: 1px solid var(--border); padding-top: 8px; margin-top: 2px; font-size: 15px; color: var(--ink); }
+.ini-pagos-fila.total strong { font-size: 18px; color: var(--accent); }
+.ini-nota { margin: 0; font-size: 12px; color: var(--ink-soft); background: var(--surface-alt); border-radius: 10px; padding: 8px 12px; }

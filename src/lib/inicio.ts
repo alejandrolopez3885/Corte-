@@ -1,4 +1,8 @@
-import { addDaysIso, computeNominaSemana, computeWeekSummary, dateForDay, money, resolveWeekStartDate, round2 } from "./dataModel";
+import {
+  addDaysIso, computeNominaSemana, computeWeekSummary, dateForDay, money, resolveGastosFijos, resolveMontoFijo, resolveWeekStartDate, round2,
+  unidadConteo,
+} from "./dataModel";
+import { consumoSemana, insumosSinEquivalencia } from "./consumo";
 import { leerNotasInventario } from "./inventarioNotas";
 import { lunesDe } from "./tendencias";
 import { calcularTendencias, type TarjetaId } from "./tendenciasAnalisis";
@@ -38,6 +42,10 @@ export interface Inicio {
   negocio: AlertaInicio[];
   app: AlertaInicio[];
   venta: { hastaHoy: number; semanaPasada: number; diasContados: number; meta?: number };
+  // Por pagar en transferencia esta semana (estimado a hoy).
+  pagos: { nomina: number; fijos: number; operativos: number; total: number } | null;
+  // Insumos sin "¿Cuánto trae 1 …?" — solo si ya se lleva inventario.
+  sinEquivalencia: number;
 }
 
 interface Ubicacion {
@@ -282,6 +290,70 @@ export function calcularInicio(data: AppData, hoy: string, bitacora: RenglonBita
     }
   }
 
+  // Consumo de insumos de domingo a domingo contra lo normal para esa venta
+  // (proporción consumo/venta de hasta 4 semanas anteriores; hacen falta
+  // al menos 2). También avisa si no cuadra (salió negativo).
+  const domingoFin = diaSemana === "Domingo" ? hoy : addDaysIso(lunes, -1);
+  const ventaSemana = (domingo: string) => {
+    let v = 0;
+    for (let f = addDaysIso(domingo, -6); f <= domingo; f = addDaysIso(f, 1)) {
+      const d = dias.get(f)?.day;
+      if (d) v += d.meseros.reduce((x, m) => x + m.venta, 0) + (d.ventaApps || 0);
+    }
+    return v;
+  };
+  const consumo = consumoSemana(data, domingoFin);
+  if (consumo.size > 0) {
+    const ventaActual = ventaSemana(domingoFin);
+    const anteriores = [1, 2, 3, 4].map((k) => {
+      const dom = addDaysIso(domingoFin, -7 * k);
+      return { consumo: consumoSemana(data, dom), venta: ventaSemana(dom) };
+    });
+    const porId = new Map(data.insumos.map((i) => [i.id, i]));
+    const altos: { insumo: (typeof data.insumos)[number]; usado: number; esperado: number; pct: number }[] = [];
+    const noCuadran: { insumo: (typeof data.insumos)[number]; usado: number }[] = [];
+    consumo.forEach((usado, id) => {
+      const insumo = porId.get(id);
+      if (!insumo) return;
+      if (usado < -0.01) {
+        noCuadran.push({ insumo, usado });
+        return;
+      }
+      const ratios = anteriores
+        .map((w) => ({ c: w.consumo.get(id), v: w.venta }))
+        .filter((w): w is { c: number; v: number } => w.c !== undefined && w.c > 0 && w.v > 0)
+        .map((w) => w.c / w.v);
+      if (ratios.length < 2 || ventaActual <= 0) return;
+      const esperado = (ratios.reduce((x, r) => x + r, 0) / ratios.length) * ventaActual;
+      const pct = ((usado - esperado) / esperado) * 100;
+      if (pct >= 25 && usado - esperado >= 1) altos.push({ insumo, usado, esperado, pct });
+    });
+    const fmt = (n: number) => (Math.round(n * 10) / 10).toLocaleString("es-MX");
+    altos
+      .sort((x, y) => y.pct - x.pct)
+      .slice(0, 3)
+      .forEach(({ insumo, usado, esperado, pct }) =>
+        operacion.push({
+          id: `consumo-${insumo.id}`,
+          titulo: `${insumo.nombre}: se usaron ${fmt(usado)} ${unidadConteo(insumo)}`,
+          detalle: `Lo normal con esta venta son ~${fmt(esperado)} ${unidadConteo(insumo)} (+${Math.round(pct)}%). Revisa mermas o porciones.`,
+          ir: { tipo: "inventario", fecha: domingoFin, modo: "completo" },
+        })
+      );
+    noCuadran
+      .sort((x, y) => x.usado - y.usado)
+      .slice(0, 2)
+      .forEach(({ insumo, usado }) =>
+        operacion.push({
+          id: `no-cuadra-${insumo.id}`,
+          titulo: `${insumo.nombre}: no cuadra`,
+          detalle: `Al final había más de lo que había + lo pedido (${fmt(usado)} ${unidadConteo(insumo)}). ¿Faltó anotar un pedido o se contó mal?`,
+          ir: { tipo: "inventario", fecha: domingoFin, modo: "completo" },
+        })
+      );
+  }
+  const usaInventario = Object.keys(data.inventariosNotas || {}).some((f) => f >= addDaysIso(hoy, -21));
+
   // ---- El negocio --------------------------------------------------------
   // Lo más importante de "Para revisar" de Tendencias (lo atípico y las
   // tendencias; lo incompleto y el efectivo ya salen arriba).
@@ -292,6 +364,55 @@ export function calcularInicio(data: AppData, hoy: string, bitacora: RenglonBita
     .sort((x, y) => ORDEN[x.nivel] - ORDEN[y.nivel] || y.peso - x.peso)
     .slice(0, 3)
     .forEach((x, i) => negocio.push({ id: `tend-${i}`, titulo: x.titulo, detalle: x.detalle, ir: { tipo: "tendencias", tarjeta: x.tarjeta } }));
+
+  // Cancelaciones por mesero esta semana contra su promedio de las 4
+  // semanas anteriores: avisa con 2 o más y al menos el doble de lo normal.
+  const cancelaciones = (desde: string, hasta: string) => {
+    const out = new Map<string, { n: number; monto: number }>();
+    for (let f = desde; f <= hasta; f = addDaysIso(f, 1)) {
+      dias.get(f)?.day.gastos.forEach((g) => {
+        if (g.categoria !== "cancelaciones" || !g.meseroId) return;
+        const c = out.get(g.meseroId) || { n: 0, monto: 0 };
+        out.set(g.meseroId, { n: c.n + 1, monto: c.monto + g.total });
+      });
+    }
+    return out;
+  };
+  const estaSemana = cancelaciones(lunes, hoy);
+  const previas = cancelaciones(addDaysIso(lunes, -28), addDaysIso(lunes, -1));
+  estaSemana.forEach(({ n, monto }, meseroId) => {
+    const antes = previas.get(meseroId) || { n: 0, monto: 0 };
+    const promN = antes.n / 4;
+    if (n < 2 || n < 2 * promN) return;
+    const nombre = data.meseros.find((m) => m.id === meseroId)?.nombre || "Mesero";
+    negocio.push({
+      id: `cancel-${meseroId}`,
+      titulo: `${nombre}: ${n} cancelaciones esta semana · ${money(round2(monto))}`,
+      detalle:
+        antes.n === 0
+          ? "No tuvo ninguna en las 4 semanas anteriores."
+          : `Normalmente ${Math.round(promN * 10) / 10} por semana (${money(round2(antes.monto / 4))}).`,
+      ir: { tipo: "tendencias", tarjeta: "extras" },
+    });
+  });
+
+  // Por pagar en transferencia esta semana: la nómina que no alcanza el
+  // efectivo (igual que "Cómo se paga" en Nómina), gastos fijos y los
+  // operativos en transferencia ya capturados.
+  let pagos: Inicio["pagos"] = null;
+  const sa = semanas.get(lunes);
+  if (sa) {
+    const week = data.months[sa.mk].weeks[sa.wi];
+    const neto = round2(
+      computeNominaSemana(data.horarios[sa.mk]?.weeks?.[sa.wi] ?? null, data.empleados, data.nominaDescuentos[sa.mk]?.weeks?.[sa.wi] ?? null, week)
+        .reduce((x, e) => x + e.neto, 0)
+    );
+    const efectivo = computeWeekSummary(week).efectivoRecibido;
+    const nomina = round2(neto - Math.max(0, Math.min(efectivo, neto)));
+    const fijos = resolveGastosFijos(week, resolveMontoFijo(data.montosFijosSemanales, lunes)).transferencia;
+    const operativos = round2(week.creditoProveedores?.operativos || 0);
+    pagos = { nomina, fijos, operativos, total: round2(nomina + fijos + operativos) };
+  }
 
   // ---- La app y el equipo ----------------------------------------------
   if (bitacora) {
@@ -350,5 +471,7 @@ export function calcularInicio(data: AppData, hoy: string, bitacora: RenglonBita
     negocio,
     app,
     venta: { hastaHoy: t.hastaHoy, semanaPasada: t.mismosDiasSemanaPasada, diasContados: t.diasContados, meta: data.metaSemanal },
+    pagos,
+    sinEquivalencia: usaInventario ? insumosSinEquivalencia(data.insumos) : 0,
   };
 }

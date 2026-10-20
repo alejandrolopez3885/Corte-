@@ -65,6 +65,41 @@ export function InicioPanel({ data, ownerId, onIr }: { data: AppData; ownerId: s
     </div>
   );
 
+  const { pagos } = inicio;
+  const tarjetaPagos = pagos && pagos.total > 0 && (
+    <div className="ini-pagos">
+      <span className="hint">Por pagar en transferencia esta semana (estimado hoy)</span>
+      {pagos.nomina > 0 && (
+        <div className="ini-pagos-fila">
+          <span>Nómina (lo que no alcanza el efectivo)</span>
+          <strong>{money(pagos.nomina)}</strong>
+        </div>
+      )}
+      {pagos.fijos > 0 && (
+        <div className="ini-pagos-fila">
+          <span>Gastos fijos</span>
+          <strong>{money(pagos.fijos)}</strong>
+        </div>
+      )}
+      {pagos.operativos > 0 && (
+        <div className="ini-pagos-fila">
+          <span>Gastos operativos capturados</span>
+          <strong>{money(pagos.operativos)}</strong>
+        </div>
+      )}
+      <div className="ini-pagos-fila total">
+        <span>Total</span>
+        <strong>{money(pagos.total)}</strong>
+      </div>
+    </div>
+  );
+  const notaEquivalencia = inicio.sinEquivalencia > 0 && (
+    <p className="ini-nota">
+      {inicio.sinEquivalencia} {inicio.sinEquivalencia === 1 ? "insumo" : "insumos"} sin "¿Cuánto trae 1 …?" en el Catálogo — no se
+      puede calcular su consumo.
+    </p>
+  );
+
   return (
     <div className="page-section">
       <div>
@@ -80,6 +115,7 @@ export function InicioPanel({ data, ownerId, onIr }: { data: AppData; ownerId: s
             <span>No hay cortes, gastos ni pendientes por revisar.</span>
           </div>
           {tarjetaVenta}
+          {tarjetaPagos}
         </>
       ) : (
         <>
@@ -98,13 +134,15 @@ export function InicioPanel({ data, ownerId, onIr }: { data: AppData; ownerId: s
             </span>
           </div>
           {grupos.map((g) =>
-            g.alertas.length === 0 && !(g.key === "negocio" && tarjetaVenta) ? null : (
+            g.alertas.length === 0 && !(g.key === "negocio" && (tarjetaVenta || tarjetaPagos)) && !(g.key === "operacion" && notaEquivalencia) ? null : (
               <section key={g.key} className="ini-grupo">
                 <h3 className={`ini-grupo-titulo ${g.clase}`}>{g.titulo}</h3>
                 {g.key === "negocio" && tarjetaVenta}
+                {g.key === "negocio" && tarjetaPagos}
                 {g.alertas.map((al) => (
                   <Alerta key={al.id} alerta={al} clase={g.clase} onIr={onIr} />
                 ))}
+                {g.key === "operacion" && notaEquivalencia}
                 {g.key === "negocio" && g.alertas.length > 0 && (
                   <button className="link-btn ini-ver-todo" onClick={() => onIr({ tipo: "tendencias" })}>
                     Ver todo en Tendencias ›

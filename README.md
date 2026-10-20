@@ -153,13 +153,37 @@ estando en Nómina te regresa al menú de Equipo):
     Inventario en esa semana y modo); horario de la próxima semana sin
     guardar, de jueves en adelante; días de hoy a 6 días sin nadie
     asignado ni corte capturado (solo si se ha usado "Asignar día" en las
-    últimas 3 semanas); y la nómina de la semana que cerró (o la de hoy si
-    es domingo) con personas sin marcar como pagadas.
+    últimas 3 semanas); la nómina de la semana que cerró (o la de hoy si
+    es domingo) con personas sin marcar como pagadas; y el **consumo de
+    insumos** de domingo a domingo: inventario del domingo anterior + lo
+    pedido en la semana (conteo diario e inventario, desde ese domingo
+    hasta el sábado) − inventario de este domingo, todo pasado a kg/pz con
+    la equivalencia del Catálogo ("2 cajas", "500 g" y "3" se entienden).
+    Si un producto se usó 25% o más de lo normal para esa venta (lo normal
+    = su proporción consumo/venta de hasta 4 semanas anteriores; hacen
+    falta al menos 2), sale "Pollo: se usaron 48 kg — lo normal con esta
+    venta son ~37 kg (+30%)" (hasta 3, los más altos); si salió negativo
+    (al final había más de lo que había + lo pedido), "Papas crisscut: no
+    cuadra" (hasta 2). Llevan al inventario de ese domingo. Debajo, si se
+    lleva inventario, una nota con cuántos insumos se piden en otra
+    presentación sin "¿Cuánto trae 1 …?", porque de esos no se puede
+    calcular el consumo (un producto con alguna cantidad que no se pudo
+    pasar a kg/pz se deja fuera esa semana).
   - **El negocio** (verde): la venta hasta hoy de la semana con su cambio
     contra los mismos días de la semana pasada y, si hay meta semanal, su
-    avance con barra; debajo, hasta 3 alertas de "Para revisar" de
-    Tendencias (lo atípico y las tendencias; lo incompleto y el efectivo ya
-    salen arriba) y "Ver todo en Tendencias ›".
+    avance con barra; la tarjeta "Por pagar en transferencia esta semana
+    (estimado hoy)": la nómina que no alcanza a cubrir el efectivo (la
+    misma cuenta que "Cómo se paga" en Nómina: neto de la semana − el
+    efectivo calculado del corte hasta hoy, así que baja conforme entra
+    efectivo), los gastos fijos en transferencia y los gastos operativos en
+    transferencia ya capturados, con su total (cada renglón solo si es
+    mayor a 0); debajo, hasta 3 alertas de "Para revisar" de Tendencias (lo
+    atípico y las tendencias; lo incompleto y el efectivo ya salen arriba),
+    las **cancelaciones por mesero** — las de esta semana ligadas a un
+    mesero ("¿A quién se le cancela?"), cuando son 2 o más y al menos el
+    doble de su promedio de las 4 semanas anteriores ("Luis: 4
+    cancelaciones esta semana · $620 — normalmente 1 por semana ($150)") —
+    y "Ver todo en Tendencias ›".
   - **La app y el equipo** (gris): de los últimos 7 días de Actividad, sin
     contar lo que hizo el dueño — cambios con algo eliminado, cambios entre
     2 y 6 a.m. y cambios a cortes de días pasados (con quién; llevan a
@@ -852,7 +876,7 @@ src/
   components/
     ui.tsx        Sheet, Field, inputs, Toggle, Empty
     ConceptoInput.tsx  cuadro de concepto de gasto con autocompletado y ortografía
-    panels/InicioPanel.tsx  Inicio del dueño (alertas); cálculo en lib/inicio.ts
+    panels/InicioPanel.tsx  Inicio del dueño (alertas); cálculo en lib/inicio.ts y lib/consumo.ts
     panels/ImportarCatalogoPanel.tsx  Negocio > Compras > Importar catálogo; lectura del Excel en lib/excelPrecios.ts
     panels/RecetarioPanel.tsx  Recetario (dueño edita y carga varias, equipo consulta); formato en lib/recetasTexto.ts
     NovedadesAlEntrar.tsx  slider de novedades al entrar (cuentas de equipo); lista en lib/novedades.ts
