@@ -357,7 +357,27 @@ estando en Nómina te regresa al menú de Equipo):
   no perder esa referencia ni el historial ya guardado en Inventario);
   agrupadas bajo "Control de gastos",
   Control de gastos en efectivo y Control de gastos en transferencia; y
-  bajo "Análisis", "Tendencias" — cómo va
+  bajo "Análisis", "Tendencias" — la
+  sección más dinámica: se reacomoda sola según los datos. Arriba, "Para
+  revisar" (siempre primero) junta lo que conviene ver, en este orden:
+  información que parece incompleta (días pasados sin corte, días con venta
+  pero sin gastos cuando normalmente sí hay, semanas con margen anormalmente
+  alto o sin nómina, falta de efectivo real), valores atípicos (±25% contra
+  lo normal de ese mismo día/semana: venta del día, gastos muy altos para su
+  categoría, meseros, cancelaciones/cortesías, descuadre de efectivo) y
+  tendencias (3 semanas seguidas bajando o subiendo, gastos operativos
+  arriba de 42%, nómina subiendo como % de la venta, al ritmo actual por
+  debajo de la semana pasada o de la meta); cada una con "Ver ›" a su
+  tarjeta. Con menos de 3 semanas de historial casi no marca atípicos.
+  Luego "Venta hasta hoy" con la meta semanal (un solo campo y Guardar).
+  Después, las tarjetas que traen algo fuera de lo normal suben solas, con
+  la etiqueta "Subió: …", y las demás se juntan abajo en "Sin novedades".
+  Tarjetas: ¿cómo cerraría la semana?, día a día vs. semana pasada (con la
+  venta de cada día de esta semana y de la pasada; los días estimados
+  quedan sin número), semanas, venta por mesero vs. su promedio, gastos por
+  categoría, propinas/cancelaciones/cortesías, cómo se cobra, nómina como %
+  de la venta, efectivo real vs. esperado, venta promedio por día de la
+  semana y resultados por semana cerrada. En detalle — cómo va
   el negocio, por fecha real (semanas de lunes a domingo): **venta hasta
   hoy** de la semana en curso contra los mismos días de la semana pasada y
   contra el promedio de esos días en las últimas 4 semanas (el día de hoy

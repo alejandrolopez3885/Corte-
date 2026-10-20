@@ -1,7 +1,9 @@
-import { ArrowLeft, ChartLine, Minus, TrendingDown, TrendingUp } from "lucide-react";
+import { useState, type ReactNode } from "react";
+import { ArrowLeft, ChartLine, ChevronRight, Minus, TrendingDown, TrendingUp } from "lucide-react";
 import { Empty } from "../ui";
 import { addDaysIso, computeVentaTrend, formatWeekRange, money, round2, todayIso } from "../../lib/dataModel";
 import { computeTendenciasSemana, type TendenciasSemana } from "../../lib/tendencias";
+import { analizarTendencias, type Alerta, type AnalisisTendencias, type TarjetaId } from "../../lib/tendenciasAnalisis";
 import type { EmpleadoEntry, HorarioMonthData, MeseroCatalogEntry, MonthData, MontoFijoSemanal, WeekTrendPoint } from "../../lib/types";
 
 const ACCENT = "#1F5D4C";
@@ -25,6 +27,8 @@ export function TendenciasPanel({
   empleados,
   meseros,
   montosFijos,
+  meta,
+  onGuardarMeta,
 }: {
   onBack: () => void;
   months: Record<string, MonthData>;
@@ -32,7 +36,12 @@ export function TendenciasPanel({
   empleados: EmpleadoEntry[];
   meseros: MeseroCatalogEntry[];
   montosFijos?: MontoFijoSemanal[];
+  meta?: number;
+  onGuardarMeta: (meta: number | undefined) => void;
 }) {
+  const [abiertas, setAbiertas] = useState<Set<TarjetaId>>(new Set());
+  const [verSinNovedades, setVerSinNovedades] = useState(false);
+
   // Solo semanas ya cerradas: la semana en curso va aparte, comparada por
   // los mismos días (si no, siempre parecería una caída).
   const hoy = todayIso();
@@ -41,6 +50,59 @@ export function TendenciasPanel({
   );
   const t = computeTendenciasSemana(months, hoy);
   const proyeccion = t.proyeccionRitmo !== null && t.diasContados < 7 ? { monto: t.proyeccionRitmo } : null;
+  const a = analizarTendencias(months, puntos, {
+    proyeccion: t.proyeccionRitmo,
+    semanaPasada: t.semanaPasadaTotal,
+    diasContados: t.diasContados,
+    meta,
+  }, hoy);
+  // Cómo se cobra: sube si las tarjetas o apps se movieron 8 puntos o más.
+  const { tarjetasPct, tarjetasAntes, appsPct, appsAntes } = t.mezcla;
+  const movCobro = Math.max(
+    tarjetasPct !== null && tarjetasAntes !== null ? Math.abs(tarjetasPct - tarjetasAntes) : 0,
+    appsPct !== null && appsAntes !== null ? Math.abs(appsPct - appsAntes) : 0
+  );
+  if (movCobro >= 8) a.relevancia.cobro = { score: movCobro / 8, motivo: `cobro ${Math.round(movCobro)} pts` };
+
+  const tarjetas: { id: TarjetaId; titulo: string; contenido: ReactNode | null }[] = [
+    { id: "cierre", titulo: "¿Cómo cerraría la semana?", contenido: t.semanasBase > 0 && t.diasContados < 7 ? <CierreSemana t={t} meta={meta} /> : null },
+    { id: "diaADia", titulo: "Día a día vs. semana pasada", contenido: <DiaADia t={t} /> },
+    { id: "semanas", titulo: "Semanas", contenido: t.semanas.length > 0 ? <SemanasCompletas t={t} /> : null },
+    { id: "meseros", titulo: "Venta por mesero", contenido: a.meseros.length > 0 ? <VentaMeseros a={a} /> : null },
+    { id: "gastos", titulo: "Gastos por categoría", contenido: a.gastosCategoria.length > 0 ? <GastosCategoria a={a} /> : null },
+    { id: "extras", titulo: "Propinas, cancelaciones y cortesías", contenido: <Extras a={a} /> },
+    { id: "cobro", titulo: "Cómo se cobra", contenido: tarjetasPct !== null ? <MezclaCobro t={t} /> : null },
+    { id: "nomina", titulo: "Nómina como % de la venta", contenido: a.nomina.length > 0 ? <NominaPct a={a} /> : null },
+    { id: "efectivo", titulo: "Efectivo real vs. esperado", contenido: a.efectivo.length > 0 ? <Efectivo a={a} /> : null },
+    { id: "patron", titulo: "Venta promedio por día de la semana", contenido: t.patron.some((p) => p.promedio > 0) ? <PatronSemanal t={t} /> : null },
+    {
+      id: "resultados",
+      titulo: "Resultados por semana cerrada",
+      contenido:
+        puntos.length > 0 ? (
+          <div className="tend-card">
+            <h4>Resultados por semana cerrada</h4>
+            <KpiGrid puntos={puntos} />
+            <VentaChartCard puntos={puntos} proyeccion={proyeccion} />
+            <TablaSemanas puntos={puntos} />
+          </div>
+        ) : null,
+    },
+  ];
+  const disponibles = tarjetas.filter((x) => x.contenido !== null);
+  // Las que traen algo fuera de lo normal suben, de mayor a menor; el resto
+  // se junta abajo en "Sin novedades" (en su orden de siempre).
+  const destacadas = disponibles.filter((x) => a.relevancia[x.id].score > 0).sort((x, y) => a.relevancia[y.id].score - a.relevancia[x.id].score);
+  const tranquilas = disponibles.filter((x) => a.relevancia[x.id].score === 0);
+
+  function irA(id?: TarjetaId) {
+    if (!id) return;
+    if (a.relevancia[id].score === 0) {
+      setVerSinNovedades(true);
+      setAbiertas((s) => new Set(s).add(id));
+    }
+    setTimeout(() => document.getElementById(`tend-${id}`)?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+  }
 
   return (
     <div className="page-section">
@@ -48,9 +110,6 @@ export function TendenciasPanel({
         <ArrowLeft size={15} /> Negocio
       </button>
       <h2 className="page-title">Tendencias</h2>
-      <p className="hint">
-        Cómo va la semana contra las anteriores, cómo cerraría y cómo se ha movido el negocio semana a semana.
-      </p>
 
       {t.semanasBase === 0 && t.hastaHoy === 0 ? (
         <Empty
@@ -59,19 +118,41 @@ export function TendenciasPanel({
         />
       ) : (
         <>
-          <SemanaEnCurso t={t} />
-          <CierreSemana t={t} />
-          <DiaADia t={t} />
-          <SemanasCompletas t={t} />
-          <PatronSemanal t={t} />
-          <MezclaCobro t={t} />
-          {puntos.length > 0 && (
-            <>
-              <h3 className="tendencias-subtitulo">Resultados por semana cerrada</h3>
-              <KpiGrid puntos={puntos} />
-              <VentaChartCard puntos={puntos} proyeccion={proyeccion} />
-              <TablaSemanas puntos={puntos} />
-            </>
+          <ParaRevisar alertas={a.alertas} onVer={irA} />
+          <SemanaEnCurso t={t} meta={meta} onGuardarMeta={onGuardarMeta} />
+          {destacadas.map((x) => (
+            <div key={x.id} id={`tend-${x.id}`} className="tend-slot">
+              <span className="tend-motivo">Subió: {a.relevancia[x.id].motivo}</span>
+              {x.contenido}
+            </div>
+          ))}
+          {tranquilas.length > 0 && (
+            <div className="tend-tranquilas">
+              <button className="tend-tranquilas-head" onClick={() => setVerSinNovedades((v) => !v)}>
+                <strong>Sin novedades</strong>
+                <span>{verSinNovedades ? "Ocultar" : `${tranquilas.length} secciones`}</span>
+              </button>
+              {verSinNovedades &&
+                tranquilas.map((x) => (
+                  <div key={x.id} id={`tend-${x.id}`}>
+                    <button
+                      className="tend-tranquila"
+                      onClick={() =>
+                        setAbiertas((s) => {
+                          const n = new Set(s);
+                          if (n.has(x.id)) n.delete(x.id);
+                          else n.add(x.id);
+                          return n;
+                        })
+                      }
+                    >
+                      <span>{x.titulo}</span>
+                      <ChevronRight size={16} className={abiertas.has(x.id) ? "girado" : ""} />
+                    </button>
+                    {abiertas.has(x.id) && x.contenido}
+                  </div>
+                ))}
+            </div>
           )}
         </>
       )}
@@ -253,7 +334,10 @@ function Cambio({ v, sufijo = "%" }: { v: number | null; sufijo?: string }) {
 }
 const pct = (a: number, b: number) => (b > 0 ? round2(((a - b) / b) * 100) : null);
 
-function SemanaEnCurso({ t }: { t: TendenciasSemana }) {
+function SemanaEnCurso({ t, meta, onGuardarMeta }: { t: TendenciasSemana; meta?: number; onGuardarMeta: (m: number | undefined) => void }) {
+  const [metaTexto, setMetaTexto] = useState(meta ? String(meta) : "");
+  const metaNum = Number(metaTexto.replace(/[^0-9.]/g, "")) || 0;
+  const cambioMeta = metaNum !== (meta || 0);
   const dias = t.dias.slice(0, t.diasContados);
   const rango =
     t.diasContados === 0
@@ -278,11 +362,40 @@ function SemanaEnCurso({ t }: { t: TendenciasSemana }) {
           )}
         </>
       )}
+      {meta ? (
+        <>
+          <div className="tend-progreso" role="img" aria-label={`Llevas ${money(t.hastaHoy)} de la meta ${money(meta)}`}>
+            <i style={{ width: `${Math.min(100, (t.hastaHoy / meta) * 100)}%` }} />
+          </div>
+          <span>
+            Meta {money(meta)} · llevas {Math.round((t.hastaHoy / meta) * 1000) / 10}%
+            {t.proyeccionRitmo !== null && t.diasContados > 0 && t.diasContados < 7 && (
+              <>
+                {" "}
+                · al ritmo actual cerrarías en <b>{money(t.proyeccionRitmo)}</b> ({Math.round((t.proyeccionRitmo / meta) * 100)}% de la meta)
+              </>
+            )}
+          </span>
+        </>
+      ) : null}
+      <div className="tend-meta">
+        <input
+          className="num-input"
+          inputMode="decimal"
+          value={metaTexto}
+          onChange={(e) => setMetaTexto(e.target.value)}
+          placeholder="Meta de venta semanal"
+          aria-label="Meta de venta semanal"
+        />
+        <button className="btn-primary" disabled={!cambioMeta} onClick={() => onGuardarMeta(metaNum || undefined)}>
+          Guardar
+        </button>
+      </div>
     </div>
   );
 }
 
-function CierreSemana({ t }: { t: TendenciasSemana }) {
+function CierreSemana({ t }: { t: TendenciasSemana; meta?: number }) {
   if (t.semanasBase === 0 || t.diasContados === 7) return null;
   const restantes = t.dias.slice(t.diasContados);
   const nombreResto =
@@ -345,7 +458,7 @@ function DiaADia({ t }: { t: TendenciasSemana }) {
           <i className="tend-est" /> Estimado
         </span>
       </div>
-      <div className="tend-barras">
+      <div className="tend-barras con-etq">
         {t.dias.map((d) => {
           const esEstimado = d.actual === null;
           const valor = d.actual ?? d.estimado;
@@ -361,7 +474,7 @@ function DiaADia({ t }: { t: TendenciasSemana }) {
           );
         })}
       </div>
-      <div className="tend-ejes">
+      <div className="tend-ejes con-etq">
         {t.dias.map((d) => (
           <span key={d.dia}>
             {INICIAL[d.dia]}
@@ -369,8 +482,28 @@ function DiaADia({ t }: { t: TendenciasSemana }) {
           </span>
         ))}
       </div>
+      {/* Venta de cada día: esta semana (vacía si todavía es estimado) y la pasada. */}
+      <div className="tend-valores">
+        <span className="tend-valores-etq tend-esta-txt">Esta</span>
+        {t.dias.map((d) => (
+          <span key={d.dia} className="tend-esta-txt">
+            {d.actual !== null ? milesCorto(d.actual) : ""}
+          </span>
+        ))}
+      </div>
+      <div className="tend-valores">
+        <span className="tend-valores-etq">Pasada</span>
+        {t.dias.map((d) => (
+          <span key={d.dia}>{d.semanaPasada > 0 ? milesCorto(d.semanaPasada) : "—"}</span>
+        ))}
+      </div>
     </div>
   );
+}
+
+// $12,345 → "12.3k" para que quepan los 7 días en el celular.
+function milesCorto(n: number): string {
+  return n >= 1000 ? `${Math.round(n / 100) / 10}k` : String(Math.round(n));
 }
 
 function SemanasCompletas({ t }: { t: TendenciasSemana }) {
@@ -457,6 +590,158 @@ function MezclaCobro({ t }: { t: TendenciasSemana }) {
         </div>
       </div>
       <small className="tend-nota">% de la venta hasta hoy, contra los mismos días de la semana pasada.</small>
+    </div>
+  );
+}
+
+const NIVEL: Record<Alerta["nivel"], { clase: string; icono: string }> = {
+  incompleto: { clase: "incompleto", icono: "⚠" },
+  atipico: { clase: "atipico", icono: "●" },
+  tendencia: { clase: "tendencia", icono: "↗" },
+};
+
+function ParaRevisar({ alertas, onVer }: { alertas: Alerta[]; onVer: (id?: TarjetaId) => void }) {
+  return (
+    <div className="tend-card">
+      <h4>
+        Para revisar <span>{alertas.length || ""}</span>
+      </h4>
+      {alertas.length === 0 ? (
+        <span className="tend-todo-ok">Todo en orden esta semana ✓</span>
+      ) : (
+        alertas.slice(0, 8).map((al, i) => (
+          <button key={i} className={`tend-alerta ${NIVEL[al.nivel].clase}`} onClick={() => onVer(al.tarjeta)} disabled={!al.tarjeta}>
+            <span className="tend-alerta-icono">{al.titulo.includes("subiendo") ? "↗" : NIVEL[al.nivel].icono}</span>
+            <span className="tend-alerta-texto">
+              {al.titulo}
+              <small>{al.detalle}</small>
+            </span>
+            {al.tarjeta && <span className="tend-alerta-ver">Ver ›</span>}
+          </button>
+        ))
+      )}
+      {alertas.length > 8 && <small className="tend-nota">y {alertas.length - 8} más</small>}
+    </div>
+  );
+}
+
+function FilaComparada({ nombre, actual, base, cambio, etiquetaBase }: { nombre: string; actual: number; base: number; cambio: number | null; etiquetaBase: string }) {
+  return (
+    <tr>
+      <td>{nombre}</td>
+      <td>{money(actual)}</td>
+      <td className="tend-tabla-suave">
+        {etiquetaBase} {money(base)}
+      </td>
+      <td>
+        <Cambio v={cambio} />
+      </td>
+    </tr>
+  );
+}
+
+function VentaMeseros({ a }: { a: AnalisisTendencias }) {
+  return (
+    <div className="tend-card">
+      <h4>Venta por mesero</h4>
+      <table className="tend-tabla">
+        <tbody>
+          {a.meseros.slice(0, 10).map((m) => (
+            <FilaComparada
+              key={`${m.nombre}-${m.fecha}`}
+              nombre={`${m.nombre} · ${DIA_CORTO[diaDe(m.fecha)]}`}
+              actual={m.hoy}
+              base={m.promedio}
+              cambio={m.cambio}
+              etiquetaBase="prom."
+            />
+          ))}
+        </tbody>
+      </table>
+      <small className="tend-nota">Su venta de cada día de esta semana contra su promedio de ese mismo día.</small>
+    </div>
+  );
+}
+
+function diaDe(fecha: string): string {
+  const dias = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+  return dias[new Date(`${fecha}T00:00:00`).getDay()];
+}
+
+function GastosCategoria({ a }: { a: AnalisisTendencias }) {
+  return (
+    <div className="tend-card">
+      <h4>Gastos por categoría</h4>
+      <table className="tend-tabla">
+        <tbody>
+          {a.gastosCategoria.map((g) => (
+            <FilaComparada key={g.categoria} nombre={g.categoria} actual={g.actual} base={g.promedio} cambio={g.cambio} etiquetaBase="prom." />
+          ))}
+        </tbody>
+      </table>
+      <small className="tend-nota">En efectivo, esta semana hasta hoy contra el promedio de los mismos días.</small>
+    </div>
+  );
+}
+
+function Extras({ a }: { a: AnalisisTendencias }) {
+  return (
+    <div className="tend-card">
+      <h4>Propinas, cancelaciones y cortesías</h4>
+      <table className="tend-tabla">
+        <tbody>
+          {a.extras.map((e) => (
+            <FilaComparada key={e.concepto} nombre={e.concepto} actual={e.actual} base={e.promedio} cambio={e.cambio} etiquetaBase="prom." />
+          ))}
+        </tbody>
+      </table>
+      <small className="tend-nota">Esta semana hasta hoy contra el promedio de los mismos días.</small>
+    </div>
+  );
+}
+
+function NominaPct({ a }: { a: AnalisisTendencias }) {
+  const max = Math.max(1, ...a.nomina.map((n) => n.pct));
+  return (
+    <div className="tend-card">
+      <h4>Nómina como % de la venta</h4>
+      {a.nomina.map((n) => (
+        <div key={n.label} className="tend-ranking" title={`${n.label}: ${n.pct}%`}>
+          <span>{n.label}</span>
+          <i style={{ width: `${(n.pct / max) * 100}%` }} />
+          <strong>{n.pct}%</strong>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function Efectivo({ a }: { a: AnalisisTendencias }) {
+  return (
+    <div className="tend-card">
+      <h4>Efectivo real vs. esperado</h4>
+      <table className="tend-tabla">
+        <thead>
+          <tr>
+            <th>Semana</th>
+            <th>Real</th>
+            <th>Esperado</th>
+            <th>Diferencia</th>
+          </tr>
+        </thead>
+        <tbody>
+          {a.efectivo.map((e) => (
+            <tr key={e.label}>
+              <td>{e.label}</td>
+              <td>{e.real === null ? "—" : money(e.real)}</td>
+              <td>{money(e.esperado)}</td>
+              <td className={e.diferencia === null ? "" : e.diferencia < 0 ? "tend-neg" : e.diferencia > 0 ? "tend-pos" : ""}>
+                {e.diferencia === null ? "sin capturar" : money(e.diferencia)}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }

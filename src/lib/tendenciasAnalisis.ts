@@ -1,0 +1,412 @@
+import { addDaysIso, dateForDay, money, round2, todayIso } from "./dataModel";
+import { lunesDe } from "./tendencias";
+import { DAYS, GASTO_CATEGORIAS } from "./types";
+import type { DayName, Gasto, MonthData, WeekTrendPoint } from "./types";
+
+// Revisiones automáticas de Negocio > Tendencias: qué está incompleto, qué
+// salió fuera de lo normal y qué tendencia conviene ver, más una
+// calificación por tarjeta para que suban solas las que traen algo raro.
+// "Fuera de lo normal" = ±25% contra el mismo día/semana de las semanas
+// anteriores; con menos de 3 semanas de historial casi no se marca nada,
+// para no dar falsas alarmas.
+
+export const UMBRAL = 25; // %
+const MIN_SEMANAS = 3;
+
+export type NivelAlerta = "incompleto" | "atipico" | "tendencia";
+export type TarjetaId =
+  | "cierre" | "diaADia" | "semanas" | "patron" | "cobro" | "meseros" | "gastos" | "extras" | "nomina" | "efectivo" | "resultados";
+
+export interface Alerta {
+  nivel: NivelAlerta;
+  titulo: string;
+  detalle: string;
+  tarjeta?: TarjetaId;
+  peso: number; // para ordenar dentro del mismo nivel
+}
+
+export interface Relevancia {
+  score: number; // 0 = sin novedades
+  motivo?: string;
+}
+
+interface Dia {
+  fecha: string;
+  dia: DayName;
+  venta: number;
+  tarjetas: number;
+  propina: number;
+  gastos: Gasto[];
+  meseros: { nombre: string; venta: number }[];
+}
+
+const NOMBRE_CORTO: Record<DayName, string> = {
+  Lunes: "lunes", Martes: "martes", Miércoles: "miércoles", Jueves: "jueves", Viernes: "viernes", Sábado: "sábado", Domingo: "domingo",
+};
+const fechaTexto = (f: string) => {
+  const d = new Date(`${f}T00:00:00`);
+  return `${NOMBRE_CORTO[DAYS[(d.getDay() + 6) % 7]]} ${d.getDate()}`;
+};
+const pct = (a: number, b: number) => (b > 0 ? round2(((a - b) / b) * 100) : null);
+const prom = (ns: number[]) => (ns.length ? ns.reduce((s, n) => s + n, 0) / ns.length : 0);
+const fmtPct = (n: number) => `${Math.abs(Math.round(n))}%`;
+const etiquetaCategoria = (c?: string) => GASTO_CATEGORIAS.find((x) => x.value === c)?.label || "Sin categoría";
+
+function diasPorFecha(months: Record<string, MonthData>): Map<string, Dia> {
+  const mapa = new Map<string, Dia>();
+  Object.keys(months)
+    .sort()
+    .forEach((mk) => {
+      const month = months[mk];
+      month.weeks.forEach((w, wi) =>
+        DAYS.forEach((d) => {
+          const day = w?.days?.[d];
+          if (!day) return;
+          const ventaMeseros = day.meseros.reduce((s, m) => s + m.venta, 0);
+          const venta = round2(ventaMeseros + (day.ventaApps || 0));
+          if (venta === 0 && day.gastos.length === 0) return;
+          const fecha = dateForDay(mk, wi, month, d);
+          mapa.set(fecha, {
+            fecha,
+            dia: d,
+            venta,
+            tarjetas: day.meseros.reduce((s, m) => s + m.tarjetas, 0),
+            propina: day.meseros.reduce((s, m) => s + m.propina, 0),
+            gastos: day.gastos,
+            meseros: day.meseros.map((m) => ({ nombre: m.nombre, venta: m.venta })),
+          });
+        })
+      );
+    });
+  return mapa;
+}
+
+export interface AnalisisTendencias {
+  alertas: Alerta[];
+  relevancia: Record<TarjetaId, Relevancia>;
+  meseros: { nombre: string; hoy: number; promedio: number; cambio: number | null; fecha: string }[];
+  gastosCategoria: { categoria: string; actual: number; promedio: number; cambio: number | null }[];
+  extras: { concepto: string; actual: number; promedio: number; cambio: number | null }[];
+  nomina: { label: string; pct: number }[];
+  efectivo: { label: string; real: number | null; esperado: number; diferencia: number | null }[];
+}
+
+export function analizarTendencias(
+  months: Record<string, MonthData>,
+  cerradas: WeekTrendPoint[],
+  ritmo: { proyeccion: number | null; semanaPasada: number; diasContados: number; meta?: number },
+  hoy = todayIso()
+): AnalisisTendencias {
+  const dias = diasPorFecha(months);
+  const lunes = lunesDe(hoy);
+  const alertas: Alerta[] = [];
+  const rel = Object.fromEntries(
+    (["cierre", "diaADia", "semanas", "patron", "cobro", "meseros", "gastos", "extras", "nomina", "efectivo", "resultados"] as TarjetaId[]).map((k) => [k, { score: 0 }])
+  ) as Record<TarjetaId, Relevancia>;
+  const subir = (id: TarjetaId, score: number, motivo: string) => {
+    if (score > rel[id].score) rel[id] = { score, motivo };
+  };
+
+  const fechasConDatos = [...dias.keys()].sort();
+  const primera = fechasConDatos[0];
+  // Mismo día de la semana en las semanas anteriores (hasta 8) con venta.
+  const historicoDe = (fecha: string) => {
+    const out: Dia[] = [];
+    for (let i = 1; i <= 8; i++) {
+      const d = dias.get(addDaysIso(fecha, -7 * i));
+      if (d && d.venta > 0) out.push(d);
+    }
+    return out;
+  };
+  // Días que ya cuentan esta semana (hoy solo si ya tiene corte).
+  const diasEstaSemana = DAYS.map((_, i) => addDaysIso(lunes, i)).filter((f) => f < hoy || (f === hoy && (dias.get(f)?.venta || 0) > 0));
+
+  // ---- Incompleto ------------------------------------------------------
+  // 1. Días pasados (últimos 14) sin corte, cuando ese día normalmente se vende.
+  if (primera) {
+    for (let i = 1; i <= 14; i++) {
+      const f = addDaysIso(hoy, -i);
+      if (f < primera) break;
+      if ((dias.get(f)?.venta || 0) > 0) continue;
+      const hist = historicoDe(f);
+      if (hist.length >= 2) {
+        alertas.push({
+          nivel: "incompleto",
+          titulo: `El ${fechaTexto(f)} no tiene corte capturado`,
+          detalle: "Falta información: afecta la venta y las proyecciones.",
+          tarjeta: "diaADia",
+          peso: 100 - i,
+        });
+      }
+    }
+  }
+  // 2. Días con venta pero sin gastos, cuando ese día normalmente sí hay.
+  for (let i = 0; i <= 7; i++) {
+    const f = addDaysIso(hoy, -i);
+    const d = dias.get(f);
+    if (!d || d.venta === 0 || d.gastos.length > 0) continue;
+    const hist = historicoDe(f);
+    const conGastos = hist.filter((h) => h.gastos.length > 0).length;
+    if (hist.length >= MIN_SEMANAS && conGastos / hist.length >= 0.75) {
+      alertas.push({
+        nivel: "incompleto",
+        titulo: `El ${fechaTexto(f)} tiene venta pero ningún gasto`,
+        detalle: "Normalmente ese día sí hay gastos: puede faltar capturarlos.",
+        tarjeta: "gastos",
+        peso: 80 - i,
+      });
+    }
+  }
+  // 3. Semanas cerradas recientes con margen muy alto, sin nómina o sin efectivo real.
+  const ultimas = cerradas.slice(-2);
+  ultimas.forEach((p) => {
+    const historial = cerradas.filter((x) => x.weekStartDate < p.weekStartDate).slice(-8);
+    const normal = historial.length >= MIN_SEMANAS ? prom(historial.map((x) => x.margenPct)) : null;
+    if ((normal !== null && p.margenPct > normal + 15) || (normal === null && p.margenPct > 75)) {
+      alertas.push({
+        nivel: "incompleto",
+        titulo: `Semana del ${p.label}: margen de ${Math.round(p.margenPct)}%`,
+        detalle: `${normal !== null ? `Tu normal es ${Math.round(normal)}%. ` : ""}Puede faltar capturar gastos o nómina.`,
+        tarjeta: "resultados",
+        peso: 70,
+      });
+      subir("resultados", 3, `margen ${Math.round(p.margenPct)}%`);
+    }
+    if (p.ventaTotal > 0 && p.nomina === 0) {
+      alertas.push({
+        nivel: "incompleto",
+        titulo: `Semana del ${p.label} sin nómina`,
+        detalle: "No hay horarios capturados: la utilidad sale más alta de lo real.",
+        tarjeta: "nomina",
+        peso: 65,
+      });
+    }
+  });
+  const ultimaCerrada = cerradas[cerradas.length - 1];
+  if (ultimaCerrada && ultimaCerrada.efectivoReal === null && ultimaCerrada.ventaTotal > 0) {
+    alertas.push({
+      nivel: "incompleto",
+      titulo: `Falta el efectivo real de la semana del ${ultimaCerrada.label}`,
+      detalle: "Sin él no se puede saber si cuadró el efectivo.",
+      tarjeta: "efectivo",
+      peso: 50,
+    });
+  }
+
+  // ---- Atípicos --------------------------------------------------------
+  // 4. Venta de cada día (esta semana y la pasada) contra ese mismo día normal.
+  const revisarDias = [...diasEstaSemana, ...DAYS.map((_, i) => addDaysIso(lunes, i - 7))];
+  let peorDia: { f: string; c: number } | null = null;
+  revisarDias.forEach((f) => {
+    const d = dias.get(f);
+    if (!d || d.venta === 0) return;
+    const hist = historicoDe(f);
+    if (hist.length < MIN_SEMANAS) return;
+    const normal = prom(hist.map((h) => h.venta));
+    const c = pct(d.venta, normal);
+    if (c === null || Math.abs(c) < UMBRAL) return;
+    alertas.push({
+      nivel: "atipico",
+      titulo: `${fechaTexto(f).replace(/^./, (x) => x.toUpperCase())}: venta ${fmtPct(c)} ${c < 0 ? "abajo" : "arriba"} de lo normal`,
+      detalle: `${money(d.venta)} vs. promedio ${money(normal)} de ese día.`,
+      tarjeta: "diaADia",
+      peso: Math.abs(c),
+    });
+    if (f >= lunes && (!peorDia || Math.abs(c) > Math.abs(peorDia.c))) peorDia = { f, c };
+  });
+  if (peorDia) {
+    const p = peorDia as { f: string; c: number };
+    subir("diaADia", Math.abs(p.c) / UMBRAL + 1, `${NOMBRE_CORTO[dias.get(p.f)!.dia]} ${p.c > 0 ? "+" : "−"}${fmtPct(p.c)}`);
+  }
+
+  // 5. Gastos fuera de lo normal en su categoría (últimos 14 días).
+  const todosGastos = [...dias.values()].flatMap((d) => d.gastos.map((g) => ({ ...g, fecha: d.fecha })));
+  const porCategoria = new Map<string, number[]>();
+  todosGastos.forEach((g) => {
+    const k = g.categoria || "";
+    if (!porCategoria.has(k)) porCategoria.set(k, []);
+    porCategoria.get(k)!.push(g.total);
+  });
+  todosGastos
+    .filter((g) => g.fecha >= addDaysIso(hoy, -14))
+    .forEach((g) => {
+      const montos = porCategoria.get(g.categoria || "") || [];
+      if (montos.length < 5) return;
+      const normal = prom(montos);
+      if (g.total >= 500 && g.total > normal * 2.5) {
+        alertas.push({
+          nivel: "atipico",
+          titulo: `Gasto alto: “${g.concepto}” ${money(g.total)}`,
+          detalle: `${fechaTexto(g.fecha)} · lo normal en ${etiquetaCategoria(g.categoria)} es ${money(normal)}.`,
+          tarjeta: "gastos",
+          peso: (g.total / normal) * 10,
+        });
+        subir("gastos", 2, `“${g.concepto}” alto`);
+      }
+    });
+
+  // 6. Meseros: su venta del día contra su promedio de ese día.
+  const meseros: AnalisisTendencias["meseros"] = [];
+  diasEstaSemana.forEach((f) => {
+    const d = dias.get(f);
+    if (!d) return;
+    const hist = historicoDe(f);
+    d.meseros.forEach((m) => {
+      const suyos = hist.map((h) => h.meseros.find((x) => x.nombre === m.nombre)?.venta).filter((v): v is number => v !== undefined && v > 0);
+      if (suyos.length < MIN_SEMANAS) return;
+      const normal = prom(suyos);
+      const c = pct(m.venta, normal);
+      meseros.push({ nombre: m.nombre, hoy: m.venta, promedio: round2(normal), cambio: c, fecha: f });
+    });
+  });
+  meseros.sort((a, b) => Math.abs(b.cambio ?? 0) - Math.abs(a.cambio ?? 0));
+  const meseroRaro = meseros.find((m) => m.cambio !== null && Math.abs(m.cambio) >= UMBRAL && m.promedio >= 1000);
+  if (meseroRaro && meseroRaro.cambio !== null) {
+    subir("meseros", Math.abs(meseroRaro.cambio) / UMBRAL, `${meseroRaro.nombre} ${meseroRaro.cambio > 0 ? "+" : "−"}${fmtPct(meseroRaro.cambio)}`);
+    alertas.push({
+      nivel: "atipico",
+      titulo: `${meseroRaro.nombre} vendió ${fmtPct(meseroRaro.cambio)} ${meseroRaro.cambio < 0 ? "menos" : "más"} de lo normal`,
+      detalle: `${fechaTexto(meseroRaro.fecha)}: ${money(meseroRaro.hoy)} vs. su promedio ${money(meseroRaro.promedio)}.`,
+      tarjeta: "meseros",
+      peso: Math.abs(meseroRaro.cambio) * 0.8,
+    });
+  }
+
+  // 7. Gastos por categoría y propinas/cancelaciones/cortesías: semana en
+  //    curso vs. los mismos días de semanas anteriores.
+  const n = diasEstaSemana.length;
+  const semanasAntes = [1, 2, 3, 4, 5, 6, 7, 8].map((i) => addDaysIso(lunes, -7 * i)).filter((l) => DAYS.some((_, j) => (dias.get(addDaysIso(l, j))?.venta || 0) > 0));
+  const mismosDias = (l: string) => DAYS.slice(0, n).map((_, j) => dias.get(addDaysIso(l, j))).filter((d): d is Dia => !!d);
+  const actuales = diasEstaSemana.map((f) => dias.get(f)).filter((d): d is Dia => !!d);
+  const sumaCat = (ds: Dia[], cat: string) => ds.reduce((s, d) => s + d.gastos.filter((g) => (g.categoria || "") === cat).reduce((a, g) => a + g.total, 0), 0);
+  const categorias = [...new Set([...dias.values()].flatMap((d) => d.gastos.map((g) => g.categoria || "")))];
+  const gastosCategoria = categorias
+    .map((cat) => {
+      const actual = round2(sumaCat(actuales, cat));
+      const promedio = round2(prom(semanasAntes.slice(0, 4).map((l) => sumaCat(mismosDias(l), cat))));
+      return { categoria: etiquetaCategoria(cat), actual, promedio, cambio: pct(actual, promedio) };
+    })
+    .filter((c) => c.actual > 0 || c.promedio > 0)
+    .sort((a, b) => b.actual - a.actual);
+  if (n > 0 && semanasAntes.length >= MIN_SEMANAS) {
+    const rara = gastosCategoria.find((c) => c.cambio !== null && Math.abs(c.cambio) >= UMBRAL && Math.max(c.actual, c.promedio) >= 500);
+    if (rara && rara.cambio !== null) subir("gastos", Math.abs(rara.cambio) / UMBRAL, `${rara.categoria} ${rara.cambio > 0 ? "+" : "−"}${fmtPct(rara.cambio)}`);
+  }
+  const extrasDef: { concepto: string; valor: (ds: Dia[]) => number }[] = [
+    { concepto: "Propinas", valor: (ds) => ds.reduce((s, d) => s + d.propina, 0) },
+    { concepto: "Cancelaciones", valor: (ds) => sumaCat(ds, "cancelaciones") },
+    { concepto: "Cortesías", valor: (ds) => sumaCat(ds, "cortesia") },
+  ];
+  const extras = extrasDef.map((e) => {
+    const actual = round2(e.valor(actuales));
+    const promedio = round2(prom(semanasAntes.slice(0, 4).map((l) => e.valor(mismosDias(l)))));
+    return { concepto: e.concepto, actual, promedio, cambio: pct(actual, promedio) };
+  });
+  if (n > 0 && semanasAntes.length >= MIN_SEMANAS) {
+    extras.forEach((e) => {
+      if (e.cambio === null || Math.abs(e.cambio) < UMBRAL || Math.max(e.actual, e.promedio) < 300) return;
+      subir("extras", Math.abs(e.cambio) / UMBRAL, `${e.concepto} ${e.cambio > 0 ? "+" : "−"}${fmtPct(e.cambio)}`);
+      if (e.concepto !== "Propinas" && e.cambio > 0) {
+        alertas.push({
+          nivel: "atipico",
+          titulo: `${e.concepto} ${fmtPct(e.cambio)} arriba de lo normal esta semana`,
+          detalle: `${money(e.actual)} vs. ${money(e.promedio)} en los mismos días.`,
+          tarjeta: "extras",
+          peso: e.cambio * 0.7,
+        });
+      }
+    });
+  }
+
+  // 8. Efectivo real vs. esperado (semanas cerradas).
+  const efectivo = cerradas.slice(-4).reverse().map((p) => ({
+    label: p.label,
+    real: p.efectivoReal,
+    esperado: p.efectivoEsperado,
+    diferencia: p.efectivoReal === null ? null : round2(p.efectivoReal - p.efectivoEsperado),
+  }));
+  const descuadre = efectivo[0];
+  if (descuadre && descuadre.diferencia !== null && Math.abs(descuadre.diferencia) >= Math.max(200, descuadre.esperado * 0.01)) {
+    subir("efectivo", 2, `${descuadre.diferencia < 0 ? "faltan" : "sobran"} ${money(Math.abs(descuadre.diferencia))}`);
+    alertas.push({
+      nivel: "atipico",
+      titulo: `Efectivo de la semana del ${descuadre.label}: ${descuadre.diferencia < 0 ? "faltan" : "sobran"} ${money(Math.abs(descuadre.diferencia))}`,
+      detalle: `Real ${money(descuadre.real ?? 0)} vs. esperado ${money(descuadre.esperado)}.`,
+      tarjeta: "efectivo",
+      peso: 60,
+    });
+  }
+
+  // ---- Tendencias --------------------------------------------------------
+  const ventas = cerradas.map((p) => p.ventaTotal);
+  if (ventas.length >= 4) {
+    const ult = ventas.slice(-4);
+    const cambios = [1, 2, 3].map((i) => pct(ult[i], ult[i - 1]) ?? 0);
+    const bajando = cambios.every((c) => c < 0);
+    const subiendo = cambios.every((c) => c > 0);
+    if (bajando || subiendo) {
+      alertas.push({
+        nivel: "tendencia",
+        titulo: `3 semanas seguidas ${bajando ? "bajando" : "subiendo"} la venta`,
+        detalle: cambios.map((c) => `${c > 0 ? "+" : "−"}${Math.abs(Math.round(c * 10) / 10)}%`).join(", "),
+        tarjeta: "semanas",
+        peso: bajando ? 40 : 20,
+      });
+      subir("semanas", 1.5, bajando ? "3 semanas bajando" : "3 semanas subiendo");
+    }
+    const ultimaVar = cambios[2];
+    if (Math.abs(ultimaVar) >= 10) subir("semanas", Math.abs(ultimaVar) / 10, `última semana ${ultimaVar > 0 ? "+" : "−"}${fmtPct(ultimaVar)}`);
+  }
+  if (ultimaCerrada && ultimaCerrada.gastosOperativosPct > 42) {
+    alertas.push({
+      nivel: "tendencia",
+      titulo: `Gastos operativos en ${Math.round(ultimaCerrada.gastosOperativosPct)}% de la venta`,
+      detalle: `Semana del ${ultimaCerrada.label}: arriba de la meta de 42%.`,
+      tarjeta: "resultados",
+      peso: 35,
+    });
+    subir("resultados", 1.5, `gastos operativos ${Math.round(ultimaCerrada.gastosOperativosPct)}%`);
+  }
+  const nomina = cerradas.slice(-6).map((p) => ({ label: p.label, pct: round2(p.nominaPct) }));
+  if (nomina.length >= 3) {
+    const [a, b, c] = nomina.slice(-3).map((x) => x.pct);
+    if (a > 0 && c > b && b > a && c - a >= 3) {
+      alertas.push({
+        nivel: "tendencia",
+        titulo: `La nómina sube como % de la venta`,
+        detalle: `${a}% → ${b}% → ${c}% en las últimas 3 semanas.`,
+        tarjeta: "nomina",
+        peso: 30,
+      });
+      subir("nomina", 1.5, `nómina ${c}%`);
+    }
+  }
+  if (ritmo.proyeccion !== null && ritmo.diasContados >= 3 && ritmo.diasContados < 7) {
+    const vsPasada = pct(ritmo.proyeccion, ritmo.semanaPasada);
+    if (vsPasada !== null && vsPasada <= -10) {
+      alertas.push({
+        nivel: "tendencia",
+        titulo: `Al ritmo actual la semana cerraría ${fmtPct(vsPasada)} abajo de la pasada`,
+        detalle: `${money(ritmo.proyeccion)} vs. ${money(ritmo.semanaPasada)}.`,
+        tarjeta: "cierre",
+        peso: 25,
+      });
+      subir("cierre", Math.abs(vsPasada) / 10, `${fmtPct(vsPasada)} vs. semana pasada`);
+    }
+    if (ritmo.meta) {
+      const vsMeta = pct(ritmo.proyeccion, ritmo.meta);
+      if (vsMeta !== null && vsMeta <= -10) {
+        alertas.push({
+          nivel: "tendencia",
+          titulo: `Al ritmo actual quedarías ${fmtPct(vsMeta)} abajo de la meta`,
+          detalle: `${money(ritmo.proyeccion)} vs. meta ${money(ritmo.meta)}.`,
+          peso: 24,
+        });
+      }
+    }
+  }
+
+  const ORDEN: Record<NivelAlerta, number> = { incompleto: 0, atipico: 1, tendencia: 2 };
+  alertas.sort((a, b) => ORDEN[a.nivel] - ORDEN[b.nivel] || b.peso - a.peso);
+  return { alertas, relevancia: rel, meseros, gastosCategoria, extras, nomina, efectivo };
+}

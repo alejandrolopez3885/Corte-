@@ -439,6 +439,14 @@ export default function CortesApp({ profile }: { profile: Profile }) {
     persist(next);
   }
 
+  function guardarMetaSemanal(meta: number | undefined) {
+    if (!data) return;
+    const next = structuredClone(data);
+    if (meta && meta > 0) next.metaSemanal = meta;
+    else delete next.metaSemanal;
+    persist(next);
+  }
+
   function guardarInventarioNotas(fecha: string, texto: string) {
     if (!data) return;
     const next = structuredClone(data);
@@ -1101,6 +1109,8 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           empleados={data.empleados}
           meseros={data.meseros}
           montosFijos={data.montosFijosSemanales}
+          meta={data.metaSemanal}
+          onGuardarMeta={guardarMetaSemanal}
         />
       )}
 

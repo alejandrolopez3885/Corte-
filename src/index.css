@@ -1007,3 +1007,44 @@ button.pill { cursor: pointer; }
 .receta-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .receta-chips span { font-size: 12.5px; padding: 4px 10px; border-radius: 100px; background: var(--surface-alt); }
 .receta-textarea { resize: vertical; font-family: inherit; line-height: 1.5; }
+
+/* ---- Tendencias dinámica ---- */
+.tend-card h4 span { font-weight: 600; color: var(--ink); }
+.tend-card h4 { display: flex; justify-content: space-between; gap: 8px; }
+.tend-todo-ok { font-size: 13.5px; color: var(--good); font-weight: 600; }
+.tend-alerta {
+  display: flex; align-items: flex-start; gap: 8px; width: 100%; text-align: left; border: none; cursor: pointer;
+  font: inherit; font-size: 13px; line-height: 1.35; border-radius: 10px; padding: 9px 10px;
+}
+.tend-alerta:disabled { cursor: default; }
+.tend-alerta.incompleto { background: var(--bad-soft); color: var(--bad); }
+.tend-alerta.atipico { background: var(--warn-soft); color: #8a5216; }
+.tend-alerta.tendencia { background: var(--accent-soft); color: var(--accent); }
+.tend-alerta-icono { flex-shrink: 0; width: 14px; text-align: center; }
+.tend-alerta-texto { flex: 1; display: flex; flex-direction: column; gap: 2px; font-weight: 600; }
+.tend-alerta-texto small { font-weight: 400; font-size: 11.5px; opacity: 0.9; }
+.tend-alerta-ver { font-weight: 600; white-space: nowrap; }
+.tend-meta { display: flex; gap: 8px; align-items: center; margin-top: 2px; }
+.tend-meta .num-input { flex: 1; min-width: 0; text-align: left; }
+.tend-meta .btn-primary { width: auto; padding: 10px 16px; font-size: 14px; }
+.tend-slot { display: flex; flex-direction: column; gap: 4px; }
+.tend-motivo { align-self: flex-start; font-size: 11px; font-weight: 600; padding: 2px 9px; border-radius: 100px; background: var(--warn-soft); color: var(--warn); }
+.tend-tranquilas { display: flex; flex-direction: column; gap: 6px; background: var(--surface-alt); border-radius: 14px; padding: 10px 12px; }
+.tend-tranquilas-head, .tend-tranquila {
+  display: flex; justify-content: space-between; align-items: center; width: 100%;
+  background: none; border: none; font: inherit; color: var(--ink); cursor: pointer; padding: 4px 2px; text-align: left;
+}
+.tend-tranquilas-head span { font-size: 12.5px; color: var(--ink-soft); }
+.tend-tranquila { font-size: 13.5px; color: var(--ink-soft); }
+.tend-tranquila .girado { transform: rotate(90deg); }
+.tend-valores { display: flex; gap: 7px; padding: 0 2px; font-size: 10px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+.tend-valores span { flex: 1; text-align: center; min-width: 0; }
+.tend-valores .tend-valores-etq { flex: 0 0 34px; text-align: left; font-size: 9.5px; }
+.tend-valores .tend-esta-txt { color: var(--accent); font-weight: 600; }
+.tend-tabla-suave { color: var(--ink-soft); font-size: 11.5px; }
+.tend-neg { color: var(--bad); font-weight: 600; }
+.tend-pos { color: var(--good); font-weight: 600; }
+.tend-ranking { display: grid; grid-template-columns: 112px 1fr 44px; align-items: center; gap: 8px; font-size: 12.5px; }
+.tend-ranking i { display: block; height: 8px; border-radius: 0 4px 4px 0; background: var(--accent); }
+.tend-ranking strong { text-align: right; }
+.tend-barras.con-etq, .tend-ejes.con-etq { padding-left: 43px; }

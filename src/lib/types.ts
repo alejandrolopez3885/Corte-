@@ -462,6 +462,9 @@ export interface AppData {
   // historial: cada cambio aplica desde esa semana (fecha ISO del lunes)
   // en adelante. Vacío o sin definir = MONTO_FIJO_SEMANAL_INICIAL.
   montosFijosSemanales?: MontoFijoSemanal[];
+  // Meta de venta semanal (Negocio > Tendencias) — un solo monto para todas
+  // las semanas.
+  metaSemanal?: number;
   // Recetario (Negocio > Control de Bar > Recetario): las recetas que
   // captura el dueño y consulta el personal con el permiso "Recetario".
   recetas?: Receta[];
@@ -500,6 +503,10 @@ export interface WeekTrendPoint {
   nomina: number;
   utilidad: number;
   margenPct: number;
+  gastosOperativosPct: number;
+  nominaPct: number;
+  efectivoReal: number | null;
+  efectivoEsperado: number;
 }
 
 // Proyección de venta de la próxima semana, calculada con un promedio

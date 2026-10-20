@@ -954,6 +954,10 @@ export function computeVentaTrend(
         nomina: report.nomina,
         utilidad: report.utilidad,
         margenPct: report.pct.utilidad,
+        gastosOperativosPct: report.pct.gastosOperativos,
+        nominaPct: report.pct.nomina,
+        efectivoReal: summary.efectivoReal,
+        efectivoEsperado: summary.efectivoRecibido,
       });
     }
   });
