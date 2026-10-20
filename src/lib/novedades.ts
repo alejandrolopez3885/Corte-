@@ -16,7 +16,7 @@ import type { AppData, PermisoStaff, Profile } from "./types";
 
 export type SeccionNovedad = "corte" | PermisoStaff;
 
-export type VisualNovedad = "sumar" | "autocompletar" | "categoria" | "faltan";
+export type VisualNovedad = "sumar" | "autocompletar" | "categoria" | "faltan" | "guardarCorte";
 
 export interface Novedad {
   id: string;
@@ -59,6 +59,14 @@ export const NOVEDADES: Novedad[] = [
     titulo: "Lo que no hay también se pide",
     texto: "Si no anotas un producto, al guardar la app te pregunta. Marca **No hay** y sale en 0 para pedirlo.",
     visual: "faltan",
+  },
+  {
+    id: "guardar-corte",
+    fecha: "2026-10-20T07:30:00Z",
+    seccion: "corte",
+    titulo: "Termina tu corte con \"Guardar corte\"",
+    texto: "Al final revisas y palomeas cada total. Ya guardado **no se puede editar**, y no deja guardar si un gasto sigue en Pendiente.",
+    visual: "guardarCorte",
   },
 ];
 

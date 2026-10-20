@@ -948,6 +948,53 @@ button.pill { cursor: pointer; }
 .nv-chips { display: flex; flex-wrap: wrap; gap: 5px; }
 .nv-chips span { font-size: 11.5px; padding: 3px 9px; border-radius: 100px; background: var(--surface-alt); color: var(--ink-soft); }
 .nv-chips span.nuevo { background: var(--accent); color: white; }
+.nv-intro-icono {
+  width: 56px; height: 56px; border-radius: 16px; background: var(--accent-soft); color: var(--accent);
+  display: flex; align-items: center; justify-content: center; margin: 4px auto 10px;
+}
+.nv-centro { text-align: center; }
+.nv-intro-pasos { display: flex; flex-direction: column; gap: 8px; margin: 0 0 16px; padding: 0; list-style: none; font-size: 13.5px; color: var(--ink-soft); }
+.nv-intro-pasos li {
+  display: flex; gap: 10px; align-items: flex-start; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; padding: 9px 12px; line-height: 1.4;
+}
+.nv-intro-pasos strong { color: var(--ink); }
+.nv-intro-num {
+  flex-shrink: 0; width: 22px; height: 22px; border-radius: 50%; background: var(--accent); color: white;
+  font-size: 12px; font-weight: 600; display: flex; align-items: center; justify-content: center;
+}
+.nv-ejemplo-caja { border-style: dashed; pointer-events: none; user-select: none; }
+.nv-ejemplo {
+  align-self: flex-start; font-size: 10.5px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;
+  color: var(--ink-soft); background: var(--surface-alt); border-radius: 6px; padding: 2px 7px;
+}
+.guardar-corte { display: flex; flex-direction: column; gap: 6px; }
+.guardar-corte .hint, .guardar-corte-dueno { text-align: center; margin: 0; }
+.guardar-corte-dueno .link-btn { padding: 0; font-weight: 600; display: inline; }
+.corte-guardado {
+  margin: 0 20px 14px; display: flex; gap: 10px; align-items: flex-start; background: var(--good-soft); color: var(--good);
+  border-radius: 12px; padding: 12px 14px; font-size: 13px; line-height: 1.4;
+}
+.corte-guardado svg { flex-shrink: 0; margin-top: 1px; }
+.corte-guardado strong { color: var(--ink); }
+.corte-guardado.dueno { padding: 10px 14px; }
+.card:disabled, .gasto-main:disabled, .apps-row:disabled { cursor: default; color: inherit; opacity: 0.75; }
+.gc-faltan { display: flex; flex-direction: column; gap: 6px; }
+.gc-falta { background: var(--bad-soft); color: var(--bad); border-radius: 12px; padding: 10px 14px; font-size: 14px; line-height: 1.4; }
+.gc-falta strong { display: block; color: var(--ink); font-weight: 600; }
+.gc-lista { display: flex; flex-direction: column; gap: 6px; }
+.gc-check {
+  display: flex; align-items: center; gap: 10px; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; padding: 10px 14px; font-size: 14.5px; cursor: pointer;
+}
+.gc-check input { width: 19px; height: 19px; accent-color: var(--accent); flex-shrink: 0; }
+.gc-check span { flex: 1; }
+.gc-check > strong { font-weight: 700; white-space: nowrap; }
+.gc-check.gc-bot { background: var(--warn-soft); border-color: var(--warn-soft); font-size: 13.5px; align-items: flex-start; line-height: 1.4; }
+.gc-volver { text-align: center; }
+.nv-checks { display: flex; flex-direction: column; gap: 5px; font-size: 13px; }
+.nv-boton { background: var(--accent); color: white; border-radius: 10px; padding: 9px 10px; font-size: 14px; font-weight: 600; text-align: center; }
+.nv-pie { font-size: 12px; color: var(--ink-soft); text-align: center; margin: -4px 0 12px; }
 .fijos-referencia { color: var(--ink-soft); }
 .report-row-servicio { padding-left: 46px; }
 .report-row-servicio .report-row-label em { display: inline; font-style: normal; color: var(--ink-soft); font-size: 0.9em; }

@@ -350,6 +350,29 @@ estando en Nómina te regresa al menú de Equipo):
   se le quite el acceso o se reasigne el día a alguien más — así el corte
   diario conserva el historial de quién lo hizo, aparte de quién lo tiene
   asignado ahora.
+
+  **Guardar corte**: hasta abajo del corte del día (después de
+  Transferencias) está el botón "Guardar corte", con el aviso "Al
+  guardarlo ya no se podrá editar". Al tocarlo primero se revisa que todo
+  esté completo; si falta algo, sale "Todavía no puedes terminar el corte"
+  con la lista de qué falta y no deja seguir: un gasto en **Pendiente**
+  ("sube el comprobante al bot y toca Confirmar"), un gasto sin concepto,
+  sin monto o sin categoría, un corte de mesero sin venta, o que no haya
+  ningún corte de mesero. Si está completo, sale "¿Seguro guardar el
+  corte?" con un renglón con casilla por cada total — tarjetas,
+  transferencias, gastos, venta (total) y apps — y uno más: "Ya subí al
+  bot los comprobantes de gastos, bancarios y transferencias, y la venta".
+  El botón "Sí, todo coincide — guardar corte" solo se activa con todas
+  las casillas marcadas. Ya guardado, arriba de los totales sale "Corte
+  guardado por [nombre] el [fecha] a las [hora]". Para el personal el día
+  queda bloqueado: el aviso agrega "Ya no se puede editar. Si algo está
+  mal, avísale al dueño", desaparecen los botones "+" de meseros, gastos y
+  transferencias, no se abren los cortes, gastos, transferencias ni
+  ventas de apps, y no se puede tocar Confirmar/Ingresado. El dueño ve el
+  mismo aviso pero puede seguir editando todo, y abajo tiene "Reabrir
+  corte" (con confirmación) para desbloquearlo y que la persona lo
+  corrija y lo vuelva a guardar. Los cortes hechos antes de este botón no
+  quedan bloqueados solos.
 - **Negocio**: catálogo de proveedores (nombre y la
   marca de "también se pide los jueves" — el mismo proveedor que se elige
   en el Catálogo de Bar/Cocina y que agrupa la lista en Inventario; no se
@@ -622,10 +645,21 @@ el cambio): le salen todas las que todavía no ha cerrado, y al cerrarlas
 ya no vuelven a salir. Lo visto se guarda en su cuenta, no en el aparato:
 si las cierra en la computadora, ya no le salen en el celular. Lo que ve
 el dueño no queda en el historial. Las
-novedades viven en `src/lib/novedades.ts`; hoy hay 4. De Corte: sumar
-montos con "+", el nombre del gasto que se completa solo y la categoría
-obligatoria (con la nueva Servicio). De Inventario: el aviso "Faltan por
-contar" al guardar, para que lo que no hay salga en 0 y se pueda pedir.
+novedades viven en `src/lib/novedades.ts`; hoy hay 5. De Corte: sumar
+montos con "+", el nombre del gasto que se completa solo, la categoría
+obligatoria (con la nueva Servicio) y el botón "Guardar corte". De
+Inventario: el aviso "Faltan por contar" al guardar, para que lo que no
+hay salga en 0 y se pueda pedir.
+
+Antes de las novedades sale siempre una tarjeta de intro, "Hay cosas
+nuevas en la app": explica que así se avisan los cambios la primera vez
+que se entra (que no se abrió nada por error), que el dibujo de cada
+tarjeta es solo un ejemplo y no hay que seleccionar nada, que se pasan con
+Siguiente/Entendido y que solo salen una vez; su botón es "Ver las
+novedades". En cada novedad, la etiqueta de arriba dice el número y la
+sección ("Novedad 4 de 5 · Inventario"), el dibujo lleva encima "Ejemplo ·
+así se ve en la app" con borde punteado y no responde a toques, y arriba
+del botón dice "Solo es informativo — no tienes que hacer nada aquí".
 
 ## 1. Crear el proyecto en Supabase
 

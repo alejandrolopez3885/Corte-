@@ -99,7 +99,7 @@ const CAMPOS: Record<string, string> = {
   persona: "Persona", nombre: "Nombre", precio: "Precio", unidad: "Unidad", proveedorId: "Proveedor",
   altaRotacion: "Alta rotación", unidadPedido: "Se pide por", equivalenciaPedido: "Equivalencia de pedido",
   apodos: "Apodos", incluyeJueves: "Se pide los jueves", efectivoReal: "Efectivo real", ventaApps: "Venta de apps",
-  asignadoA: "Asignado a", monto: "Monto", operativos: "Gastos operativos", fijos: "Gastos fijos",
+  asignadoA: "Asignado a", corteGuardado: "Corte guardado", monto: "Monto", operativos: "Gastos operativos", fijos: "Gastos fijos",
   comisionDidi: "Comisión DIDI", comisionUber: "Comisión UBER", comisionRappi: "Comisión RAPPI",
   sueldoDiario: "Sueldo diario", puestoId: "Puesto", areaId: "Área", numero: "Número", fecha: "Fecha",
   tipo: "Tipo", empleadoId: "Empleado", meseroId: "Mesero", label: "Nombre del mes",
