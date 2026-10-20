@@ -734,10 +734,24 @@ estando en Nómina te regresa al menú de Equipo):
   y Utilidad se pinta verde si es positiva o rojo si no (con toda la fila
   resaltada, no solo el número). El resto de las filas son informativas y
   se quedan en el color neutro de siempre — no tienen una meta buena/mala
-  definida. Arriba del reporte hay un botón "Descargar imagen" que genera
-  y descarga un PNG con este mismo resultado (mismos colores, para que se
-  note de un vistazo si algo se salió de la meta) — pensado para enviarlo
-  por WhatsApp, igual que las imágenes de Horarios y Nómina.
+  definida. Arriba del reporte hay un botón "Copiar imagen del resultado"
+  que genera un PNG y lo copia al portapapeles para pegarlo en el grupo de
+  WhatsApp del jefe (el botón cambia unos segundos a "¡Copiada! Pégala en
+  WhatsApp"; si el navegador no deja copiar imágenes, el PNG se descarga y
+  aparece el aviso). La imagen se lee como una cuenta: encabezado negro
+  "Resultado semanal · Metroplex · Semana [ISO] · [fechas y año]" (con
+  "hasta hoy (día)" si la semana no ha terminado); la **venta semanal** en
+  grande con su cambio contra la venta de la semana pasada (por fecha
+  real; ▲ verde o ▼ rojo); − **gastos operativos** (su % verde si está en
+  la meta de 42% o menos, rojo si se pasó); − **nómina**; = **margen
+  operativo** (venta − gastos operativos − nómina, resaltado); − **otros
+  gastos** en un renglón, con su desglose chico (fijos, comisiones de
+  apps, banco y las demás categorías, sin la nómina en efectivo ni el
+  retiro); = **utilidad antes de retiro**; − **retiro** (los gastos con
+  categoría Retiro); y = **utilidad después de retiro** en grande, en
+  verde si es positiva o rojo si no — es la misma Utilidad del reporte.
+  Cada renglón lleva su % sobre la venta, y al pie una nota (en una semana
+  en curso, que los números son hasta hoy).
 
 Hay 2 tipos de cuenta:
 

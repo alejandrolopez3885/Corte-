@@ -1,11 +1,11 @@
 import { useState } from "react";
-import { ChevronDown, ChevronUp, Download } from "lucide-react";
+import { Check, ChevronDown, ChevronUp, Copy } from "lucide-react";
 import { Field } from "../ui";
 import {
-  META_GASTOS_OPERATIVOS_PCT, computeDashboardReport, dateForDay, computeNominaTotalHastaHoy, formatShortDayDate, formatWeekRange, isoWeekNumber,
-  money, resolveMontoFijo, resolveWeekStartDate, todayIso,
+  META_GASTOS_OPERATIVOS_PCT, addDaysIso, computeDashboardReport, computeWeekSummary, dateForDay, computeNominaTotalHastaHoy, formatShortDayDate,
+  formatWeekRange, isoWeekNumber, money, resolveMontoFijo, resolveWeekStartDate, todayIso,
 } from "../../lib/dataModel";
-import { downloadDashboardImage } from "../../lib/dashboardImage";
+import { copyDashboardImage, resultadoSemanal } from "../../lib/dashboardImage";
 import { DAY_SHORT } from "../../lib/types";
 import type { EmpleadoEntry, HorarioMonthData, MeseroCatalogEntry, MonthData, MontoFijoSemanal } from "../../lib/types";
 
@@ -42,6 +42,8 @@ export function DashboardPanel({
   const [showGastosOperativos, setShowGastosOperativos] = useState(false);
   const [showGastosFijos, setShowGastosFijos] = useState(false);
   const [expandedCategorias, setExpandedCategorias] = useState<Set<string>>(new Set());
+  // Resultado del último "Copiar imagen" — se borra solo a los pocos segundos.
+  const [copiaEstado, setCopiaEstado] = useState<"copiada" | "descargada" | null>(null);
 
   function toggleCategoria(key: string) {
     setExpandedCategorias((prev) => {
@@ -62,6 +64,34 @@ export function DashboardPanel({
   const nominaCalculada = computeNominaTotalHastaHoy(monthKey, weekIndex, month, semana, empleados);
   const report = computeDashboardReport(week, nominaCalculada, meseros, resolveMontoFijo(montosFijos, weekStartDate));
   const gastosOperativosOk = report.pct.gastosOperativos <= META_GASTOS_OPERATIVOS_PCT;
+
+  // Imagen para el grupo del jefe: con la venta de la semana pasada (por
+  // fecha real) para comparar, y aviso si la semana todavía no termina.
+  async function copiarImagen() {
+    const lunesPasado = addDaysIso(weekStartDate, -7);
+    let ventaPasada: number | null = null;
+    Object.keys(months).forEach((mk) =>
+      months[mk].weeks.forEach((w, wi) => {
+        if (ventaPasada === null && w && resolveWeekStartDate(mk, wi, months[mk]) === lunesPasado) {
+          const v = computeWeekSummary(w).ventaTotal;
+          if (v > 0) ventaPasada = v;
+        }
+      })
+    );
+    const hoy = todayIso();
+    const domingo = addDaysIso(weekStartDate, 6);
+    const enCurso = hoy >= weekStartDate && hoy <= domingo;
+    const diaHoy = new Date(`${hoy}T00:00:00`).toLocaleDateString("es-MX", { weekday: "long" });
+    const copiada = await copyDashboardImage(
+      resultadoSemanal(report, ventaPasada),
+      `Semana ${isoWeekNumber(weekStartDate)} · ${formatWeekRange(weekStartDate)} ${weekStartDate.slice(0, 4)}${enCurso ? ` · hasta hoy (${diaHoy})` : ""}`,
+      enCurso
+        ? "Semana en curso: los números son hasta hoy. Los % son sobre la venta semanal."
+        : "Los % son sobre la venta semanal. Nómina calculada con los horarios de la semana."
+    );
+    setCopiaEstado(copiada ? "copiada" : "descargada");
+    setTimeout(() => setCopiaEstado(null), copiada ? 3000 : 6000);
+  }
 
   return (
     <div className="page-section">
@@ -100,19 +130,18 @@ export function DashboardPanel({
         </Field>
       </div>
       <p className="hint">{formatWeekRange(weekStartDate)}</p>
-      <button
-        type="button"
-        className="link-btn"
-        onClick={() =>
-          downloadDashboardImage(
-            report,
-            `Resultado · ${month.label} · Semana ${isoWeekNumber(weekStartDate)}`,
-            formatWeekRange(weekStartDate)
-          )
-        }
-      >
-        <Download size={15} /> Descargar imagen
+      <button type="button" className="link-btn" onClick={copiarImagen}>
+        {copiaEstado === "copiada" ? (
+          <>
+            <Check size={15} /> ¡Copiada! Pégala en WhatsApp
+          </>
+        ) : (
+          <>
+            <Copy size={15} /> Copiar imagen del resultado
+          </>
+        )}
       </button>
+      {copiaEstado === "descargada" && <p className="hint">Tu navegador no permite copiar imágenes — se descargó el PNG.</p>}
 
       <div className="report-list">
         <div className="report-row">
