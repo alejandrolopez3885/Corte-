@@ -51,6 +51,7 @@ export function InventarioNotasPanel({
   onGuardarPedido,
   onAsignarApodo,
   onEditarProveedores,
+  initialModo,
 }: {
   onBack?: () => void;
   backLabel: string;
@@ -66,10 +67,12 @@ export function InventarioNotasPanel({
   onGuardarPedido: (fecha: string, pedido: Record<string, number>) => void;
   onAsignarApodo: (insumoId: string, apodo: string) => void;
   onEditarProveedores?: () => void;
+  // Desde Inicio se abre en el modo de la alerta.
+  initialModo?: Modo;
 }) {
   const [monthKey, setMonthKey] = useState(initialMonthKey);
   const [weekIndex, setWeekIndex] = useState(initialWeekIndex);
-  const [modo, setModo] = useState<Modo>(() => (esHoyJueves() ? "jueves" : "completo"));
+  const [modo, setModo] = useState<Modo>(() => initialModo ?? (esHoyJueves() ? "jueves" : "completo"));
 
   const month = months[monthKey] || null;
 

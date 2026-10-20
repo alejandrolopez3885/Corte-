@@ -1,7 +1,11 @@
-import { addDaysIso, dateForDay, money, round2, todayIso } from "./dataModel";
-import { lunesDe } from "./tendencias";
+import {
+  addDaysIso, computeNominaTotalHastaHoy, computeVentaTrend, dateForDay, money, resolveWeekStartDate, round2, todayIso,
+} from "./dataModel";
+import { computeTendenciasSemana, lunesDe } from "./tendencias";
 import { DAYS, GASTO_CATEGORIAS } from "./types";
-import type { DayName, Gasto, MonthData, WeekTrendPoint } from "./types";
+import type {
+  DayName, EmpleadoEntry, Gasto, HorarioMonthData, MeseroCatalogEntry, MonthData, MontoFijoSemanal, WeekTrendPoint,
+} from "./types";
 
 // Revisiones automáticas de Negocio > Tendencias: qué está incompleto, qué
 // salió fuera de lo normal y qué tendencia conviene ver, más una
@@ -436,4 +440,45 @@ export function analizarTendencias(
   const deLaSemana = alertas.filter((x) => !x.soloTarjeta);
   deLaSemana.sort((a, b) => ORDEN[a.nivel] - ORDEN[b.nivel] || b.peso - a.peso);
   return { alertas: deLaSemana, relevancia: rel, meseros, gastosCategoria, extras, nomina, efectivo };
+}
+
+// Todo lo de Negocio > Tendencias de una vez (también lo usa Inicio):
+// semanas ya cerradas, la semana en curso y sus revisiones.
+export function calcularTendencias(
+  months: Record<string, MonthData>,
+  horarios: Record<string, HorarioMonthData>,
+  empleados: EmpleadoEntry[],
+  meseros: MeseroCatalogEntry[],
+  montosFijos: MontoFijoSemanal[] | undefined,
+  meta: number | undefined,
+  hoy = todayIso()
+) {
+  // Solo semanas ya cerradas: la semana en curso va aparte, comparada por
+  // los mismos días (si no, siempre parecería una caída).
+  const puntos = computeVentaTrend(months, horarios, empleados, meseros, montosFijos).filter(
+    (p) => addDaysIso(p.weekStartDate, 6) < hoy
+  );
+  const t = computeTendenciasSemana(months, hoy);
+  // ¿La semana en curso ya tiene horarios? (si no, su nómina sale en $0).
+  const semanaActual = Object.keys(months).flatMap((mk) =>
+    [0, 1, 2, 3].filter((wi) => resolveWeekStartDate(mk, wi, months[mk]) === t.lunes).map((wi) => ({ mk, wi }))
+  )[0];
+  const sinHorarios =
+    !!semanaActual &&
+    empleados.length > 0 &&
+    computeNominaTotalHastaHoy(
+      semanaActual.mk,
+      semanaActual.wi,
+      months[semanaActual.mk],
+      horarios[semanaActual.mk]?.weeks?.[semanaActual.wi] ?? null,
+      empleados
+    ) === 0;
+  const a = analizarTendencias(months, puntos, {
+    proyeccion: t.proyeccionRitmo,
+    semanaPasada: t.semanaPasadaTotal,
+    diasContados: t.diasContados,
+    meta,
+    sinHorarios,
+  }, hoy);
+  return { puntos, t, a };
 }

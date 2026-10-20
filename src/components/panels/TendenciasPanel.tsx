@@ -1,18 +1,9 @@
 import { useState, type ReactNode } from "react";
 import { ArrowLeft, ChartLine, ChevronRight, Minus, TrendingDown, TrendingUp } from "lucide-react";
 import { Empty } from "../ui";
-import {
-  addDaysIso,
-  computeNominaTotalHastaHoy,
-  computeVentaTrend,
-  formatWeekRange,
-  money,
-  resolveWeekStartDate,
-  round2,
-  todayIso,
-} from "../../lib/dataModel";
-import { computeTendenciasSemana, type TendenciasSemana } from "../../lib/tendencias";
-import { analizarTendencias, type Alerta, type AnalisisTendencias, type TarjetaId } from "../../lib/tendenciasAnalisis";
+import { formatWeekRange, money, round2, todayIso } from "../../lib/dataModel";
+import { type TendenciasSemana } from "../../lib/tendencias";
+import { calcularTendencias, type Alerta, type AnalisisTendencias, type TarjetaId } from "../../lib/tendenciasAnalisis";
 import type { EmpleadoEntry, HorarioMonthData, MeseroCatalogEntry, MonthData, MontoFijoSemanal, WeekTrendPoint } from "../../lib/types";
 
 const ACCENT = "#1F5D4C";
@@ -51,35 +42,9 @@ export function TendenciasPanel({
   const [abiertas, setAbiertas] = useState<Set<TarjetaId>>(new Set());
   const [verSinNovedades, setVerSinNovedades] = useState(false);
 
-  // Solo semanas ya cerradas: la semana en curso va aparte, comparada por
-  // los mismos días (si no, siempre parecería una caída).
   const hoy = todayIso();
-  const puntos = computeVentaTrend(months, horarios, empleados, meseros, montosFijos).filter(
-    (p) => addDaysIso(p.weekStartDate, 6) < hoy
-  );
-  const t = computeTendenciasSemana(months, hoy);
+  const { puntos, t, a } = calcularTendencias(months, horarios, empleados, meseros, montosFijos, meta, hoy);
   const proyeccion = t.proyeccionRitmo !== null && t.diasContados < 7 ? { monto: t.proyeccionRitmo } : null;
-  // ¿La semana en curso ya tiene horarios? (si no, su nómina sale en $0).
-  const semanaActual = Object.keys(months).flatMap((mk) =>
-    [0, 1, 2, 3].filter((wi) => resolveWeekStartDate(mk, wi, months[mk]) === t.lunes).map((wi) => ({ mk, wi }))
-  )[0];
-  const sinHorarios =
-    !!semanaActual &&
-    empleados.length > 0 &&
-    computeNominaTotalHastaHoy(
-      semanaActual.mk,
-      semanaActual.wi,
-      months[semanaActual.mk],
-      horarios[semanaActual.mk]?.weeks?.[semanaActual.wi] ?? null,
-      empleados
-    ) === 0;
-  const a = analizarTendencias(months, puntos, {
-    proyeccion: t.proyeccionRitmo,
-    semanaPasada: t.semanaPasadaTotal,
-    diasContados: t.diasContados,
-    meta,
-    sinHorarios,
-  }, hoy);
   // Cómo se cobra: sube si las tarjetas o apps se movieron 8 puntos o más.
   const { tarjetasPct, tarjetasAntes, appsPct, appsAntes } = t.mezcla;
   const movCobro = Math.max(

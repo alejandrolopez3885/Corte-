@@ -127,11 +127,48 @@ en Negocio > Análisis > Actividad.
 - **Backend**: Supabase (Auth + Postgres).
 - **Hosting sugerido**: Vercel.
 
-La vista del dueño se organiza en 4 secciones, accesibles desde la barra de
-navegación de abajo — tocar una pestaña siempre regresa al inicio de esa
+La vista del dueño se organiza en 5 secciones, accesibles desde la barra de
+navegación de abajo (Inicio · Corte · Equipo · Negocio · Dashboard) — tocar una pestaña siempre regresa al inicio de esa
 sección, aunque ya estés adentro de una de sus páginas (ej. tocar "Equipo"
 estando en Nómina te regresa al menú de Equipo):
 
+- **Inicio**: lo primero que ve el dueño al abrir la app — qué necesita su
+  atención hoy. Arriba, el saludo según la hora ("Buenos días", "Buenas
+  tardes", "Buenas noches"), la fecha y un resumen ("6 cosas por revisar ·
+  3 urgentes"). Debajo, las alertas en 4 grupos, cada uno con su color en
+  el borde, y cada alerta con una línea de por qué importa y "Ver ›", que
+  lleva directo a la pantalla donde se resuelve:
+  - **Urgente** (rojo): cortes de días pasados sin "Guardar corte" (desde
+    el 20 de octubre de 2026, cuando se agregó el botón), días pasados sin
+    nada capturado (solo si la semana anterior ese día sí tuvo corte),
+    gastos en Pendiente de esta semana y la pasada (cuántos y el total; lleva
+    a Control de gastos en efectivo) y el efectivo real de las 2 últimas
+    semanas cerradas sin capturar o que no cuadra con lo calculado (abre el
+    Resumen semanal de esa semana).
+  - **Operación** (amarillo): conteo diario de hoy de Cocina o Bar sin
+    capturar, o el de Cocina con el pedido sin guardar (solo de las áreas
+    que lo vienen usando en las últimas 2 semanas; abre directo el Conteo
+    diario); inventario del domingo más reciente y, de jueves a sábado, el
+    del jueves — sin hacer o con "No reconocidos" por resolver (abre
+    Inventario en esa semana y modo); horario de la próxima semana sin
+    guardar, de jueves en adelante; días de hoy a 6 días sin nadie
+    asignado ni corte capturado (solo si se ha usado "Asignar día" en las
+    últimas 3 semanas); y la nómina de la semana que cerró (o la de hoy si
+    es domingo) con personas sin marcar como pagadas.
+  - **El negocio** (verde): la venta hasta hoy de la semana con su cambio
+    contra los mismos días de la semana pasada y, si hay meta semanal, su
+    avance con barra; debajo, hasta 3 alertas de "Para revisar" de
+    Tendencias (lo atípico y las tendencias; lo incompleto y el efectivo ya
+    salen arriba) y "Ver todo en Tendencias ›".
+  - **La app y el equipo** (gris): de los últimos 7 días de Actividad, sin
+    contar lo que hizo el dueño — cambios con algo eliminado, cambios entre
+    2 y 6 a.m. y cambios a cortes de días pasados (con quién; llevan a
+    Actividad) — y quien tiene asignado el corte de hoy o mañana y no ha
+    abierto la app en 7 días.
+  Un grupo sin pendientes no aparece. Si no hay ninguno, sale "Todo al
+  día ✓ — No hay cortes, gastos ni pendientes por revisar" y solo la
+  tarjeta de venta. Las alertas no se descartan a mano: se quitan solas al
+  resolver el pendiente.
 - **Corte**: la pantalla principal — mes, semana, día, meseros, gastos,
   transferencias, ventas de apps y sus resúmenes. Arriba de los totales del
   día hay una tarjeta de asignación: quién tiene asignado ese día (si
@@ -788,6 +825,7 @@ src/
   components/
     ui.tsx        Sheet, Field, inputs, Toggle, Empty
     ConceptoInput.tsx  cuadro de concepto de gasto con autocompletado y ortografía
+    panels/InicioPanel.tsx  Inicio del dueño (alertas); cálculo en lib/inicio.ts
     panels/RecetarioPanel.tsx  Recetario (dueño edita y carga varias, equipo consulta); formato en lib/recetasTexto.ts
     NovedadesAlEntrar.tsx  slider de novedades al entrar (cuentas de equipo); lista en lib/novedades.ts
     modals/       un modal por acción (mesero, gasto, transferencia, etc.)

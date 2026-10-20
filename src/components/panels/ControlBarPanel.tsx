@@ -21,6 +21,7 @@ export function ControlBarPanel({
   onGuardarConteo,
   pedidosDiarios,
   onGuardarPedido,
+  initialView = "menu",
 }: {
   onBack: () => void;
   insumos: InsumoEntry[];
@@ -35,8 +36,10 @@ export function ControlBarPanel({
   onGuardarConteo: (area: ConteoTextoArea, fecha: string, texto: string) => void;
   pedidosDiarios: Record<ConteoTextoArea, Record<string, Record<string, number>>>;
   onGuardarPedido: (area: ConteoTextoArea, fecha: string, pedido: Record<string, number>) => void;
+  // Desde Inicio se abre directo en el Conteo diario.
+  initialView?: ControlBarView;
 }) {
-  const [view, setView] = useState<ControlBarView>("menu");
+  const [view, setView] = useState<ControlBarView>(initialView);
   const insumosBar = insumos.filter((i) => i.area === "bar");
 
   if (view === "catalogo") {

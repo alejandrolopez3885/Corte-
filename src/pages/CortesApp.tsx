@@ -25,6 +25,8 @@ import { CatalogModal } from "../components/modals/CatalogModal";
 import { ProveedoresModal } from "../components/modals/ProveedoresModal";
 import { AppsModal } from "../components/modals/AppsModal";
 import { GuardarCorteModal } from "../components/modals/GuardarCorteModal";
+import { InicioPanel } from "../components/panels/InicioPanel";
+import { ubicarFechas, type Destino } from "../lib/inicio";
 import { WeekSummaryModal } from "../components/modals/WeekSummaryModal";
 import { GastosSummaryModal } from "../components/modals/GastosSummaryModal";
 import { DeleteMonthModal } from "../components/modals/DeleteMonthModal";
@@ -71,7 +73,7 @@ type NegocioView =
   | "menu" | "tendencias" | "bitacora" | "controlBar" | "controlCocina" | "controlGeneral" | "inventario" | "pedidos"
   | "recetarioBar" | "recetarioCocina";
 
-type OwnerTab = "corte" | "equipo" | "negocio" | "dashboard";
+type OwnerTab = "inicio" | "corte" | "equipo" | "negocio" | "dashboard";
 
 export default function CortesApp({ profile }: { profile: Profile }) {
   const { signOut } = useAuth();
@@ -84,7 +86,10 @@ export default function CortesApp({ profile }: { profile: Profile }) {
   const [activeMonth, setActiveMonth] = useState<string | null>(null);
   const [activeWeek, setActiveWeek] = useState(0);
   const [activeDay, setActiveDay] = useState<DayName>("Lunes");
-  const [activeTab, setActiveTab] = useState<OwnerTab>("corte");
+  const [activeTab, setActiveTab] = useState<OwnerTab>("inicio");
+  // A dónde llevó un "Ver ›" de Inicio: semana y vista con la que abre la
+  // pantalla destino (se limpia al cambiar de pestaña).
+  const [desdeInicio, setDesdeInicio] = useState<{ mk?: string; wi?: number; modo?: "completo" | "jueves"; conteo?: boolean } | null>(null);
   const [equipoView, setEquipoView] = useState<EquipoView>("menu");
   const [negocioView, setNegocioView] = useState<NegocioView>("menu");
   const [modal, setModal] = useState<ModalState>(null);
@@ -111,7 +116,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
       ? "Corte"
       : null
     : (modal && NOMBRE_MODAL[modal.type]) ||
-      (activeTab === "corte" ? "Corte" : activeTab === "dashboard" ? "Dashboard" : activeTab === "equipo" ? NOMBRE_EQUIPO[equipoView] : NOMBRE_NEGOCIO[negocioView]);
+      (activeTab === "inicio" ? "Inicio" : activeTab === "corte" ? "Corte" : activeTab === "dashboard" ? "Dashboard" : activeTab === "equipo" ? NOMBRE_EQUIPO[equipoView] : NOMBRE_NEGOCIO[negocioView]);
   useRegistrarVista(profile, pantalla);
 
   // "Historial de este día" (solo el dueño): cuántos cambios tiene registrados
@@ -267,6 +272,58 @@ export default function CortesApp({ profile }: { profile: Profile }) {
     setActiveTab(tab);
     setEquipoView("menu");
     setNegocioView("menu");
+    setDesdeInicio(null);
+  }
+
+  // "Ver ›" de una alerta de Inicio: abre la pantalla donde se resuelve.
+  function irDesdeInicio(destino: Destino) {
+    if (!data) return;
+    const ubicar = (fecha: string) => ubicarFechas(data).get(fecha);
+    goToTab("inicio");
+    switch (destino.tipo) {
+      case "dia":
+      case "semana": {
+        const u = ubicar(destino.fecha);
+        if (!u) return;
+        setActiveMonth(u.mk);
+        setActiveWeek(u.wi);
+        setActiveDay(u.dia);
+        setActiveTab("corte");
+        if (destino.tipo === "semana") setModal({ type: "weekSummary" });
+        return;
+      }
+      case "gastos":
+        setModal({ type: "gastosSummary" });
+        return;
+      case "conteo":
+        setDesdeInicio({ conteo: true });
+        setActiveTab("negocio");
+        setNegocioView(destino.area === "cocina" ? "controlCocina" : "controlBar");
+        return;
+      case "inventario": {
+        const u = ubicar(destino.fecha);
+        setDesdeInicio({ mk: u?.mk, wi: u?.wi, modo: destino.modo });
+        setActiveTab("negocio");
+        setNegocioView("inventario");
+        return;
+      }
+      case "horarios":
+      case "nomina": {
+        const u = ubicar(destino.fecha);
+        setDesdeInicio({ mk: u?.mk, wi: u?.wi });
+        setActiveTab("equipo");
+        setEquipoView(destino.tipo);
+        return;
+      }
+      case "tendencias":
+        setActiveTab("negocio");
+        setNegocioView("tendencias");
+        return;
+      case "actividad":
+        setActiveTab("negocio");
+        setNegocioView("bitacora");
+        return;
+    }
   }
 
   function updateDay(mutator: (d: DayData) => void) {
@@ -969,8 +1026,8 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           onBack={() => setEquipoView("menu")}
           months={data.months}
           monthKeys={monthKeys}
-          initialMonthKey={mostRecentMonthKey as string}
-          initialWeekIndex={mostRecentWeekIdx}
+          initialMonthKey={desdeInicio?.mk ?? (mostRecentMonthKey as string)}
+          initialWeekIndex={desdeInicio?.wi ?? mostRecentWeekIdx}
           empleados={data.empleados}
           horarios={data.horarios}
           onSaveSemana={saveHorarioSemana}
@@ -982,8 +1039,8 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           onBack={() => setEquipoView("menu")}
           months={data.months}
           monthKeys={monthKeys}
-          initialMonthKey={mostRecentMonthKey as string}
-          initialWeekIndex={mostRecentWeekIdx}
+          initialMonthKey={desdeInicio?.mk ?? (mostRecentMonthKey as string)}
+          initialWeekIndex={desdeInicio?.wi ?? mostRecentWeekIdx}
           empleados={data.empleados}
           horarios={data.horarios}
           nominaDescuentos={data.nominaDescuentos}
@@ -1191,6 +1248,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           onGuardarConteo={guardarConteoTexto}
           pedidosDiarios={data.pedidosDiarios}
           onGuardarPedido={guardarPedidoDiario}
+          initialView={desdeInicio?.conteo ? "conteo" : "menu"}
         />
       )}
 
@@ -1223,6 +1281,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           onGuardarConteo={guardarConteoTexto}
           pedidosDiarios={data.pedidosDiarios}
           onGuardarPedido={guardarPedidoDiario}
+          initialView={desdeInicio?.conteo ? "conteo" : "menu"}
         />
       )}
 
@@ -1249,8 +1308,9 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           proveedores={data.proveedores}
           months={data.months}
           monthKeys={monthKeys}
-          initialMonthKey={mostRecentMonthKey as string}
-          initialWeekIndex={mostRecentWeekIdx}
+          initialMonthKey={desdeInicio?.mk ?? (mostRecentMonthKey as string)}
+          initialWeekIndex={desdeInicio?.wi ?? mostRecentWeekIdx}
+          initialModo={desdeInicio?.modo}
           notas={data.inventariosNotas}
           onGuardarNotas={guardarInventarioNotas}
           pedidos={data.pedidosInventario}
@@ -1273,6 +1333,8 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           pedidosInventario={data.pedidosInventario}
         />
       )}
+
+      {isOwner && activeTab === "inicio" && <InicioPanel data={data} ownerId={profile.id} onIr={irDesdeInicio} />}
 
       {isOwner && activeTab === "dashboard" && (
         monthKeys.length > 0 ? (
@@ -1618,8 +1680,12 @@ export default function CortesApp({ profile }: { profile: Profile }) {
       {isOwner && (
         <nav className="bottom-nav">
           <div className="bottom-nav-inner">
-            <button className={`bottom-nav-item ${activeTab === "corte" ? "active" : ""}`} onClick={() => goToTab("corte")}>
+            <button className={`bottom-nav-item ${activeTab === "inicio" ? "active" : ""}`} onClick={() => goToTab("inicio")}>
               <Home size={20} />
+              <span>Inicio</span>
+            </button>
+            <button className={`bottom-nav-item ${activeTab === "corte" ? "active" : ""}`} onClick={() => goToTab("corte")}>
+              <Receipt size={20} />
               <span>Corte</span>
             </button>
             <button className={`bottom-nav-item ${activeTab === "equipo" ? "active" : ""}`} onClick={() => goToTab("equipo")}>
