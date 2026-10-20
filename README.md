@@ -359,16 +359,18 @@ estando en Nómina te regresa al menú de Equipo):
   Control de gastos en efectivo y Control de gastos en transferencia; y
   bajo "Análisis", "Tendencias" — la
   sección más dinámica: se reacomoda sola según los datos. Arriba, "Para
-  revisar" (siempre primero) junta lo que conviene ver, en este orden:
-  información que parece incompleta (días pasados sin corte, días con venta
-  pero sin gastos cuando normalmente sí hay, semanas con margen anormalmente
-  alto o sin nómina, falta de efectivo real), valores atípicos (±25% contra
-  lo normal de ese mismo día/semana: venta del día, gastos muy altos para su
-  categoría, meseros, cancelaciones/cortesías, descuadre de efectivo) y
-  tendencias (3 semanas seguidas bajando o subiendo, gastos operativos
-  arriba de 42%, nómina subiendo como % de la venta, al ritmo actual por
-  debajo de la semana pasada o de la meta); cada una con "Ver ›" a su
-  tarjeta. Con menos de 3 semanas de historial casi no marca atípicos.
+  revisar" (siempre primero) es exclusivamente de la semana en curso (de
+  lunes a hoy; el lunes empieza en limpio), para ir resolviendo esa semana,
+  en este orden: información que parece incompleta (días de esta semana sin
+  corte, días con venta pero sin gastos cuando normalmente sí hay, semana
+  sin horarios capturados), valores atípicos de esta semana (±25% contra lo
+  normal de ese mismo día: venta del día, gastos muy altos para su
+  categoría, meseros, cancelaciones/cortesías) y cómo va al ritmo actual
+  (por debajo de la semana pasada o de la meta); cada una con "Ver ›" a su
+  tarjeta. Lo de semanas ya cerradas (efectivo real sin capturar o
+  descuadrado, semana sin nómina, margen anormalmente alto, 3 semanas
+  seguidas bajando o subiendo, gastos operativos arriba de 42%, nómina
+  subiendo como % de la venta) no sale ahí: hace subir su tarjeta. Con menos de 3 semanas de historial casi no marca atípicos.
   Luego "Venta hasta hoy" con la meta semanal (un solo campo y Guardar).
   Después, las tarjetas que traen algo fuera de lo normal suben solas, con
   la etiqueta "Subió: …", y las demás se juntan abajo en "Sin novedades".

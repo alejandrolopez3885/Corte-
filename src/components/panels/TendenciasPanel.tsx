@@ -1,7 +1,16 @@
 import { useState, type ReactNode } from "react";
 import { ArrowLeft, ChartLine, ChevronRight, Minus, TrendingDown, TrendingUp } from "lucide-react";
 import { Empty } from "../ui";
-import { addDaysIso, computeVentaTrend, formatWeekRange, money, round2, todayIso } from "../../lib/dataModel";
+import {
+  addDaysIso,
+  computeNominaTotalHastaHoy,
+  computeVentaTrend,
+  formatWeekRange,
+  money,
+  resolveWeekStartDate,
+  round2,
+  todayIso,
+} from "../../lib/dataModel";
 import { computeTendenciasSemana, type TendenciasSemana } from "../../lib/tendencias";
 import { analizarTendencias, type Alerta, type AnalisisTendencias, type TarjetaId } from "../../lib/tendenciasAnalisis";
 import type { EmpleadoEntry, HorarioMonthData, MeseroCatalogEntry, MonthData, MontoFijoSemanal, WeekTrendPoint } from "../../lib/types";
@@ -50,11 +59,26 @@ export function TendenciasPanel({
   );
   const t = computeTendenciasSemana(months, hoy);
   const proyeccion = t.proyeccionRitmo !== null && t.diasContados < 7 ? { monto: t.proyeccionRitmo } : null;
+  // ¿La semana en curso ya tiene horarios? (si no, su nómina sale en $0).
+  const semanaActual = Object.keys(months).flatMap((mk) =>
+    [0, 1, 2, 3].filter((wi) => resolveWeekStartDate(mk, wi, months[mk]) === t.lunes).map((wi) => ({ mk, wi }))
+  )[0];
+  const sinHorarios =
+    !!semanaActual &&
+    empleados.length > 0 &&
+    computeNominaTotalHastaHoy(
+      semanaActual.mk,
+      semanaActual.wi,
+      months[semanaActual.mk],
+      horarios[semanaActual.mk]?.weeks?.[semanaActual.wi] ?? null,
+      empleados
+    ) === 0;
   const a = analizarTendencias(months, puntos, {
     proyeccion: t.proyeccionRitmo,
     semanaPasada: t.semanaPasadaTotal,
     diasContados: t.diasContados,
     meta,
+    sinHorarios,
   }, hoy);
   // Cómo se cobra: sube si las tarjetas o apps se movieron 8 puntos o más.
   const { tarjetasPct, tarjetasAntes, appsPct, appsAntes } = t.mezcla;
@@ -118,7 +142,7 @@ export function TendenciasPanel({
         />
       ) : (
         <>
-          <ParaRevisar alertas={a.alertas} onVer={irA} />
+          <ParaRevisar alertas={a.alertas} lunes={t.lunes} onVer={irA} />
           <SemanaEnCurso t={t} meta={meta} onGuardarMeta={onGuardarMeta} />
           {destacadas.map((x) => (
             <div key={x.id} id={`tend-${x.id}`} className="tend-slot">
@@ -600,11 +624,14 @@ const NIVEL: Record<Alerta["nivel"], { clase: string; icono: string }> = {
   tendencia: { clase: "tendencia", icono: "↗" },
 };
 
-function ParaRevisar({ alertas, onVer }: { alertas: Alerta[]; onVer: (id?: TarjetaId) => void }) {
+function ParaRevisar({ alertas, lunes, onVer }: { alertas: Alerta[]; lunes: string; onVer: (id?: TarjetaId) => void }) {
   return (
     <div className="tend-card">
       <h4>
-        Para revisar <span>{alertas.length || ""}</span>
+        <span className="tend-revisar-titulo">
+          Para revisar <small>· semana del {formatWeekRange(lunes)}</small>
+        </span>
+        <span>{alertas.length || ""}</span>
       </h4>
       {alertas.length === 0 ? (
         <span className="tend-todo-ok">Todo en orden esta semana ✓</span>

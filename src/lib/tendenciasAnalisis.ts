@@ -23,6 +23,9 @@ export interface Alerta {
   detalle: string;
   tarjeta?: TarjetaId;
   peso: number; // para ordenar dentro del mismo nivel
+  // De semanas ya cerradas: no sale en "Para revisar" (que es solo de la
+  // semana en curso), solo hace subir su tarjeta.
+  soloTarjeta?: boolean;
 }
 
 export interface Relevancia {
@@ -94,7 +97,7 @@ export interface AnalisisTendencias {
 export function analizarTendencias(
   months: Record<string, MonthData>,
   cerradas: WeekTrendPoint[],
-  ritmo: { proyeccion: number | null; semanaPasada: number; diasContados: number; meta?: number },
+  ritmo: { proyeccion: number | null; semanaPasada: number; diasContados: number; meta?: number; sinHorarios?: boolean },
   hoy = todayIso()
 ): AnalisisTendencias {
   const dias = diasPorFecha(months);
@@ -122,11 +125,12 @@ export function analizarTendencias(
   const diasEstaSemana = DAYS.map((_, i) => addDaysIso(lunes, i)).filter((f) => f < hoy || (f === hoy && (dias.get(f)?.venta || 0) > 0));
 
   // ---- Incompleto ------------------------------------------------------
-  // 1. Días pasados (últimos 14) sin corte, cuando ese día normalmente se vende.
+  // 1. Días de esta semana (antes de hoy) sin corte, cuando ese día
+  //    normalmente se vende.
   if (primera) {
-    for (let i = 1; i <= 14; i++) {
+    for (let i = 1; i <= 6; i++) {
       const f = addDaysIso(hoy, -i);
-      if (f < primera) break;
+      if (f < lunes || f < primera) break;
       if ((dias.get(f)?.venta || 0) > 0) continue;
       const hist = historicoDe(f);
       if (hist.length >= 2) {
@@ -140,9 +144,11 @@ export function analizarTendencias(
       }
     }
   }
-  // 2. Días con venta pero sin gastos, cuando ese día normalmente sí hay.
-  for (let i = 0; i <= 7; i++) {
+  // 2. Días de esta semana con venta pero sin gastos, cuando ese día
+  //    normalmente sí hay.
+  for (let i = 0; i <= 6; i++) {
     const f = addDaysIso(hoy, -i);
+    if (f < lunes) break;
     const d = dias.get(f);
     if (!d || d.venta === 0 || d.gastos.length > 0) continue;
     const hist = historicoDe(f);
@@ -157,9 +163,21 @@ export function analizarTendencias(
       });
     }
   }
+  // 2b. Semana en curso con venta pero sin horarios (nómina en $0).
+  if (ritmo.sinHorarios && diasEstaSemana.length > 0) {
+    alertas.push({
+      nivel: "incompleto",
+      titulo: "Esta semana no tiene horarios capturados",
+      detalle: "Sin ellos la nómina y la utilidad no son reales.",
+      tarjeta: "nomina",
+      peso: 75,
+    });
+    subir("nomina", 2, "sin horarios esta semana");
+  }
   // 3. Semanas cerradas recientes con margen muy alto, sin nómina o sin efectivo real.
   const ultimas = cerradas.slice(-2);
   ultimas.forEach((p) => {
+    if (p.ventaTotal > 0 && p.nomina === 0) subir("nomina", 1.5, `semana del ${p.label} sin nómina`);
     const historial = cerradas.filter((x) => x.weekStartDate < p.weekStartDate).slice(-8);
     const normal = historial.length >= MIN_SEMANAS ? prom(historial.map((x) => x.margenPct)) : null;
     if ((normal !== null && p.margenPct > normal + 15) || (normal === null && p.margenPct > 75)) {
@@ -169,6 +187,7 @@ export function analizarTendencias(
         detalle: `${normal !== null ? `Tu normal es ${Math.round(normal)}%. ` : ""}Puede faltar capturar gastos o nómina.`,
         tarjeta: "resultados",
         peso: 70,
+        soloTarjeta: true,
       });
       subir("resultados", 3, `margen ${Math.round(p.margenPct)}%`);
     }
@@ -179,23 +198,26 @@ export function analizarTendencias(
         detalle: "No hay horarios capturados: la utilidad sale más alta de lo real.",
         tarjeta: "nomina",
         peso: 65,
+        soloTarjeta: true,
       });
     }
   });
   const ultimaCerrada = cerradas[cerradas.length - 1];
   if (ultimaCerrada && ultimaCerrada.efectivoReal === null && ultimaCerrada.ventaTotal > 0) {
+    subir("efectivo", 1, "falta efectivo real");
     alertas.push({
       nivel: "incompleto",
       titulo: `Falta el efectivo real de la semana del ${ultimaCerrada.label}`,
       detalle: "Sin él no se puede saber si cuadró el efectivo.",
       tarjeta: "efectivo",
       peso: 50,
+        soloTarjeta: true,
     });
   }
 
   // ---- Atípicos --------------------------------------------------------
-  // 4. Venta de cada día (esta semana y la pasada) contra ese mismo día normal.
-  const revisarDias = [...diasEstaSemana, ...DAYS.map((_, i) => addDaysIso(lunes, i - 7))];
+  // 4. Venta de cada día de esta semana contra ese mismo día normal.
+  const revisarDias = diasEstaSemana;
   let peorDia: { f: string; c: number } | null = null;
   revisarDias.forEach((f) => {
     const d = dias.get(f);
@@ -219,7 +241,7 @@ export function analizarTendencias(
     subir("diaADia", Math.abs(p.c) / UMBRAL + 1, `${NOMBRE_CORTO[dias.get(p.f)!.dia]} ${p.c > 0 ? "+" : "−"}${fmtPct(p.c)}`);
   }
 
-  // 5. Gastos fuera de lo normal en su categoría (últimos 14 días).
+  // 5. Gastos de esta semana fuera de lo normal en su categoría.
   const todosGastos = [...dias.values()].flatMap((d) => d.gastos.map((g) => ({ ...g, fecha: d.fecha })));
   const porCategoria = new Map<string, number[]>();
   todosGastos.forEach((g) => {
@@ -228,7 +250,7 @@ export function analizarTendencias(
     porCategoria.get(k)!.push(g.total);
   });
   todosGastos
-    .filter((g) => g.fecha >= addDaysIso(hoy, -14))
+    .filter((g) => g.fecha >= lunes && g.fecha <= hoy)
     .forEach((g) => {
       const montos = porCategoria.get(g.categoria || "") || [];
       if (montos.length < 5) return;
@@ -334,6 +356,7 @@ export function analizarTendencias(
       detalle: `Real ${money(descuadre.real ?? 0)} vs. esperado ${money(descuadre.esperado)}.`,
       tarjeta: "efectivo",
       peso: 60,
+        soloTarjeta: true,
     });
   }
 
@@ -351,6 +374,7 @@ export function analizarTendencias(
         detalle: cambios.map((c) => `${c > 0 ? "+" : "−"}${Math.abs(Math.round(c * 10) / 10)}%`).join(", "),
         tarjeta: "semanas",
         peso: bajando ? 40 : 20,
+        soloTarjeta: true,
       });
       subir("semanas", 1.5, bajando ? "3 semanas bajando" : "3 semanas subiendo");
     }
@@ -364,6 +388,7 @@ export function analizarTendencias(
       detalle: `Semana del ${ultimaCerrada.label}: arriba de la meta de 42%.`,
       tarjeta: "resultados",
       peso: 35,
+        soloTarjeta: true,
     });
     subir("resultados", 1.5, `gastos operativos ${Math.round(ultimaCerrada.gastosOperativosPct)}%`);
   }
@@ -377,6 +402,7 @@ export function analizarTendencias(
         detalle: `${a}% → ${b}% → ${c}% en las últimas 3 semanas.`,
         tarjeta: "nomina",
         peso: 30,
+        soloTarjeta: true,
       });
       subir("nomina", 1.5, `nómina ${c}%`);
     }
@@ -407,6 +433,7 @@ export function analizarTendencias(
   }
 
   const ORDEN: Record<NivelAlerta, number> = { incompleto: 0, atipico: 1, tendencia: 2 };
-  alertas.sort((a, b) => ORDEN[a.nivel] - ORDEN[b.nivel] || b.peso - a.peso);
-  return { alertas, relevancia: rel, meseros, gastosCategoria, extras, nomina, efectivo };
+  const deLaSemana = alertas.filter((x) => !x.soloTarjeta);
+  deLaSemana.sort((a, b) => ORDEN[a.nivel] - ORDEN[b.nivel] || b.peso - a.peso);
+  return { alertas: deLaSemana, relevancia: rel, meseros, gastosCategoria, extras, nomina, efectivo };
 }
