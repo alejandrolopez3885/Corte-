@@ -198,6 +198,10 @@ export interface MeseroCut {
   gastosTotal: number;
   total: number;
   aplicaPropina?: boolean; // legacy field from cuts saved before propinaTipo existed
+  // Montos sueltos que se sumaron ("300+450+750"), para revisarlos contra
+  // los vouchers — solo si se capturó más de uno.
+  tarjetasDesglose?: number[];
+  transferenciaDesglose?: number[];
 }
 
 export type GastoEstado = "pendiente" | "ingresado";
@@ -254,6 +258,7 @@ export interface Transferencia {
   total: number;
   origen?: "mesero";
   meseroCutId?: string;
+  desglose?: number[]; // montos sueltos que se sumaron
 }
 
 export interface ProveedorCatalogEntry {
@@ -367,6 +372,7 @@ export interface DayData {
   gastos: Gasto[];
   transferencias: Transferencia[];
   ventaApps: number;
+  ventaAppsDesglose?: number[]; // montos sueltos que se sumaron
   // Historial de quién tiene/tuvo este día asignado y quién realmente
   // capturó el corte — independientes entre sí: asignadoA refleja la
   // asignación vigente (se limpia si se quita el acceso), hechoPor es un

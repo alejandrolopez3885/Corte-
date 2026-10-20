@@ -13,6 +13,8 @@ export interface MeseroFormValues {
   manualPropina: string;
   venta: string;
   tarjetas: string;
+  tarjetasDesglose?: number[];
+  transferDesglose?: number[];
   gastos: { concepto: string; monto: string }[];
   transferMonto: string;
 }
@@ -50,6 +52,8 @@ export function MeseroModal({
   );
   const [venta, setVenta] = useState(editing ? String(editing.venta) : "");
   const [tarjetas, setTarjetas] = useState(editing ? String(editing.tarjetas) : "");
+  const [tarjetasDesglose, setTarjetasDesglose] = useState<number[] | undefined>(editing?.tarjetasDesglose);
+  const [transferDesglose, setTransferDesglose] = useState<number[] | undefined>(editing?.transferenciaDesglose);
   const [gastos, setGastos] = useState<GastoRow[]>([]);
   const [showTransfer, setShowTransfer] = useState(!!editing?.transferencia);
   const [transferMonto, setTransferMonto] = useState(editing?.transferencia ? String(editing.transferencia) : "");
@@ -135,7 +139,7 @@ export function MeseroModal({
           <NumInput value={venta} onChange={(e) => setVenta(e.target.value)} placeholder="0.00" />
         </Field>
         <Field label="Total tarjetas">
-          <SumInput value={tarjetas} onChange={setTarjetas} placeholder="0.00 o 300+300+300" sumar />
+          <SumInput value={tarjetas} onChange={setTarjetas} onPartes={setTarjetasDesglose} placeholder="0.00 o 300+300+300" sumar />
         </Field>
       </div>
 
@@ -213,7 +217,7 @@ export function MeseroModal({
 
       {showTransfer && (
         <Field label="Monto de la transferencia">
-          <SumInput value={transferMonto} onChange={setTransferMonto} placeholder="0.00 o 300+300+300" sumar />
+          <SumInput value={transferMonto} onChange={setTransferMonto} onPartes={setTransferDesglose} placeholder="0.00 o 300+300+300" sumar />
         </Field>
       )}
       {showTransfer && <p className="hint">Se agregará a Transferencias a nombre de {nombre || "este mesero"}.</p>}
@@ -239,6 +243,8 @@ export function MeseroModal({
               manualPropina,
               venta,
               tarjetas,
+              tarjetasDesglose,
+              transferDesglose: showTransfer ? transferDesglose : undefined,
               gastos: gastos.filter((g) => g.concepto && g.monto),
               transferMonto: showTransfer ? transferMonto : "",
             },

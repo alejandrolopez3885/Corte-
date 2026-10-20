@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, ChevronLeft, ChevronRight, History, LogIn, LogOut, Search, X } from "lucide-react";
-import { Empty } from "../ui";
+import { Empty, Sheet } from "../ui";
 import { addDaysIso, formatAssignedDate, formatWeekRange, todayIso } from "../../lib/dataModel";
-import { cargarBitacora, type RenglonBitacora } from "../../lib/bitacora";
+import { cargarBitacora, cargarBitacoraDelDia, type RenglonBitacora } from "../../lib/bitacora";
 
 // Negocio > Análisis > Actividad: la bitácora de la app ordenada para
 // revisarla y estudiar el uso, en tres pestañas — Resumen (lo importante de
@@ -457,7 +457,7 @@ function Historial({
   );
 }
 
-function Renglon({ r, esDueno }: { r: RenglonBitacora; esDueno: boolean }) {
+export function Renglon({ r, esDueno, sinDonde }: { r: RenglonBitacora; esDueno: boolean; sinDonde?: boolean }) {
   const hora = new Date(r.creado_en).toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" });
   const quien = `${r.actor_nombre || "—"}${esDueno ? " (dueño)" : ""}`;
   if (r.tipo !== "cambio") {
@@ -480,7 +480,8 @@ function Renglon({ r, esDueno }: { r: RenglonBitacora; esDueno: boolean }) {
       <div className="bitacora-evento-top">
         <span className="bitacora-quien">{quien}</span>
         <span>
-          {hora} · {r.donde}
+          {hora}
+          {!sinDonde && ` · ${r.donde}`}
         </span>
       </div>
       {(r.detalle || []).map((c, i) => (
@@ -496,10 +497,55 @@ function Renglon({ r, esDueno }: { r: RenglonBitacora; esDueno: boolean }) {
             <>
               <span className={`bitacora-tag ${c.accion === "agregó" ? "agrego" : "elimino"}`}>{c.accion === "agregó" ? "Agregó" : "Eliminó"}</span>
               <span>{c.texto}</span>
+              {c.campos && (
+                <span className="bitacora-campos">
+                  {c.campos.map((f) => (
+                    <span key={f.campo} className="bitacora-campo">
+                      <span>{f.campo}</span>
+                      <strong>{f.valor}</strong>
+                    </span>
+                  ))}
+                </span>
+              )}
             </>
           )}
         </div>
       ))}
     </div>
+  );
+}
+
+// "Historial de este día" dentro del Corte (solo el dueño): todo lo
+// registrado sobre esa fecha del corte, con quién, a qué hora y los montos.
+export function HistorialDiaSheet({ ownerId, fecha, onClose }: { ownerId: string; fecha: string; onClose: () => void }) {
+  const [estado, setEstado] = useState<{ cargando: boolean; error?: boolean; renglones: RenglonBitacora[] }>({ cargando: true, renglones: [] });
+  useEffect(() => {
+    let cancelado = false;
+    cargarBitacoraDelDia(ownerId, fecha).then(({ data, error }) => {
+      if (!cancelado) setEstado({ cargando: false, error: !!error, renglones: (data || []) as RenglonBitacora[] });
+    });
+    return () => {
+      cancelado = true;
+    };
+  }, [ownerId, fecha]);
+  return (
+    <Sheet title={`Historial · ${formatAssignedDate(fecha)}`} onClose={onClose}>
+      {estado.cargando ? (
+        <p className="hint">Cargando…</p>
+      ) : estado.error ? (
+        <p className="hint">No se pudo cargar el historial de este día.</p>
+      ) : estado.renglones.length === 0 ? (
+        <p className="hint">Todavía no hay cambios registrados para este día.</p>
+      ) : (
+        <div className="bitacora-dia">
+          {estado.renglones.map((r) => (
+            <div key={r.id} className="historial-dia-item">
+              <span className="historial-dia-donde">{(r.donde || "").replace(/^Corte [^·]*·?\s*/, "") || "Día"}</span>
+              <Renglon r={r} esDueno={r.actor_id === ownerId} sinDonde />
+            </div>
+          ))}
+        </div>
+      )}
+    </Sheet>
   );
 }
