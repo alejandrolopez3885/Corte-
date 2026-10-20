@@ -1259,3 +1259,7 @@ button.pill { cursor: pointer; }
   color: var(--ink); font-weight: 600; width: 100%; cursor: pointer; font-family: inherit;
 }
 .inv-saltar-hint { text-align: center; margin: 0; }
+.inv-repetido { display: flex; flex-direction: column; gap: 6px; background: var(--surface); border-radius: 10px; padding: 10px 12px; font-size: 13.5px; }
+.inv-repetido-fila { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.inv-repetido .hint { margin: 0; font-size: 12px; }
+.inv-opcion-detalle { display: block; color: var(--ink-soft); font-size: 12px; }

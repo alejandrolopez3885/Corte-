@@ -646,7 +646,20 @@ estando en Nómina te regresa al menú de Equipo):
   otro orden o en plural. Lo que no se reconoce (o tiene más de un
   posible) aparece arriba en "No reconocidos" para elegir qué producto es
   una sola vez: lo escrito se guarda como apodo de ese insumo y la
-  próxima vez sale solo. Lo reconocido se muestra separado por proveedor
+  próxima vez sale solo — un apodo así gana aunque otro producto se llame
+  igual. En la lista para elegir, cada producto dice de dónde es ("Limón
+  · Cocina · Frutas y Verduras · kg"), con los posibles hasta arriba. Si
+  la duda es porque un producto está repetido en el catálogo (mismo
+  nombre, sin importar acentos), arriba sale "'Limón' está 3 veces en el
+  catálogo" y, para el dueño, "Unir": se elige cuál se queda (de inicio
+  el más completo, con proveedor y precio) y los otros se borran del
+  catálogo; sus nombres y apodos pasan a ser apodos del que se queda, toma
+  lo que le falte (precio, proveedor, "Se pide por") y las capturas viejas
+  por insumo se pasan a él. Si uno de los que se borran era de alta
+  rotación en otra área, avisa que deja de salir en su Conteo diario.
+  "Faltan por contar" escribe el área cuando hay dos productos con el
+  mismo nombre ("0 Limón (Bar)"), y un renglón con "(Bar)", "(Cocina)" o
+  "(General)" al final solo se busca en ese catálogo. Lo reconocido se muestra separado por proveedor
   con el mismo recuadro "Pedir", "Copiar pedido [proveedor]" y "Guardar
   pedido" del Conteo diario (si un producto se anotó dos veces, se ven
   juntas las dos cantidades). Al final, plegable, "No se contaron": los

@@ -5,8 +5,17 @@ import { ErroresSheet, ListaPorProveedor, type ErroresCaptura } from "./ConteoDi
 import {
   dateForDay, formatDayNumber, formatLongDayDate, formatWeekRange, resolveWeekStartDate, todayIso, type LineaConteoTexto,
 } from "../../lib/dataModel";
-import { leerNotasInventario, type RenglonInventario } from "../../lib/inventarioNotas";
-import type { InsumoEntry, MonthData, ProveedorCatalogEntry } from "../../lib/types";
+import { leerNotasInventario, normalizar, type RenglonInventario } from "../../lib/inventarioNotas";
+import type { InsumoArea, InsumoEntry, MonthData, ProveedorCatalogEntry } from "../../lib/types";
+
+const NOMBRE_AREA: Record<InsumoArea, string> = { bar: "Bar", cocina: "Cocina", general: "General" };
+
+// "Limón · Cocina · Frutas y Verduras · kg" — para distinguir productos que
+// se llaman igual.
+function etiquetaInsumo(i: InsumoEntry, proveedores: ProveedorCatalogEntry[]): string {
+  const prov = proveedores.find((p) => p.id === i.proveedorId)?.nombre || "sin proveedor";
+  return `${i.nombre} · ${NOMBRE_AREA[i.area]} · ${prov} · ${i.unidad === "pieza" ? "pz" : i.unidad}`;
+}
 
 type Modo = "completo" | "jueves";
 
@@ -57,6 +66,7 @@ export function InventarioNotasPanel({
   initialModo,
   juevesSaltados,
   onSaltarJueves,
+  onUnirInsumos,
 }: {
   onBack?: () => void;
   backLabel: string;
@@ -78,6 +88,8 @@ export function InventarioNotasPanel({
   juevesSaltados?: Record<string, boolean>;
   // Solo el dueño: saltar (o deshacer) el jueves de una semana.
   onSaltarJueves?: (fecha: string, saltado: boolean) => void;
+  // Solo el dueño: unir productos repetidos del catálogo.
+  onUnirInsumos?: (quedaId: string, otrosIds: string[]) => void;
 }) {
   const [monthKey, setMonthKey] = useState(initialMonthKey);
   const [weekIndex, setWeekIndex] = useState(initialWeekIndex);
@@ -189,6 +201,7 @@ export function InventarioNotasPanel({
           pedidoGuardado={pedidos[fecha]}
           onGuardarPedido={onGuardarPedido}
           onAsignarApodo={onAsignarApodo}
+          onUnirInsumos={onUnirInsumos}
           cerrado={modo === "jueves" && domingoGuardado && !esDueno}
         />
         {modo === "jueves" && !juevesGuardado && esDueno && <SaltarJueves onClick={() => setPidiendoSaltar(true)} />}
@@ -329,6 +342,7 @@ function NotasForm({
   pedidoGuardado,
   onGuardarPedido,
   onAsignarApodo,
+  onUnirInsumos,
   cerrado,
 }: {
   fecha: string;
@@ -342,6 +356,7 @@ function NotasForm({
   pedidoGuardado?: Record<string, number>;
   onGuardarPedido: (fecha: string, pedido: Record<string, number>) => void;
   onAsignarApodo: (insumoId: string, apodo: string) => void;
+  onUnirInsumos?: (quedaId: string, otrosIds: string[]) => void;
 }) {
   const [texto, setTexto] = useState(guardado ?? "");
   const [locked, setLocked] = useState(guardado !== undefined);
@@ -379,7 +394,12 @@ function NotasForm({
   // Los marcados como "no hay" se agregan al final de las notas en 0, para
   // que salgan en la lista de abajo y se puedan pedir.
   function guardarConCeros() {
-    const ceros = (faltantes || []).filter((i) => marcados.has(i.id)).map((i) => `0 ${i.nombre}`);
+    // Si otro producto se llama igual, va con su área ("0 Limón (Bar)") para
+    // que se sepa cuál es.
+    const repetido = (i: InsumoEntry) => insumos.some((x) => x.id !== i.id && normalizar(x.nombre) === normalizar(i.nombre));
+    const ceros = (faltantes || [])
+      .filter((i) => marcados.has(i.id))
+      .map((i) => `0 ${i.nombre}${repetido(i) ? ` (${NOMBRE_AREA[i.area]})` : ""}`);
     setFaltantes(null);
     guardarTexto(ceros.length > 0 ? `${texto.trimEnd()}\n${ceros.join("\n")}` : texto);
   }
@@ -424,6 +444,7 @@ function NotasForm({
           pedidoGuardado={pedidoGuardado}
           onGuardarPedido={onGuardarPedido}
           onAsignarApodo={onAsignarApodo}
+          onUnirInsumos={onUnirInsumos}
         />
       )}
 
@@ -481,6 +502,7 @@ function Resultado({
   pedidoGuardado,
   onGuardarPedido,
   onAsignarApodo,
+  onUnirInsumos,
 }: {
   fecha: string;
   modo: Modo;
@@ -490,7 +512,9 @@ function Resultado({
   pedidoGuardado?: Record<string, number>;
   onGuardarPedido: (fecha: string, pedido: Record<string, number>) => void;
   onAsignarApodo: (insumoId: string, apodo: string) => void;
+  onUnirInsumos?: (quedaId: string, otrosIds: string[]) => void;
 }) {
+  const [uniendo, setUniendo] = useState<InsumoEntry[] | null>(null);
   const { renglones } = leerNotasInventario(notas, insumos);
   const porId = new Map(insumos.map((i) => [i.id, i]));
   const noReconocidos = renglones.filter((r) => !r.insumoId);
@@ -516,6 +540,22 @@ function Resultado({
   const noSeContaron = faltantesPorContar(insumos, proveedores, modo, new Set(porInsumo.keys()));
 
   const ordenados = [...insumos].sort((a, b) => a.nombre.localeCompare(b.nombre));
+  // Productos que se llaman igual entre los candidatos de un renglón no
+  // reconocido: son la razón de que no se reconozca.
+  const repetidos: InsumoEntry[][] = [];
+  noReconocidos.forEach((r) => {
+    const porNombre = new Map<string, InsumoEntry[]>();
+    r.candidatos.forEach((id) => {
+      const i = porId.get(id);
+      if (!i) return;
+      const k = normalizar(i.nombre);
+      porNombre.set(k, [...(porNombre.get(k) || []), i]);
+    });
+    porNombre.forEach((g) => {
+      const clave = g.map((i) => i.id).sort().join("-");
+      if (g.length > 1 && !repetidos.some((x) => x.map((i) => i.id).sort().join("-") === clave)) repetidos.push(g);
+    });
+  });
 
   return (
     <>
@@ -525,6 +565,28 @@ function Resultado({
             <TriangleAlert size={15} /> No reconocidos ({noReconocidos.length})
           </strong>
           <span className="hint">Elige qué producto es; se recordará para la próxima vez.</span>
+          {repetidos.map((grupo) => (
+            <div key={grupo.map((i) => i.id).join("-")} className="inv-repetido">
+              <div className="inv-repetido-fila">
+                <span>
+                  <strong>
+                    "{grupo[0].nombre}" está {grupo.length} veces
+                  </strong>{" "}
+                  en el catálogo, por eso no sé cuál es.
+                </span>
+                {onUnirInsumos && (
+                  <button className="prov-par-btn" onClick={() => setUniendo(grupo)}>
+                    Unir
+                  </button>
+                )}
+              </div>
+              <span className="hint">
+                {onUnirInsumos
+                  ? "Si son el mismo producto, únelos. Si son distintos (ej. uno de Bar y otro de Cocina), elige abajo cuál es: se recordará."
+                  : "Elige abajo cuál es: se recordará. Si son el mismo producto, avísale al dueño para que los una."}
+              </span>
+            </div>
+          ))}
           {noReconocidos.map((r, idx) => (
             <div key={`${idx}-${r.linea}`} className="inv-no-reconocido">
               <code>{r.linea}</code>
@@ -536,7 +598,7 @@ function Resultado({
                 <option value="">{r.candidatos.length > 1 ? "¿Cuál de estos es?" : "¿Qué producto es?"}</option>
                 {[...r.candidatos.map((c) => porId.get(c)!), ...ordenados.filter((i) => !r.candidatos.includes(i.id))].map((i) => (
                   <option key={i.id} value={i.id}>
-                    {i.nombre}
+                    {etiquetaInsumo(i, proveedores)}
                   </option>
                 ))}
               </select>
@@ -544,6 +606,18 @@ function Resultado({
           ))}
           {insumos.length === 0 && <span className="hint">Primero da de alta los productos en el Catálogo.</span>}
         </div>
+      )}
+
+      {uniendo && onUnirInsumos && (
+        <UnirInsumosSheet
+          grupo={uniendo}
+          proveedores={proveedores}
+          onUnir={(queda) => {
+            onUnirInsumos(queda, uniendo.filter((i) => i.id !== queda).map((i) => i.id));
+            setUniendo(null);
+          }}
+          onClose={() => setUniendo(null)}
+        />
       )}
 
       {lineas.length > 0 && (
@@ -620,6 +694,63 @@ function FaltanPorContarSheet({
       </button>
       <button className="btn-secundario" onClick={onClose}>
         Volver a contar
+      </button>
+    </Sheet>
+  );
+}
+
+// Unir productos repetidos: se elige cuál se queda (de inicio, el más
+// completo: con proveedor y precio).
+function UnirInsumosSheet({
+  grupo,
+  proveedores,
+  onUnir,
+  onClose,
+}: {
+  grupo: InsumoEntry[];
+  proveedores: ProveedorCatalogEntry[];
+  onUnir: (quedaId: string) => void;
+  onClose: () => void;
+}) {
+  const completo = (i: InsumoEntry) => (i.proveedorId ? 2 : 0) + (i.precio ? 1 : 0) + (i.equivalenciaPedido ? 1 : 0);
+  const [queda, setQueda] = useState(() => [...grupo].sort((a, b) => completo(b) - completo(a))[0].id);
+  const elegido = grupo.find((i) => i.id === queda)!;
+  const pierdeAltaRotacion = grupo.some((i) => i.id !== queda && i.altaRotacion && i.area !== elegido.area);
+  const otros = grupo.length - 1;
+  return (
+    <Sheet title={`Unir "${grupo[0].nombre}"`} onClose={onClose}>
+      <p className="hint">¿Cuál se queda?</p>
+      {grupo.map((i) => {
+        const [nombre, ...resto] = etiquetaInsumo(i, proveedores).split(" · ");
+        return (
+          <label key={i.id} className={`prov-opcion ${queda === i.id ? "sel" : ""}`}>
+            <input type="radio" checked={queda === i.id} onChange={() => setQueda(i.id)} />
+            <span>
+              {nombre}
+              <small className="inv-opcion-detalle">
+                {resto.join(" · ")}
+                {i.precio ? ` · precio $${i.precio.toFixed(2)}` : ""}
+              </small>
+            </span>
+          </label>
+        );
+      })}
+      <div className="prov-resultado">
+        {otros === 1 ? "El otro se borra" : `Los otros ${otros} se borran`} del catálogo y sus nombres y apodos pasan al que
+        se queda. El historial de Inventario y Pedidos no cambia.
+        {pierdeAltaRotacion && (
+          <>
+            {" "}
+            <strong>Ojo:</strong> uno de los que se borran es de alta rotación en otra área: deja de salir en su Conteo
+            diario.
+          </>
+        )}
+      </div>
+      <button className="btn-primary" onClick={() => onUnir(queda)}>
+        Unir en {elegido.nombre} ({NOMBRE_AREA[elegido.area]})
+      </button>
+      <button className="link-btn prov-cancelar" onClick={onClose}>
+        Cancelar
       </button>
     </Sheet>
   );

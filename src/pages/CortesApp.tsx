@@ -566,6 +566,45 @@ export default function CortesApp({ profile }: { profile: Profile }) {
     persist(next);
   }
 
+  // Une productos repetidos del catálogo en el que se queda: los nombres y
+  // apodos de los otros pasan a ser apodos suyos (así las notas viejas se
+  // siguen leyendo), toma lo que le falte (precio, proveedor, presentación)
+  // y las capturas viejas por insumo (conteo diario e inventario/pedido
+  // semanal) se pasan a él. El historial en texto no cambia.
+  function unirInsumos(quedaId: string, otrosIds: string[]) {
+    if (!data) return;
+    const next = structuredClone(data);
+    const queda = next.insumos.find((i) => i.id === quedaId);
+    const otros = next.insumos.filter((i) => otrosIds.includes(i.id) && i.id !== quedaId);
+    if (!queda || otros.length === 0) return;
+    const nombres = [...(queda.apodos || []), ...otros.flatMap((o) => [o.nombre, ...(o.apodos || [])])];
+    const apodos = nombres.filter(
+      (a, i) => normalizarNombre(a) !== normalizarNombre(queda.nombre) && nombres.findIndex((b) => normalizarNombre(b) === normalizarNombre(a)) === i
+    );
+    if (apodos.length > 0) queda.apodos = apodos;
+    otros.forEach((o) => {
+      if (queda.precio === undefined && o.precio !== undefined) queda.precio = o.precio;
+      if (!queda.proveedorId && o.proveedorId) queda.proveedorId = o.proveedorId;
+      if (!queda.unidadPedido && o.unidadPedido) {
+        queda.unidadPedido = o.unidadPedido;
+        if (o.equivalenciaPedido) queda.equivalenciaPedido = o.equivalenciaPedido;
+      }
+      if (o.altaRotacion && o.area === queda.area) queda.altaRotacion = true;
+    });
+    const mover = (filas: Record<string, unknown> | undefined) => {
+      if (!filas) return;
+      otros.forEach((o) => {
+        if (filas[o.id] !== undefined && filas[quedaId] === undefined) filas[quedaId] = filas[o.id];
+        delete filas[o.id];
+      });
+    };
+    Object.values(next.conteosDiarios || {}).forEach(mover);
+    Object.values(next.inventarioSemanal || {}).forEach((m) => m.weeks.forEach((w) => mover(w?.filas)));
+    Object.values(next.pedidosSemanal || {}).forEach((m) => m.weeks.forEach((w) => mover(w?.filas)));
+    next.insumos = next.insumos.filter((i) => !otros.some((o) => o.id === i.id));
+    persist(next);
+  }
+
   function saltarJuevesInventario(fecha: string, saltado: boolean) {
     if (!data) return;
     const next = structuredClone(data);
@@ -1399,6 +1438,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           initialModo={desdeInicio?.modo}
           juevesSaltados={data.inventarioJuevesSaltado}
           onSaltarJueves={saltarJuevesInventario}
+          onUnirInsumos={unirInsumos}
           notas={data.inventariosNotas}
           onGuardarNotas={guardarInventarioNotas}
           pedidos={data.pedidosInventario}

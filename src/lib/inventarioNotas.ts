@@ -101,6 +101,10 @@ function iniciales(e: string[], n: string[]) {
 export function buscarInsumo(texto: string, insumos: InsumoEntry[]): string[] {
   const e = palabras(texto);
   if (e.length === 0) return [];
+  // Lo que el usuario ya ligó a mano (apodo exacto de un solo insumo) gana,
+  // aunque otro insumo se llame igual.
+  const porApodo = insumos.filter((i) => (i.apodos || []).some((a) => igual(e, palabras(a))));
+  if (porApodo.length === 1) return [porApodo[0].id];
   for (const prueba of [igual, abreviado, contenido, iniciales]) {
     const hits = insumos.filter((i) => claves(i).some((k) => prueba(e, k))).map((i) => i.id);
     if (hits.length > 0) return hits;
@@ -123,12 +127,18 @@ export function leerNotasInventario(notas: string, insumos: InsumoEntry[]): Nota
     // Si la palabra después del número no es unidad, es parte del nombre
     // ("5 huevos"). Si es unidad pero también puede ser parte del nombre
     // ("500 bolsas Johnster"), primero se prueba con ella y luego sin ella.
+    // "0 Limón (Bar)": el área entre paréntesis al final dice de cuál
+    // catálogo es (la escribe "Faltan por contar" cuando hay dos productos
+    // con el mismo nombre en áreas distintas).
+    const conArea = p.texto.match(/^(.*?)\s*\((bar|cocina|general)\)\s*$/i);
+    const entre = conArea ? insumos.filter((i) => i.area === conArea[2].toLowerCase()) : insumos;
+    if (conArea) p.texto = conArea[1];
     const conPalabra = p.unidadEscrita ? `${p.unidadEscrita} ${p.texto}` : p.texto;
     let texto = unidad ? p.texto : conPalabra;
-    let hits = buscarInsumo(texto, insumos);
+    let hits = buscarInsumo(texto, entre);
     let unidadFinal = unidad;
     if (unidad) {
-      const hitsCon = buscarInsumo(conPalabra, insumos);
+      const hitsCon = buscarInsumo(conPalabra, entre);
       if (hitsCon.length === 1 || (hitsCon.length > 0 && hits.length !== 1)) {
         hits = hitsCon;
         texto = conPalabra;
