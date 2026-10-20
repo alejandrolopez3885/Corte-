@@ -140,6 +140,7 @@ export function GastoForm({
           </select>
         </Field>
       )}
+      {categoria === "servicio" && <p className="hint">Se va a restar de los Gastos fijos en transferencia de esta semana.</p>}
       {ligableAMesero && meseroElegido && (
         <p className="hint">Se va a sumar al desglose de cancelaciones de {meseroElegido.nombre} en el Dashboard.</p>
       )}

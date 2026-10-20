@@ -1,4 +1,4 @@
-import { DAYS, GASTO_CATEGORIAS, HORARIO_AREAS_FIJAS, PLANTILLA_CONTEO_COCINA, type AppData, type ConteoTextoArea, type InsumoEntry, type AreaEntry, type DayData, type DayName, type EmpleadoEntry, type GastoCategoria, type HorarioFila, type HorarioMonthData, type HorarioSemana, type InsumoArea, type MeseroCatalogEntry, type MeseroCut, type MonthData, type NominaDescuento, type NominaDescuentosSemana, type NominaDia, type NominaEmpleadoSemana, type PuestoEntry, type VentaProyeccion, type WeekData, type WeekTrendPoint } from "./types";
+import { DAYS, GASTO_CATEGORIAS, HORARIO_AREAS_FIJAS, PLANTILLA_CONTEO_COCINA, type AppData, type ConteoTextoArea, type InsumoEntry, type AreaEntry, type DayData, type DayName, type EmpleadoEntry, type GastoCategoria, type HorarioFila, type HorarioMonthData, type HorarioSemana, type InsumoArea, type MeseroCatalogEntry, type MeseroCut, type MonthData, type MontoFijoSemanal, type NominaDescuento, type NominaDescuentosSemana, type NominaDia, type NominaEmpleadoSemana, type PuestoEntry, type VentaProyeccion, type WeekData, type WeekTrendPoint } from "./types";
 
 export const uid = (): string => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 
@@ -564,8 +564,11 @@ export function computeWeekSummary(week: WeekData) {
 // ahora se captura a mano porque no existe todavía un generador de nómina).
 // "Gastos operativos" junta los gastos en efectivo categorizados como
 // Operación con los gastos operativos en transferencia de Proveedores —
-// son el mismo concepto, solo con distinta forma de pago. Gastos fijos y
-// las 3 comisiones de apps vienen tal cual de Proveedores. El resto de
+// son el mismo concepto, solo con distinta forma de pago. Gastos fijos
+// junta lo mismo: lo pagado por transferencia más los gastos en efectivo
+// categorizados como Servicio (siempre suman el monto fijo semanal, ver
+// resolveGastosFijos). Las 3 comisiones de apps vienen tal cual de
+// Proveedores. El resto de
 // categorías en efectivo (cortesía, retiro, mantenimiento, comida
 // empleado, envíos, cancelaciones, otro, o sin categoría) se desglosan
 // cada una en su propia línea, para que la Utilidad reste todo lo
@@ -766,7 +769,36 @@ export function computeNominaTotalHastaHoy(
   return round2(Object.values(porEmpleado).reduce((s, n) => s + n, 0));
 }
 
-export function computeDashboardReport(week: WeekData, nominaCalculada: number, meseros: MeseroCatalogEntry[]) {
+// --- Gastos fijos ------------------------------------------------------
+// Los gastos fijos de la semana siempre suman el monto fijo semanal: lo que
+// se pagó en efectivo con categoría Servicio (luz, gas, teléfono...) se
+// resta de lo que se paga por transferencia.
+export const MONTO_FIJO_SEMANAL_INICIAL = 24500;
+
+export function resolveMontoFijo(montos: MontoFijoSemanal[] | undefined, weekStartDate: string): number {
+  const vigente = [...(montos || [])]
+    .sort((a, b) => a.desde.localeCompare(b.desde))
+    .filter((m) => m.desde <= weekStartDate)
+    .pop();
+  return vigente ? vigente.monto : MONTO_FIJO_SEMANAL_INICIAL;
+}
+
+export function resolveGastosFijos(week: WeekData, montoFijo: number) {
+  const servicios = DAYS.flatMap((d) =>
+    week.days[d].gastos.filter((g) => g.categoria === "servicio").map((g) => ({ concepto: g.concepto, total: g.total }))
+  );
+  const servicioEfectivo = round2(servicios.reduce((s, g) => s + g.total, 0));
+  const automatico = round2(Math.max(0, montoFijo - servicioEfectivo));
+  const credito = week.creditoProveedores;
+  // Semanas guardadas antes de que existieran los gastos fijos automáticos
+  // (sin fijosManual) se quedan con lo que se capturó, para no mover
+  // resultados pasados.
+  const manual = credito ? credito.fijosManual ?? true : false;
+  const transferencia = manual ? round2(credito?.fijos || 0) : automatico;
+  return { montoFijo, servicios, servicioEfectivo, automatico, manual, transferencia };
+}
+
+export function computeDashboardReport(week: WeekData, nominaCalculada: number, meseros: MeseroCatalogEntry[], montoFijo: number) {
   const { ventaTotal } = computeWeekSummary(week);
   const comisionTarjetas = computeComisionTarjetas(week);
 
@@ -781,6 +813,8 @@ export function computeDashboardReport(week: WeekData, nominaCalculada: number, 
     week.days[d].gastos.forEach((g) => {
       if (g.categoria === "operacion") {
         operacionEfectivo += g.total;
+      } else if (g.categoria === "servicio") {
+        // Va dentro de Gastos fijos (ver resolveGastosFijos).
       } else {
         const key = g.categoria || "sin_categoria";
         otrosPorCategoria[key] = round2((otrosPorCategoria[key] || 0) + g.total);
@@ -802,7 +836,10 @@ export function computeDashboardReport(week: WeekData, nominaCalculada: number, 
   const gastosOperativosEfectivo = round2(operacionEfectivo);
   const gastosOperativosTransferencia = round2(credito?.operativos || 0);
   const gastosOperativos = round2(gastosOperativosEfectivo + gastosOperativosTransferencia);
-  const gastosFijos = round2(credito?.fijos || 0);
+  const fijos = resolveGastosFijos(week, montoFijo);
+  const gastosFijosTransferencia = fijos.transferencia;
+  const gastosFijosEfectivo = fijos.servicioEfectivo;
+  const gastosFijos = round2(gastosFijosTransferencia + gastosFijosEfectivo);
   const comisionDidi = round2(credito?.comisionDidi || 0);
   const comisionUber = round2(credito?.comisionUber || 0);
   const comisionRappi = round2(credito?.comisionRappi || 0);
@@ -812,7 +849,7 @@ export function computeDashboardReport(week: WeekData, nominaCalculada: number, 
   const pct = (n: number) => (ventaTotal > 0 ? round2((n / ventaTotal) * 100) : 0);
 
   const otrosCategorias = [
-    ...GASTO_CATEGORIAS.filter((c) => c.value !== "operacion").map((c) => ({
+    ...GASTO_CATEGORIAS.filter((c) => c.value !== "operacion" && c.value !== "servicio").map((c) => ({
       key: c.value as string,
       label: c.value === "nomina" ? "Nómina (gastos en efectivo)" : c.label,
       total: otrosPorCategoria[c.value] || 0,
@@ -843,6 +880,8 @@ export function computeDashboardReport(week: WeekData, nominaCalculada: number, 
     gastosOperativosEfectivo,
     gastosOperativosTransferencia,
     gastosFijos,
+    gastosFijosTransferencia,
+    gastosFijosEfectivo,
     comisionesApps,
     comisionDidi,
     comisionUber,
@@ -857,6 +896,8 @@ export function computeDashboardReport(week: WeekData, nominaCalculada: number, 
       gastosOperativosEfectivo: pct(gastosOperativosEfectivo),
       gastosOperativosTransferencia: pct(gastosOperativosTransferencia),
       gastosFijos: pct(gastosFijos),
+      gastosFijosTransferencia: pct(gastosFijosTransferencia),
+      gastosFijosEfectivo: pct(gastosFijosEfectivo),
       comisionesApps: pct(comisionesApps),
       comisionDidi: pct(comisionDidi),
       comisionUber: pct(comisionUber),
@@ -886,7 +927,8 @@ export function computeVentaTrend(
   months: Record<string, MonthData>,
   horarios: Record<string, HorarioMonthData>,
   empleados: EmpleadoEntry[],
-  meseros: MeseroCatalogEntry[]
+  meseros: MeseroCatalogEntry[],
+  montosFijos?: MontoFijoSemanal[]
 ): WeekTrendPoint[] {
   const monthKeys = Object.keys(months).sort();
   const points: WeekTrendPoint[] = [];
@@ -899,7 +941,8 @@ export function computeVentaTrend(
       if (!huboActividad) continue;
       const semana = horarios[monthKey]?.weeks?.[weekIndex] ?? null;
       const nominaCalculada = computeNominaTotalHastaHoy(monthKey, weekIndex, month, semana, empleados);
-      const report = computeDashboardReport(week, nominaCalculada, meseros);
+      const montoFijo = resolveMontoFijo(montosFijos, resolveWeekStartDate(monthKey, weekIndex, month));
+      const report = computeDashboardReport(week, nominaCalculada, meseros, montoFijo);
       points.push({
         monthKey,
         weekIndex,

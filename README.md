@@ -18,6 +18,22 @@ comisión DIDI, comisión UBER y comisión RAPPI. Esta última vive totalmente
 separada del corte diario: es solo informativa, no afecta el efectivo ni
 ningún total de caja.
 
+**Gastos fijos** se llena solo y queda bloqueado: es el monto fijo semanal
+($24,500 de inicio) menos los gastos en efectivo de esa semana con
+categoría **Servicio** (luz, gas, teléfono, agua, internet...). Así lo
+pagado en efectivo más lo pagado por transferencia siempre suman el monto
+fijo — ej. si se pagaron $500 de teléfono en efectivo, Gastos fijos queda
+en $24,000. Debajo se ve el desglose (monto fijo − cada Servicio en
+efectivo = Gastos fijos en transferencia) y se recalcula solo cada vez que
+se agrega, cambia o mueve un gasto de Servicio, sin tener que entrar a
+guardar. Con el lápiz se cambia el número solo para esa semana: queda
+marcado "editado a mano" y se puede "Volver al automático". "Cambiar" el
+monto fijo semanal aplica desde esa semana en adelante (las semanas
+anteriores se quedan con el monto que tenían). Las semanas que ya tenían
+Gastos fijos guardado antes de este cambio se quedan con su número, como
+"editado a mano", para no mover resultados pasados; las semanas sin nada
+guardado en Control de gastos en transferencia toman el automático.
+
 Desde **Control de gastos en efectivo** también se puede mover un gasto de
 un día a otro dentro de la misma semana (botón "Mover a..." en cada gasto),
 sin perder su historial (mismo id, categoría y estado). Si el gasto estaba
@@ -447,8 +463,11 @@ estando en Nómina te regresa al menú de Equipo):
 - **Dashboard**: reporte de resultados de la semana, solo para leer (con
   porcentajes sobre la venta total): Venta total, Gastos operativos (suma
   los de efectivo categorizados como Operación más los de transferencia),
-  Gastos fijos, las 3 comisiones de apps, el resto de categorías de gastos
-  en efectivo desglosadas una por una (Nómina, Cortesía, Retiro,
+  Gastos fijos (desplegable: lo pagado en transferencia más los gastos en
+  efectivo categorizados como Servicio — siempre suman el monto fijo
+  semanal, salvo que se haya editado a mano), las 3 comisiones de apps, el
+  resto de categorías de gastos en efectivo desglosadas una por una
+  (Nómina, Cortesía, Retiro,
   Mantenimiento, Comida empleado, Envíos, Cancelaciones — con su propio
   desglose por mesero, nombre y total de la semana, porque un gasto de
   Cancelaciones en Corte se le puede asignar a un mesero del catálogo —,

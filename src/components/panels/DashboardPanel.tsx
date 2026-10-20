@@ -3,10 +3,10 @@ import { ChevronDown, ChevronUp, Download } from "lucide-react";
 import { Field } from "../ui";
 import {
   META_GASTOS_OPERATIVOS_PCT, computeDashboardReport, computeNominaTotalHastaHoy, formatShortDayDate, formatWeekRange, isoWeekNumber,
-  money, resolveWeekStartDate, todayIso,
+  money, resolveMontoFijo, resolveWeekStartDate, todayIso,
 } from "../../lib/dataModel";
 import { downloadDashboardImage } from "../../lib/dashboardImage";
-import type { EmpleadoEntry, HorarioMonthData, MeseroCatalogEntry, MonthData } from "../../lib/types";
+import type { EmpleadoEntry, HorarioMonthData, MeseroCatalogEntry, MonthData, MontoFijoSemanal } from "../../lib/types";
 
 // Categorías donde además del total conviene ver el detalle de cada gasto
 // que lo compone (concepto por concepto), porque agrupan cosas variadas.
@@ -22,6 +22,7 @@ export function DashboardPanel({
   empleados,
   horarios,
   meseros,
+  montosFijos,
   onGoToNomina,
 }: {
   months: Record<string, MonthData>;
@@ -31,12 +32,14 @@ export function DashboardPanel({
   empleados: EmpleadoEntry[];
   horarios: Record<string, HorarioMonthData>;
   meseros: MeseroCatalogEntry[];
+  montosFijos?: MontoFijoSemanal[];
   onGoToNomina: () => void;
 }) {
   const [monthKey, setMonthKey] = useState(initialMonthKey);
   const [weekIndex, setWeekIndex] = useState(initialWeekIndex);
   const [showComisiones, setShowComisiones] = useState(false);
   const [showGastosOperativos, setShowGastosOperativos] = useState(false);
+  const [showGastosFijos, setShowGastosFijos] = useState(false);
   const [expandedCategorias, setExpandedCategorias] = useState<Set<string>>(new Set());
 
   function toggleCategoria(key: string) {
@@ -56,7 +59,7 @@ export function DashboardPanel({
   const weekStartDate = resolveWeekStartDate(monthKey, weekIndex, month);
   const semana = horarios[monthKey]?.weeks?.[weekIndex] ?? null;
   const nominaCalculada = computeNominaTotalHastaHoy(monthKey, weekIndex, month, semana, empleados);
-  const report = computeDashboardReport(week, nominaCalculada, meseros);
+  const report = computeDashboardReport(week, nominaCalculada, meseros, resolveMontoFijo(montosFijos, weekStartDate));
   const gastosOperativosOk = report.pct.gastosOperativos <= META_GASTOS_OPERATIVOS_PCT;
 
   return (
@@ -138,11 +141,26 @@ export function DashboardPanel({
             </div>
           </>
         )}
-        <div className="report-row">
+        <button type="button" className="report-row report-row-toggle" onClick={() => setShowGastosFijos((v) => !v)}>
           <span className="report-row-label">Gastos fijos</span>
           <span className="report-row-pct">{report.pct.gastosFijos}%</span>
           <strong className="report-row-amount">{money(report.gastosFijos)}</strong>
-        </div>
+          {showGastosFijos ? <ChevronUp size={16} className="report-row-chevron" /> : <ChevronDown size={16} className="report-row-chevron" />}
+        </button>
+        {showGastosFijos && (
+          <>
+            <div className="report-row report-row-sub">
+              <span className="report-row-label">En transferencia</span>
+              <span className="report-row-pct">{report.pct.gastosFijosTransferencia}%</span>
+              <strong className="report-row-amount">{money(report.gastosFijosTransferencia)}</strong>
+            </div>
+            <div className="report-row report-row-sub">
+              <span className="report-row-label">Servicio en efectivo</span>
+              <span className="report-row-pct">{report.pct.gastosFijosEfectivo}%</span>
+              <strong className="report-row-amount">{money(report.gastosFijosEfectivo)}</strong>
+            </div>
+          </>
+        )}
         <button type="button" className="report-row report-row-toggle" onClick={() => setShowComisiones((v) => !v)}>
           <span className="report-row-label">Comisiones de apps</span>
           <span className="report-row-pct">{report.pct.comisionesApps}%</span>

@@ -850,3 +850,19 @@ button.pill { cursor: pointer; }
   display: flex; justify-content: space-between; gap: 10px; background: var(--surface-alt); border-radius: 12px;
   padding: 9px 12px; font-size: 13px;
 }
+
+/* Gastos fijos automáticos (Control de gastos en transferencia) */
+.fijos-valor { display: flex; justify-content: space-between; align-items: center; color: var(--ink); padding: 8px 8px 8px 14px; }
+.fijos-edit { display: flex; flex-direction: column; gap: 8px; }
+.tag-manual { font-size: 11px; padding: 2px 8px; border-radius: 100px; background: var(--warn-soft); color: var(--warn); font-weight: 500; margin-left: 4px; }
+.fijos-volver { display: flex; align-items: center; gap: 5px; margin-top: -6px; }
+.fijos-desglose {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 9px 12px; font-size: 12.5px;
+  margin-top: -6px; display: flex; flex-direction: column; gap: 3px;
+}
+.fijos-desglose > div { display: flex; justify-content: space-between; gap: 10px; }
+.fijos-menos { color: var(--warn); }
+.fijos-total { border-top: 1px solid var(--surface-alt); padding-top: 5px; margin-top: 2px; font-weight: 600; }
+.fijos-monto { margin: -6px 0 0; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.fijos-monto .link-btn { padding: 0; font-size: 12px; }
+.fijos-valor > span { font-size: 16px; color: var(--ink); }

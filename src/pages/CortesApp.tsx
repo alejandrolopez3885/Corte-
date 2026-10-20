@@ -671,10 +671,19 @@ export default function CortesApp({ profile }: { profile: Profile }) {
   // Control (solo informativo) de gastos que los proveedores dan a crédito,
   // pagados después por transferencia — vive por semana, igual que
   // efectivoReal, pero no afecta ningún total de caja del corte.
-  function saveCreditoProveedores(monthKey: string, weekIndex: number, values: CreditoProveedores) {
+  // nuevoMontoFijo: si se cambió el monto fijo semanal de Gastos fijos,
+  // aplica desde esta semana en adelante (reemplaza cambios posteriores).
+  function saveCreditoProveedores(monthKey: string, weekIndex: number, values: CreditoProveedores, nuevoMontoFijo?: number) {
     if (!data) return;
     const next = structuredClone(data);
     next.months[monthKey].weeks[weekIndex].creditoProveedores = values;
+    if (nuevoMontoFijo !== undefined) {
+      const desde = resolveWeekStartDate(monthKey, weekIndex, next.months[monthKey]);
+      next.montosFijosSemanales = [
+        ...(next.montosFijosSemanales || []).filter((m) => m.desde < desde),
+        { desde, monto: round2(nuevoMontoFijo) },
+      ];
+    }
     persist(next);
   }
 
@@ -1035,6 +1044,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           horarios={data.horarios}
           empleados={data.empleados}
           meseros={data.meseros}
+          montosFijos={data.montosFijosSemanales}
         />
       )}
 
@@ -1136,6 +1146,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
             empleados={data.empleados}
             horarios={data.horarios}
             meseros={data.meseros}
+            montosFijos={data.montosFijosSemanales}
             onGoToNomina={() => {
               setActiveTab("equipo");
               setEquipoView("nomina");
@@ -1518,6 +1529,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           monthKeys={monthKeys}
           initialMonthKey={mostRecentMonthKey as string}
           initialWeekIndex={mostRecentWeekIdx}
+          montosFijos={data.montosFijosSemanales}
           onSave={saveCreditoProveedores}
         />
       )}

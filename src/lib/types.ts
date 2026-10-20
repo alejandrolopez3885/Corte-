@@ -209,6 +209,7 @@ export type GastoCategoria =
   | "cortesia"
   | "retiro"
   | "mantenimiento"
+  | "servicio"
   | "comida_empleado"
   | "envios"
   | "cancelaciones"
@@ -220,6 +221,7 @@ export const GASTO_CATEGORIAS: { value: GastoCategoria; label: string }[] = [
   { value: "cortesia", label: "Cortesía" },
   { value: "retiro", label: "Retiro" },
   { value: "mantenimiento", label: "Mantenimiento" },
+  { value: "servicio", label: "Servicio" },
   { value: "comida_empleado", label: "Comida empleado" },
   { value: "envios", label: "Envíos" },
   { value: "cancelaciones", label: "Cancelaciones" },
@@ -380,7 +382,13 @@ export interface DayData {
 // `efectivoReal`.
 export interface CreditoProveedores {
   operativos: number;
+  // Gastos fijos en transferencia. Normalmente se calculan solos (monto
+  // fijo semanal − gastos en efectivo de categoría Servicio) y aquí queda
+  // 0; solo se usa este número si fijosManual es true (editado con el
+  // lápiz). Semanas guardadas antes de que existiera fijosManual se
+  // respetan tal cual — ver resolveGastosFijos.
   fijos: number;
+  fijosManual?: boolean;
   comisionDidi: number;
   comisionUber: number;
   comisionRappi: number;
@@ -444,6 +452,15 @@ export interface AppData {
   // Pedidos semanales (Negocio > Pedidos) — lo que se va a pedir a cada
   // proveedor, mismas semanas y Completo/Jueves que Inventario.
   pedidosSemanal: Record<string, PedidoSemanalMonthData>;
+  // Monto fijo semanal de Gastos fijos (renta, servicios, etc.), con su
+  // historial: cada cambio aplica desde esa semana (fecha ISO del lunes)
+  // en adelante. Vacío o sin definir = MONTO_FIJO_SEMANAL_INICIAL.
+  montosFijosSemanales?: MontoFijoSemanal[];
+}
+
+export interface MontoFijoSemanal {
+  desde: string;
+  monto: number;
 }
 
 // Un punto de la tendencia semanal (Negocio > Tendencias) — un resumen de

@@ -1,7 +1,7 @@
 import { ArrowLeft, ChartLine, Minus, TrendingDown, TrendingUp } from "lucide-react";
 import { Empty } from "../ui";
 import { computeVentaProyeccion, computeVentaTrend, money, round2 } from "../../lib/dataModel";
-import type { EmpleadoEntry, HorarioMonthData, MeseroCatalogEntry, MonthData, WeekTrendPoint } from "../../lib/types";
+import type { EmpleadoEntry, HorarioMonthData, MeseroCatalogEntry, MonthData, MontoFijoSemanal, WeekTrendPoint } from "../../lib/types";
 
 const ACCENT = "#1F5D4C";
 const WARN = "#B8752D";
@@ -23,14 +23,16 @@ export function TendenciasPanel({
   horarios,
   empleados,
   meseros,
+  montosFijos,
 }: {
   onBack: () => void;
   months: Record<string, MonthData>;
   horarios: Record<string, HorarioMonthData>;
   empleados: EmpleadoEntry[];
   meseros: MeseroCatalogEntry[];
+  montosFijos?: MontoFijoSemanal[];
 }) {
-  const puntos = computeVentaTrend(months, horarios, empleados, meseros);
+  const puntos = computeVentaTrend(months, horarios, empleados, meseros, montosFijos);
   const proyeccion = computeVentaProyeccion(puntos);
 
   return (
