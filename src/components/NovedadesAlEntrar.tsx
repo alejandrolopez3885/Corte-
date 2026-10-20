@@ -1,17 +1,25 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { X } from "lucide-react";
+import { Sparkles, X } from "lucide-react";
 import { novedadesPendientes, registrarEntrada } from "../lib/novedades";
-import type { Novedad, VisualNovedad } from "../lib/novedades";
+import type { Novedad, SeccionNovedad, VisualNovedad } from "../lib/novedades";
+import { PERMISOS_DISPONIBLES } from "../lib/types";
 import type { AppData, Profile } from "../lib/types";
+
+function nombreSeccion(s: SeccionNovedad): string {
+  return s === "corte" ? "Corte" : PERMISOS_DISPONIBLES.find((p) => p.value === s)?.label || s;
+}
 
 // Lo primero que ve una cuenta de equipo al entrar si hay algo nuevo en las
 // secciones a las que tiene acceso (el dueño, en todas): una tarjeta por novedad con un dibujito
 // de cómo se usa, "Siguiente" entre ellas y "Entendido" en la última. Se
 // cierra en cualquier momento con la ✕ o tocando fuera, y ya no vuelve a
-// salir. Ver lib/novedades.ts.
+// salir. Antes de las novedades sale siempre una tarjeta de intro que
+// explica qué son, para que nadie piense que abrió algo por error o que
+// tiene que seleccionar algo. Ver lib/novedades.ts.
 export function NovedadesAlEntrar({ profile, data, tieneCorte }: { profile: Profile; data: AppData; tieneCorte: boolean }) {
   const [novedades, setNovedades] = useState<Novedad[]>([]);
   const [indice, setIndice] = useState(0);
+  const [enIntro, setEnIntro] = useState(true);
   const revisado = useRef(false);
 
   useEffect(() => {
@@ -34,19 +42,67 @@ export function NovedadesAlEntrar({ profile, data, tieneCorte }: { profile: Prof
 
   const n = novedades[indice];
   const ultima = indice === novedades.length - 1;
+  const botonCerrar = (
+    <button type="button" className="icon-btn novedades-cerrar" onClick={cerrar} aria-label="Cerrar">
+      <X size={18} />
+    </button>
+  );
+
+  if (enIntro) {
+    return (
+      <div className="novedades-fondo" onClick={cerrar}>
+        <div className="novedades-tarjeta" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Novedades">
+          <div className="novedades-arriba">
+            <span className="novedades-badge">Novedades · {novedades.length}</span>
+            {botonCerrar}
+          </div>
+          <div className="nv-intro-icono">
+            <Sparkles size={26} />
+          </div>
+          <h3 className="novedades-titulo nv-centro">Hay cosas nuevas en la app</h3>
+          <p className="novedades-texto nv-centro">
+            Cuando la app cambia, te lo explicamos con estas tarjetas la primera vez que entras. No se abrió nada por
+            error.
+          </p>
+          <ol className="nv-intro-pasos">
+            <li>
+              <span className="nv-intro-num">1</span>
+              <span>
+                Cada tarjeta trae un <strong>dibujo de ejemplo</strong> de cómo se ve. Es solo para mirar:{" "}
+                <strong>no hay que seleccionar nada</strong>.
+              </span>
+            </li>
+            <li>
+              <span className="nv-intro-num">2</span>
+              <span>
+                Lee y toca <strong>Siguiente</strong>. En la última, <strong>Entendido</strong>.
+              </span>
+            </li>
+            <li>
+              <span className="nv-intro-num">3</span>
+              <span>Solo salen una vez. Después entras a la app como siempre.</span>
+            </li>
+          </ol>
+          <button type="button" className="btn-primary" onClick={() => setEnIntro(false)}>
+            Ver {novedades.length === 1 ? "la novedad" : "las novedades"}
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="novedades-fondo" onClick={cerrar}>
       <div className="novedades-tarjeta" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Novedades">
         <div className="novedades-arriba">
           <span className="novedades-badge">
-            Novedad{novedades.length > 1 ? ` · ${indice + 1} de ${novedades.length}` : ""}
+            Novedad {indice + 1} de {novedades.length} · {nombreSeccion(n.seccion)}
           </span>
-          <button type="button" className="icon-btn novedades-cerrar" onClick={cerrar} aria-label="Cerrar">
-            <X size={18} />
-          </button>
+          {botonCerrar}
         </div>
-        <div className="novedades-visual">
+        {/* Solo un dibujo de ejemplo: no responde a toques. */}
+        <div className="novedades-visual nv-ejemplo-caja" aria-hidden="true">
+          <span className="nv-ejemplo">Ejemplo · así se ve en la app</span>
           <Visual tipo={n.visual} />
         </div>
         <h3 className="novedades-titulo">{n.titulo}</h3>
@@ -64,6 +120,7 @@ export function NovedadesAlEntrar({ profile, data, tieneCorte }: { profile: Prof
             ))}
           </div>
         )}
+        <p className="nv-pie">Solo es informativo — no tienes que hacer nada aquí.</p>
         <button type="button" className="btn-primary" onClick={() => (ultima ? cerrar() : setIndice(indice + 1))}>
           {ultima ? "Entendido" : "Siguiente"}
         </button>
@@ -108,6 +165,22 @@ function Visual({ tipo }: { tipo: VisualNovedad }) {
             <small>usado 9 veces</small>
           </div>
         </div>
+      </>
+    );
+  }
+  if (tipo === "guardarCorte") {
+    return (
+      <>
+        <div className="nv-checks">
+          <span>
+            ☑ Total de tarjetas <strong>$14,380</strong>
+          </span>
+          <span>
+            ☑ Total de gastos <strong>$1,135</strong>
+          </span>
+          <span>☑ Ya subí todo al bot</span>
+        </div>
+        <div className="nv-boton">🔒 Guardar corte</div>
       </>
     );
   }

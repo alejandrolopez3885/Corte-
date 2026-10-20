@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Plus, Settings2, Users, Receipt, ArrowLeftRight, CircleDot, Circle, Pencil,
   Smartphone, BarChart3, LogOut, Truck, Trash2, Home, Store, LayoutDashboard, Contact, Clock, Wallet, ChartLine, Martini, ChefHat, BookOpen,
-  ShoppingCart, Handshake, Boxes, Package, Coins, History,
+  ShoppingCart, Handshake, Boxes, Package, Coins, History, Lock,
 } from "lucide-react";
 import { useAuth } from "../lib/auth.tsx";
 import { useAppData } from "../lib/useAppData";
@@ -15,7 +15,7 @@ import {
 import { removeAssignmentByStaffAndDate, upsertAssignment, useStaffAssignments } from "../lib/staffAssignments";
 import { DAYS, DAY_SHORT } from "../lib/types";
 import type { AreaEntry, ConteoTextoArea, CreditoProveedores, DayData, DayName, EmpleadoEntry, Gasto, GastoCategoria, HorarioSemana, InsumoEntry, MeseroCatalogEntry, MeseroCut, NominaDescuentosSemana, Profile, ProveedorCatalogEntry, PuestoEntry, Receta, Transferencia, WeekData } from "../lib/types";
-import { Empty } from "../components/ui";
+import { Empty, Sheet } from "../components/ui";
 import { MonthModal } from "../components/modals/MonthModal";
 import { MeseroModal, type MeseroFormValues } from "../components/modals/MeseroModal";
 import { GastoModal, type GastoFormValues } from "../components/modals/GastoModal";
@@ -24,6 +24,7 @@ import { CreditoProveedoresModal } from "../components/modals/CreditoProveedores
 import { CatalogModal } from "../components/modals/CatalogModal";
 import { ProveedoresModal } from "../components/modals/ProveedoresModal";
 import { AppsModal } from "../components/modals/AppsModal";
+import { GuardarCorteModal } from "../components/modals/GuardarCorteModal";
 import { WeekSummaryModal } from "../components/modals/WeekSummaryModal";
 import { GastosSummaryModal } from "../components/modals/GastosSummaryModal";
 import { DeleteMonthModal } from "../components/modals/DeleteMonthModal";
@@ -52,6 +53,8 @@ type ModalState =
   | { type: "gasto"; editing?: Gasto }
   | { type: "transfer"; editing?: Transferencia }
   | { type: "apps" }
+  | { type: "guardarCorte" }
+  | { type: "reabrirCorte" }
   | { type: "weekSummary" }
   | { type: "gastosSummary" }
   | { type: "creditoProveedores" }
@@ -245,6 +248,8 @@ export default function CortesApp({ profile }: { profile: Profile }) {
   const monthKeys = Object.keys(data.months).sort();
   const month = activeMonth ? data.months[activeMonth] : null;
   const day: DayData | null = month ? month.weeks[activeWeek].days[activeDay] : null;
+  // Ya con "Guardar corte", el personal solo lo puede ver.
+  const corteBloqueado = !isOwner && !!day?.corteGuardado;
   const week = month ? month.weeks[activeWeek] : null;
   const weekStartDate = activeMonth && month ? resolveWeekStartDate(activeMonth, activeWeek, month) : null;
   const activeDayDate = activeMonth && month ? dateForDay(activeMonth, activeWeek, month, activeDay) : null;
@@ -268,6 +273,8 @@ export default function CortesApp({ profile }: { profile: Profile }) {
     if (!data || !activeMonth) return;
     const next = structuredClone(data);
     const d = next.months[activeMonth].weeks[activeWeek].days[activeDay];
+    // Corte ya guardado: el personal ya no lo puede cambiar (el dueño sí).
+    if (!isOwner && d.corteGuardado) return;
     mutator(d);
     // Registro permanente de quién realmente capturó este corte — se
     // estampa en cualquier cambio que haga una cuenta de equipo (no el
@@ -815,6 +822,20 @@ export default function CortesApp({ profile }: { profile: Profile }) {
     const next = structuredClone(data);
     next.proveedores = next.proveedores.filter((p) => p.id !== id);
     persist(next);
+  }
+
+  function guardarCorte() {
+    updateDay((d) => {
+      d.corteGuardado = { fecha: new Date().toISOString(), nombre: profile.display_name || (isOwner ? "Dueño" : "Alguien del equipo") };
+    });
+    setModal(null);
+  }
+
+  function reabrirCorte() {
+    updateDay((d) => {
+      delete d.corteGuardado;
+    });
+    setModal(null);
   }
 
   function saveVentaApps(rawValue: string, desglose?: number[]) {
@@ -1387,6 +1408,16 @@ export default function CortesApp({ profile }: { profile: Profile }) {
               </button>
             )}
 
+            {day?.corteGuardado && (
+              <div className={`corte-guardado ${isOwner ? "dueno" : ""}`}>
+                <Lock size={15} />
+                <span>
+                  <strong>Corte guardado</strong> por {day.corteGuardado.nombre} el {fechaHoraCorta(day.corteGuardado.fecha)}.
+                  {!isOwner && " Ya no se puede editar. Si algo está mal, avísale al dueño."}
+                </span>
+              </div>
+            )}
+
             {totals && (
               <section className="summary">
                 <div className="summary-item highlight">
@@ -1426,7 +1457,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
               </section>
             )}
 
-            <button className="apps-row" onClick={() => setModal({ type: "apps" })}>
+            <button className="apps-row" onClick={() => setModal({ type: "apps" })} disabled={corteBloqueado}>
               <span className="apps-row-label">
                 <Smartphone size={15} /> Ventas de apps <em>(no suma al efectivo)</em>
               </span>
@@ -1441,16 +1472,18 @@ export default function CortesApp({ profile }: { profile: Profile }) {
                   <h2>
                     <Users size={17} /> Meseros
                   </h2>
-                  <button className="icon-btn accent" onClick={() => setModal({ type: "mesero" })}>
-                    <Plus size={18} />
-                  </button>
+                  {!corteBloqueado && (
+                    <button className="icon-btn accent" onClick={() => setModal({ type: "mesero" })}>
+                      <Plus size={18} />
+                    </button>
+                  )}
                 </div>
                 {day.meseros.length === 0 ? (
                   <Empty icon={<Users size={26} strokeWidth={1.3} />} text="Sin cortes capturados este día. Toca + para agregar el primero." />
                 ) : (
                   <div className="card-list">
                     {day.meseros.map((m) => (
-                      <button key={m.id} className="card mesero-card" onClick={() => setModal({ type: "mesero", editing: m })}>
+                      <button key={m.id} className="card mesero-card" onClick={() => setModal({ type: "mesero", editing: m })} disabled={corteBloqueado}>
                         <div className="card-top">
                           <span className="card-name">{m.nombre}</span>
                           <span className="card-total">{money(m.total)}</span>
@@ -1472,9 +1505,11 @@ export default function CortesApp({ profile }: { profile: Profile }) {
                   <h2>
                     <Receipt size={17} /> Gastos
                   </h2>
-                  <button className="icon-btn accent" onClick={() => setModal({ type: "gasto" })}>
-                    <Plus size={18} />
-                  </button>
+                  {!corteBloqueado && (
+                    <button className="icon-btn accent" onClick={() => setModal({ type: "gasto" })}>
+                      <Plus size={18} />
+                    </button>
+                  )}
                 </div>
                 {day.gastos.length === 0 ? (
                   <Empty icon={<Receipt size={26} strokeWidth={1.3} />} text="No hay gastos registrados este día." />
@@ -1482,7 +1517,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
                   <div className="card-list">
                     {day.gastos.map((g) => (
                       <div key={g.id} className="card gasto-card">
-                        <button className="gasto-main" onClick={() => setModal({ type: "gasto", editing: g })}>
+                        <button className="gasto-main" onClick={() => setModal({ type: "gasto", editing: g })} disabled={corteBloqueado}>
                           <div className="card-top">
                             <span className="card-name">{g.concepto}</span>
                             <span className="card-total">{money(g.total)}</span>
@@ -1501,7 +1536,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
                         </button>
                         <button
                           className={`estado-chip ${g.estado}`}
-                          disabled={g.estado === "pendiente" && !g.categoria}
+                          disabled={corteBloqueado || (g.estado === "pendiente" && !g.categoria)}
                           onClick={() => toggleGastoEstado(g.id)}
                         >
                           {g.estado === "pendiente" ? "Confirmar" : "Ingresado"}
@@ -1517,16 +1552,18 @@ export default function CortesApp({ profile }: { profile: Profile }) {
                   <h2>
                     <ArrowLeftRight size={17} /> Transferencias
                   </h2>
-                  <button className="icon-btn accent" onClick={() => setModal({ type: "transfer" })}>
-                    <Plus size={18} />
-                  </button>
+                  {!corteBloqueado && (
+                    <button className="icon-btn accent" onClick={() => setModal({ type: "transfer" })}>
+                      <Plus size={18} />
+                    </button>
+                  )}
                 </div>
                 {day.transferencias.length === 0 ? (
                   <Empty icon={<ArrowLeftRight size={26} strokeWidth={1.3} />} text="No hay transferencias registradas este día." />
                 ) : (
                   <div className="card-list">
                     {day.transferencias.map((t) => (
-                      <button key={t.id} className="card" onClick={() => setModal({ type: "transfer", editing: t })}>
+                      <button key={t.id} className="card" onClick={() => setModal({ type: "transfer", editing: t })} disabled={corteBloqueado}>
                         <div className="card-top">
                           <span className="card-name">{t.persona}</span>
                           <span className="card-total">{money(t.total)}</span>
@@ -1537,6 +1574,25 @@ export default function CortesApp({ profile }: { profile: Profile }) {
                   </div>
                 )}
               </section>
+
+              {!day.corteGuardado ? (
+                <div className="guardar-corte">
+                  <button className="btn-primary" onClick={() => setModal({ type: "guardarCorte" })}>
+                    <Lock size={16} /> Guardar corte
+                  </button>
+                  <p className="hint">Al guardarlo ya no se podrá editar.</p>
+                </div>
+              ) : (
+                isOwner && (
+                  <p className="hint guardar-corte-dueno">
+                    Tú lo puedes seguir editando. Si quieres que la persona lo corrija, toca{" "}
+                    <button className="link-btn" onClick={() => setModal({ type: "reabrirCorte" })}>
+                      Reabrir corte
+                    </button>
+                    .
+                  </p>
+                )
+              )}
             </main>
           </>
         )}
@@ -1599,6 +1655,23 @@ export default function CortesApp({ profile }: { profile: Profile }) {
         />
       )}
       {historialDia && <HistorialDiaSheet ownerId={profile.id} fecha={historialDia} onClose={() => setHistorialDia(null)} />}
+      {modal?.type === "guardarCorte" && day && totals && (
+        <GuardarCorteModal day={day} totals={totals} onGuardar={guardarCorte} onClose={() => setModal(null)} />
+      )}
+      {modal?.type === "reabrirCorte" && (
+        <Sheet title="Reabrir corte" onClose={() => setModal(null)}>
+          <p className="hint">
+            El corte se desbloquea para quien lo tiene asignado: lo podrá corregir y tendrá que volver a tocar
+            "Guardar corte".
+          </p>
+          <button className="btn-primary" onClick={reabrirCorte}>
+            Sí, reabrir corte
+          </button>
+          <button className="link-btn" onClick={() => setModal(null)}>
+            Cancelar
+          </button>
+        </Sheet>
+      )}
       {modal?.type === "apps" && day && <AppsModal onClose={() => setModal(null)} onSave={saveVentaApps} value={day.ventaApps || 0} desglose={day.ventaAppsDesglose} />}
       {modal?.type === "weekSummary" && month && activeMonth && (
         <WeekSummaryModal
@@ -1684,4 +1757,10 @@ export default function CortesApp({ profile }: { profile: Profile }) {
       )}
     </div>
   );
+}
+
+// "20 oct a las 11:42 p.m."
+function fechaHoraCorta(iso: string): string {
+  const d = new Date(iso);
+  return `${d.toLocaleDateString("es-MX", { day: "numeric", month: "short" }).replace(".", "")} a las ${d.toLocaleTimeString("es-MX", { hour: "numeric", minute: "2-digit" })}`;
 }

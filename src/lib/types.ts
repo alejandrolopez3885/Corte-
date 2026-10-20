@@ -380,6 +380,9 @@ export interface DayData {
   // aunque después se le quite el acceso a esa persona.
   asignadoA?: { empleadoId: string; staffId: string; nombre: string };
   hechoPor?: { empleadoId?: string; nombre: string };
+  // "Guardar corte": quien termina el corte lo confirma y desde ahí queda
+  // bloqueado para el personal (el dueño siempre puede editarlo o reabrirlo).
+  corteGuardado?: { fecha: string; nombre: string }; // fecha: ISO con hora
 }
 
 // Control de gastos que los proveedores dan a crédito, pagados después por
