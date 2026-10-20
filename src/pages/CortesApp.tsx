@@ -566,6 +566,16 @@ export default function CortesApp({ profile }: { profile: Profile }) {
     persist(next);
   }
 
+  function saltarJuevesInventario(fecha: string, saltado: boolean) {
+    if (!data) return;
+    const next = structuredClone(data);
+    const saltados = { ...(next.inventarioJuevesSaltado || {}) };
+    if (saltado) saltados[fecha] = true;
+    else delete saltados[fecha];
+    next.inventarioJuevesSaltado = saltados;
+    persist(next);
+  }
+
   function guardarPedidoInventario(fecha: string, pedido: Record<string, number>) {
     if (!data) return;
     const next = structuredClone(data);
@@ -1387,6 +1397,8 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           initialMonthKey={desdeInicio?.mk ?? (mostRecentMonthKey as string)}
           initialWeekIndex={desdeInicio?.wi ?? mostRecentWeekIdx}
           initialModo={desdeInicio?.modo}
+          juevesSaltados={data.inventarioJuevesSaltado}
+          onSaltarJueves={saltarJuevesInventario}
           notas={data.inventariosNotas}
           onGuardarNotas={guardarInventarioNotas}
           pedidos={data.pedidosInventario}

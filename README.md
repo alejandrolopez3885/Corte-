@@ -149,8 +149,11 @@ estando en Nómina te regresa al menú de Equipo):
     capturar, o el de Cocina con el pedido sin guardar (solo de las áreas
     que lo vienen usando en las últimas 2 semanas; abre directo el Conteo
     diario); inventario del domingo más reciente y, de jueves a sábado, el
-    del jueves — sin hacer o con "No reconocidos" por resolver (abre
-    Inventario en esa semana y modo); horario de la próxima semana sin
+    del jueves — sin hacer o con "No reconocidos" por resolver, en el
+    mismo orden que Inventario: si al domingo le falta su jueves (sin
+    guardar ni saltado), avisa del jueves ("el del domingo espera a
+    este"); un jueves saltado no avisa (abre Inventario en esa semana y
+    paso); horario de la próxima semana sin
     guardar, de jueves en adelante; días de hoy a 6 días sin nadie
     asignado ni corte capturado (solo si se ha usado "Asignar día" en las
     últimas 3 semanas); la nómina de la semana que cerró (o la de hoy si
@@ -605,7 +608,20 @@ estando en Nómina te regresa al menú de Equipo):
   abre directo al catálogo, sin menú intermedio, porque es su única
   función. Es para insumos que gerencia maneja aparte, sin ser de Bar ni
   de Cocina — desechables, limpieza y similares; y bajo "Compras", "Inventario" — el conteo completo del domingo y el
-  parcial del jueves (switch "Completo (domingo)" / "Jueves"), en notas
+  parcial del jueves, por pasos y en orden: arriba, "1 · Jueves [día]" y
+  "2 · Domingo [día]" con la fecha real de esa semana y su estado (Sin
+  guardar, Guardado ✓, No se hizo, Desde el jueves/domingo, Después del
+  jueves). Al abrir una semana se abre el paso que toca. Cada uno se
+  captura desde su día (antes sale "🔒 Se habilita el jueves 22", también
+  para el dueño), y el domingo además espera a que se guarde el jueves
+  ("🔒 Primero guarda el inventario del jueves", con "Ir al jueves"). El
+  jueves se puede corregir con "Editar" mientras no se guarde el domingo;
+  ya guardado el domingo, para el personal queda "Cerrado: ya se guardó el
+  inventario del domingo" (el dueño siempre puede). Si una semana no se
+  hizo el jueves, solo el dueño ve "Saltar el jueves de esta semana" (con
+  confirmación): el jueves queda como "No se hizo", se habilita el
+  domingo, y se puede deshacer desde el mismo paso. Las semanas de antes
+  que solo tienen el domingo guardado se respetan tal cual. Va en notas
   libres: el cuadro arranca vacío y quien cuenta escribe lo que va viendo,
   un producto por renglón y como le salga (".6 consomé", "1k ajo en
   polvo", "500 bolsas Johnster", "250 gms habanero"). Se guarda por la
@@ -758,11 +774,12 @@ el cambio): le salen todas las que todavía no ha cerrado, y al cerrarlas
 ya no vuelven a salir. Lo visto se guarda en su cuenta, no en el aparato:
 si las cierra en la computadora, ya no le salen en el celular. Lo que ve
 el dueño no queda en el historial. Las
-novedades viven en `src/lib/novedades.ts`; hoy hay 5. De Corte: sumar
+novedades viven en `src/lib/novedades.ts`; hoy hay 6. De Corte: sumar
 montos con "+", el nombre del gasto que se completa solo, la categoría
 obligatoria (con la nueva Servicio) y el botón "Guardar corte". De
 Inventario: el aviso "Faltan por contar" al guardar, para que lo que no
-hay salga en 0 y se pueda pedir.
+hay salga en 0 y se pueda pedir, y el inventario en orden (primero el
+jueves, luego el domingo).
 
 Antes de las novedades sale siempre una tarjeta de intro, "Hay cosas
 nuevas en la app": explica que así se avisan los cambios la primera vez

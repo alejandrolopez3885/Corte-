@@ -206,21 +206,32 @@ export function calcularInicio(data: AppData, hoy: string, bitacora: RenglonBita
     }
   });
 
-  // Inventario: el domingo más reciente y, de jueves a sábado, el jueves.
+  // Inventario, en orden: primero el jueves y después el domingo de cada
+  // semana (el domingo espera al jueves, salvo que el dueño lo salte).
+  // Se revisa el domingo más reciente y, de jueves a sábado, el jueves.
   const notas = data.inventariosNotas || {};
   if (Object.keys(notas).length > 0) {
+    const saltados = data.inventarioJuevesSaltado || {};
+    const juevesListo = (f: string) => notas[f] !== undefined || !!saltados[f];
+    const revisar: { fecha: string; modo: "completo" | "jueves"; nombre: string }[] = [];
+    const agregar = (fecha: string, modo: "completo" | "jueves") => {
+      if (!revisar.some((r) => r.fecha === fecha)) revisar.push({ fecha, modo, nombre: modo === "jueves" ? "del jueves" : "del domingo" });
+    };
     const domingo = diaSemana === "Domingo" ? hoy : addDaysIso(lunes, -1);
+    const juevesDeEseDomingo = addDaysIso(domingo, -3);
+    if (notas[domingo] === undefined && !juevesListo(juevesDeEseDomingo)) agregar(juevesDeEseDomingo, "jueves");
+    else agregar(domingo, "completo");
     const jueves = addDaysIso(lunes, 3);
-    const revisar: { fecha: string; modo: "completo" | "jueves"; nombre: string }[] = [{ fecha: domingo, modo: "completo", nombre: "del domingo" }];
-    if (jueves <= hoy && diaSemana !== "Domingo") revisar.push({ fecha: jueves, modo: "jueves", nombre: "del jueves" });
+    if (jueves <= hoy && diaSemana !== "Domingo") agregar(jueves, "jueves");
     revisar.forEach(({ fecha, modo, nombre }) => {
       if (!dias.has(fecha)) return;
       const texto = notas[fecha];
       if (texto === undefined) {
+        if (modo === "jueves" && saltados[fecha]) return;
         operacion.push({
           id: `inventario-${fecha}`,
           titulo: `Inventario ${nombre} ${diaCorto(fecha).split(" ")[1]}`,
-          detalle: "Todavía no se hace.",
+          detalle: modo === "jueves" && fecha === juevesDeEseDomingo ? "Todavía no se hace · el del domingo espera a este." : "Todavía no se hace.",
           ir: { tipo: "inventario", fecha, modo },
         });
         return;

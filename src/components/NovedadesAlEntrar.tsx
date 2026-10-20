@@ -168,6 +168,27 @@ function Visual({ tipo }: { tipo: VisualNovedad }) {
       </>
     );
   }
+  if (tipo === "inventarioPasos") {
+    return (
+      <>
+        <div className="inv-pasos">
+          <div className="inv-paso hecho">
+            <strong>
+              <span className="inv-paso-num">✓</span>Jueves 22
+            </strong>
+            <small>Guardado</small>
+          </div>
+          <div className="inv-paso activo">
+            <strong>
+              <span className="inv-paso-num">2</span>Domingo 25
+            </strong>
+            <small>Sin guardar</small>
+          </div>
+        </div>
+        <span className="nv-suma">El domingo se habilita al guardar el jueves.</span>
+      </>
+    );
+  }
   if (tipo === "guardarCorte") {
     return (
       <>

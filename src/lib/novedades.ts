@@ -16,7 +16,7 @@ import type { AppData, PermisoStaff, Profile } from "./types";
 
 export type SeccionNovedad = "corte" | PermisoStaff;
 
-export type VisualNovedad = "sumar" | "autocompletar" | "categoria" | "faltan" | "guardarCorte";
+export type VisualNovedad = "sumar" | "autocompletar" | "categoria" | "faltan" | "guardarCorte" | "inventarioPasos";
 
 export interface Novedad {
   id: string;
@@ -67,6 +67,14 @@ export const NOVEDADES: Novedad[] = [
     titulo: "Termina tu corte con \"Guardar corte\"",
     texto: "Al final revisas y palomeas cada total. Ya guardado **no se puede editar**, y no deja guardar si un gasto sigue en Pendiente.",
     visual: "guardarCorte",
+  },
+  {
+    id: "inventario-pasos",
+    fecha: "2026-10-20T09:05:00Z",
+    seccion: "inventario",
+    titulo: "El inventario va en orden",
+    texto: "Primero el **jueves** y, ya guardado, el **domingo**. Cada uno se captura desde su día.",
+    visual: "inventarioPasos",
   },
 ];
 

@@ -459,6 +459,9 @@ export interface AppData {
   // Inventario del domingo/jueves en notas libres (Negocio > Inventario):
   // fecha real del domingo o jueves (ISO) -> texto tal cual lo escribieron.
   inventariosNotas: Record<string, string>;
+  // Jueves que el dueño marcó como "No se hizo" (fecha -> true): habilitan
+  // el inventario del domingo de esa semana sin el del jueves.
+  inventarioJuevesSaltado?: Record<string, boolean>;
   // Lo que se pide desde ese inventario: fecha -> producto (nombre
   // normalizado) -> cantidad; 0 = no se pide.
   pedidosInventario: Record<string, Record<string, number>>;

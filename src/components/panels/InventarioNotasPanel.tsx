@@ -1,16 +1,14 @@
-import { useState } from "react";
-import { ArrowLeft, Package, TriangleAlert } from "lucide-react";
+import { useState, type ReactNode } from "react";
+import { ArrowLeft, Check, Lock, Package, TriangleAlert } from "lucide-react";
 import { Empty, Field, Sheet } from "../ui";
 import { ErroresSheet, ListaPorProveedor, type ErroresCaptura } from "./ConteoDiarioPanel";
-import { dateForDay, formatLongDayDate, formatWeekRange, resolveWeekStartDate, todayIso, type LineaConteoTexto } from "../../lib/dataModel";
+import {
+  dateForDay, formatDayNumber, formatLongDayDate, formatWeekRange, resolveWeekStartDate, todayIso, type LineaConteoTexto,
+} from "../../lib/dataModel";
 import { leerNotasInventario, type RenglonInventario } from "../../lib/inventarioNotas";
 import type { InsumoEntry, MonthData, ProveedorCatalogEntry } from "../../lib/types";
 
 type Modo = "completo" | "jueves";
-
-function esHoyJueves(): boolean {
-  return new Date(`${todayIso()}T00:00:00`).getDay() === 4;
-}
 
 // Del catálogo que tocaba contar (todos el domingo; el jueves, solo los de
 // proveedores marcados) y no aparece en las notas — sin los de alta
@@ -30,6 +28,11 @@ function faltantesPorContar(
   );
 }
 
+// Inventario por pasos: primero el jueves (parcial) y después el domingo
+// (completo). Cada uno se captura desde su día; el domingo además espera a
+// que se guarde el jueves (o a que el dueño lo salte). El jueves se puede
+// corregir hasta que se guarde el domingo (el dueño, siempre).
+//
 // Inventario completo (domingo) / parcial (jueves) en notas libres: el
 // cuadro arranca vacío y quien cuenta escribe lo que va viendo, un producto
 // por renglón. Ya guardado, cada renglón se liga con el catálogo para
@@ -52,6 +55,8 @@ export function InventarioNotasPanel({
   onAsignarApodo,
   onEditarProveedores,
   initialModo,
+  juevesSaltados,
+  onSaltarJueves,
 }: {
   onBack?: () => void;
   backLabel: string;
@@ -69,10 +74,17 @@ export function InventarioNotasPanel({
   onEditarProveedores?: () => void;
   // Desde Inicio se abre en el modo de la alerta.
   initialModo?: Modo;
+  // Jueves que el dueño marcó como "No se hizo" (fecha -> true).
+  juevesSaltados?: Record<string, boolean>;
+  // Solo el dueño: saltar (o deshacer) el jueves de una semana.
+  onSaltarJueves?: (fecha: string, saltado: boolean) => void;
 }) {
   const [monthKey, setMonthKey] = useState(initialMonthKey);
   const [weekIndex, setWeekIndex] = useState(initialWeekIndex);
-  const [modo, setModo] = useState<Modo>(() => initialModo ?? (esHoyJueves() ? "jueves" : "completo"));
+  // null = el paso que toca (jueves si no está listo, si no el domingo).
+  const [modoElegido, setModoElegido] = useState<Modo | null>(initialModo ?? null);
+  const [pidiendoSaltar, setPidiendoSaltar] = useState(false);
+  const esDueno = !!onSaltarJueves;
 
   const month = months[monthKey] || null;
 
@@ -91,7 +103,98 @@ export function InventarioNotasPanel({
   }
 
   const weekStartDate = resolveWeekStartDate(monthKey, weekIndex, month);
-  const fecha = dateForDay(monthKey, weekIndex, month, modo === "completo" ? "Domingo" : "Jueves");
+  const hoy = todayIso();
+  const fechaJueves = dateForDay(monthKey, weekIndex, month, "Jueves");
+  const fechaDomingo = dateForDay(monthKey, weekIndex, month, "Domingo");
+  const juevesGuardado = notas[fechaJueves] !== undefined;
+  const juevesSaltado = !juevesGuardado && !!juevesSaltados?.[fechaJueves];
+  const juevesListo = juevesGuardado || juevesSaltado;
+  const domingoGuardado = notas[fechaDomingo] !== undefined;
+  const modo: Modo = modoElegido ?? (juevesListo || domingoGuardado ? "completo" : "jueves");
+  const fecha = modo === "completo" ? fechaDomingo : fechaJueves;
+  const cambiarSemana = (mk: string, wi: number) => {
+    setMonthKey(mk);
+    setWeekIndex(wi);
+    setModoElegido(null);
+  };
+
+  const estadoJueves = juevesGuardado ? "Guardado" : juevesSaltado ? "No se hizo" : hoy < fechaJueves ? "Desde el jueves" : "Sin guardar";
+  const domingoBloqueado = !domingoGuardado && !juevesListo;
+  const estadoDomingo = domingoGuardado ? "Guardado" : domingoBloqueado ? "Después del jueves" : hoy < fechaDomingo ? "Desde el domingo" : "Sin guardar";
+
+  let contenido: ReactNode;
+  if (modo === "jueves" && juevesSaltado) {
+    contenido = (
+      <div className="inv-espera">
+        <strong>No se hizo el inventario de este jueves</strong>
+        <span>Ya se puede capturar el del domingo.</span>
+        {esDueno && (
+          <button className="link-btn" onClick={() => onSaltarJueves!(fechaJueves, false)}>
+            Deshacer: capturar el jueves
+          </button>
+        )}
+      </div>
+    );
+  } else if (modo === "jueves" && !juevesGuardado && hoy < fechaJueves) {
+    contenido = (
+      <>
+        <div className="inv-espera">
+          <strong>
+            <Lock size={15} /> Se habilita el jueves {formatDayNumber(fechaJueves)}
+          </strong>
+          <span>El inventario del jueves se captura desde ese día.</span>
+        </div>
+        {esDueno && <SaltarJueves onClick={() => setPidiendoSaltar(true)} />}
+      </>
+    );
+  } else if (modo === "completo" && domingoBloqueado) {
+    contenido = (
+      <div className="inv-espera">
+        <strong>
+          <Lock size={15} /> Primero guarda el inventario del jueves
+        </strong>
+        <span>El del domingo se habilita en cuanto se guarde el del jueves {formatDayNumber(fechaJueves)}.</span>
+        <button className="link-btn" onClick={() => setModoElegido("jueves")}>
+          Ir al jueves
+        </button>
+      </div>
+    );
+  } else if (modo === "completo" && !domingoGuardado && hoy < fechaDomingo) {
+    contenido = (
+      <div className="inv-espera">
+        <strong>
+          <Lock size={15} /> Se habilita el domingo {formatDayNumber(fechaDomingo)}
+        </strong>
+        <span>
+          El inventario completo se captura desde ese día.{juevesGuardado && " Mientras, puedes corregir el del jueves."}
+        </span>
+        {juevesGuardado && (
+          <button className="link-btn" onClick={() => setModoElegido("jueves")}>
+            Ver / editar el inventario del jueves
+          </button>
+        )}
+      </div>
+    );
+  } else {
+    contenido = (
+      <>
+        <NotasForm
+          key={fecha}
+          fecha={fecha}
+          modo={modo}
+          guardado={notas[fecha]}
+          insumos={insumos}
+          proveedores={proveedores}
+          onGuardarNotas={onGuardarNotas}
+          pedidoGuardado={pedidos[fecha]}
+          onGuardarPedido={onGuardarPedido}
+          onAsignarApodo={onAsignarApodo}
+          cerrado={modo === "jueves" && domingoGuardado && !esDueno}
+        />
+        {modo === "jueves" && !juevesGuardado && esDueno && <SaltarJueves onClick={() => setPidiendoSaltar(true)} />}
+      </>
+    );
+  }
 
   return (
     <div className="page-section">
@@ -104,14 +207,7 @@ export function InventarioNotasPanel({
 
       <div className="field-row">
         <Field label="Mes">
-          <select
-            className="text-input"
-            value={monthKey}
-            onChange={(e) => {
-              setMonthKey(e.target.value);
-              setWeekIndex(0);
-            }}
-          >
+          <select className="text-input" value={monthKey} onChange={(e) => cambiarSemana(e.target.value, 0)}>
             {monthKeys.map((mk) => (
               <option key={mk} value={mk}>
                 {months[mk].label}
@@ -120,7 +216,7 @@ export function InventarioNotasPanel({
           </select>
         </Field>
         <Field label="Semana">
-          <select className="text-input" value={weekIndex} onChange={(e) => setWeekIndex(Number(e.target.value))}>
+          <select className="text-input" value={weekIndex} onChange={(e) => cambiarSemana(monthKey, Number(e.target.value))}>
             {[0, 1, 2, 3].map((i) => (
               <option key={i} value={i}>
                 Semana {i + 1}
@@ -131,13 +227,24 @@ export function InventarioNotasPanel({
       </div>
       <p className="hint">{formatWeekRange(weekStartDate)}</p>
 
-      <div className="segmented">
-        <button type="button" className={modo === "completo" ? "active" : ""} onClick={() => setModo("completo")}>
-          Completo (domingo)
-        </button>
-        <button type="button" className={modo === "jueves" ? "active" : ""} onClick={() => setModo("jueves")}>
-          Jueves
-        </button>
+      <div className="inv-pasos">
+        <Paso
+          numero={1}
+          titulo={`Jueves ${formatDayNumber(fechaJueves)}`}
+          estado={estadoJueves}
+          activo={modo === "jueves"}
+          hecho={juevesListo}
+          onClick={() => setModoElegido("jueves")}
+        />
+        <Paso
+          numero={2}
+          titulo={`Domingo ${formatDayNumber(fechaDomingo)}`}
+          estado={estadoDomingo}
+          activo={modo === "completo"}
+          hecho={domingoGuardado}
+          bloqueado={domingoBloqueado}
+          onClick={() => setModoElegido("completo")}
+        />
       </div>
       {onEditarProveedores && (
         <button className="link-btn" onClick={onEditarProveedores}>
@@ -146,19 +253,69 @@ export function InventarioNotasPanel({
       )}
       <p className="active-day-date">{formatLongDayDate(fecha)}</p>
 
-      <NotasForm
-        key={fecha}
-        fecha={fecha}
-        modo={modo}
-        guardado={notas[fecha]}
-        insumos={insumos}
-        proveedores={proveedores}
-        onGuardarNotas={onGuardarNotas}
-        pedidoGuardado={pedidos[fecha]}
-        onGuardarPedido={onGuardarPedido}
-        onAsignarApodo={onAsignarApodo}
-      />
+      {contenido}
+
+      {pidiendoSaltar && (
+        <Sheet title="Saltar el jueves" onClose={() => setPidiendoSaltar(false)}>
+          <p className="hint">
+            El inventario del jueves {formatDayNumber(fechaJueves)} queda como "No se hizo" y se habilita el del domingo. Lo
+            puedes deshacer desde el mismo paso del jueves.
+          </p>
+          <button
+            className="btn-primary"
+            onClick={() => {
+              onSaltarJueves!(fechaJueves, true);
+              setPidiendoSaltar(false);
+              setModoElegido(null);
+            }}
+          >
+            Sí, saltar el jueves
+          </button>
+          <button className="link-btn" onClick={() => setPidiendoSaltar(false)}>
+            Cancelar
+          </button>
+        </Sheet>
+      )}
     </div>
+  );
+}
+
+function Paso({
+  numero,
+  titulo,
+  estado,
+  activo,
+  hecho,
+  bloqueado,
+  onClick,
+}: {
+  numero: number;
+  titulo: string;
+  estado: string;
+  activo: boolean;
+  hecho: boolean;
+  bloqueado?: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button type="button" className={`inv-paso ${activo ? "activo" : ""} ${hecho ? "hecho" : ""} ${bloqueado ? "bloqueado" : ""}`} onClick={onClick}>
+      <strong>
+        <span className="inv-paso-num">{hecho ? <Check size={12} /> : bloqueado ? <Lock size={11} /> : numero}</span>
+        {titulo}
+      </strong>
+      <small>{estado}</small>
+    </button>
+  );
+}
+
+function SaltarJueves({ onClick }: { onClick: () => void }) {
+  return (
+    <>
+      <button className="inv-saltar" onClick={onClick}>
+        Saltar el jueves de esta semana
+      </button>
+      <p className="hint inv-saltar-hint">Solo tú ves este botón. El jueves queda como "No se hizo" y se habilita el domingo.</p>
+    </>
   );
 }
 
@@ -172,9 +329,12 @@ function NotasForm({
   pedidoGuardado,
   onGuardarPedido,
   onAsignarApodo,
+  cerrado,
 }: {
   fecha: string;
   modo: Modo;
+  // Jueves ya cerrado para el personal (se guardó el domingo).
+  cerrado?: boolean;
   guardado?: string;
   insumos: InsumoEntry[];
   proveedores: ProveedorCatalogEntry[];
@@ -228,10 +388,12 @@ function NotasForm({
     <>
       {locked && (
         <div className="conteo-locked-banner">
-          <span>Inventario guardado y bloqueado.</span>
-          <button className="link-btn" onClick={() => setPidiendoConfirmacion(true)}>
-            Editar
-          </button>
+          <span>{cerrado ? "Cerrado: ya se guardó el inventario del domingo." : "Inventario guardado y bloqueado."}</span>
+          {!cerrado && (
+            <button className="link-btn" onClick={() => setPidiendoConfirmacion(true)}>
+              Editar
+            </button>
+          )}
         </div>
       )}
       <textarea
@@ -246,8 +408,9 @@ function NotasForm({
         <>
           <p className="hint">Un producto por renglón, con la cantidad como lo cuentes.</p>
           <button className="btn-primary" onClick={guardar} disabled={!texto.trim()}>
-            Guardar inventario
+            Guardar inventario del {modo === "jueves" ? "jueves" : "domingo"}
           </button>
+          {modo === "jueves" && guardado === undefined && <p className="hint inv-saltar-hint">Al guardarlo se habilita el domingo.</p>}
         </>
       )}
 

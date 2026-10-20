@@ -221,6 +221,7 @@ export default function StaffAccessShell({
           pedidos={data.pedidosInventario}
           onGuardarPedido={onSavePedidoInventario}
           onAsignarApodo={onAsignarApodo}
+          juevesSaltados={data.inventarioJuevesSaltado}
         />
       </div>
     );
