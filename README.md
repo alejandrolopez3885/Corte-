@@ -36,6 +36,22 @@ Gastos fijos guardado antes de este cambio se quedan con su número, como
 "editado a mano", para no mover resultados pasados; las semanas sin nada
 guardado en Control de gastos en transferencia toman el automático.
 
+**Pendientes en Control de gastos en efectivo**: arriba de la lista de
+gastos hay filtros con cuántos hay de cada uno — **Todos**, **Pendientes**,
+**Sin categoría** (pendientes sin categoría) e **Ingresados**. Si la semana
+tiene pendientes se abre directo en Pendientes; si no, en Todos. Con un
+filtro solo salen los días que tienen algo de ese filtro (con "2
+pendientes" en vez del total del día) y un resumen ("3 pendientes ·
+$1,135.00"). Cada pendiente lleva una etiqueta con lo que le falta: "Falta
+categoría" (rojo; Confirmar sigue apagado hasta elegirla) o "Falta
+confirmar (subir comprobante al bot)" (naranja), con el borde del mismo
+color. Al confirmar uno, sale el aviso "✓ Coca Cola $362.00 confirmado" y,
+en Pendientes, se quita de la lista. Cada gasto lleva además una etiqueta
+discreta con su día y fecha ("Lun 12 oct"). En el selector de semana, las
+que tienen pendientes lo dicen ("Sem 3 · 3 pdtes"), y si hay pendientes en
+las 2 semanas anteriores sale arriba "⚠ 1 pendiente en semanas anteriores
+(5 – 11 oct)" — al tocarlo, abre la más vieja.
+
 Desde **Control de gastos en efectivo** también se puede mover un gasto de
 un día a otro dentro de la misma semana (botón "Mover a..." en cada gasto),
 sin perder su historial (mismo id, categoría y estado). Si el gasto estaba

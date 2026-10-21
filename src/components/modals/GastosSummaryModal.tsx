@@ -1,9 +1,25 @@
-import { useState } from "react";
-import { Check, Pencil } from "lucide-react";
+import { useRef, useState } from "react";
+import { Check, Pencil, TriangleAlert } from "lucide-react";
 import { Sheet, Field, NumInput } from "../ui";
-import { computeWeekGastos, dateForDay, formatShortDayDate, formatWeekRange, money, resolveWeekStartDate } from "../../lib/dataModel";
+import { addDaysIso, computeWeekGastos, dateForDay, formatShortDayDate, formatWeekRange, money, resolveWeekStartDate } from "../../lib/dataModel";
 import { DAYS, GASTO_CATEGORIAS } from "../../lib/types";
-import type { DayName, EmpleadoEntry, GastoCategoria, MeseroCatalogEntry, MonthData } from "../../lib/types";
+import type { DayName, EmpleadoEntry, Gasto, GastoCategoria, MeseroCatalogEntry, MonthData, WeekData } from "../../lib/types";
+
+type Filtro = "todos" | "pendientes" | "sinCategoria" | "ingresados";
+
+const pasaFiltro = (g: Gasto, f: Filtro) =>
+  f === "todos" || (f === "pendientes" && g.estado === "pendiente") || (f === "ingresados" && g.estado === "ingresado") || (f === "sinCategoria" && g.estado === "pendiente" && !g.categoria);
+
+const pendientesDe = (w: WeekData | null | undefined) => (w ? DAYS.reduce((n, d) => n + w.days[d].gastos.filter((g) => g.estado === "pendiente").length, 0) : 0);
+
+// "Lun 13 oct": etiqueta discreta de cada gasto.
+const DIA_CORTO: Record<DayName, string> = {
+  Lunes: "Lun", Martes: "Mar", Miércoles: "Mié", Jueves: "Jue", Viernes: "Vie", Sábado: "Sáb", Domingo: "Dom",
+};
+
+// Semanas anteriores a revisar por pendientes olvidados: solo las 2
+// últimas — lo más viejo ya no se corrige.
+const SEMANAS_ATRAS = 2;
 import type { NombreHistorial } from "../../lib/gastosBusqueda";
 import { BuscarGastos } from "./BuscarGastos";
 import type { GastoFormValues } from "./GastoModal";
@@ -40,6 +56,10 @@ export function GastosSummaryModal({
   const [monthKey, setMonthKey] = useState(initialMonthKey);
   const [weekIndex, setWeekIndex] = useState(initialWeekIndex);
   const [editing, setEditing] = useState<{ id: string; concepto: string; total: string } | null>(null);
+  // null = automático: Pendientes si la semana tiene, si no Todos.
+  const [filtroElegido, setFiltroElegido] = useState<Filtro | null>(null);
+  const [aviso, setAviso] = useState<string | null>(null);
+  const avisoTimer = useRef<number | undefined>(undefined);
 
   const month = months[monthKey];
   const week = month?.weeks[weekIndex];
@@ -48,19 +68,57 @@ export function GastosSummaryModal({
 
   const weekStartDate = resolveWeekStartDate(monthKey, weekIndex, month);
   const g = computeWeekGastos(week);
+  const sinCategoria = g.perDay.reduce((n, d) => n + d.items.filter((x) => pasaFiltro(x, "sinCategoria")).length, 0);
+  const filtro: Filtro = filtroElegido ?? (g.countPendiente > 0 ? "pendientes" : "todos");
+  const filtros: { key: Filtro; label: string; n: number }[] = [
+    { key: "todos", label: "Todos", n: g.countTotal },
+    { key: "pendientes", label: "Pendientes", n: g.countPendiente },
+    { key: "sinCategoria", label: "Sin categoría", n: sinCategoria },
+    { key: "ingresados", label: "Ingresados", n: g.countIngresado },
+  ];
+  const dias = g.perDay.map((d) => ({ ...d, visibles: d.items.filter((x) => pasaFiltro(x, filtro)) }));
+  const montoVisible = dias.reduce((s, d) => s + d.visibles.reduce((x, i) => x + i.total, 0), 0);
+  const cuantosVisibles = dias.reduce((n, d) => n + d.visibles.length, 0);
+
+  // Pendientes en las 2 semanas anteriores, en cualquier mes.
+  const anteriores: { mk: string; wi: number; lunes: string; n: number }[] = [];
+  monthKeys.forEach((mk) =>
+    months[mk].weeks.forEach((w, wi) => {
+      const lunes = resolveWeekStartDate(mk, wi, months[mk]);
+      if (lunes >= weekStartDate || lunes < addDaysIso(weekStartDate, -7 * SEMANAS_ATRAS)) return;
+      const n = pendientesDe(w);
+      if (n > 0) anteriores.push({ mk, wi, lunes, n });
+    })
+  );
+  anteriores.sort((a, b) => a.lunes.localeCompare(b.lunes));
+  const totalAnteriores = anteriores.reduce((s, a) => s + a.n, 0);
+
+  function irASemana(mk: string, wi: number) {
+    setMonthKey(mk);
+    setWeekIndex(wi);
+    setEditing(null);
+    setFiltroElegido(null);
+  }
+
+  // Al confirmar un pendiente se quita de la lista (si el filtro es
+  // Pendientes) y queda un aviso discreto de cuál fue.
+  function cambiarEstado(day: DayName, item: Gasto) {
+    onToggleEstado(monthKey, weekIndex, day, item.id);
+    if (item.estado === "pendiente") {
+      setAviso(`${item.concepto} ${money(item.total)} confirmado`);
+      window.clearTimeout(avisoTimer.current);
+      avisoTimer.current = window.setTimeout(() => setAviso(null), 2500);
+    }
+  }
 
   return (
     <Sheet title="Control de gastos en efectivo" onClose={onClose}>
-      <div className="field-row">
+      <div className="field-row gastos-semana-row">
         <Field label="Mes">
           <select
             className="text-input"
             value={monthKey}
-            onChange={(e) => {
-              setMonthKey(e.target.value);
-              setWeekIndex(0);
-              setEditing(null);
-            }}
+            onChange={(e) => irASemana(e.target.value, 0)}
           >
             {monthKeys.map((mk) => (
               <option key={mk} value={mk}>
@@ -70,23 +128,29 @@ export function GastosSummaryModal({
           </select>
         </Field>
         <Field label="Semana">
-          <select
-            className="text-input"
-            value={weekIndex}
-            onChange={(e) => {
-              setWeekIndex(Number(e.target.value));
-              setEditing(null);
-            }}
-          >
-            {[0, 1, 2, 3].map((i) => (
-              <option key={i} value={i}>
-                Semana {i + 1}
-              </option>
-            ))}
+          <select className="text-input" value={weekIndex} onChange={(e) => irASemana(monthKey, Number(e.target.value))}>
+            {[0, 1, 2, 3].map((i) => {
+              const n = pendientesDe(month.weeks[i]);
+              return (
+                <option key={i} value={i}>
+                  {n > 0 ? `Sem ${i + 1} · ${n} pdte${n === 1 ? "" : "s"}` : `Semana ${i + 1}`}
+                </option>
+              );
+            })}
           </select>
         </Field>
       </div>
       <p className="hint">{formatWeekRange(weekStartDate)}</p>
+
+      {totalAnteriores > 0 && (
+        <button type="button" className="gastos-anteriores" onClick={() => irASemana(anteriores[0].mk, anteriores[0].wi)}>
+          <span>
+            <TriangleAlert size={14} /> <strong>{totalAnteriores} {totalAnteriores === 1 ? "pendiente" : "pendientes"}</strong> en
+            semanas anteriores ({anteriores.map((a) => formatWeekRange(a.lunes)).join(", ")})
+          </span>
+          <span className="gastos-anteriores-ver">Ver ›</span>
+        </button>
+      )}
 
       <BuscarGastos
         key={`${monthKey}-${weekIndex}`}
@@ -123,23 +187,63 @@ export function GastosSummaryModal({
         vuelve a marcarlo como pendiente.
       </p>
 
+      <div className="gastos-filtros">
+        {filtros.map((f) => (
+          <button
+            key={f.key}
+            type="button"
+            className={`gastos-filtro ${filtro === f.key ? "activo" : ""} ${f.key !== "todos" && f.key !== "ingresados" && f.n > 0 ? "alerta" : ""}`}
+            onClick={() => setFiltroElegido(f.key)}
+          >
+            {f.label} <strong>{f.n}</strong>
+          </button>
+        ))}
+      </div>
+      {filtro !== "todos" && (
+        <p className="hint gastos-filtro-resumen">
+          {cuantosVisibles === 0
+            ? filtro === "ingresados"
+              ? "Ningún gasto ingresado esta semana."
+              : "✓ Sin pendientes esta semana."
+            : `${cuantosVisibles} ${filtro === "ingresados" ? (cuantosVisibles === 1 ? "ingresado" : "ingresados") : cuantosVisibles === 1 ? "pendiente" : "pendientes"} · ${money(montoVisible)}${filtro !== "ingresados" ? " — al confirmar cada uno, se quita de esta lista." : ""}`}
+        </p>
+      )}
+      {aviso && (
+        <div className="toast-discreto gastos-aviso" role="status">
+          <Check size={14} /> {aviso}
+        </div>
+      )}
+
       <div className="gastos-days">
-        {g.perDay.map((d) => (
+        {dias.map((d) => {
+          if (filtro !== "todos" && d.visibles.length === 0) return null;
+          const fecha = dateForDay(monthKey, weekIndex, month, d.day);
+          const etiquetaFecha = `${DIA_CORTO[d.day]} ${formatShortDayDate(fecha)}`;
+          return (
           <div key={d.day} className="gastos-day-block">
             <div className="gastos-day-head">
               <span>
-                {d.day} <em>{formatShortDayDate(dateForDay(monthKey, weekIndex, month, d.day))}</em>
+                {d.day} <em>{formatShortDayDate(fecha)}</em>
               </span>
-              <strong>{money(d.dayTotal)}</strong>
+              {filtro === "todos" ? (
+                <strong>{money(d.dayTotal)}</strong>
+              ) : (
+                <em className="gastos-day-cuantos">
+                  {d.visibles.length} {filtro === "ingresados" ? (d.visibles.length === 1 ? "ingresado" : "ingresados") : d.visibles.length === 1 ? "pendiente" : "pendientes"}
+                </em>
+              )}
             </div>
-            {d.items.length === 0 ? (
+            {d.visibles.length === 0 ? (
               <p className="hint">Sin gastos este día.</p>
             ) : (
               <div className="gasto-existing-list">
-                {d.items.map((item) => {
+                {d.visibles.map((item) => {
                   const isEditing = editing?.id === item.id;
                   return (
-                    <div key={item.id} className="gasto-existing-row gasto-row-classify">
+                    <div
+                      key={item.id}
+                      className={`gasto-existing-row gasto-row-classify ${item.estado === "pendiente" ? (item.categoria ? "falta-confirmar" : "falta-categoria") : ""}`}
+                    >
                       {isEditing ? (
                         <div className="gasto-row-edit">
                           <input
@@ -174,7 +278,10 @@ export function GastosSummaryModal({
                         <>
                           <div className="gasto-row-main">
                             <span className="gasto-row-main-text">
-                              <span className="gasto-existing-concepto">{item.concepto}</span>
+                              <span className="gasto-existing-concepto">
+                                {item.concepto}
+                                <span className="gasto-fecha">{etiquetaFecha}</span>
+                              </span>
                               <span className="gasto-existing-monto">{money(item.total)}</span>
                             </span>
                             <button
@@ -186,6 +293,11 @@ export function GastosSummaryModal({
                               <Pencil size={14} />
                             </button>
                           </div>
+                          {item.estado === "pendiente" && (
+                            <span className={`gasto-razon ${item.categoria ? "confirmar" : "categoria"}`}>
+                              {item.categoria ? "Falta confirmar (subir comprobante al bot)" : "Falta categoría"}
+                            </span>
+                          )}
                           <div className="gasto-row-controls">
                             <select
                               className="categoria-select"
@@ -204,7 +316,7 @@ export function GastosSummaryModal({
                               type="button"
                               className={`estado-chip ${item.estado}`}
                               disabled={item.estado === "pendiente" && !item.categoria}
-                              onClick={() => onToggleEstado(monthKey, weekIndex, d.day, item.id)}
+                              onClick={() => cambiarEstado(d.day, item)}
                             >
                               {item.estado === "pendiente" ? (
                                 "Confirmar"
@@ -230,9 +342,6 @@ export function GastosSummaryModal({
                               ))}
                             </select>
                           </div>
-                          {item.estado === "pendiente" && !item.categoria && (
-                            <p className="hint gasto-row-hint">Elige una categoría para poder confirmarlo.</p>
-                          )}
                           {item.meseroCutId && (
                             <p className="hint gasto-row-hint">
                               Restado del corte de {item.meseroNombre || "un mesero"} este día — si lo mueves o editas el monto, su
@@ -247,7 +356,8 @@ export function GastosSummaryModal({
               </div>
             )}
           </div>
-        ))}
+          );
+        })}
       </div>
 
       <div className="week-total-row">
