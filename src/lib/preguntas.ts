@@ -795,3 +795,127 @@ function responderEstadistica(data: AppData, c: Consulta, hoy: string): Respuest
     consulta: c,
   };
 }
+
+// --- Autocompletado -----------------------------------------------------
+// Mientras se escribe, se sugieren preguntas completas armadas con lo que sí
+// hay capturado: los días recientes, los nombres del horario y de los
+// meseros que tuvieron corte. Cada sugerencia ya trae su consulta, así que
+// al tocarla responde directo, sin volver a interpretar el texto.
+
+export interface Sugerencia {
+  texto: string;
+  consulta: Consulta;
+  claves: string; // texto normalizado + sinónimos, para buscar
+}
+
+const SINONIMOS: Record<Tema, string> = {
+  venta: "venta ventas vendi vendimos vendio vender cuanto",
+  efectivo: "efectivo sobre entregar cash dinero",
+  gastos: "gastos gasto gastamos gaste",
+  propinas: "propinas propina",
+  utilidad: "utilidad ganancia ganamos margen",
+  nomina: "nomina sueldo raya pago pagar toca gana",
+};
+const SINONIMOS_ESTADISTICA = "promedio normalmente estadistica general";
+
+export function catalogoSugerencias(data: AppData, hoy: string): Sugerencia[] {
+  const lista: Sugerencia[] = [];
+  const agregar = (texto: string, consulta: Consulta, extra = "") =>
+    lista.push({ texto, consulta, claves: normalizarNombre(`${texto} ${SINONIMOS[consulta.tema]} ${consulta.estadistica ? SINONIMOS_ESTADISTICA : ""} ${extra}`) });
+  const ayer = addDaysIso(hoy, -1);
+  const pasada = addDaysIso(hoy, -7);
+  const lunesHoy = mondayOnOrBefore(hoy);
+  const ubicaciones = ubicarFechas(data);
+  // Días de esta semana y la pasada que ya pasaron (hoy incluido).
+  const recientes: string[] = [];
+  for (let f = hoy; f >= addDaysIso(lunesHoy, -7); f = addDaysIso(f, -1)) recientes.push(f);
+  const nombreDia = (f: string) => (f === hoy ? "de hoy" : f === ayer ? `de ayer (${fechaLarga(f)})` : `del ${fechaLarga(f)}`);
+
+  PREGUNTAS.forEach((p) => {
+    // Estas ya salen con cada día o cada nombre.
+    if (p.id === "venta-dia" || p.id === "nomina-persona" || p.id === "stat-promedio-dia") return;
+    const texto = p.id === "venta-semana-pasada" ? "Venta de la semana pasada" : p.texto.replace("¿", "").replace("?", "");
+    agregar(texto.replace(/^./, (x) => x.toUpperCase()), consultaDePregunta(p.id, hoy));
+  });
+  recientes.forEach((f) => {
+    if (f === hoy || f === ayer) return;
+    agregar(`Venta ${nombreDia(f)}`, { tema: "venta", alcance: "dia", fecha: f });
+    agregar(`Propinas ${nombreDia(f)}`, { tema: "propinas", alcance: "dia", fecha: f });
+    agregar(`Gastos ${nombreDia(f)}`, { tema: "gastos", alcance: "dia", fecha: f });
+    agregar(`Efectivo a entregar ${nombreDia(f)}`, { tema: "efectivo", alcance: "dia", fecha: f });
+  });
+  agregar("Gastos de hoy", { tema: "gastos", alcance: "dia", fecha: hoy });
+  agregar(`Gastos de ayer (${fechaLarga(ayer)})`, { tema: "gastos", alcance: "dia", fecha: ayer });
+  agregar(`Propinas de ayer (${fechaLarga(ayer)})`, { tema: "propinas", alcance: "dia", fecha: ayer });
+  agregar(`Efectivo a entregar ayer (${fechaLarga(ayer)})`, { tema: "efectivo", alcance: "dia", fecha: ayer });
+  agregar("Gastos de la semana pasada", { tema: "gastos", alcance: "semana", fecha: pasada });
+  agregar("Utilidad de la semana pasada", { tema: "utilidad", alcance: "semana", fecha: pasada });
+
+  // Estadística por día de la semana.
+  const plurales = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábados", "domingos"];
+  plurales.forEach((d, i) => {
+    const fecha = addDaysIso(lunesHoy, i);
+    agregar(`Venta promedio de los ${d}`, { tema: "venta", alcance: "dia", fecha, estadistica: "promedioDia" });
+    agregar(`Propinas promedio de los ${d}`, { tema: "propinas", alcance: "dia", fecha, estadistica: "promedioDia" });
+  });
+  agregar("Propinas promedio por semana", { tema: "propinas", alcance: "semana", fecha: hoy, estadistica: "promedioSemana" });
+  agregar("Gastos promedio por semana", { tema: "gastos", alcance: "semana", fecha: hoy, estadistica: "promedioSemana" });
+  agregar("Mejor día de propinas", { tema: "propinas", alcance: "dia", fecha: hoy, estadistica: "mejorDia" }, "record");
+
+  // Nómina de cada persona del horario de esta semana y la pasada.
+  const enHorario = new Map<string, string>();
+  [hoy, pasada].forEach((f) => {
+    const u = ubicaciones.get(f);
+    (u ? data.horarios[u.mk]?.weeks?.[u.wi]?.areas || [] : []).forEach((a) => a.filas.forEach((fila) => enHorario.set(fila.empleadoId, fila.nombre)));
+  });
+  enHorario.forEach((nombre, id) => {
+    const persona = { id, nombre };
+    agregar(`Cuánto le toca a ${nombre}`, { tema: "nomina", alcance: "semana", fecha: hoy, persona }, "nomina de");
+    agregar(`Nómina de ${nombre} de la semana pasada`, { tema: "nomina", alcance: "semana", fecha: pasada, persona });
+  });
+
+  // Propinas de cada mesero con corte en las últimas dos semanas.
+  const meseros = new Map<string, string>();
+  recientes.forEach((f) => ubicaciones.get(f)?.day.meseros.forEach((m) => meseros.set(m.meseroId, m.nombre)));
+  meseros.forEach((nombre, id) => {
+    const persona = { id, nombre };
+    agregar(`Propinas de ${nombre} esta semana`, { tema: "propinas", alcance: "semana", fecha: hoy, persona });
+    agregar(`Propinas de ${nombre} de la semana pasada`, { tema: "propinas", alcance: "semana", fecha: pasada, persona });
+    agregar(`Propinas de ${nombre} hoy`, { tema: "propinas", alcance: "dia", fecha: hoy, persona });
+    agregar(`Propinas de ${nombre} ayer`, { tema: "propinas", alcance: "dia", fecha: ayer, persona });
+  });
+  return lista;
+}
+
+// Palabras que no ayudan a distinguir una pregunta de otra.
+const RELLENO = new Set(["de", "del", "la", "el", "los", "las", "a", "al", "que", "se", "en", "y", "cual", "fue", "es", "cuanto", "cuanta", "me", "mi", "lo", "por", "le"]);
+
+// Las sugerencias que contienen todas las palabras escritas (la última puede
+// ir a medias), primero las que más se usan.
+export function buscarSugerencias(catalogo: Sugerencia[], texto: string, uso: Partial<Record<PreguntaId, number>>, hoy: string, max = 5): Sugerencia[] {
+  const palabras = normalizarNombre(texto).replace(/[¿?¡!.,()]/g, " ").split(" ").filter(Boolean);
+  if (palabras.length === 0) return [];
+  const ultima = palabras[palabras.length - 1];
+  const completas = palabras.slice(0, -1).filter((p) => !RELLENO.has(p));
+  const res = catalogo
+    .map((s, orden) => {
+      const tokens = s.claves.replace(/[()]/g, " ").split(" ");
+      const ok =
+        completas.every((p) => tokens.some((t) => t.startsWith(p))) && (RELLENO.has(ultima) || tokens.some((t) => t.startsWith(ultima)));
+      if (!ok) return null;
+      // Que coincida con el texto visible pesa más que con un sinónimo.
+      const visible = normalizarNombre(s.texto);
+      const enTexto = completas.filter((p) => visible.includes(p)).length;
+      // La última palabra cuenta aunque sea de relleno ("al" → "Aldair").
+      const ultimaEnTexto = visible.split(/[ ()]/).some((t) => t.startsWith(ultima)) ? 1 : 0;
+      return { s, orden, puntos: (enTexto + ultimaEnTexto) * 100 + (uso[preguntaDeConsulta(s.consulta, hoy)] || 0) };
+    })
+    .filter((x): x is { s: Sugerencia; orden: number; puntos: number } => !!x)
+    .sort((a, b) => b.puntos - a.puntos || a.orden - b.orden);
+  // Sin repetir el mismo texto.
+  const vistos = new Set<string>();
+  return res
+    .map((x) => x.s)
+    .filter((s) => !vistos.has(s.texto) && !!vistos.add(s.texto))
+    .slice(0, max);
+}

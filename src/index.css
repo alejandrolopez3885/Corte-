@@ -1431,3 +1431,16 @@ button.pill { cursor: pointer; }
 .pregunta-barra-pista { height: 10px; background: var(--surface-alt); border-radius: 6px; overflow: hidden; }
 .pregunta-barra-pista div { height: 100%; background: var(--accent); border-radius: 6px; }
 .pregunta-barra-pista div.destacada { background: var(--warn); }
+.pregunta-sugerencias {
+  display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 14px; overflow: hidden; margin-top: -4px;
+}
+.pregunta-sugerencias button {
+  display: flex; align-items: center; gap: 10px; padding: 12px 14px; border: none; border-bottom: 1px solid var(--surface-alt);
+  background: none; font-family: inherit; font-size: 14.5px; color: var(--ink); text-align: left; cursor: pointer;
+}
+.pregunta-sugerencias button:last-child { border-bottom: none; }
+.pregunta-sugerencias button svg { flex-shrink: 0; color: var(--ink-soft); opacity: 0.7; }
+.pregunta-sugerencias span { flex: 1; min-width: 0; }
+.pregunta-sugerencias em { font-style: normal; font-size: 13px; color: var(--accent); font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pregunta-ver-todas { display: inline-flex; align-items: center; gap: 4px; align-self: flex-start; font-weight: 600; }

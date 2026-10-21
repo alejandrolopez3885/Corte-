@@ -1,11 +1,13 @@
-import { useEffect, useRef, useState } from "react";
-import { ArrowRight, Mic, Send } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { ArrowRight, ChevronDown, Mic, Search, Send } from "lucide-react";
 import { Sheet } from "./ui";
 import { supabase } from "../lib/supabaseClient";
 import { addDaysIso, mondayOnOrBefore, todayIso } from "../lib/dataModel";
 import {
   PREGUNTAS,
   PREGUNTAS_INICIALES,
+  buscarSugerencias,
+  catalogoSugerencias,
   consultaDePregunta,
   entenderPregunta,
   preguntaDeConsulta,
@@ -14,6 +16,7 @@ import {
   type GrupoPregunta,
   type PreguntaId,
   type Respuesta,
+  type Sugerencia,
 } from "../lib/preguntas";
 import { DAYS, DAY_SHORT } from "../lib/types";
 import type { AppData } from "../lib/types";
@@ -62,6 +65,17 @@ export function PreguntasSheet({
   const [escuchando, setEscuchando] = useState(false);
   const reconocimiento = useRef<Reconocimiento | null>(null);
   const usoRef = useRef<Uso>({});
+  // Las sugerencias se ven mientras se escribe; al responder se esconden
+  // hasta que se vuelva a escribir.
+  const [sugiriendo, setSugiriendo] = useState(false);
+  const [todas, setTodas] = useState(false);
+  const catalogo = useMemo(() => catalogoSugerencias(data, hoy), [data, hoy]);
+  const sugerencias = useMemo(
+    () => (sugiriendo && !escuchando ? buscarSugerencias(catalogo, texto, uso, hoy) : []),
+    [catalogo, texto, uso, hoy, sugiriendo, escuchando]
+  );
+  // Lo que ya se sabe de cada sugerencia, para verlo antes de tocarla.
+  const avances = useMemo(() => sugerencias.map((s) => responder(data, s.consulta, hoy).valor), [sugerencias, data, hoy]);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: u }) => {
@@ -83,6 +97,7 @@ export function PreguntasSheet({
   }
 
   function mostrar(c: Consulta) {
+    setSugiriendo(false);
     setNoEntendi(null);
     setRespuesta(responder(data, c, hoy));
   }
@@ -96,7 +111,8 @@ export function PreguntasSheet({
   function preguntar(t: string) {
     const limpio = t.trim();
     if (!limpio) return;
-    const c = entenderPregunta(limpio, hoy, data);
+    // Si no se entiende lo escrito pero hay sugerencias, va la primera.
+    const c = entenderPregunta(limpio, hoy, data) || sugerencias[0]?.consulta;
     if (!c) {
       setRespuesta(null);
       setNoEntendi(limpio);
@@ -104,6 +120,12 @@ export function PreguntasSheet({
     }
     contar(preguntaDeConsulta(c, hoy));
     mostrar(c);
+  }
+
+  function elegir(s: Sugerencia) {
+    setTexto(s.texto);
+    contar(preguntaDeConsulta(s.consulta, hoy));
+    mostrar(s.consulta);
   }
 
   function dictar() {
@@ -160,7 +182,10 @@ export function PreguntasSheet({
         <input
           className="text-input"
           value={texto}
-          onChange={(e) => setTexto(e.target.value)}
+          onChange={(e) => {
+            setTexto(e.target.value);
+            setSugiriendo(true);
+          }}
           placeholder={escuchando ? "Te escucho…" : "Escribe tu pregunta…"}
           enterKeyHint="send"
         />
@@ -174,6 +199,18 @@ export function PreguntasSheet({
           </button>
         )}
       </form>
+
+      {sugerencias.length > 0 && (
+        <div className="pregunta-sugerencias">
+          {sugerencias.map((s, i) => (
+            <button key={s.texto} type="button" onClick={() => elegir(s)}>
+              <Search size={14} />
+              <span>{s.texto}</span>
+              <em>{avances[i]}</em>
+            </button>
+          ))}
+        </div>
+      )}
 
       {respuesta && (
         <div className="pregunta-respuesta">
@@ -281,20 +318,30 @@ export function PreguntasSheet({
         </div>
       )}
 
-      <div className="pregunta-grupo">
-        <span className="pregunta-grupo-titulo">Las que más preguntas</span>
-        <div className="pregunta-chips">{top.map((id) => chip(id, true))}</div>
-      </div>
-      {GRUPOS.map((g) => {
-        const lista = PREGUNTAS.filter((p) => p.grupo === g && !top.includes(p.id));
-        if (lista.length === 0) return null;
-        return (
-          <div key={g} className="pregunta-grupo">
-            <span className="pregunta-grupo-titulo">{g}</span>
-            <div className="pregunta-chips">{lista.map((p) => chip(p.id))}</div>
+      {sugerencias.length === 0 && (
+        <>
+          <div className="pregunta-grupo">
+            <span className="pregunta-grupo-titulo">Las que más preguntas</span>
+            <div className="pregunta-chips">{top.map((id) => chip(id, true))}</div>
           </div>
-        );
-      })}
+          {!todas ? (
+            <button type="button" className="link-btn pregunta-ver-todas" onClick={() => setTodas(true)}>
+              Ver todas las preguntas <ChevronDown size={14} />
+            </button>
+          ) : (
+            GRUPOS.map((g) => {
+              const lista = PREGUNTAS.filter((p) => p.grupo === g && !top.includes(p.id));
+              if (lista.length === 0) return null;
+              return (
+                <div key={g} className="pregunta-grupo">
+                  <span className="pregunta-grupo-titulo">{g}</span>
+                  <div className="pregunta-chips">{lista.map((p) => chip(p.id))}</div>
+                </div>
+              );
+            })
+          )}
+        </>
+      )}
     </Sheet>
   );
 }
