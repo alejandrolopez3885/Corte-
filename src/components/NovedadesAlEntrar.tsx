@@ -6,6 +6,7 @@ import { PERMISOS_DISPONIBLES } from "../lib/types";
 import type { AppData, Profile } from "../lib/types";
 
 function nombreSeccion(s: SeccionNovedad): string {
+  if (s === "general") return "Toda la app";
   return s === "corte" ? "Corte" : PERMISOS_DISPONIBLES.find((p) => p.value === s)?.label || s;
 }
 
@@ -257,6 +258,25 @@ function Visual({ tipo }: { tipo: VisualNovedad }) {
         <span className="nv-suma">
           Efectivo a entregar en la noche: <strong>$7,280</strong>
         </span>
+      </>
+    );
+  }
+  if (tipo === "preguntas") {
+    return (
+      <>
+        <span className="nv-etiqueta">Pregúntale a Cortes 💬</span>
+        <div className="nv-campo">cuanto ll</div>
+        <div className="nv-lista">
+          <div>
+            <span>Cuánto llevo esta semana</span>
+            <small>$1,050</small>
+          </div>
+          <div>
+            <span>Cómo se prepara Margarita</span>
+            <small>Receta</small>
+          </div>
+        </div>
+        <span className="nv-suma">Solo de tus secciones</span>
       </>
     );
   }

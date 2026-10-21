@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, ChevronLeft, ChevronRight, History, LogIn, LogOut, Search, X } from "lucide-react";
 import { Empty, Sheet } from "../ui";
 import { addDaysIso, formatAssignedDate, formatWeekRange, todayIso } from "../../lib/dataModel";
-import { cargarBitacora, cargarBitacoraDelDia, type RenglonBitacora } from "../../lib/bitacora";
+import { SECCION_PREGUNTAS, cargarBitacora, cargarBitacoraDelDia, type RenglonBitacora } from "../../lib/bitacora";
 
 // Negocio > Análisis > Actividad: la bitácora de la app ordenada para
 // revisarla y estudiar el uso, en tres pestañas — Resumen (lo importante de
@@ -470,7 +470,13 @@ export function Renglon({ r, esDueno, sinDonde }: { r: RenglonBitacora; esDueno:
           <span>{hora}</span>
         </div>
         <span className="bitacora-donde">
-          {r.tipo === "login" ? "Inició sesión" : r.tipo === "logout" ? "Cerró sesión" : `Abrió ${r.seccion}`}
+          {r.tipo === "login"
+            ? "Inició sesión"
+            : r.tipo === "logout"
+              ? "Cerró sesión"
+              : r.seccion === SECCION_PREGUNTAS && r.donde
+                ? `Preguntó: “${r.donde}”`
+                : `Abrió ${r.seccion}`}
         </span>
       </div>
     );

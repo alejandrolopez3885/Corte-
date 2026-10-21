@@ -1029,9 +1029,62 @@ viernes", "gastos promedio por semana"):
 
 Si un día o semana no tiene nada capturado, lo dice ("Todavía no hay nada
 capturado ese día"). Si no entiende la pregunta, responde "No entendí…" con
-un ejemplo y las 3 preguntas más usadas para tocarlas. Por ahora solo la ve
-el dueño; la lógica vive en `src/lib/preguntas.ts` y la pantalla en
-`src/components/PreguntasSheet.tsx`.
+un ejemplo y las 3 preguntas más usadas para tocarlas. El dueño también
+puede preguntar por cualquier receta ("cómo se prepara la Margarita", o
+solo su nombre): responde con el vaso o presentación, ingredientes,
+utensilios, preparación paso a paso y notas; el grupo **Recetario** sale en
+"Ver todas las preguntas" en cuanto hay recetas. La lógica vive en
+`src/lib/preguntas.ts` (dueño) y `src/lib/preguntasEquipo.ts` (personal) y
+la pantalla en `src/components/PreguntasSheet.tsx`.
+
+**Pregúntale a Cortes para el personal**: todas las cuentas de equipo tienen
+el mismo botón verde 💬 (abajo a la derecha, en todas sus pantallas: su
+inicio, cada sección y su corte), con el mismo autocompletado y micrófono.
+Cada quien solo pregunta de las secciones a las que ya tiene acceso — sus
+permisos y sus días de corte asignados — y las respuestas salen de su
+propia información; nunca de venta de la semana, utilidad, la nómina de
+otra persona ni días que no tiene asignados. Si pregunta algo de fuera,
+responde "Eso no está en tus secciones" con las secciones de las que sí
+puede preguntar. Por sección:
+
+- **Corte** (solo sus días asignados; arranca en hoy si se lo asignaron, si
+  no en el último que ya pasó): efectivo a entregar (igual que "Efectivo
+  del día", con la apertura y lo que se dejó), qué falta para guardar el
+  corte (lo mismo que avisa "Guardar corte", o "Ya está guardado"),
+  tarjetas del día por mesero, gastos del día con su etiqueta
+  Pendiente/Ingresado y quién abre (X o Z del horario). Si tiene varios
+  días, debajo vienen para cambiar; "Ir a mi corte" abre ese día.
+- **Nómina** (solo la suya): cuánto llevo esta semana (su "a recibir hasta
+  hoy" con bruto, extras, adelantos y descuentos), ¿ya me pagaron la
+  semana pasada? (con la etiqueta Pagada/Pendiente), mis adelantos y
+  descuentos y qué días trabajo esta semana (su renglón del horario: X
+  abre, Z dobla, OFF descansa).
+- **Propinas**: solo las ven las cuentas de **Bar y Cocina** (por su
+  puesto) que tengan el permiso; el dueño las sigue viendo como siempre.
+  Hoy, ayer, esta semana o la pasada: lo que le toca a su área (su tercio)
+  y el total del que sale — nunca las propinas por mesero.
+- **Horarios** (solo su área): quién trabaja, quién descansa y quién abre
+  hoy, mañana o cualquier día de la semana (con Lun–Dom para cambiar), y
+  su propio horario de la semana.
+- **Conteo diario** (su área): qué falta por contar hoy (los productos sin
+  cantidad en el conteo de hoy, o si todavía no se guarda), qué hay que
+  pedir (el último pedido guardado; Bar no hace pedido diario) y cuánto
+  había de un producto en el último conteo (el autocompletado trae los
+  productos de ese conteo).
+- **Inventario**: si ya se guardó el de esta semana (jueves y domingo, con
+  el mismo estado que su pantalla) y el último pedido del inventario.
+- **Recetario** (solo las recetas de su área): "Cómo se prepara…" con la
+  lista de recetas para tocar, o directo por nombre.
+
+Arriba salen sus 3 preguntas más usadas; mientras no tenga, una de cada
+sección empezando por la que más abre (cada cuenta cuenta en su propia
+cuenta cuántas veces entra a cada sección, sin tablas nuevas). Los enlaces
+de cada respuesta lo llevan a esa sección. Cada pregunta del personal queda
+en **Actividad** como "Preguntó: “cuánto llevo esta semana”" (con su nombre
+y hora, igual que las pantallas que abre), para ver qué le interesa a cada
+quien; lo que pregunta el dueño no se registra. Al entrar, al personal le
+sale la novedad "Pregúntale a Cortes" (de toda la app: le sale a cualquiera
+que ya entraba antes).
 
 ## 1. Crear el proyecto en Supabase
 

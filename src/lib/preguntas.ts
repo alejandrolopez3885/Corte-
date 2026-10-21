@@ -1,5 +1,5 @@
 import { DAYS, DAY_SHORT, GASTO_CATEGORIAS, NOMINA_DESCUENTO_TIPOS, NOMINA_EXTRA_TIPOS } from "./types";
-import type { AppData, DayName, WeekData } from "./types";
+import type { AppData, DayName, PermisoStaff, WeekData } from "./types";
 import {
   addDaysIso,
   computeDashboardReport,
@@ -45,38 +45,92 @@ export type PreguntaId =
   | "stat-promedio-dia"
   | "stat-dia-mas"
   | "stat-promedio-semana"
-  | "stat-mejor-dia";
+  | "stat-mejor-dia"
+  // Personal (cada quien según sus secciones, ver preguntasEquipo.ts).
+  | "corte-efectivo"
+  | "corte-tarjetas"
+  | "corte-gastos"
+  | "corte-falta"
+  | "corte-abre"
+  | "mi-nomina"
+  | "mi-nomina-pasada"
+  | "mis-descuentos"
+  | "mis-dias"
+  | "horario-hoy"
+  | "horario-manana"
+  | "horario-descansa"
+  | "horario-abre"
+  | "conteo-falta"
+  | "conteo-pedido"
+  | "inventario-estado"
+  | "inventario-pedido"
+  | "receta";
 
-export type GrupoPregunta = "Ventas" | "Estadística" | "Dinero" | "Nómina" | "Propinas";
+export type GrupoPregunta =
+  | "Ventas"
+  | "Estadística"
+  | "Dinero"
+  | "Nómina"
+  | "Propinas"
+  | "Tu corte"
+  | "Tu nómina"
+  | "Horario"
+  | "Conteo"
+  | "Inventario"
+  | "Recetario";
 
-export const PREGUNTAS: { id: PreguntaId; texto: string; grupo: GrupoPregunta }[] = [
-  { id: "venta-hoy", texto: "Venta de hoy", grupo: "Ventas" },
-  { id: "venta-ayer", texto: "Venta de ayer", grupo: "Ventas" },
-  { id: "venta-semana", texto: "Venta de la semana", grupo: "Ventas" },
-  { id: "venta-semana-pasada", texto: "Semana pasada", grupo: "Ventas" },
-  { id: "venta-dia", texto: "¿Cuánto se vendió el…?", grupo: "Ventas" },
-  { id: "stat-promedio-dia", texto: "Venta promedio por día", grupo: "Estadística" },
-  { id: "stat-dia-mas", texto: "¿Qué día se vende más?", grupo: "Estadística" },
-  { id: "stat-promedio-semana", texto: "Venta promedio semanal", grupo: "Estadística" },
-  { id: "stat-mejor-dia", texto: "Mejor día de venta", grupo: "Estadística" },
-  { id: "efectivo-hoy", texto: "Efectivo a entregar hoy", grupo: "Dinero" },
-  { id: "gastos-semana", texto: "Gastos de la semana", grupo: "Dinero" },
-  { id: "utilidad-semana", texto: "Utilidad de la semana", grupo: "Dinero" },
-  { id: "nomina-actual", texto: "Nómina actual", grupo: "Nómina" },
-  { id: "nomina-semana-pasada", texto: "Nómina de la semana pasada", grupo: "Nómina" },
-  { id: "nomina-persona", texto: "¿Cuánto le toca a…?", grupo: "Nómina" },
-  { id: "nomina-pendientes", texto: "¿A quién falta pagar?", grupo: "Nómina" },
-  { id: "nomina-descuentos", texto: "Adelantos y descuentos", grupo: "Nómina" },
-  { id: "propinas-hoy", texto: "Propinas de hoy", grupo: "Propinas" },
-  { id: "propinas-semana", texto: "Propinas de la semana", grupo: "Propinas" },
-  { id: "propinas-semana-pasada", texto: "Propinas de la semana pasada", grupo: "Propinas" },
-  { id: "propinas-mesero", texto: "Propinas por mesero", grupo: "Propinas" },
+// "dueno" = solo el dueño; las demás, quien tenga esa sección (el dueño
+// también ve las del Recetario).
+export type SeccionPregunta = "dueno" | "corte" | PermisoStaff;
+
+export const PREGUNTAS: { id: PreguntaId; texto: string; grupo: GrupoPregunta; seccion: SeccionPregunta }[] = [
+  { id: "venta-hoy", texto: "Venta de hoy", grupo: "Ventas", seccion: "dueno" },
+  { id: "venta-ayer", texto: "Venta de ayer", grupo: "Ventas", seccion: "dueno" },
+  { id: "venta-semana", texto: "Venta de la semana", grupo: "Ventas", seccion: "dueno" },
+  { id: "venta-semana-pasada", texto: "Semana pasada", grupo: "Ventas", seccion: "dueno" },
+  { id: "venta-dia", texto: "¿Cuánto se vendió el…?", grupo: "Ventas", seccion: "dueno" },
+  { id: "stat-promedio-dia", texto: "Venta promedio por día", grupo: "Estadística", seccion: "dueno" },
+  { id: "stat-dia-mas", texto: "¿Qué día se vende más?", grupo: "Estadística", seccion: "dueno" },
+  { id: "stat-promedio-semana", texto: "Venta promedio semanal", grupo: "Estadística", seccion: "dueno" },
+  { id: "stat-mejor-dia", texto: "Mejor día de venta", grupo: "Estadística", seccion: "dueno" },
+  { id: "efectivo-hoy", texto: "Efectivo a entregar hoy", grupo: "Dinero", seccion: "dueno" },
+  { id: "gastos-semana", texto: "Gastos de la semana", grupo: "Dinero", seccion: "dueno" },
+  { id: "utilidad-semana", texto: "Utilidad de la semana", grupo: "Dinero", seccion: "dueno" },
+  { id: "nomina-actual", texto: "Nómina actual", grupo: "Nómina", seccion: "dueno" },
+  { id: "nomina-semana-pasada", texto: "Nómina de la semana pasada", grupo: "Nómina", seccion: "dueno" },
+  { id: "nomina-persona", texto: "¿Cuánto le toca a…?", grupo: "Nómina", seccion: "dueno" },
+  { id: "nomina-pendientes", texto: "¿A quién falta pagar?", grupo: "Nómina", seccion: "dueno" },
+  { id: "nomina-descuentos", texto: "Adelantos y descuentos", grupo: "Nómina", seccion: "dueno" },
+  { id: "propinas-hoy", texto: "Propinas de hoy", grupo: "Propinas", seccion: "dueno" },
+  { id: "propinas-semana", texto: "Propinas de la semana", grupo: "Propinas", seccion: "dueno" },
+  { id: "propinas-semana-pasada", texto: "Propinas de la semana pasada", grupo: "Propinas", seccion: "dueno" },
+  { id: "propinas-mesero", texto: "Propinas por mesero", grupo: "Propinas", seccion: "dueno" },
+  { id: "receta", texto: "¿Cómo se prepara…?", grupo: "Recetario", seccion: "recetario" },
+  { id: "corte-efectivo", texto: "Efectivo a entregar", grupo: "Tu corte", seccion: "corte" },
+  { id: "corte-falta", texto: "¿Qué falta para guardar el corte?", grupo: "Tu corte", seccion: "corte" },
+  { id: "corte-tarjetas", texto: "Tarjetas del día", grupo: "Tu corte", seccion: "corte" },
+  { id: "corte-gastos", texto: "Gastos del día", grupo: "Tu corte", seccion: "corte" },
+  { id: "corte-abre", texto: "¿Quién abre?", grupo: "Tu corte", seccion: "corte" },
+  { id: "mi-nomina", texto: "¿Cuánto llevo esta semana?", grupo: "Tu nómina", seccion: "nomina" },
+  { id: "mi-nomina-pasada", texto: "¿Ya me pagaron la semana pasada?", grupo: "Tu nómina", seccion: "nomina" },
+  { id: "mis-descuentos", texto: "Mis adelantos y descuentos", grupo: "Tu nómina", seccion: "nomina" },
+  { id: "mis-dias", texto: "¿Qué días trabajo esta semana?", grupo: "Tu nómina", seccion: "nomina" },
+  { id: "horario-hoy", texto: "¿Quién trabaja hoy?", grupo: "Horario", seccion: "horarios" },
+  { id: "horario-manana", texto: "¿Quién trabaja mañana?", grupo: "Horario", seccion: "horarios" },
+  { id: "horario-descansa", texto: "¿Quién descansa hoy?", grupo: "Horario", seccion: "horarios" },
+  { id: "horario-abre", texto: "¿Quién abre mañana?", grupo: "Horario", seccion: "horarios" },
+  { id: "conteo-falta", texto: "¿Qué falta por contar hoy?", grupo: "Conteo", seccion: "conteo_diario" },
+  { id: "conteo-pedido", texto: "¿Qué hay que pedir?", grupo: "Conteo", seccion: "conteo_diario" },
+  { id: "inventario-estado", texto: "¿Ya se guardó el inventario?", grupo: "Inventario", seccion: "inventario" },
+  { id: "inventario-pedido", texto: "Pedido del inventario", grupo: "Inventario", seccion: "inventario" },
 ];
 
 // Las que salen arriba mientras todavía no hay suficientes preguntas hechas.
 export const PREGUNTAS_INICIALES: PreguntaId[] = ["venta-hoy", "nomina-actual", "venta-semana"];
 
-export type Tema = "venta" | "efectivo" | "gastos" | "propinas" | "utilidad" | "nomina";
+// Las que responde responder(); el resto son del personal y del Recetario.
+export type TemaDueno = "venta" | "efectivo" | "gastos" | "propinas" | "utilidad" | "nomina";
+export type Tema = "venta" | "efectivo" | "gastos" | "propinas" | "utilidad" | "nomina" | "corte" | "miNomina" | "horario" | "conteo" | "inventario" | "receta";
 
 export interface Consulta {
   tema: Tema;
@@ -90,9 +144,13 @@ export interface Consulta {
   // Estadística de venta, propinas o gastos con todo lo capturado. En
   // "promedioDia" el día de la semana es el de "fecha".
   estadistica?: "promedioDia" | "porDiaSemana" | "promedioSemana" | "mejorDia";
+  // Personal: qué de su sección ("efectivo", "falta", "descansa"…).
+  sub?: string;
+  // Una receta o un insumo del conteo.
+  objeto?: { id: string; nombre: string };
 }
 
-export type DestinoPregunta = Destino | { tipo: "dashboard" } | { tipo: "propinas" };
+export type DestinoPregunta = Destino | { tipo: "dashboard" } | { tipo: "propinas" } | { tipo: "seccion"; seccion: PermisoStaff };
 
 export interface Respuesta {
   titulo: string;
@@ -100,7 +158,11 @@ export interface Respuesta {
   lineas: string[];
   enlace?: { texto: string; destino: DestinoPregunta };
   // Renglones con monto a la derecha (desglose, lista de personas…).
-  filas?: { etiqueta: string; valor: string; tag?: "pendiente" | "pagada" }[];
+  filas?: { etiqueta: string; valor: string; tag?: "pendiente" | "pagada" | "ingresado" }[];
+  // Bloques de texto (receta): ingredientes, preparación…
+  secciones?: { titulo: string; renglones: string[]; numerada?: boolean }[];
+  // Recetas para elegir con un toque.
+  recetas?: { id: string; nombre: string }[];
   // Lun–Dom de esa semana, para cambiar de día sin volver a preguntar.
   dias?: { fecha: string; etiqueta: string; futuro: boolean }[];
   // Barras horizontales (estadística); "destacada" = la más reciente.
@@ -157,6 +219,11 @@ export function consultaDePregunta(id: PreguntaId, hoy: string): Consulta {
       return { tema: "venta", alcance: "semana", fecha: hoy, estadistica: "promedioSemana" };
     case "stat-mejor-dia":
       return { tema: "venta", alcance: "dia", fecha: hoy, estadistica: "mejorDia" };
+    case "receta":
+      return { tema: "receta", alcance: "dia", fecha: hoy };
+    default:
+      // Las del personal las arma consultaEquipo (preguntasEquipo.ts).
+      return { tema: "venta", alcance: "dia", fecha: hoy };
   }
 }
 
@@ -187,6 +254,21 @@ export function preguntaDeConsulta(c: Consulta, hoy: string): PreguntaId {
       if (c.modo === "pendientes") return "nomina-pendientes";
       if (c.modo === "descuentos") return "nomina-descuentos";
       return pasada ? "nomina-semana-pasada" : "nomina-actual";
+    case "receta":
+      return "receta";
+    case "corte":
+      return c.sub === "tarjetas" ? "corte-tarjetas" : c.sub === "gastos" ? "corte-gastos" : c.sub === "falta" ? "corte-falta" : c.sub === "abre" ? "corte-abre" : "corte-efectivo";
+    case "miNomina":
+      return c.sub === "pasada" ? "mi-nomina-pasada" : c.sub === "descuentos" ? "mis-descuentos" : c.sub === "dias" ? "mis-dias" : "mi-nomina";
+    case "horario":
+      if (c.sub === "descansa") return "horario-descansa";
+      if (c.sub === "abre") return "horario-abre";
+      if (c.sub === "mio") return "mis-dias";
+      return c.fecha > hoy ? "horario-manana" : "horario-hoy";
+    case "conteo":
+      return c.sub === "pedido" ? "conteo-pedido" : "conteo-falta";
+    case "inventario":
+      return c.sub === "pedido" ? "inventario-pedido" : "inventario-estado";
   }
 }
 
@@ -217,7 +299,7 @@ const pad = (n: number) => String(n).padStart(2, "0");
 
 // Un nombre del personal o de un mesero dentro de la pregunta: el nombre
 // completo o solo el primer nombre, como palabra suelta.
-function buscarPersona(t: string, lista: { id: string; nombre: string }[]): { id: string; nombre: string } | undefined {
+export function buscarPersona(t: string, lista: { id: string; nombre: string }[]): { id: string; nombre: string } | undefined {
   const conNombre = lista.filter((x) => normalizarNombre(x.nombre));
   // Los nombres solo traen letras y espacios ya normalizados.
   const palabra = (n: string) => /^[a-z ]+$/.test(n) && new RegExp(`\\b${n}\\b`).test(t);
@@ -324,15 +406,15 @@ export function entenderPregunta(texto: string, hoy: string, data?: AppData): Co
 
 // --- Respuestas ---------------------------------------------------------
 
-function fechaLarga(fecha: string): string {
+export function fechaLarga(fecha: string): string {
   const d = new Date(`${fecha}T00:00:00`);
   const dia = d.toLocaleDateString("es-MX", { weekday: "long" });
   const mes = d.toLocaleDateString("es-MX", { month: "short" }).replace(".", "");
   return `${dia} ${d.getDate()} ${mes}`;
 }
 
-const sinCentavos = (n: number) => (Number.isInteger(round2(n)) ? money(n).replace(/\.00$/, "") : money(n));
-const plural = (n: number, uno: string, varios: string) => `${n} ${n === 1 ? uno : varios}`;
+export const sinCentavos = (n: number) => (Number.isInteger(round2(n)) ? money(n).replace(/\.00$/, "") : money(n));
+export const plural = (n: number, uno: string, varios: string) => `${n} ${n === 1 ? uno : varios}`;
 
 // Meseros que tienen cortes en la semana, para cambiar de mesero.
 function meserosDeSemana(week: WeekData) {
@@ -366,7 +448,7 @@ export function responder(data: AppData, c: Consulta, hoy: string): Respuesta {
   if (c.alcance === "dia") {
     const ud = ubicaciones.get(c.fecha);
     const nombreDia = c.fecha === hoy ? "hoy" : c.fecha === addDaysIso(hoy, -1) ? `ayer (${fechaLarga(c.fecha)})` : `el ${fechaLarga(c.fecha)}`;
-    const titulos: Record<Tema, string> = {
+    const titulos: Record<TemaDueno, string> = {
       venta: `Venta del ${fechaLarga(c.fecha)}`,
       efectivo: `Efectivo a entregar ${nombreDia}`,
       propinas: `Propinas ${nombreDia}`,
@@ -374,12 +456,12 @@ export function responder(data: AppData, c: Consulta, hoy: string): Respuesta {
       utilidad: "",
       nomina: "",
     };
-    if (!ud) return sinDatos(titulos[c.tema], "Ese día no está en ningún mes del corte.");
+    if (!ud) return sinDatos(titulos[c.tema as TemaDueno], "Ese día no está en ningún mes del corte.");
     const wk = data.months[ud.mk].weeks[ud.wi];
     const r = computeWeekSummary(wk).perDay.find((p) => p.day === ud.dia)!;
     const enlace = { texto: "Ver el corte de ese día", destino: { tipo: "dia" as const, fecha: c.fecha } };
     const vacio = ud.day.meseros.length === 0 && !ud.day.ventaApps && ud.day.gastos.length === 0;
-    if (vacio) return { ...sinDatos(titulos[c.tema], "Todavía no hay nada capturado ese día."), enlace };
+    if (vacio) return { ...sinDatos(titulos[c.tema as TemaDueno], "Todavía no hay nada capturado ese día."), enlace };
 
     if (c.tema === "venta") {
       return {
@@ -450,7 +532,7 @@ export function responder(data: AppData, c: Consulta, hoy: string): Respuesta {
   }
 
   // Por semana.
-  const titulosSemana: Record<Tema, string> = {
+  const titulosSemana: Record<TemaDueno, string> = {
     venta: `Venta de ${nombreSemana}`,
     efectivo: `Efectivo de ${nombreSemana}`,
     propinas: `Propinas de ${nombreSemana}`,
@@ -458,7 +540,7 @@ export function responder(data: AppData, c: Consulta, hoy: string): Respuesta {
     utilidad: `Utilidad de ${nombreSemana}${esEstaSemana ? ", hasta hoy" : ""}`,
     nomina: esEstaSemana ? "Nómina de esta semana, generada hasta hoy" : `Nómina de ${nombreSemana}`,
   };
-  if (!u || !month || !week) return sinDatos(titulosSemana[c.tema], "Esa semana no está en ningún mes del corte.");
+  if (!u || !month || !week) return sinDatos(titulosSemana[c.tema as TemaDueno], "Esa semana no está en ningún mes del corte.");
   const resumen = computeWeekSummary(week);
   const enlaceSemana = { texto: "Ver el resumen de la semana", destino: { tipo: "semana" as const, fecha: lunes } };
 
@@ -521,7 +603,7 @@ export function responder(data: AppData, c: Consulta, hoy: string): Respuesta {
             ...(mejor ? [`Mejor día: ${mejor.day} ${sinCentavos(mejor.ventaTotal)}`] : []),
           ]
         : [hastaHoy];
-    return { titulo: titulosSemana[c.tema], valor: sinCentavos(valor), lineas, enlace: enlaceSemana, consulta: c };
+    return { titulo: titulosSemana[c.tema as TemaDueno], valor: sinCentavos(valor), lineas, enlace: enlaceSemana, consulta: c };
   }
 
   if (c.tema === "gastos") {
@@ -815,6 +897,12 @@ const SINONIMOS: Record<Tema, string> = {
   propinas: "propinas propina",
   utilidad: "utilidad ganancia ganamos margen",
   nomina: "nomina sueldo raya pago pagar toca gana",
+  corte: "corte",
+  miNomina: "nomina sueldo pago pagaron llevo toca mi",
+  horario: "horario quien trabaja descansa",
+  conteo: "conteo contar",
+  inventario: "inventario",
+  receta: "receta prepara hace como",
 };
 const SINONIMOS_ESTADISTICA = "promedio normalmente estadistica general";
 
@@ -832,6 +920,7 @@ export function catalogoSugerencias(data: AppData, hoy: string): Sugerencia[] {
   const nombreDia = (f: string) => (f === hoy ? "de hoy" : f === ayer ? `de ayer (${fechaLarga(f)})` : `del ${fechaLarga(f)}`);
 
   PREGUNTAS.forEach((p) => {
+    if (p.seccion !== "dueno") return;
     // Estas ya salen con cada día o cada nombre.
     if (p.id === "venta-dia" || p.id === "nomina-persona" || p.id === "stat-promedio-dia") return;
     const texto = p.id === "venta-semana-pasada" ? "Venta de la semana pasada" : p.texto.replace("¿", "").replace("?", "");

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowRight, ChevronDown, Mic, Search, Send } from "lucide-react";
 import { Sheet } from "./ui";
 import { supabase } from "../lib/supabaseClient";
-import { addDaysIso, mondayOnOrBefore, todayIso } from "../lib/dataModel";
+import { addDaysIso, mondayOnOrBefore, normalizarNombre, todayIso } from "../lib/dataModel";
 import {
   PREGUNTAS,
   PREGUNTAS_INICIALES,
@@ -18,12 +18,28 @@ import {
   type Respuesta,
   type Sugerencia,
 } from "../lib/preguntas";
+import {
+  buscarReceta,
+  catalogoEquipo,
+  consultaEquipo,
+  entenderPreguntaEquipo,
+  inicialesEquipo,
+  preguntasDeEquipo,
+  recetasDe,
+  responderEquipo,
+  responderReceta,
+  sugerenciasRecetas,
+  type ContextoEquipo,
+} from "../lib/preguntasEquipo";
+import { registrarPregunta } from "../lib/bitacora";
 import { DAYS, DAY_SHORT } from "../lib/types";
-import type { AppData } from "../lib/types";
+import type { AppData, Profile } from "../lib/types";
 
-// Pregúntale a Cortes (solo dueño): escribir, dictar o tocar una pregunta.
-// Cuántas veces se usa cada una se guarda en la cuenta del dueño
-// (user_metadata.preguntasUso) para subir las más usadas al inicio.
+// Pregúntale a Cortes: escribir, dictar o tocar una pregunta. El dueño
+// pregunta de todo; el personal (con "contexto") solo de sus secciones, y
+// cada pregunta suya queda en Actividad. Cuántas veces usa cada quien cada
+// pregunta se guarda en su propia cuenta (user_metadata.preguntasUso) para
+// subir las más usadas al inicio.
 
 type Uso = Partial<Record<PreguntaId, number>>;
 
@@ -46,18 +62,31 @@ const Reconocedor: ConstructorReconocimiento | undefined =
       (window as unknown as Record<string, ConstructorReconocimiento | undefined>).webkitSpeechRecognition)
     : undefined;
 
-const GRUPOS: GrupoPregunta[] = ["Ventas", "Estadística", "Dinero", "Nómina", "Propinas"];
+const GRUPOS: GrupoPregunta[] = ["Ventas", "Estadística", "Dinero", "Nómina", "Propinas", "Recetario"];
 
 export function PreguntasSheet({
   data,
   onClose,
   onIr,
+  profile,
+  contexto,
 }: {
   data: AppData;
   onClose: () => void;
   onIr: (destino: NonNullable<Respuesta["enlace"]>["destino"]) => void;
+  profile: Profile;
+  // Cuenta de equipo: sus secciones. Sin esto, es el dueño.
+  contexto?: ContextoEquipo | null;
 }) {
   const hoy = todayIso();
+  const ctx = contexto || null;
+  const visibles = useMemo(
+    () => (ctx ? preguntasDeEquipo(ctx) : PREGUNTAS.filter((p) => p.seccion === "dueno" || (p.seccion === "recetario" && (data.recetas || []).length > 0))),
+    [ctx, data.recetas]
+  );
+  const grupos = ctx ? [...new Set(visibles.map((p) => p.grupo))] : GRUPOS;
+  const [seccionesUso, setSeccionesUso] = useState<Partial<Record<string, number>>>({});
+  const [fuera, setFuera] = useState(false);
   const [texto, setTexto] = useState("");
   const [respuesta, setRespuesta] = useState<Respuesta | null>(null);
   const [noEntendi, setNoEntendi] = useState<string | null>(null);
@@ -69,19 +98,33 @@ export function PreguntasSheet({
   // hasta que se vuelva a escribir.
   const [sugiriendo, setSugiriendo] = useState(false);
   const [todas, setTodas] = useState(false);
-  const catalogo = useMemo(() => catalogoSugerencias(data, hoy), [data, hoy]);
+  const catalogo = useMemo(
+    () => (ctx ? catalogoEquipo(data, hoy, ctx) : [...catalogoSugerencias(data, hoy), ...sugerenciasRecetas(data, hoy)]),
+    [data, hoy, ctx]
+  );
   const sugerencias = useMemo(
     () => (sugiriendo && !escuchando ? buscarSugerencias(catalogo, texto, uso, hoy) : []),
     [catalogo, texto, uso, hoy, sugiriendo, escuchando]
   );
   // Lo que ya se sabe de cada sugerencia, para verlo antes de tocarla.
-  const avances = useMemo(() => sugerencias.map((s) => responder(data, s.consulta, hoy).valor), [sugerencias, data, hoy]);
+  const contestar = (c: Consulta): Respuesta => {
+    if (ctx) return responderEquipo(data, c, hoy, ctx);
+    if (c.tema === "receta") return responderReceta(data, c, null);
+    return responder(data, c, hoy);
+  };
+  const avances = sugerencias.map((s) => contestar(s.consulta).valor);
+
+  // Queda en Actividad lo que preguntó el personal (el dueño no).
+  function anotar(textoPregunta: string) {
+    if (ctx) registrarPregunta(profile, textoPregunta);
+  }
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: u }) => {
       const guardado = (u.user?.user_metadata?.preguntasUso || {}) as Uso;
       usoRef.current = guardado;
       setUso(guardado);
+      setSeccionesUso((u.user?.user_metadata?.seccionesUso || {}) as Partial<Record<string, number>>);
     });
     return () => reconocimiento.current?.stop();
   }, []);
@@ -99,22 +142,37 @@ export function PreguntasSheet({
   function mostrar(c: Consulta) {
     setSugiriendo(false);
     setNoEntendi(null);
-    setRespuesta(responder(data, c, hoy));
+    setFuera(false);
+    setRespuesta(contestar(c));
   }
 
   function tocar(id: PreguntaId) {
     setTexto("");
     contar(id);
-    mostrar(consultaDePregunta(id, hoy));
+    anotar(visibles.find((p) => p.id === id)?.texto || id);
+    mostrar(ctx ? consultaEquipo(id, hoy, ctx) : consultaDePregunta(id, hoy));
+  }
+
+  function entender(t: string): Consulta | "fuera" | null {
+    if (ctx) return entenderPreguntaEquipo(t, hoy, data, ctx);
+    const n = normalizarNombre(t);
+    const receta = buscarReceta(n, recetasDe(data, null));
+    if (receta && (/receta|como se|prepara|ingrediente/.test(n) || n === normalizarNombre(receta.nombre)))
+      return { tema: "receta", alcance: "dia", fecha: hoy, objeto: { id: receta.id, nombre: receta.nombre } };
+    return entenderPregunta(t, hoy, data);
   }
 
   function preguntar(t: string) {
     const limpio = t.trim();
     if (!limpio) return;
+    anotar(limpio);
     // Si no se entiende lo escrito pero hay sugerencias, va la primera.
-    const c = entenderPregunta(limpio, hoy, data) || sugerencias[0]?.consulta;
+    const entendida = entender(limpio);
+    const c = (entendida !== "fuera" && entendida) || sugerencias[0]?.consulta;
     if (!c) {
       setRespuesta(null);
+      setSugiriendo(false);
+      setFuera(entendida === "fuera");
       setNoEntendi(limpio);
       return;
     }
@@ -124,6 +182,7 @@ export function PreguntasSheet({
 
   function elegir(s: Sugerencia) {
     setTexto(s.texto);
+    anotar(s.texto);
     contar(preguntaDeConsulta(s.consulta, hoy));
     mostrar(s.consulta);
   }
@@ -160,13 +219,14 @@ export function PreguntasSheet({
   }
 
   const usadas = (Object.entries(uso) as [PreguntaId, number][])
-    .filter(([id, n]) => n > 0 && PREGUNTAS.some((p) => p.id === id))
+    .filter(([id, n]) => n > 0 && visibles.some((p) => p.id === id))
     .sort((a, b) => b[1] - a[1])
     .map(([id]) => id);
-  const top = [...usadas, ...PREGUNTAS_INICIALES.filter((id) => !usadas.includes(id))].slice(0, 3);
+  const iniciales = ctx ? inicialesEquipo(ctx, seccionesUso) : PREGUNTAS_INICIALES;
+  const top = [...usadas, ...iniciales.filter((id) => !usadas.includes(id))].slice(0, 3);
   const chip = (id: PreguntaId, destacada = false) => (
     <button key={id} type="button" className={`pregunta-chip ${destacada ? "destacada" : ""}`} onClick={() => tocar(id)}>
-      {PREGUNTAS.find((p) => p.id === id)?.texto}
+      {visibles.find((p) => p.id === id)?.texto}
     </button>
   );
 
@@ -228,13 +288,31 @@ export function PreguntasSheet({
                   <div key={i} className="pregunta-fila">
                     <span>
                       {f.etiqueta}
-                      {f.tag && <em className={`pregunta-tag ${f.tag}`}>{f.tag === "pagada" ? "Pagada" : "Pendiente"}</em>}
+                      {f.tag && <em className={`pregunta-tag ${f.tag}`}>{f.tag === "pagada" ? "Pagada" : f.tag === "ingresado" ? "Ingresado" : "Pendiente"}</em>}
                     </span>
-                    <strong>{f.valor}</strong>
+                    {f.valor && <strong>{f.valor}</strong>}
                   </div>
                 ))}
               </div>
             )}
+            {respuesta.secciones?.map((sec) => (
+              <div key={sec.titulo} className="pregunta-seccion">
+                <span className="pregunta-grupo-titulo">{sec.titulo}</span>
+                {sec.numerada ? (
+                  <ol>
+                    {sec.renglones.map((r, i) => (
+                      <li key={i}>{r}</li>
+                    ))}
+                  </ol>
+                ) : (
+                  <ul>
+                    {sec.renglones.map((r, i) => (
+                      <li key={i}>{r}</li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            ))}
             {respuesta.barras && respuesta.barras.length > 0 && (
               <div className="pregunta-barras">
                 {respuesta.barras.map((b, i) => (
@@ -270,6 +348,15 @@ export function PreguntasSheet({
               </div>
               <p className="hint">Toca otro nombre para cambiar la respuesta.</p>
             </>
+          )}
+          {respuesta.recetas && respuesta.recetas.length > 0 && (
+            <div className="pregunta-personas">
+              {respuesta.recetas.map((r) => (
+                <button key={r.id} type="button" onClick={() => mostrar({ ...respuesta.consulta, objeto: r })}>
+                  {r.nombre}
+                </button>
+              ))}
+            </div>
           )}
           {respuesta.diasSemana && (
             <>
@@ -310,10 +397,17 @@ export function PreguntasSheet({
 
       {noEntendi && (
         <div className="pregunta-tarjeta pregunta-no">
-          <span>
-            No entendí "{noEntendi}". Pregunta por venta, efectivo, gastos, propinas, utilidad o nómina — por ejemplo{" "}
-            <em>"¿cuánto se vendió el martes?"</em> o <em>"¿cuánto le toca a {data.empleados[0]?.nombre.split(" ")[0] || "Jenny"}?"</em> — o toca una de estas:
-          </span>
+          {fuera ? (
+            <span>Eso no está en tus secciones. Puedes preguntar de: {grupos.join(", ").toLowerCase()}. Prueba con una de estas:</span>
+          ) : ctx ? (
+            <span>No entendí "{noEntendi}". Empieza a escribir y elige una de las sugerencias, o toca una de estas:</span>
+          ) : (
+            <span>
+              No entendí "{noEntendi}". Pregunta por venta, efectivo, gastos, propinas, utilidad o nómina — por ejemplo{" "}
+              <em>"¿cuánto se vendió el martes?"</em> o <em>"¿cuánto le toca a {data.empleados[0]?.nombre.split(" ")[0] || "Jenny"}?"</em> — o toca una
+              de estas:
+            </span>
+          )}
           <div className="pregunta-chips">{top.map((id) => chip(id))}</div>
         </div>
       )}
@@ -329,8 +423,8 @@ export function PreguntasSheet({
               Ver todas las preguntas <ChevronDown size={14} />
             </button>
           ) : (
-            GRUPOS.map((g) => {
-              const lista = PREGUNTAS.filter((p) => p.grupo === g && !top.includes(p.id));
+            grupos.map((g) => {
+              const lista = visibles.filter((p) => p.grupo === g && !top.includes(p.id));
               if (lista.length === 0) return null;
               return (
                 <div key={g} className="pregunta-grupo">

@@ -422,3 +422,15 @@ export async function cargarBitacora(ownerId: string, desdeIso: string, hastaIso
     .order("creado_en", { ascending: false })
     .limit(10000);
 }
+
+// Lo que pregunta el personal en "Pregúntale a Cortes" (solo el dueño lo ve
+// en Actividad). Va como pantalla para no necesitar otro tipo de renglón.
+export const SECCION_PREGUNTAS = "Pregúntale a Cortes";
+export function registrarPregunta(profile: Profile, pregunta: string) {
+  supabase
+    .from("bitacora")
+    .insert({ owner_id: ownerIdDe(profile), actor_id: profile.id, actor_nombre: nombreDe(profile), tipo: "vista", seccion: SECCION_PREGUNTAS, donde: pregunta.slice(0, 200) })
+    .then(({ error }) => {
+      if (error && error.code !== "23514") console.error("No se pudo registrar la pregunta", error);
+    });
+}

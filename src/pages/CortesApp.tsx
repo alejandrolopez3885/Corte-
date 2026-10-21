@@ -14,7 +14,7 @@ import {
 } from "../lib/dataModel";
 import { removeAssignmentByStaffAndDate, upsertAssignment, useStaffAssignments } from "../lib/staffAssignments";
 import { DAYS, DAY_SHORT } from "../lib/types";
-import type { AppData, AreaEntry, ConteoTextoArea, CreditoProveedores, DayData, DayName, EmpleadoEntry, Gasto, GastoCategoria, HorarioSemana, InsumoEntry, MeseroCatalogEntry, MeseroCut, NominaDescuentosSemana, Profile, ProveedorCatalogEntry, PuestoEntry, Receta, Transferencia, WeekData } from "../lib/types";
+import type { AppData, AreaEntry, ConteoTextoArea, CreditoProveedores, DayData, DayName, EmpleadoEntry, Gasto, GastoCategoria, HorarioSemana, InsumoEntry, MeseroCatalogEntry, MeseroCut, NominaDescuentosSemana, PermisoStaff, Profile, ProveedorCatalogEntry, PuestoEntry, Receta, Transferencia, WeekData } from "../lib/types";
 import { Empty, Field, NumInput, Sheet } from "../components/ui";
 import { MonthModal } from "../components/modals/MonthModal";
 import { MeseroModal, type MeseroFormValues } from "../components/modals/MeseroModal";
@@ -51,6 +51,7 @@ import { contarBitacoraDelDia, useRegistrarVista } from "../lib/bitacora";
 import StaffAccessShell from "./StaffAccessShell";
 import { NovedadesAlEntrar } from "../components/NovedadesAlEntrar";
 import { PreguntasSheet } from "../components/PreguntasSheet";
+import { contextoEquipo } from "../lib/preguntasEquipo";
 
 type ModalState =
   | { type: "month" }
@@ -99,6 +100,8 @@ export default function CortesApp({ profile }: { profile: Profile }) {
   const [equipoView, setEquipoView] = useState<EquipoView>("menu");
   const [negocioView, setNegocioView] = useState<NegocioView>("menu");
   const [preguntasAbierto, setPreguntasAbierto] = useState(false);
+  // Personal: la sección a la que regresa desde "Pregúntale a Cortes".
+  const [staffVista, setStaffVista] = useState<PermisoStaff | null>(null);
   const [modal, setModal] = useState<ModalState>(null);
   const [selectedAssignedDate, setSelectedAssignedDate] = useState<string | null>(null);
 
@@ -251,6 +254,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           onSignOut={signOut}
           assignments={assignmentsStatus === "error" ? [] : assignments}
           onPickCorteDate={(date) => setSelectedAssignedDate(date)}
+          vistaInicial={staffVista}
           />
         </>
       );
@@ -2074,21 +2078,41 @@ export default function CortesApp({ profile }: { profile: Profile }) {
       </>
       )}
 
-      {isOwner && !modal && (
-        <button type="button" className="preguntas-fab" onClick={() => setPreguntasAbierto(true)} aria-label="Pregúntale a Cortes">
+      {!modal && (
+        <button
+          type="button"
+          className={`preguntas-fab ${isOwner ? "" : "sin-barra"}`}
+          onClick={() => setPreguntasAbierto(true)}
+          aria-label="Pregúntale a Cortes"
+        >
           <MessageCircle size={24} />
         </button>
       )}
-      {isOwner && preguntasAbierto && (
+      {preguntasAbierto && (
         <PreguntasSheet
           data={data}
+          profile={profile}
+          contexto={isOwner ? null : contextoEquipo(profile, data, assignments || [])}
           onClose={() => setPreguntasAbierto(false)}
           onIr={(destino) => {
             setPreguntasAbierto(false);
+            if (!isOwner) {
+              // Personal en su corte: a otro de sus días, o de regreso a su
+              // inicio en la sección de la respuesta.
+              if (destino.tipo === "dia") setSelectedAssignedDate(destino.fecha);
+              else if (destino.tipo === "seccion") {
+                setStaffVista(destino.seccion);
+                setSelectedAssignedDate(null);
+              }
+              return;
+            }
             if (destino.tipo === "dashboard") goToTab("dashboard");
             else if (destino.tipo === "propinas") {
               goToTab("equipo");
               setEquipoView("propinas");
+            } else if (destino.tipo === "seccion") {
+              goToTab("negocio");
+              setNegocioView("recetarioBar");
             } else irDesdeInicio(destino);
           }}
         />

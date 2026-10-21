@@ -14,9 +14,10 @@ import type { AppData, PermisoStaff, Profile } from "./types";
 // el personal nunca consulta el historial de cambios. El dueño ve todas,
 // de todas las secciones, hasta que las cierra.
 
-export type SeccionNovedad = "corte" | PermisoStaff;
+// "general" = de toda la app: le sale a cualquiera que ya entraba antes.
+export type SeccionNovedad = "corte" | PermisoStaff | "general";
 
-export type VisualNovedad = "sumar" | "autocompletar" | "categoria" | "faltan" | "guardarCorte" | "inventarioPasos" | "recetarioArea" | "apertura" | "cierreTotal" | "efectivoEntregar";
+export type VisualNovedad = "sumar" | "autocompletar" | "categoria" | "faltan" | "guardarCorte" | "inventarioPasos" | "recetarioArea" | "apertura" | "cierreTotal" | "efectivoEntregar" | "preguntas";
 
 export interface Novedad {
   id: string;
@@ -109,6 +110,14 @@ export const NOVEDADES: Novedad[] = [
     texto: "En **Efectivo del día** ves lo que va en el sobre: sin lo de la apertura y con lo que se dejó el día anterior.",
     visual: "efectivoEntregar",
   },
+  {
+    id: "preguntale-a-cortes",
+    fecha: "2026-10-21T16:45:00Z",
+    seccion: "general",
+    titulo: "Pregúntale a Cortes",
+    texto: "Toca el botón verde 💬 y pregunta de tus secciones: escribe y elige una de las sugerencias, o toca una pregunta.",
+    visual: "preguntas",
+  },
 ];
 
 interface EstadoNovedades {
@@ -168,14 +177,15 @@ export async function novedadesPendientes(profile: Profile, data: AppData, tiene
   const secciones = seccionesConAcceso(profile, tieneCorte);
   const corteHecho = tieneCorte ? ultimoCorteHecho(data, profile) : null;
   return NOVEDADES.filter((n) => {
-    if (!yaPublicada(n) || !secciones.includes(n.seccion) || estado.vistas.includes(n.id)) return false;
+    const general = n.seccion === "general";
+    if (!yaPublicada(n) || (!general && !secciones.includes(n.seccion)) || estado.vistas.includes(n.id)) return false;
     const tiempos: number[] = [];
-    const acceso = estado.ultimoAcceso[n.seccion];
-    if (acceso) tiempos.push(new Date(acceso).getTime());
+    const accesos = general ? Object.values(estado.ultimoAcceso) : [estado.ultimoAcceso[n.seccion]];
+    accesos.forEach((acceso) => acceso && tiempos.push(new Date(acceso).getTime()));
     // El "Corte hecho por" solo dice el día del corte, no la hora en que se
     // capturó: se toma como del día anterior, para no perder novedades
     // publicadas ese mismo día.
-    if (n.seccion === "corte" && corteHecho) tiempos.push(new Date(corteHecho).getTime() - 24 * 60 * 60 * 1000);
+    if ((n.seccion === "corte" || general) && corteHecho) tiempos.push(new Date(corteHecho).getTime() - 24 * 60 * 60 * 1000);
     if (tiempos.length === 0) return false;
     const ultimo = Math.max(...tiempos);
     return ultimo < new Date(n.fecha).getTime();
