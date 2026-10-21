@@ -1,6 +1,7 @@
 import { supabase } from "./supabaseClient";
+import { insumoAreaForPuesto } from "./dataModel";
 import { DAYS } from "./types";
-import type { AppData, PermisoStaff, Profile } from "./types";
+import type { AppData, ConteoTextoArea, PermisoStaff, Profile } from "./types";
 
 // Novedades: lo que cambió en la app, explicado en corto al personal (y al
 // dueño) la primera vez que entra después del cambio (ver NovedadesAlEntrar). Cada
@@ -17,7 +18,7 @@ import type { AppData, PermisoStaff, Profile } from "./types";
 // "general" = de toda la app: le sale a cualquiera que ya entraba antes.
 export type SeccionNovedad = "corte" | PermisoStaff | "general";
 
-export type VisualNovedad = "sumar" | "autocompletar" | "categoria" | "faltan" | "guardarCorte" | "inventarioPasos" | "recetarioArea" | "apertura" | "cierreTotal" | "efectivoEntregar" | "preguntas";
+export type VisualNovedad = "sumar" | "autocompletar" | "categoria" | "faltan" | "guardarCorte" | "inventarioPasos" | "recetarioArea" | "apertura" | "cierreTotal" | "efectivoEntregar" | "conteoBar" | "pedidosPegar" | "preguntas";
 
 export interface Novedad {
   id: string;
@@ -26,6 +27,8 @@ export interface Novedad {
   titulo: string;
   texto: string; // una o dos frases; **texto** se pinta en negritas
   visual: VisualNovedad;
+  // Solo para quien cuenta en esa área (Conteo diario de Bar o de Cocina).
+  soloArea?: ConteoTextoArea;
 }
 
 export const NOVEDADES: Novedad[] = [
@@ -111,8 +114,25 @@ export const NOVEDADES: Novedad[] = [
     visual: "efectivoEntregar",
   },
   {
-    id: "preguntale-a-cortes",
+    id: "conteo-bar-lista",
+    fecha: "2026-10-21T16:37:00Z",
+    seccion: "conteo_diario",
+    soloArea: "bar",
+    titulo: "Lista nueva del conteo de Bar",
+    texto: "El conteo diario de Bar ya trae la lista **fija** de refrescos y cervezas, en el orden en que se cuentan. Solo escribe la cantidad.",
+    visual: "conteoBar",
+  },
+  {
+    id: "pedidos-pegar",
     fecha: "2026-10-21T16:45:00Z",
+    seccion: "pedidos",
+    titulo: "Pega tus pedidos y la app los suma",
+    texto: "Copia de WhatsApp los mensajes de pedidos de la semana y pégalos en **Pedidos**. La app suma cada producto por proveedor.",
+    visual: "pedidosPegar",
+  },
+  {
+    id: "preguntale-a-cortes",
+    fecha: "2026-10-21T16:50:00Z",
     seccion: "general",
     titulo: "Pregúntale a Cortes",
     texto: "Toca el botón verde 💬 y pregunta de tus secciones: escribe y elige una de las sugerencias, o toca una pregunta.",
@@ -175,10 +195,14 @@ export async function novedadesPendientes(profile: Profile, data: AppData, tiene
     return NOVEDADES.filter((n) => yaPublicada(n) && !estado.vistas.includes(n.id)).sort((a, b) => a.fecha.localeCompare(b.fecha));
   }
   const secciones = seccionesConAcceso(profile, tieneCorte);
+  const empleado = data.empleados.find((e) => e.id === profile.empleado_id);
+  const puesto = empleado?.puestoId ? data.puestos.find((p) => p.id === empleado.puestoId) : undefined;
+  const areaConteo = puesto ? insumoAreaForPuesto(puesto.nombre) : null;
   const corteHecho = tieneCorte ? ultimoCorteHecho(data, profile) : null;
   return NOVEDADES.filter((n) => {
     const general = n.seccion === "general";
     if (!yaPublicada(n) || (!general && !secciones.includes(n.seccion)) || estado.vistas.includes(n.id)) return false;
+    if (n.soloArea && n.soloArea !== areaConteo) return false;
     const tiempos: number[] = [];
     const accesos = general ? Object.values(estado.ultimoAcceso) : [estado.ultimoAcceso[n.seccion]];
     accesos.forEach((acceso) => acceso && tiempos.push(new Date(acceso).getTime()));

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { BookOpen, ChefHat, ClipboardList, Clock, Coins, Home, LogOut, Martini, MessageCircle, Package, Wallet } from "lucide-react";
+import { BookOpen, ChefHat, ClipboardList, Clock, Coins, Home, LogOut, Martini, MessageCircle, Package, ShoppingCart, Wallet } from "lucide-react";
 import { formatAssignedDate, insumoAreaForPuesto, plantillaConteo, mostRecentWeekIndex, puedeEditarHorarios } from "../lib/dataModel";
 import { HORARIO_AREAS_FIJAS, PERMISOS_DISPONIBLES } from "../lib/types";
 import type { AppData, ConteoTextoArea, HorarioSemana, PermisoStaff, Profile, StaffAssignment } from "../lib/types";
@@ -13,6 +13,7 @@ import { RecetarioPanel } from "../components/panels/RecetarioPanel";
 import { PreguntasSheet } from "../components/PreguntasSheet";
 import { contextoEquipo } from "../lib/preguntasEquipo";
 import { supabase } from "../lib/supabaseClient";
+import { CargarPedidosPanel } from "../components/panels/CargarPedidosPanel";
 
 type StaffView = "menu" | PermisoStaff | "corte";
 
@@ -45,6 +46,7 @@ export default function StaffAccessShell({
   onSaveInventarioNotas,
   onSavePedidoInventario,
   onAsignarApodo,
+  onGuardarPedidosCargados,
   onSignOut,
   assignments,
   onPickCorteDate,
@@ -58,6 +60,7 @@ export default function StaffAccessShell({
   onSaveInventarioNotas: (fecha: string, texto: string) => void;
   onSavePedidoInventario: (fecha: string, pedido: Record<string, number>) => void;
   onAsignarApodo: (insumoId: string, apodo: string) => void;
+  onGuardarPedidosCargados: (lunes: string, porProveedor: Record<string, Record<string, number>>) => void;
   onSignOut: () => void;
   assignments: StaffAssignment[];
   onPickCorteDate: (date: string) => void;
@@ -232,7 +235,7 @@ export default function StaffAccessShell({
           backLabel="Inicio"
           emptyIcon={insumoArea === "bar" ? <Martini size={26} strokeWidth={1.3} /> : <ChefHat size={26} strokeWidth={1.3} />}
           emptyText={`Aún no hay insumos de ${insumoAreaLabel} marcados como alta rotación. Pide al dueño que los marque desde el Catálogo.`}
-          plantilla={plantillaConteo(insumoArea, data.insumos)}
+          plantilla={plantillaConteo(insumoArea)}
           insumos={data.insumos.filter((i) => i.area === insumoArea)}
           proveedores={data.proveedores}
           months={data.months}
@@ -328,8 +331,26 @@ export default function StaffAccessShell({
     );
   }
 
+  if (view === "pedidos" && permisos.includes("pedidos")) {
+    return (
+      <div className="app-shell">
+        <ShellHeader subtitle={area?.nombre} onSignOut={onSignOut} />
+        {preguntas}
+        <CargarPedidosPanel
+          onBack={backToMenu}
+          backLabel="Inicio"
+          insumos={data.insumos}
+          proveedores={data.proveedores}
+          cargados={data.pedidosCargados || {}}
+          onGuardar={onGuardarPedidosCargados}
+          onAsignarApodo={onAsignarApodo}
+        />
+      </div>
+    );
+  }
+
   const ICONOS: Record<PermisoStaff, typeof Clock> = {
-    horarios: Clock, conteo_diario: ClipboardList, inventario: Package, nomina: Wallet, propinas: Coins, recetario: BookOpen,
+    horarios: Clock, conteo_diario: ClipboardList, inventario: Package, pedidos: ShoppingCart, nomina: Wallet, propinas: Coins, recetario: BookOpen,
   };
 
   return (

@@ -251,6 +251,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           onSaveInventarioNotas={guardarInventarioNotas}
           onSavePedidoInventario={guardarPedidoInventario}
           onAsignarApodo={asignarApodoInsumo}
+          onGuardarPedidosCargados={guardarPedidosCargados}
           onSignOut={signOut}
           assignments={assignmentsStatus === "error" ? [] : assignments}
           onPickCorteDate={(date) => setSelectedAssignedDate(date)}
@@ -650,6 +651,21 @@ export default function CortesApp({ profile }: { profile: Profile }) {
     if (!insumo) return;
     const actuales = insumo.apodos || [];
     if (!actuales.some((a) => a.toLowerCase() === apodo.toLowerCase())) insumo.apodos = [...actuales, apodo];
+    persist(next);
+  }
+
+  // Pedidos pegados de WhatsApp (permiso "Pedidos"): por semana y
+  // proveedor; lo de un proveedor que se vuelve a pegar se reemplaza.
+  function guardarPedidosCargados(lunes: string, porProveedor: Record<string, Record<string, number>>) {
+    if (!data) return;
+    const next = structuredClone(data);
+    const semana = { ...(next.pedidosCargados?.[lunes] || {}) };
+    const en = new Date().toISOString();
+    const por = profile.display_name || (isOwner ? "Dueño" : "Equipo");
+    Object.entries(porProveedor).forEach(([provId, cantidades]) => {
+      semana[provId] = { cantidades, por, en };
+    });
+    next.pedidosCargados = { ...(next.pedidosCargados || {}), [lunes]: semana };
     persist(next);
   }
 
@@ -1574,6 +1590,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           initialWeekIndex={mostRecentWeekIdx}
           pedidosDiarios={data.pedidosDiarios}
           pedidosInventario={data.pedidosInventario}
+          pedidosCargados={data.pedidosCargados || {}}
         />
       )}
 

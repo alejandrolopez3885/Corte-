@@ -169,6 +169,25 @@ function Visual({ tipo }: { tipo: VisualNovedad }) {
       </>
     );
   }
+  if (tipo === "pedidosPegar") {
+    return (
+      <>
+        <span className="nv-etiqueta">Lo que pegas</span>
+        <div className="nv-campo">1 caja de francesa · 1 caja de francesa · 5kg carne molida</div>
+        <div className="nv-lista">
+          <div>
+            <span>Papas a la francesa</span>
+            <small>1 + 1 = 2 cajas</small>
+          </div>
+          <div>
+            <span>Carne molida</span>
+            <small>5 kg</small>
+          </div>
+        </div>
+        <span className="nv-antes">Antes: sumar a mano y anotarlo en papel</span>
+      </>
+    );
+  }
   if (tipo === "recetarioArea") {
     return (
       <>
@@ -184,6 +203,22 @@ function Visual({ tipo }: { tipo: VisualNovedad }) {
           </div>
         </div>
         <span className="nv-antes">Antes: salían también las bebidas de Bar</span>
+      </>
+    );
+  }
+  if (tipo === "conteoBar") {
+    return (
+      <>
+        <span className="nv-etiqueta">Conteo diario de Bar</span>
+        <div className="nv-campo nv-conteo">
+          Agua natural Johnster (pz): <strong>24</strong>
+          <br />
+          XX Lager (pz): <strong>96</strong>
+          <br />
+          Tecate Light (pz): <strong>73</strong>
+          <br />
+          Indio (pz): _
+        </div>
       </>
     );
   }
