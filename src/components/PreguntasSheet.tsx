@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { ArrowRight, Mic, Send } from "lucide-react";
 import { Sheet } from "./ui";
 import { supabase } from "../lib/supabaseClient";
-import { todayIso } from "../lib/dataModel";
+import { addDaysIso, mondayOnOrBefore, todayIso } from "../lib/dataModel";
 import {
   PREGUNTAS,
   PREGUNTAS_INICIALES,
@@ -15,6 +15,7 @@ import {
   type PreguntaId,
   type Respuesta,
 } from "../lib/preguntas";
+import { DAYS, DAY_SHORT } from "../lib/types";
 import type { AppData } from "../lib/types";
 
 // Pregúntale a Cortes (solo dueño): escribir, dictar o tocar una pregunta.
@@ -42,7 +43,7 @@ const Reconocedor: ConstructorReconocimiento | undefined =
       (window as unknown as Record<string, ConstructorReconocimiento | undefined>).webkitSpeechRecognition)
     : undefined;
 
-const GRUPOS: GrupoPregunta[] = ["Ventas", "Dinero", "Nómina", "Propinas"];
+const GRUPOS: GrupoPregunta[] = ["Ventas", "Estadística", "Dinero", "Nómina", "Propinas"];
 
 export function PreguntasSheet({
   data,
@@ -197,6 +198,19 @@ export function PreguntasSheet({
                 ))}
               </div>
             )}
+            {respuesta.barras && respuesta.barras.length > 0 && (
+              <div className="pregunta-barras">
+                {respuesta.barras.map((b, i) => (
+                  <div key={i} className="pregunta-barra-fila">
+                    <span>{b.etiqueta}</span>
+                    <div className="pregunta-barra-pista">
+                      <div className={b.destacada ? "destacada" : ""} style={{ width: `${Math.max(2, Math.round(b.valor * 100))}%` }} />
+                    </div>
+                    <strong>{b.texto}</strong>
+                  </div>
+                ))}
+              </div>
+            )}
             {respuesta.enlace && (
               <button type="button" className="link-btn pregunta-enlace" onClick={() => onIr(respuesta.enlace!.destino)}>
                 {respuesta.enlace.texto} <ArrowRight size={14} />
@@ -218,6 +232,22 @@ export function PreguntasSheet({
                 ))}
               </div>
               <p className="hint">Toca otro nombre para cambiar la respuesta.</p>
+            </>
+          )}
+          {respuesta.diasSemana && (
+            <>
+              <div className="pregunta-dias">
+                {DAYS.map((d, i) => {
+                  const fecha = addDaysIso(mondayOnOrBefore(hoy), i);
+                  const activo = DAYS[(new Date(`${respuesta.consulta.fecha}T00:00:00`).getDay() + 6) % 7] === d;
+                  return (
+                    <button key={d} type="button" className={activo ? "activo" : ""} onClick={() => mostrar({ ...respuesta.consulta, fecha })}>
+                      {DAY_SHORT[d]}
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="hint">Toca otro día para ver su promedio.</p>
             </>
           )}
           {respuesta.dias && (

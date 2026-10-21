@@ -1,5 +1,5 @@
 import { DAYS, DAY_SHORT, GASTO_CATEGORIAS, NOMINA_DESCUENTO_TIPOS, NOMINA_EXTRA_TIPOS } from "./types";
-import type { AppData, WeekData } from "./types";
+import type { AppData, DayName, WeekData } from "./types";
 import {
   addDaysIso,
   computeDashboardReport,
@@ -41,9 +41,13 @@ export type PreguntaId =
   | "nomina-descuentos"
   | "propinas-semana"
   | "propinas-semana-pasada"
-  | "propinas-mesero";
+  | "propinas-mesero"
+  | "stat-promedio-dia"
+  | "stat-dia-mas"
+  | "stat-promedio-semana"
+  | "stat-mejor-dia";
 
-export type GrupoPregunta = "Ventas" | "Dinero" | "Nómina" | "Propinas";
+export type GrupoPregunta = "Ventas" | "Estadística" | "Dinero" | "Nómina" | "Propinas";
 
 export const PREGUNTAS: { id: PreguntaId; texto: string; grupo: GrupoPregunta }[] = [
   { id: "venta-hoy", texto: "Venta de hoy", grupo: "Ventas" },
@@ -51,6 +55,10 @@ export const PREGUNTAS: { id: PreguntaId; texto: string; grupo: GrupoPregunta }[
   { id: "venta-semana", texto: "Venta de la semana", grupo: "Ventas" },
   { id: "venta-semana-pasada", texto: "Semana pasada", grupo: "Ventas" },
   { id: "venta-dia", texto: "¿Cuánto se vendió el…?", grupo: "Ventas" },
+  { id: "stat-promedio-dia", texto: "Venta promedio por día", grupo: "Estadística" },
+  { id: "stat-dia-mas", texto: "¿Qué día se vende más?", grupo: "Estadística" },
+  { id: "stat-promedio-semana", texto: "Venta promedio semanal", grupo: "Estadística" },
+  { id: "stat-mejor-dia", texto: "Mejor día de venta", grupo: "Estadística" },
   { id: "efectivo-hoy", texto: "Efectivo a entregar hoy", grupo: "Dinero" },
   { id: "gastos-semana", texto: "Gastos de la semana", grupo: "Dinero" },
   { id: "utilidad-semana", texto: "Utilidad de la semana", grupo: "Dinero" },
@@ -79,6 +87,9 @@ export interface Consulta {
   // toca a…?").
   persona?: { id: string; nombre: string } | "primera";
   modo?: "pendientes" | "descuentos" | "porMesero";
+  // Estadística de venta, propinas o gastos con todo lo capturado. En
+  // "promedioDia" el día de la semana es el de "fecha".
+  estadistica?: "promedioDia" | "porDiaSemana" | "promedioSemana" | "mejorDia";
 }
 
 export type DestinoPregunta = Destino | { tipo: "dashboard" } | { tipo: "propinas" };
@@ -92,6 +103,10 @@ export interface Respuesta {
   filas?: { etiqueta: string; valor: string; tag?: "pendiente" | "pagada" }[];
   // Lun–Dom de esa semana, para cambiar de día sin volver a preguntar.
   dias?: { fecha: string; etiqueta: string; futuro: boolean }[];
+  // Barras horizontales (estadística); "destacada" = la más reciente.
+  barras?: { etiqueta: string; valor: number; texto: string; destacada?: boolean }[];
+  // Lun–Dom para cambiar el día de la semana de un promedio.
+  diasSemana?: boolean;
   // Nombres para cambiar de persona sin volver a preguntar.
   personas?: { id: string; nombre: string }[];
   consulta: Consulta;
@@ -133,6 +148,15 @@ export function consultaDePregunta(id: PreguntaId, hoy: string): Consulta {
       return { tema: "propinas", alcance: "semana", fecha: semanaPasada };
     case "propinas-mesero":
       return { tema: "propinas", alcance: "semana", fecha: hoy, modo: "porMesero" };
+    case "stat-promedio-dia":
+      // Arranca con el mismo día de la semana que hoy.
+      return { tema: "venta", alcance: "dia", fecha: hoy, estadistica: "promedioDia" };
+    case "stat-dia-mas":
+      return { tema: "venta", alcance: "dia", fecha: hoy, estadistica: "porDiaSemana" };
+    case "stat-promedio-semana":
+      return { tema: "venta", alcance: "semana", fecha: hoy, estadistica: "promedioSemana" };
+    case "stat-mejor-dia":
+      return { tema: "venta", alcance: "dia", fecha: hoy, estadistica: "mejorDia" };
   }
 }
 
@@ -140,6 +164,10 @@ export function consultaDePregunta(id: PreguntaId, hoy: string): Consulta {
 // preguntas").
 export function preguntaDeConsulta(c: Consulta, hoy: string): PreguntaId {
   const pasada = c.fecha < mondayOnOrBefore(hoy);
+  if (c.estadistica === "promedioDia") return "stat-promedio-dia";
+  if (c.estadistica === "porDiaSemana") return "stat-dia-mas";
+  if (c.estadistica === "promedioSemana") return "stat-promedio-semana";
+  if (c.estadistica === "mejorDia") return "stat-mejor-dia";
   switch (c.tema) {
     case "venta":
       if (c.alcance === "semana") return pasada ? "venta-semana-pasada" : "venta-semana";
@@ -179,8 +207,8 @@ const DIAS_TEXTO: [RegExp, number][] = [
   [/\bmiercoles\b/, 2],
   [/\bjueves\b/, 3],
   [/\bviernes\b/, 4],
-  [/\bsabado\b/, 5],
-  [/\bdomingo\b/, 6],
+  [/\bsabados?\b/, 5],
+  [/\bdomingos?\b/, 6],
 ];
 
 const MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
@@ -199,10 +227,25 @@ function buscarPersona(t: string, lista: { id: string; nombre: string }[]): { id
   );
 }
 
+function entenderEstadistica(t: string): Consulta["estadistica"] | "promedio" | undefined {
+  if (/que dia (se vende|vendemos|vendo|hay|se hace) mas|dia mas (fuerte|flojo)|dias? (mas|menos) (fuertes?|flojos?)|que dia (se vende|vendemos) menos/.test(t)) return "porDiaSemana";
+  if (/mejor dia|record|cuando (se )?vend\w* mas|dia que mas (se )?vend/.test(t)) return "mejorDia";
+  if (/promedio|normalmente|por lo general|en general|regularmente/.test(t)) return "promedio";
+  return undefined;
+}
+
 export function entenderPregunta(texto: string, hoy: string, data?: AppData): Consulta | null {
   const t = normalizarNombre(texto).replace(/[¿?¡!.,]/g, " ");
-  const tema = TEMAS.find(([, re]) => re.test(t))?.[0];
+  const estadistica = entenderEstadistica(t);
+  // "¿Cuál fue el mejor día?" sin tema es de venta.
+  const tema = TEMAS.find(([, re]) => re.test(t))?.[0] || (estadistica ? "venta" : undefined);
   if (!tema) return null;
+  if (estadistica && (tema === "venta" || tema === "propinas" || tema === "gastos")) {
+    const dia = DIAS_TEXTO.find(([re]) => re.test(t));
+    const tipo = estadistica === "promedio" ? (dia ? "promedioDia" : /semana/.test(t) ? "promedioSemana" : "porDiaSemana") : estadistica;
+    const fecha = dia ? addDaysIso(mondayOnOrBefore(hoy), dia[1]) : hoy;
+    return { tema, alcance: tipo === "promedioSemana" ? "semana" : "dia", fecha, estadistica: tipo };
+  }
 
   let alcance: "dia" | "semana" | null = null;
   let fecha = hoy;
@@ -299,6 +342,7 @@ function meserosDeSemana(week: WeekData) {
 }
 
 export function responder(data: AppData, c: Consulta, hoy: string): Respuesta {
+  if (c.estadistica) return responderEstadistica(data, c, hoy);
   const ubicaciones = ubicarFechas(data);
   const lunes = mondayOnOrBefore(c.fecha);
   const domingo = addDaysIso(lunes, 6);
@@ -605,6 +649,149 @@ export function responder(data: AppData, c: Consulta, hoy: string): Respuesta {
       ? [`${hastaHoy} · ${personas.length} personas`, `Semana completa (proyectada): ${sinCentavos(completa)}`]
       : [`${personas.length} personas · Neto a pagar ${sinCentavos(neto)}`, `Pagadas: ${pagadas} de ${personas.length}`],
     enlace: enlaceNomina,
+    consulta: c,
+  };
+}
+
+// --- Estadística --------------------------------------------------------
+// Con todo lo capturado: solo cuentan los días con venta (los cerrados o
+// vacíos no bajan el promedio) y nunca el día de hoy, que todavía no
+// termina; por semana, solo las semanas ya cerradas.
+
+interface DiaHistorial {
+  fecha: string;
+  dia: DayName;
+  ventaTotal: number;
+  ventaLocal: number;
+  ventaApps: number;
+  propina: number;
+  gastos: number;
+}
+
+function historialDias(data: AppData, hoy: string): DiaHistorial[] {
+  const porSemana = new Map<string, ReturnType<typeof computeWeekSummary>>();
+  const res: DiaHistorial[] = [];
+  ubicarFechas(data).forEach((u, fecha) => {
+    if (fecha >= hoy) return;
+    const clave = `${u.mk}/${u.wi}`;
+    if (!porSemana.has(clave)) porSemana.set(clave, computeWeekSummary(data.months[u.mk].weeks[u.wi]));
+    const r = porSemana.get(clave)!.perDay.find((p) => p.day === u.dia)!;
+    if (r.ventaTotal <= 0) return;
+    res.push({ fecha, dia: u.dia, ventaTotal: r.ventaTotal, ventaLocal: r.ventaLocal, ventaApps: r.ventaApps, propina: r.propina, gastos: r.gastos });
+  });
+  return res.sort((a, b) => b.fecha.localeCompare(a.fecha));
+}
+
+// Los promedios se redondean al peso.
+const promedio = (xs: number[]) => (xs.length ? Math.round(xs.reduce((s, x) => s + x, 0) / xs.length) : 0);
+const fechaCorta = (f: string) => fechaLarga(f).split(" ").slice(1).join(" ");
+const diferencia = (valor: number, base: number) => {
+  if (!base) return "";
+  const pct = Math.round(((valor - base) / base) * 100);
+  return pct === 0 ? "igual al promedio" : `${Math.abs(pct)}% ${pct > 0 ? "arriba" : "abajo"} del promedio`;
+};
+
+function responderEstadistica(data: AppData, c: Consulta, hoy: string): Respuesta {
+  const tema = c.tema === "propinas" || c.tema === "gastos" ? c.tema : "venta";
+  const nombreTema = tema === "venta" ? "Venta" : tema === "propinas" ? "Propinas" : "Gastos";
+  const valorDe = (d: DiaHistorial) => (tema === "venta" ? d.ventaTotal : tema === "propinas" ? d.propina : d.gastos);
+  const dias = historialDias(data, hoy);
+  const desde = dias.length ? ` (desde ${fechaCorta(dias[dias.length - 1].fecha)})` : "";
+  const sinDatos = (titulo: string): Respuesta => ({ titulo, valor: "—", lineas: ["Todavía no hay días con venta capturada para sacar la estadística."], consulta: c });
+
+  if (c.estadistica === "promedioDia") {
+    const dia = DAYS[(new Date(`${c.fecha}T00:00:00`).getDay() + 6) % 7];
+    const plurales: Record<DayName, string> = { Lunes: "lunes", Martes: "martes", Miércoles: "miércoles", Jueves: "jueves", Viernes: "viernes", Sábado: "sábados", Domingo: "domingos" };
+    const titulo = `${nombreTema} promedio de los ${plurales[dia]}`;
+    const lista = dias.filter((d) => d.dia === dia);
+    if (lista.length === 0) return { ...sinDatos(titulo), lineas: [`Todavía no hay ${plurales[dia]} con venta capturada.`], diasSemana: true };
+    const prom = promedio(lista.map(valorDe));
+    const mejor = [...lista].sort((a, b) => valorDe(b) - valorDe(a))[0];
+    const ultimo = lista[0];
+    const ultimas = lista.slice(0, 8);
+    const max = Math.max(...ultimas.map(valorDe), 1);
+    return {
+      titulo,
+      valor: sinCentavos(prom),
+      lineas: [
+        `De ${plural(lista.length, plurales[dia].replace(/s$/, ""), plurales[dia])} con venta (desde ${fechaCorta(lista[lista.length - 1].fecha)}) · sin contar hoy`,
+        `${lista.length > 4 ? `Últimos 4: ${sinCentavos(promedio(lista.slice(0, 4).map(valorDe)))} · ` : ""}Mejor: ${sinCentavos(valorDe(mejor))} (${fechaCorta(mejor.fecha)})`,
+        ...(lista.length > 1 && prom ? [`El último (${fechaCorta(ultimo.fecha)}) fue ${diferencia(valorDe(ultimo), prom)}`] : []),
+      ],
+      barras: ultimas.map((d, i) => ({ etiqueta: fechaCorta(d.fecha), valor: valorDe(d) / max, texto: sinCentavos(valorDe(d)), destacada: i === 0 })),
+      diasSemana: true,
+      consulta: c,
+    };
+  }
+
+  if (c.estadistica === "porDiaSemana") {
+    const titulo = `${nombreTema} promedio por día de la semana`;
+    const porDia = DAYS.map((d) => ({ d, xs: dias.filter((x) => x.dia === d).map(valorDe) }))
+      .filter((x) => x.xs.length > 0)
+      .map((x) => ({ d: x.d, prom: promedio(x.xs) }))
+      .sort((a, b) => b.prom - a.prom);
+    if (porDia.length === 0) return sinDatos(titulo);
+    const [mas] = porDia;
+    const menos = porDia[porDia.length - 1];
+    const veces = menos.prom > 0 ? mas.prom / menos.prom : 0;
+    const semanas = new Set(dias.map((d) => mondayOnOrBefore(d.fecha))).size;
+    return {
+      titulo,
+      valor: mas.d,
+      lineas: [
+        `Promedio ${sinCentavos(mas.prom)}${porDia.length > 1 && veces >= 1.1 ? ` · ${veces >= 1.95 && veces < 2.05 ? "el doble que" : `${veces.toFixed(1)} veces`} el ${menos.d.toLowerCase()}` : ""}`,
+        `De ${plural(semanas, "semana", "semanas")} con venta${desde}`,
+      ],
+      barras: porDia.map((x) => ({ etiqueta: x.d, valor: x.prom / (mas.prom || 1), texto: sinCentavos(x.prom) })),
+      consulta: c,
+    };
+  }
+
+  if (c.estadistica === "promedioSemana") {
+    const titulo = `${nombreTema} promedio por semana`;
+    const lunesHoy = mondayOnOrBefore(hoy);
+    const porSemana = new Map<string, number>();
+    dias.forEach((d) => {
+      const l = mondayOnOrBefore(d.fecha);
+      if (l < lunesHoy) porSemana.set(l, round2((porSemana.get(l) || 0) + valorDe(d)));
+    });
+    const semanas = [...porSemana.entries()].sort((a, b) => b[0].localeCompare(a[0]));
+    if (semanas.length === 0) return { ...sinDatos(titulo), lineas: ["Todavía no hay semanas cerradas con venta."] };
+    const prom = promedio(semanas.map(([, v]) => v));
+    const ultimas = semanas.slice(0, 8);
+    const max = Math.max(...ultimas.map(([, v]) => v), 1);
+    const [pasada] = semanas;
+    const rango = (l: string) => {
+      const dom = addDaysIso(l, 6);
+      return l.slice(5, 7) === dom.slice(5, 7) ? `${Number(l.slice(8))}–${fechaCorta(dom)}` : `${fechaCorta(l)}–${Number(dom.slice(8))}`;
+    };
+    return {
+      titulo,
+      valor: sinCentavos(prom),
+      lineas: [
+        `De ${plural(semanas.length, "semana cerrada", "semanas cerradas")}${semanas.length > 4 ? ` · Últimas 4: ${sinCentavos(promedio(semanas.slice(0, 4).map(([, v]) => v)))}` : ""}`,
+        ...(semanas.length > 1 && prom ? [`La más reciente (${rango(pasada[0])}): ${sinCentavos(pasada[1])} · ${diferencia(pasada[1], prom)}`] : []),
+      ],
+      barras: ultimas.map(([l, v], i) => ({ etiqueta: rango(l), valor: v / max, texto: sinCentavos(v), destacada: i === 0 })),
+      consulta: c,
+    };
+  }
+
+  // Mejor día.
+  const titulo = `Mejor día de ${nombreTema.toLowerCase()}`;
+  const top = [...dias].sort((a, b) => valorDe(b) - valorDe(a)).slice(0, 3);
+  if (top.length === 0) return sinDatos(titulo);
+  const [mejor, ...siguen] = top;
+  const conDia = (f: string) => fechaLarga(f).replace(/^\w/, (x) => x.toUpperCase());
+  return {
+    titulo,
+    valor: sinCentavos(valorDe(mejor)),
+    lineas: [
+      `${conDia(mejor.fecha)}${tema === "venta" ? ` · Local ${sinCentavos(mejor.ventaLocal)} · Apps ${sinCentavos(mejor.ventaApps)}` : ""}`,
+      ...(siguen.length ? [siguen.map((d, i) => `${i + 2}º ${conDia(d.fecha)} ${sinCentavos(valorDe(d))}`).join(" · ")] : []),
+      `De ${plural(dias.length, "día", "días")} con venta${desde}`,
+    ],
+    enlace: { texto: "Ver el corte de ese día", destino: { tipo: "dia", fecha: mejor.fecha } },
     consulta: c,
   };
 }

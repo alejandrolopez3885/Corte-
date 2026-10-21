@@ -920,7 +920,9 @@ gratis, en español de México; el botón se pone rojo mientras escucha y al
 terminar responde solo; si el celular no lo tiene, el micrófono no sale y
 se puede usar el dictado del teclado) o tocando una pregunta. Las preguntas
 vienen en botones agrupados en **Ventas** (venta de hoy, de ayer, de la
-semana, semana pasada, "¿Cuánto se vendió el…?"), **Dinero** (efectivo a
+semana, semana pasada, "¿Cuánto se vendió el…?"), **Estadística** (venta
+promedio por día, "¿Qué día se vende más?", venta promedio semanal y mejor
+día de venta), **Dinero** (efectivo a
 entregar hoy, gastos de la semana, utilidad de la semana), **Nómina**
 (nómina actual, nómina de la semana pasada, "¿Cuánto le toca a…?", "¿A
 quién falta pagar?", adelantos y descuentos) y **Propinas** (propinas de
@@ -981,6 +983,29 @@ da otra cifra:
   pantalla de Propinas), con "Ver propinas".
 - **Propinas por mesero**: de mayor a menor, con cuántos cortes tuvo cada
   quien; tocando un nombre se ven solo las suyas, día por día.
+
+**Estadística** (con todo lo capturado): solo cuentan los días con venta
+capturada — los cerrados o vacíos no bajan el promedio — y nunca el día de
+hoy, que todavía no termina; por semana solo cuentan las semanas ya
+cerradas. Los promedios se redondean al peso. Se pregunta con "promedio",
+"normalmente", "por lo general", "qué día se vende más", "el mejor día" o
+"récord", y sirve para venta, propinas y gastos ("propinas promedio de los
+viernes", "gastos promedio por semana"):
+
+- **Promedio de un día de la semana** ("venta promedio del martes", "cuánto
+  vendemos normalmente los sábados"): el promedio, de cuántos días sale y
+  desde cuándo, el promedio de los últimos 4, el mejor con su fecha, cuánto
+  arriba o abajo del promedio quedó el último, y barras con los últimos 8
+  (el más reciente en naranja). Debajo vienen Lun–Dom para ver el promedio
+  de otro día. El botón arranca con el día de hoy.
+- **¿Qué día se vende más?** (o "venta promedio" sin día): el promedio de
+  cada día de la semana, de mayor a menor, con barras; arriba el día más
+  fuerte y cuántas veces vende lo del más flojo.
+- **Promedio semanal**: el promedio de las semanas cerradas, el de las
+  últimas 4 y cómo quedó la más reciente contra el promedio, con barras de
+  las últimas 8.
+- **Mejor día** ("récord", "cuándo vendimos más"): el día con más venta (con
+  local y apps), el 2º y el 3º, y "Ver el corte de ese día".
 
 Si un día o semana no tiene nada capturado, lo dice ("Todavía no hay nada
 capturado ese día"). Si no entiende la pregunta, responde "No entendí…" con
