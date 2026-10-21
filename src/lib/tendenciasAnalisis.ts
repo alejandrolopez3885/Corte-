@@ -1,5 +1,5 @@
 import {
-  addDaysIso, computeNominaTotalHastaHoy, computeVentaTrend, dateForDay, META_NOMINA_PCT, META_NOMINA_VERDE_PCT, money, resolveWeekStartDate,
+  addDaysIso, computeNominaTotalHastaHoy, computeVentaTrend, dateForDay, formatWeekRange, META_NOMINA_PCT, META_NOMINA_VERDE_PCT, money, resolveWeekStartDate,
   round2, todayIso,
 } from "./dataModel";
 import { computeTendenciasSemana, lunesDe } from "./tendencias";
@@ -92,11 +92,22 @@ function diasPorFecha(months: Record<string, MonthData>): Map<string, Dia> {
   return mapa;
 }
 
+// Gastos del corte como % de la venta, por categoría (sin Retiro, los
+// adelantos de Nómina, Cancelaciones ni Cortesías, que van aparte).
+export interface GastosVenta {
+  semana: { gastos: number; venta: number; pct: number; normalPct: number | null } | null;
+  categorias: { categoria: string; actual: number; pct: number; normalPct: number | null; sube: boolean; baja: boolean }[];
+  suben: { categoria: string; actual: number; pct: number; normalPct: number; normalMonto: number; top: { concepto: string; total: number; fecha: string }[] }[];
+  cerradas: { label: string; gastos: number; pct: number }[];
+}
+const FUERA_DE_GASTOS_VENTA = new Set(["retiro", "nomina", "cancelaciones", "cortesia"]);
+export const DIFERENCIA_MIN_GASTO = 500; // $ para marcar ▲/▼
+
 export interface AnalisisTendencias {
   alertas: Alerta[];
   relevancia: Record<TarjetaId, Relevancia>;
   meseros: { nombre: string; hoy: number; promedio: number; cambio: number | null; fecha: string }[];
-  gastosCategoria: { categoria: string; actual: number; promedio: number; cambio: number | null }[];
+  gastosVenta: GastosVenta;
   extras: { concepto: string; actual: number; promedio: number; cambio: number | null }[];
   nomina: { label: string; pct: number }[];
   efectivo: { label: string; real: number | null; esperado: number; diferencia: number | null }[];
@@ -309,18 +320,71 @@ export function analizarTendencias(
   const mismosDias = (l: string) => DAYS.slice(0, n).map((_, j) => dias.get(addDaysIso(l, j))).filter((d): d is Dia => !!d);
   const actuales = diasEstaSemana.map((f) => dias.get(f)).filter((d): d is Dia => !!d);
   const sumaCat = (ds: Dia[], cat: string) => ds.reduce((s, d) => s + d.gastos.filter((g) => (g.categoria || "") === cat).reduce((a, g) => a + g.total, 0), 0);
-  const categorias = [...new Set([...dias.values()].flatMap((d) => d.gastos.map((g) => g.categoria || "")))];
-  const gastosCategoria = categorias
-    .map((cat) => {
-      const actual = round2(sumaCat(actuales, cat));
-      const promedio = round2(prom(semanasAntes.slice(0, 4).map((l) => sumaCat(mismosDias(l), cat))));
-      return { categoria: etiquetaCategoria(cat), actual, promedio, cambio: pct(actual, promedio) };
-    })
-    .filter((c) => c.actual > 0 || c.promedio > 0)
-    .sort((a, b) => b.actual - a.actual);
-  if (n > 0 && semanasAntes.length >= MIN_SEMANAS) {
-    const rara = gastosCategoria.find((c) => c.cambio !== null && Math.abs(c.cambio) >= UMBRAL && Math.max(c.actual, c.promedio) >= 500);
-    if (rara && rara.cambio !== null) subir("gastos", Math.abs(rara.cambio) / UMBRAL, `${rara.categoria} ${rara.cambio > 0 ? "+" : "−"}${fmtPct(rara.cambio)}`);
+  const ventaDe = (ds: Dia[]) => ds.reduce((s, d) => s + d.venta, 0);
+  const categorias = [...new Set([...dias.values()].flatMap((d) => d.gastos.map((g) => g.categoria || "")))].filter(
+    (c) => !FUERA_DE_GASTOS_VENTA.has(c)
+  );
+  const base4 = semanasAntes.slice(0, 4).map(mismosDias);
+  const ventaBase = base4.reduce((s, ds) => s + ventaDe(ds), 0);
+  const ventaActual = ventaDe(actuales);
+  const conHistorial = n > 0 && semanasAntes.length >= MIN_SEMANAS && ventaBase > 0;
+  const pctDe = (monto: number, venta: number) => (venta > 0 ? round2((monto / venta) * 100) : 0);
+  const gastosVenta: GastosVenta = { semana: null, categorias: [], suben: [], cerradas: [] };
+  if (n > 0 && ventaActual > 0) {
+    const cats = categorias
+      .map((cat) => {
+        const actual = round2(sumaCat(actuales, cat));
+        const p = pctDe(actual, ventaActual);
+        const normalPct = ventaBase > 0 ? pctDe(base4.reduce((s, ds) => s + sumaCat(ds, cat), 0), ventaBase) : null;
+        const normalMonto = normalPct !== null ? (normalPct / 100) * ventaActual : 0;
+        return {
+          categoria: etiquetaCategoria(cat),
+          cat,
+          actual,
+          pct: p,
+          normalPct,
+          sube: conHistorial && normalPct !== null && p >= normalPct * 1.25 && actual - normalMonto >= DIFERENCIA_MIN_GASTO,
+          baja: conHistorial && normalPct !== null && p <= normalPct * 0.75 && normalMonto - actual >= DIFERENCIA_MIN_GASTO,
+        };
+      })
+      .filter((c) => c.actual > 0 || (c.normalPct ?? 0) > 0)
+      .sort((a, b) => b.actual - a.actual);
+    gastosVenta.categorias = cats.map(({ cat: _cat, ...c }) => c);
+    const totalActual = round2(cats.reduce((s, c) => s + c.actual, 0));
+    const totalBase = base4.reduce((s, ds) => s + categorias.reduce((a, cat) => a + sumaCat(ds, cat), 0), 0);
+    gastosVenta.semana = { gastos: totalActual, venta: round2(ventaActual), pct: pctDe(totalActual, ventaActual), normalPct: ventaBase > 0 ? pctDe(totalBase, ventaBase) : null };
+    gastosVenta.suben = cats
+      .filter((c) => c.sube)
+      .map((c) => ({
+        categoria: c.categoria,
+        actual: c.actual,
+        pct: c.pct,
+        normalPct: c.normalPct!,
+        normalMonto: round2((c.normalPct! / 100) * ventaActual),
+        top: actuales
+          .flatMap((d) => d.gastos.filter((g) => (g.categoria || "") === c.cat).map((g) => ({ concepto: g.concepto, total: g.total, fecha: d.fecha })))
+          .sort((a, b) => b.total - a.total)
+          .slice(0, 3),
+      }));
+  }
+  gastosVenta.cerradas = semanasAntes.slice(0, 4).map((l) => {
+    const ds = DAYS.map((_, j) => dias.get(addDaysIso(l, j))).filter((d): d is Dia => !!d);
+    const g = round2(categorias.reduce((s, cat) => s + sumaCat(ds, cat), 0));
+    return { label: formatWeekRange(l), gastos: g, pct: pctDe(g, ventaDe(ds)) };
+  });
+  const peor = [...gastosVenta.suben].sort((a, b) => b.actual - b.normalMonto - (a.actual - a.normalMonto))[0];
+  if (peor) {
+    alertas.push({
+      nivel: "atipico",
+      titulo: `${peor.categoria} va en ${peor.pct.toFixed(1)}% de la venta`,
+      detalle:
+        peor.normalMonto > 0
+          ? `Lo normal es ${peor.normalPct.toFixed(1)}%: ${money(round2(peor.actual - peor.normalMonto))} de más esta semana.`
+          : `Normalmente no hay gastos de ${peor.categoria} en estos días: ${money(peor.actual)} esta semana.`,
+      tarjeta: "gastos",
+      peso: 30 + (peor.actual - peor.normalMonto) / 100,
+    });
+    subir("gastos", 2.5, `${peor.categoria} ${peor.pct.toFixed(1)}% (normal ${peor.normalPct.toFixed(1)}%)`.replace(" (normal 0.0%)", ""));
   }
   const extrasDef: { concepto: string; valor: (ds: Dia[]) => number }[] = [
     { concepto: "Propinas", valor: (ds) => ds.reduce((s, d) => s + d.propina, 0) },
@@ -442,7 +506,7 @@ export function analizarTendencias(
 
   const deLaSemana = alertas.filter((x) => !x.soloTarjeta);
   deLaSemana.sort((a, b) => ORDEN[a.nivel] - ORDEN[b.nivel] || b.peso - a.peso);
-  return { alertas: deLaSemana, relevancia: rel, meseros, gastosCategoria, extras, nomina, efectivo };
+  return { alertas: deLaSemana, relevancia: rel, meseros, gastosVenta, extras, nomina, efectivo };
 }
 
 // Todo lo de Negocio > Tendencias de una vez (también lo usa Inicio):

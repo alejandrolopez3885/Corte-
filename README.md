@@ -519,10 +519,23 @@ estando en Nómina te regresa al menú de Equipo):
   la etiqueta "Subió: …", y las demás se juntan abajo en "Sin novedades".
   Tarjetas: ¿cómo cerraría la semana?, día a día vs. semana pasada (con la
   venta de cada día de esta semana y de la pasada; los días estimados
-  quedan sin número), semanas, venta por mesero vs. su promedio, gastos por
-  categoría, propinas/cancelaciones/cortesías, cómo se cobra, nómina vs.
+  quedan sin número), semanas, venta por mesero vs. su promedio, gastos vs.
+  venta, propinas/cancelaciones/cortesías, cómo se cobra, nómina vs.
   venta, efectivo real vs. esperado, venta promedio por día de la
-  semana y resultados por semana cerrada. **Nómina vs. venta** (meta de
+  semana y resultados por semana cerrada. **Gastos vs. venta** (antes
+  "Gastos por categoría"): los gastos capturados en el corte de esta semana
+  (de lunes a los días que ya cuentan en la venta) como % de esa venta,
+  contra lo "normal" — esos mismos días de las últimas 4 semanas —, en
+  total y por categoría (Semana, % venta, Normal), sin Retiro, adelantos
+  de Nómina, Cancelaciones ni Cortesías. Una categoría se marca ▲ en rojo
+  si su % va 25% o más arriba de lo normal y la diferencia es de $500 o
+  más, y ▼ en verde si bajó igual (con menos de 3 semanas de historial no
+  se marca). "Los que suben": cada categoría marcada con su %, lo normal a
+  estas alturas y sus 3 gastos más grandes; la que más se pasó sale en
+  "Para revisar" (también en Inicio) y hace subir la tarjeta. Abajo, las
+  últimas 4 semanas cerradas con sus gastos del corte y su % de la venta.
+  Los gastos en transferencia se capturan por semana, así que no entran
+  aquí: se ven en Resultados por semana cerrada. **Nómina vs. venta** (meta de
   15–16% de la venta: verde hasta 15%, amarillo de 15 a 16%, rojo arriba
   de 16%): esta semana, la nómina de los días que ya cuentan en la venta
   (lunes a ayer, u hoy si ya tiene corte) entre esa venta, en grande con

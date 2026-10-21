@@ -1326,3 +1326,13 @@ button.pill { cursor: pointer; }
 .nomv-sug { display: flex; gap: 8px; font-size: 12.5px; line-height: 1.4; padding: 8px 10px; border-radius: 10px; }
 .nomv-sug.menos { background: var(--bad-soft); }
 .nomv-sug.mas { background: var(--good-soft); }
+
+/* Tendencias > Gastos vs. venta */
+.gv-hero { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.gv-hero strong { font-family: Fraunces, serif; font-size: 30px; }
+.gv-hero span { font-size: 13px; color: var(--ink-soft); }
+.gv-hero b { color: var(--ink); }
+.tend-tabla td.gv-sube { color: var(--bad); font-weight: 600; }
+.tend-tabla td.gv-baja { color: var(--good); font-weight: 600; }
+.gv-sube-item { display: flex; flex-direction: column; gap: 4px; padding: 9px 11px; border-radius: 10px; background: var(--bad-soft); font-size: 12.5px; line-height: 1.4; }
+.gv-sube-item small { color: var(--ink-soft); font-size: 11.5px; }

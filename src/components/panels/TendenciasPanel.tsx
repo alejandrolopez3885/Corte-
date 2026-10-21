@@ -3,9 +3,12 @@ import { ArrowLeft, ChartLine, ChevronRight, Minus, TrendingDown, TrendingUp } f
 import { Empty } from "../ui";
 import { formatWeekRange, META_NOMINA_PCT, META_NOMINA_VERDE_PCT, money, round2, todayIso } from "../../lib/dataModel";
 import { type TendenciasSemana } from "../../lib/tendencias";
-import { calcularTendencias, type Alerta, type AnalisisTendencias, type TarjetaId } from "../../lib/tendenciasAnalisis";
+import {
+  calcularTendencias, DIFERENCIA_MIN_GASTO, type Alerta, type AnalisisTendencias, type GastosVenta, type TarjetaId,
+} from "../../lib/tendenciasAnalisis";
 import { diaCorto, semaforoNomina, ultimoDiaContado, type NominaVenta } from "../../lib/nominaVenta";
 import type { EmpleadoEntry, HorarioMonthData, MeseroCatalogEntry, MonthData, MontoFijoSemanal, WeekTrendPoint } from "../../lib/types";
+import { DAYS } from "../../lib/types";
 
 const ACCENT = "#1F5D4C";
 const WARN = "#B8752D";
@@ -59,7 +62,7 @@ export function TendenciasPanel({
     { id: "diaADia", titulo: "Día a día vs. semana pasada", contenido: <DiaADia t={t} /> },
     { id: "semanas", titulo: "Semanas", contenido: t.semanas.length > 0 ? <SemanasCompletas t={t} /> : null },
     { id: "meseros", titulo: "Venta por mesero", contenido: a.meseros.length > 0 ? <VentaMeseros a={a} /> : null },
-    { id: "gastos", titulo: "Gastos por categoría", contenido: a.gastosCategoria.length > 0 ? <GastosCategoria a={a} /> : null },
+    { id: "gastos", titulo: "Gastos vs. venta", contenido: a.gastosVenta.semana || a.gastosVenta.cerradas.some((c) => c.gastos > 0) ? <GastosVsVenta g={a.gastosVenta} lunes={t.lunes} diasContados={t.diasContados} /> : null },
     { id: "extras", titulo: "Propinas, cancelaciones y cortesías", contenido: <Extras a={a} /> },
     { id: "cobro", titulo: "Cómo se cobra", contenido: tarjetasPct !== null ? <MezclaCobro t={t} /> : null },
     { id: "nomina", titulo: "Nómina vs. venta", contenido: nv.semana || nv.cerradas.length > 0 ? <NominaVsVenta nv={nv} lunes={t.lunes} /> : null },
@@ -661,19 +664,96 @@ function diaDe(fecha: string): string {
   return dias[new Date(`${fecha}T00:00:00`).getDay()];
 }
 
-function GastosCategoria({ a }: { a: AnalisisTendencias }) {
+function GastosVsVenta({ g, lunes, diasContados }: { g: GastosVenta; lunes: string; diasContados: number }) {
+  const s = g.semana;
+  const fechaCorta = (f: string) => diaCorto(DAYS[(new Date(`${f}T00:00:00`).getDay() + 6) % 7]).toLowerCase();
   return (
-    <div className="tend-card">
-      <h4>Gastos por categoría</h4>
-      <table className="tend-tabla">
-        <tbody>
-          {a.gastosCategoria.map((g) => (
-            <FilaComparada key={g.categoria} nombre={g.categoria} actual={g.actual} base={g.promedio} cambio={g.cambio} etiquetaBase="prom." />
+    <>
+      {s && (
+        <div className="tend-card">
+          <h4>Gastos vs. venta · esta semana</h4>
+          <div className="gv-hero">
+            <strong>{s.pct.toFixed(1)}%</strong>
+            <span>
+              de la venta{s.normalPct !== null && <> · normal <b>{s.normalPct.toFixed(1)}%</b></>}
+            </span>
+          </div>
+          <small className="tend-nota">
+            {diasContados < 7 ? `Lun a ${ultimoDiaContado(lunes, diasContados)}` : "Semana completa"}: gastos del corte <b>{money(s.gastos)}</b> de{" "}
+            <b>{money(s.venta)}</b> de venta.
+          </small>
+          {g.categorias.length > 0 && (
+            <table className="tend-tabla">
+              <thead>
+                <tr>
+                  <th>Categoría</th>
+                  <th>Semana</th>
+                  <th>% venta</th>
+                  <th>Normal</th>
+                </tr>
+              </thead>
+              <tbody>
+                {g.categorias.map((c) => (
+                  <tr key={c.categoria}>
+                    <td>{c.categoria}</td>
+                    <td>{money(c.actual)}</td>
+                    <td className={c.sube ? "gv-sube" : c.baja ? "gv-baja" : ""}>
+                      {c.pct.toFixed(1)}%{c.sube ? " ▲" : c.baja ? " ▼" : ""}
+                    </td>
+                    <td className="tend-tabla-suave">{c.normalPct === null ? "—" : `${c.normalPct.toFixed(1)}%`}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+          <small className="tend-nota">
+            “Normal” = esos mismos días de las últimas 4 semanas. Se marca ▲ si va 25% o más arriba de lo normal y son{" "}
+            {money(DIFERENCIA_MIN_GASTO)} o más (▼ si bajó igual). Sin Retiro, adelantos de nómina, cancelaciones ni cortesías.
+          </small>
+        </div>
+      )}
+      {g.suben.length > 0 && (
+        <div className="tend-card">
+          <h4>Los que suben</h4>
+          {g.suben.map((x) => (
+            <div key={x.categoria} className="gv-sube-item">
+              <strong>
+                {x.categoria}: {x.pct.toFixed(1)}%{x.normalMonto > 0 ? ` vs. ${x.normalPct.toFixed(1)}% normal` : " de la venta"}
+              </strong>
+              <span>
+                {money(x.actual)} esta semana ·{" "}
+                {x.normalMonto > 0 ? `lo normal a estas alturas son ~${money(x.normalMonto)}.` : "normalmente no hay en estos días."}
+              </span>
+              <small>Lo más grande: {x.top.map((t) => `“${t.concepto}” ${money(t.total)} (${fechaCorta(t.fecha)})`).join(" · ")}</small>
+            </div>
           ))}
-        </tbody>
-      </table>
-      <small className="tend-nota">En efectivo, esta semana hasta hoy contra el promedio de los mismos días.</small>
-    </div>
+        </div>
+      )}
+      {g.cerradas.some((c) => c.gastos > 0) && (
+        <div className="tend-card">
+          <h4>Gastos vs. venta · semanas cerradas</h4>
+          <table className="tend-tabla">
+            <thead>
+              <tr>
+                <th>Semana</th>
+                <th>Gastos corte</th>
+                <th>% venta</th>
+              </tr>
+            </thead>
+            <tbody>
+              {g.cerradas.map((c) => (
+                <tr key={c.label}>
+                  <td>{c.label}</td>
+                  <td>{money(c.gastos)}</td>
+                  <td>{c.pct.toFixed(1)}%</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <small className="tend-nota">Solo gastos capturados en el corte (efectivo). Los de transferencia se ven en Resultados por semana cerrada.</small>
+        </div>
+      )}
+    </>
   );
 }
 
