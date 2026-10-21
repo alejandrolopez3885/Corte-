@@ -84,23 +84,6 @@ export const NOVEDADES: Novedad[] = [
     texto: "Cocina ve solo las recetas de **Cocina** y Barra solo las de **Bar**.",
     visual: "recetarioArea",
   },
-  {
-    id: "medio-turno",
-    // Cortes desde el miércoles 21 de octubre (medianoche en Monterrey).
-    fecha: "2026-10-21T06:00:00Z",
-    seccion: "corte",
-    titulo: "Guardar medio turno",
-    texto: "Cuando se va el turno 1, toca **Guardar medio turno**. Su parte queda guardada y el turno 2 sigue capturando.",
-    visual: "medioTurno",
-  },
-  {
-    id: "para-llevar-acumulado",
-    fecha: "2026-10-21T06:00:00Z",
-    seccion: "corte",
-    titulo: "Para llevar: escribe lo que marca el sistema",
-    texto: "En cada corte de **Para llevar** pon la venta tal como la marca el sistema. La app resta sola lo ya cortado.",
-    visual: "paraLlevar",
-  },
 ];
 
 interface EstadoNovedades {

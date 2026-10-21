@@ -498,7 +498,8 @@ export function formatAssignedDate(dateStr: string): string {
 // --- Turnos (desde el 21 de octubre de 2026) --------------------------
 // Medio turno y usuarios acumulados ("Para llevar") solo aplican a los
 // cortes de esta fecha en adelante; los días anteriores quedan como estaban.
-export const FECHA_INICIO_TURNOS = "2026-10-21";
+// En pausa mientras se arma el "corte de apertura" (se reactiva con su fecha).
+export const FECHA_INICIO_TURNOS = "2099-01-01";
 
 export function turnosActivos(fechaIso: string | null | undefined): boolean {
   return !!fechaIso && fechaIso >= FECHA_INICIO_TURNOS;

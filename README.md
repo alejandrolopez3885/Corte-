@@ -200,8 +200,8 @@ estando en Nómina te regresa al menú de Equipo):
   transferencias, ventas de apps y sus resúmenes. Arriba de los totales del
   día hay una tarjeta de asignación: quién tiene asignado ese día (si
   alguien) y quién capturó su corte — ver "Asignar día" más abajo.
-- **Turnos y "Para llevar"** (en los cortes desde el **21 de octubre de
-  2026**; los días anteriores quedan como estaban): un día puede tener dos
+- **Turnos y "Para llevar"** (**en pausa**: se reemplazará por el "corte de
+  apertura"; mientras tanto no aparece en ningún día): un día puede tener dos
   turnos. Cuando se va el turno 1 se capturan sus cortes y se toca
   **"Guardar medio turno"**: todo lo capturado hasta ese momento (cortes,
   gastos y transferencias) queda bloqueado para el personal y el día sigue
