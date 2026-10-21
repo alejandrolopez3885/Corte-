@@ -921,8 +921,10 @@ terminar responde solo; si el celular no lo tiene, el micrófono no sale y
 se puede usar el dictado del teclado) o tocando una pregunta. Las preguntas
 vienen en botones agrupados en **Ventas** (venta de hoy, de ayer, de la
 semana, semana pasada, "¿Cuánto se vendió el…?"), **Dinero** (efectivo a
-entregar hoy, gastos de la semana, propinas de hoy, utilidad de la semana)
-y **Equipo** (nómina actual, nómina de la semana pasada). Hasta arriba
+entregar hoy, gastos de la semana, utilidad de la semana), **Nómina**
+(nómina actual, nómina de la semana pasada, "¿Cuánto le toca a…?", "¿A
+quién falta pagar?", adelantos y descuentos) y **Propinas** (propinas de
+hoy, de la semana, de la semana pasada y por mesero). Hasta arriba
 salen **"Las que más preguntas"**: las 3 que más usas (al inicio: venta de
 hoy, nómina actual y venta de la semana); cuántas veces usas cada una se
 guarda en tu cuenta (en Supabase Auth), así que es igual en el celular y en
@@ -934,7 +936,12 @@ entregar/sobre, gastos, propinas, utilidad/ganancia/margen y nómina/sueldo.
 El cuándo: hoy, ayer, antier, un día de la semana ("el martes" = el martes
 más reciente que ya pasó; "el martes pasado" = el de la semana anterior),
 un número de día ("el 15", "el 3 de octubre"), "esta semana" o "semana
-pasada". Sin cuándo, venta, efectivo y propinas responden por hoy y gastos
+pasada". Y un nombre: si la pregunta trae el nombre (o solo el primer
+nombre) de alguien del personal, la nómina es solo de esa persona ("nómina
+de Aldair", "¿cuánto le toca a Jenny?"); si trae el de un mesero, las
+propinas son solo de ese mesero ("propinas de Dana", "propinas de Jenny el
+martes"). Si el nombre no está en el horario de esa semana lo dice, no
+responde de otra persona. Sin cuándo, venta, efectivo y propinas responden por hoy y gastos
 por la semana; utilidad y nómina siempre son de la semana. Cada número sale
 de los mismos cálculos que ya usan Corte, Dashboard y Nómina, así que nunca
 da otra cifra:
@@ -957,6 +964,23 @@ da otra cifra:
   a hoy, cuántas personas y la semana completa proyectada. **Semana
   pasada**: el bruto completo, el neto a pagar y cuántas ya están pagadas.
   Ambas con "Ver nómina" (abre esa semana).
+- **¿Cuánto le toca a…?**: la nómina de una persona en la semana — su "a
+  recibir hasta hoy" igual que en Nómina (generado hasta hoy, más extras,
+  menos adelantos y descuentos, cada uno en su renglón), cuántos días lleva,
+  su semana completa y su sueldo por día, y si ya está pagada. El botón
+  empieza con la primera persona del horario; debajo vienen los nombres de
+  esa semana para cambiar de persona con un toque.
+- **¿A quién falta pagar?**: de la semana pasada (o "esta semana" si se
+  dice), el total que falta pagar, quién sigue en Pendiente con lo que le
+  toca (de mayor a menor) y un renglón con las ya pagadas y lo que se les
+  pagó.
+- **Adelantos y descuentos**: el total de la semana y cada uno con su
+  persona (los capturados en Nómina y los gastos del corte vinculados).
+- **Propinas de la semana** (o de la semana pasada): el total, el mejor día
+  y el reparto en tercios entre Cocina, Barra y Gerencia (el mismo de la
+  pantalla de Propinas), con "Ver propinas".
+- **Propinas por mesero**: de mayor a menor, con cuántos cortes tuvo cada
+  quien; tocando un nombre se ven solo las suyas, día por día.
 
 Si un día o semana no tiene nada capturado, lo dice ("Todavía no hay nada
 capturado ese día"). Si no entiende la pregunta, responde "No entendí…" con

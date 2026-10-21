@@ -42,7 +42,7 @@ const Reconocedor: ConstructorReconocimiento | undefined =
       (window as unknown as Record<string, ConstructorReconocimiento | undefined>).webkitSpeechRecognition)
     : undefined;
 
-const GRUPOS: GrupoPregunta[] = ["Ventas", "Dinero", "Equipo"];
+const GRUPOS: GrupoPregunta[] = ["Ventas", "Dinero", "Nómina", "Propinas"];
 
 export function PreguntasSheet({
   data,
@@ -95,7 +95,7 @@ export function PreguntasSheet({
   function preguntar(t: string) {
     const limpio = t.trim();
     if (!limpio) return;
-    const c = entenderPregunta(limpio, hoy);
+    const c = entenderPregunta(limpio, hoy, data);
     if (!c) {
       setRespuesta(null);
       setNoEntendi(limpio);
@@ -184,12 +184,42 @@ export function PreguntasSheet({
                 {l}
               </span>
             ))}
+            {respuesta.filas && respuesta.filas.length > 0 && (
+              <div className="pregunta-filas">
+                {respuesta.filas.map((f, i) => (
+                  <div key={i} className="pregunta-fila">
+                    <span>
+                      {f.etiqueta}
+                      {f.tag && <em className={`pregunta-tag ${f.tag}`}>{f.tag === "pagada" ? "Pagada" : "Pendiente"}</em>}
+                    </span>
+                    <strong>{f.valor}</strong>
+                  </div>
+                ))}
+              </div>
+            )}
             {respuesta.enlace && (
               <button type="button" className="link-btn pregunta-enlace" onClick={() => onIr(respuesta.enlace!.destino)}>
                 {respuesta.enlace.texto} <ArrowRight size={14} />
               </button>
             )}
           </div>
+          {respuesta.personas && respuesta.personas.length > 1 && (
+            <>
+              <div className="pregunta-personas">
+                {respuesta.personas.map((p) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    className={typeof respuesta.consulta.persona === "object" && respuesta.consulta.persona.id === p.id ? "activo" : ""}
+                    onClick={() => mostrar({ ...respuesta.consulta, persona: p, modo: undefined })}
+                  >
+                    {p.nombre}
+                  </button>
+                ))}
+              </div>
+              <p className="hint">Toca otro nombre para cambiar la respuesta.</p>
+            </>
+          )}
           {respuesta.dias && (
             <>
               <div className="pregunta-dias">
@@ -215,7 +245,7 @@ export function PreguntasSheet({
         <div className="pregunta-tarjeta pregunta-no">
           <span>
             No entendí "{noEntendi}". Pregunta por venta, efectivo, gastos, propinas, utilidad o nómina — por ejemplo{" "}
-            <em>"¿cuánto se vendió el martes?"</em> — o toca una de estas:
+            <em>"¿cuánto se vendió el martes?"</em> o <em>"¿cuánto le toca a {data.empleados[0]?.nombre.split(" ")[0] || "Jenny"}?"</em> — o toca una de estas:
           </span>
           <div className="pregunta-chips">{top.map((id) => chip(id))}</div>
         </div>

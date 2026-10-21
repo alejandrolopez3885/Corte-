@@ -1,18 +1,9 @@
 import { useState } from "react";
 import { ArrowLeft, Coins } from "lucide-react";
 import { Empty, Field } from "../ui";
-import { dateForDay, formatShortDayDate, formatWeekRange, money, resolveWeekStartDate, round2 } from "../../lib/dataModel";
+import { dateForDay, formatShortDayDate, formatWeekRange, money, repartoPropinas, resolveWeekStartDate, round2 } from "../../lib/dataModel";
 import { DAYS } from "../../lib/types";
 import type { MonthData } from "../../lib/types";
-
-// Cómo se reparte la propina entre las áreas — cada una se lleva una
-// tercera parte (el 1% de la propina de 3%). Solo informativo: no afecta
-// el corte ni la nómina.
-const REPARTO_AREAS = [
-  { id: "cocina", nombre: "Cocina" },
-  { id: "barra", nombre: "Barra" },
-  { id: "gerencia", nombre: "Gerencia" },
-] as const;
 
 // Consulta de propinas: total por día (sumando los cortes de todos los
 // meseros) y total de la semana, más el reparto por área. Solo lectura —
@@ -59,13 +50,7 @@ export function PropinasPanel({
     propina: round2((week?.days[day]?.meseros || []).reduce((s, m) => s + (m.propina || 0), 0)),
   }));
   const totalSemana = round2(porDia.reduce((s, d) => s + d.propina, 0));
-  // Un tercio para cada área; el centavo que sobre al redondear se lo lleva
-  // la última, para que las tres sumen exactamente el total.
-  const tercio = Math.floor((totalSemana / 3) * 100) / 100;
-  const reparto = REPARTO_AREAS.map((a, i) => ({
-    ...a,
-    monto: i < REPARTO_AREAS.length - 1 ? tercio : round2(totalSemana - tercio * (REPARTO_AREAS.length - 1)),
-  }));
+  const reparto = repartoPropinas(totalSemana);
 
   return (
     <div className="page-section">

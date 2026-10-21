@@ -1412,3 +1412,15 @@ button.pill { cursor: pointer; }
 .gasto-razon.confirmar { background: var(--warn-soft); color: var(--warn); }
 .gastos-semana-row .field:last-child { flex: 1.25; }
 .gastos-semana-row select { padding-left: 10px; padding-right: 6px; }
+.pregunta-filas { display: flex; flex-direction: column; margin-top: 8px; border-top: 1px solid var(--surface-alt); }
+.pregunta-fila { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--surface-alt); font-size: 13.5px; }
+.pregunta-fila strong { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pregunta-tag { font-style: normal; font-size: 11px; padding: 1px 8px; border-radius: 999px; margin-left: 7px; }
+.pregunta-tag.pendiente { background: var(--warn-soft); color: var(--warn); }
+.pregunta-tag.pagada { background: var(--good-soft); color: var(--good); }
+.pregunta-personas { display: flex; flex-wrap: wrap; gap: 6px; }
+.pregunta-personas button {
+  border: 1px solid var(--border); background: var(--surface); border-radius: 10px; padding: 7px 11px;
+  font-size: 13px; font-family: inherit; color: var(--ink); cursor: pointer;
+}
+.pregunta-personas button.activo { background: var(--accent); border-color: var(--accent); color: white; }

@@ -2086,7 +2086,10 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           onIr={(destino) => {
             setPreguntasAbierto(false);
             if (destino.tipo === "dashboard") goToTab("dashboard");
-            else irDesdeInicio(destino);
+            else if (destino.tipo === "propinas") {
+              goToTab("equipo");
+              setEquipoView("propinas");
+            } else irDesdeInicio(destino);
           }}
         />
       )}

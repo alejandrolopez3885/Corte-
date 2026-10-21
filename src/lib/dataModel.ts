@@ -847,6 +847,24 @@ export function computeNominaTotalHastaHoy(
   return round2(Object.values(porEmpleado).reduce((s, n) => s + n, 0));
 }
 
+// Cómo se reparte la propina entre las áreas — cada una se lleva una
+// tercera parte (el 1% de la propina de 3%). Solo informativo: no afecta
+// el corte ni la nómina. El centavo que sobre al redondear se lo lleva la
+// última, para que las tres sumen exactamente el total.
+const REPARTO_AREAS = [
+  { id: "cocina", nombre: "Cocina" },
+  { id: "barra", nombre: "Barra" },
+  { id: "gerencia", nombre: "Gerencia" },
+] as const;
+
+export function repartoPropinas(total: number) {
+  const tercio = Math.floor((total / 3) * 100) / 100;
+  return REPARTO_AREAS.map((a, i) => ({
+    ...a,
+    monto: i < REPARTO_AREAS.length - 1 ? tercio : round2(total - tercio * (REPARTO_AREAS.length - 1)),
+  }));
+}
+
 // --- Gastos fijos ------------------------------------------------------
 // Los gastos fijos de la semana siempre suman el monto fijo semanal: lo que
 // se pagó en efectivo con categoría Servicio (luz, gas, teléfono...) se
