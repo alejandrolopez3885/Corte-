@@ -523,6 +523,18 @@ export function recalcularAcumulados(d: DayData) {
   });
 }
 
+// El día (de cualquier mes/semana) que corresponde a una fecha real.
+export function diaPorFecha(months: Record<string, MonthData>, fechaIso: string): DayData | null {
+  for (const [monthKey, month] of Object.entries(months || {})) {
+    for (let w = 0; w < (month.weeks || []).length; w++) {
+      for (const d of DAYS) {
+        if (dateForDay(monthKey, w, month, d) === fechaIso) return month.weeks[w]?.days?.[d] || null;
+      }
+    }
+  }
+  return null;
+}
+
 // Quién abre ese día según el horario: X = abre, Z = dobla.
 export function quienesAbren(semana: HorarioSemana | null | undefined, dia: DayName): { empleadoId: string; nombre: string; marca: string }[] {
   const res: { empleadoId: string; nombre: string; marca: string }[] = [];

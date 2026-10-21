@@ -48,6 +48,7 @@ export function AperturaModal({
   empleados,
   abren,
   historial,
+  dejadoAyer,
 }: {
   onClose: () => void;
   onGuardar: (v: AperturaValues) => void;
@@ -56,6 +57,8 @@ export function AperturaModal({
   // Quién tiene X (abre) o Z (dobla) ese día en el horario.
   abren: { empleadoId: string; nombre: string; marca: string }[];
   historial: NombreHistorial[];
+  // Efectivo que se dejó en el restaurante el día anterior.
+  dejadoAyer?: { monto: number; nota?: string };
 }) {
   const paraLlevar = catalog.find((c) => c.acumulado);
   const usuarioDe = (empleadoId: string) => {
@@ -161,6 +164,13 @@ export function AperturaModal({
         Lo que llevan hasta este momento las apps, {paraLlevar?.nombre || "el usuario de para llevar"} y quien abrió. Al guardarlo
         queda bloqueado; al cierre se escribe el total del día y la app resta esto.
       </p>
+      {dejadoAyer && dejadoAyer.monto > 0 && (
+        <p className="aviso-dejado">
+          Ayer se dejaron <strong>{money(dejadoAyer.monto)}</strong>
+          {dejadoAyer.nota ? ` (${dejadoAyer.nota})` : ""}. Si un gasto se pagó con ese dinero, regístralo en Gastos del día, no
+          aquí.
+        </p>
+      )}
       <Field label="¿Quién abrió?">
         <select
           className="text-input"

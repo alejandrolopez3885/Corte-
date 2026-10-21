@@ -16,7 +16,7 @@ import type { AppData, PermisoStaff, Profile } from "./types";
 
 export type SeccionNovedad = "corte" | PermisoStaff;
 
-export type VisualNovedad = "sumar" | "autocompletar" | "categoria" | "faltan" | "guardarCorte" | "inventarioPasos" | "recetarioArea" | "apertura" | "cierreTotal";
+export type VisualNovedad = "sumar" | "autocompletar" | "categoria" | "faltan" | "guardarCorte" | "inventarioPasos" | "recetarioArea" | "apertura" | "cierreTotal" | "efectivoEntregar";
 
 export interface Novedad {
   id: string;
@@ -100,6 +100,14 @@ export const NOVEDADES: Novedad[] = [
     titulo: "Al cierre, el total del día",
     texto: "Para Johnster, quien abrió y las apps escribe el **total del día** del sistema. La app resta sola la apertura.",
     visual: "cierreTotal",
+  },
+  {
+    id: "efectivo-a-entregar",
+    fecha: "2026-10-21T06:00:00Z",
+    seccion: "corte",
+    titulo: "Cuánto efectivo entregar",
+    texto: "En **Efectivo del día** ves lo que va en el sobre: sin lo de la apertura y con lo que se dejó el día anterior.",
+    visual: "efectivoEntregar",
   },
 ];
 

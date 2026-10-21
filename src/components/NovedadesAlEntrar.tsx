@@ -240,6 +240,26 @@ function Visual({ tipo }: { tipo: VisualNovedad }) {
       </>
     );
   }
+  if (tipo === "efectivoEntregar") {
+    return (
+      <>
+        <span className="nv-etiqueta">Efectivo del día</span>
+        <div className="nv-lista">
+          <div>
+            <span>Resto del día</span>
+            <small>$5,780</small>
+          </div>
+          <div>
+            <span>+ Se dejó ayer (hielo)</span>
+            <small>$1,500</small>
+          </div>
+        </div>
+        <span className="nv-suma">
+          Efectivo a entregar en la noche: <strong>$7,280</strong>
+        </span>
+      </>
+    );
+  }
   if (tipo === "guardarCorte") {
     return (
       <>

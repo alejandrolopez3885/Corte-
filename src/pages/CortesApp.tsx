@@ -10,12 +10,12 @@ import { historialNombres } from "../lib/gastosBusqueda";
 import {
   addDaysIso, buildMonth, dateForDay, formatAssignedDate, formatDayNumber, formatLongDayDate, formatWeekRange,
   mondayOnOrBefore, money, mostRecentDayInWeek, mostRecentWeekIndex, resolveAssignmentLocation, resolveWeekStartDate,
-  normalizarNombre, round2, sumFromText, todayIso, uid, recalcularAcumulados, turnosActivos, acumuladosDelDia, quienesAbren,
+  normalizarNombre, round2, sumFromText, todayIso, uid, recalcularAcumulados, turnosActivos, acumuladosDelDia, quienesAbren, diaPorFecha,
 } from "../lib/dataModel";
 import { removeAssignmentByStaffAndDate, upsertAssignment, useStaffAssignments } from "../lib/staffAssignments";
 import { DAYS, DAY_SHORT } from "../lib/types";
 import type { AppData, AreaEntry, ConteoTextoArea, CreditoProveedores, DayData, DayName, EmpleadoEntry, Gasto, GastoCategoria, HorarioSemana, InsumoEntry, MeseroCatalogEntry, MeseroCut, NominaDescuentosSemana, Profile, ProveedorCatalogEntry, PuestoEntry, Receta, Transferencia, WeekData } from "../lib/types";
-import { Empty, Sheet } from "../components/ui";
+import { Empty, Field, NumInput, Sheet } from "../components/ui";
 import { MonthModal } from "../components/modals/MonthModal";
 import { MeseroModal, type MeseroFormValues } from "../components/modals/MeseroModal";
 import { AperturaModal, type AperturaValues } from "../components/modals/AperturaModal";
@@ -59,6 +59,7 @@ type ModalState =
   | { type: "apps" }
   | { type: "guardarCorte" }
   | { type: "apertura" }
+  | { type: "dejarEfectivo" }
   | { type: "quitarApertura" }
   | { type: "reabrirCorte" }
   | { type: "weekSummary" }
@@ -1099,6 +1100,14 @@ export default function CortesApp({ profile }: { profile: Profile }) {
     setModal(null);
   }
 
+  function guardarEfectivoDejado(monto: number, nota: string) {
+    updateDay((d) => {
+      if (monto > 0) d.efectivoDejado = { monto: round2(monto), ...(nota.trim() ? { nota: nota.trim() } : {}) };
+      else delete d.efectivoDejado;
+    });
+    setModal(null);
+  }
+
   function quitarApertura() {
     updateDay((d) => {
       delete d.apertura;
@@ -1141,6 +1150,23 @@ export default function CortesApp({ profile }: { profile: Profile }) {
         };
       })()
     : null;
+
+  // Efectivo a entregar (desde el 21/10/2026): el de la apertura ya se lo
+  // llevó el dueño; se suma lo que se dejó el día anterior y se resta lo que
+  // se deja para el día siguiente.
+  const efectivoDia =
+    day && totals && turnosDelDia && activeDayDate
+      ? (() => {
+          const aperturaEf = round2(day.meseros.filter((m) => m.apertura).reduce((s, m) => s + m.total, 0));
+          const ayer = diaPorFecha(data.months, addDaysIso(activeDayDate, -1))?.efectivoDejado;
+          const dejadoAyer = ayer?.monto || 0;
+          const dejadoHoy = day.efectivoDejado?.monto || 0;
+          const tieneApertura = !!day.apertura;
+          const resto = round2(totals.efectivo - (tieneApertura ? aperturaEf : 0));
+          const entregar = round2(resto + dejadoAyer - dejadoHoy);
+          return { tieneApertura, aperturaEf, resto, ayer, dejadoAyer, dejadoHoy, entregar, totalDia: round2(entregar + (tieneApertura ? aperturaEf : 0)) };
+        })()
+      : null;
 
   return (
     <div className={`app-shell ${isOwner ? "with-bottom-nav" : ""}`}>
@@ -1812,12 +1838,57 @@ export default function CortesApp({ profile }: { profile: Profile }) {
                   <span>Gastos</span>
                   <strong>{money(totals.gastos)}</strong>
                 </div>
-                <div className="summary-item highlight" style={{ gridColumn: "1 / -1" }}>
-                  <span>
-                    Efectivo a entregar <em>(sin propinas)</em>
-                  </span>
-                  <strong>{money(totals.efectivo)}</strong>
+                {!efectivoDia && (
+                  <div className="summary-item highlight" style={{ gridColumn: "1 / -1" }}>
+                    <span>
+                      Efectivo a entregar <em>(sin propinas)</em>
+                    </span>
+                    <strong>{money(totals.efectivo)}</strong>
+                  </div>
+                )}
+              </section>
+            )}
+
+            {efectivoDia && day && (
+              <section className="efectivo-dia">
+                <h4>Efectivo del día</h4>
+                {efectivoDia.tieneApertura && (
+                  <div className="efectivo-fila info">
+                    <span>Efectivo de la apertura (ya entregado al dueño)</span>
+                    <span>{money(efectivoDia.aperturaEf)}</span>
+                  </div>
+                )}
+                <div className="efectivo-fila">
+                  <span>{efectivoDia.tieneApertura ? "Efectivo del resto del día" : "Efectivo de las ventas"} (sin propinas)</span>
+                  <strong>{money(efectivoDia.resto)}</strong>
                 </div>
+                {efectivoDia.dejadoAyer > 0 && (
+                  <div className="efectivo-fila">
+                    <span>+ Se dejó el día anterior{efectivoDia.ayer?.nota ? ` (${efectivoDia.ayer.nota})` : ""}</span>
+                    <strong>+{money(efectivoDia.dejadoAyer)}</strong>
+                  </div>
+                )}
+                {efectivoDia.dejadoHoy > 0 && (
+                  <div className="efectivo-fila menos">
+                    <span>− Se deja en el restaurante{day.efectivoDejado?.nota ? ` (${day.efectivoDejado.nota})` : ""}</span>
+                    <strong>−{money(efectivoDia.dejadoHoy)}</strong>
+                  </div>
+                )}
+                <div className="efectivo-fila total">
+                  <span>Efectivo a entregar{efectivoDia.tieneApertura ? " en la noche" : ""}</span>
+                  <span>{money(efectivoDia.entregar)}</span>
+                </div>
+                {efectivoDia.tieneApertura && (
+                  <div className="efectivo-fila info">
+                    <span>Total de efectivo del día (apertura + noche)</span>
+                    <span>{money(efectivoDia.totalDia)}</span>
+                  </div>
+                )}
+                {!corteBloqueado && (
+                  <button className="link-btn" onClick={() => setModal({ type: "dejarEfectivo" })}>
+                    {day.efectivoDejado ? "Cambiar el efectivo que se deja" : "+ Dejar efectivo para el día siguiente"}
+                  </button>
+                )}
               </section>
             )}
 
@@ -2087,6 +2158,14 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           empleados={data.empleados}
           abren={abrenHoy}
           historial={historialGastos}
+          dejadoAyer={efectivoDia?.ayer}
+        />
+      )}
+      {modal?.type === "dejarEfectivo" && day && (
+        <DejarEfectivoModal
+          inicial={day.efectivoDejado}
+          onGuardar={guardarEfectivoDejado}
+          onClose={() => setModal(null)}
         />
       )}
       {modal?.type === "quitarApertura" && (
@@ -2208,4 +2287,41 @@ export default function CortesApp({ profile }: { profile: Profile }) {
 function fechaHoraCorta(iso: string): string {
   const d = new Date(iso);
   return `${d.toLocaleDateString("es-MX", { day: "numeric", month: "short" }).replace(".", "")} a las ${d.toLocaleTimeString("es-MX", { hour: "numeric", minute: "2-digit" })}`;
+}
+
+// Efectivo que se deja en el restaurante para el día siguiente (ej. para
+// pagar hielo): sale del corte de este día y entra solo al del siguiente.
+function DejarEfectivoModal({
+  inicial,
+  onGuardar,
+  onClose,
+}: {
+  inicial?: { monto: number; nota?: string };
+  onGuardar: (monto: number, nota: string) => void;
+  onClose: () => void;
+}) {
+  const [monto, setMonto] = useState(inicial ? String(inicial.monto) : "");
+  const [nota, setNota] = useState(inicial?.nota || "");
+  return (
+    <Sheet title="Dejar efectivo para el día siguiente" onClose={onClose}>
+      <p className="hint">
+        Se resta del efectivo a entregar de hoy y se suma solo al del día siguiente. Lo que se pague con ese dinero se registra
+        en Gastos de ese día (no dentro del corte de apertura).
+      </p>
+      <Field label="Monto que se deja">
+        <NumInput value={monto} onChange={(e) => setMonto(e.target.value)} placeholder="0.00" />
+      </Field>
+      <Field label="¿Para qué? (opcional)">
+        <input className="text-input" value={nota} onChange={(e) => setNota(e.target.value)} placeholder="Ej. para hielo, retiro del dueño" />
+      </Field>
+      <button className="btn-primary" onClick={() => onGuardar(parseFloat(monto) || 0, nota)}>
+        Guardar
+      </button>
+      {inicial && (
+        <button className="btn-delete" onClick={() => onGuardar(0, "")}>
+          Ya no se deja efectivo
+        </button>
+      )}
+    </Sheet>
+  );
 }

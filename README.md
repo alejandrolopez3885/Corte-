@@ -226,6 +226,19 @@ estando en Nómina te regresa al menú de Equipo):
   "Desbloquear apertura" libera esa parte. El usuario de para llevar se
   marca una vez en Equipo > Meseros ("Usuario de para llevar (sin
   propina)").
+- **Efectivo del día** (mismos días, desde el 21/10/2026): en lugar del
+  renglón "Efectivo a entregar", el corte muestra la cuenta del efectivo:
+  "Efectivo de la apertura (ya entregado al dueño)" como referencia — el
+  dueño siempre se lleva el efectivo de la apertura —, "Efectivo del resto
+  del día (sin propinas)", "+ Se dejó el día anterior" (automático, si el
+  día anterior se dejó efectivo), "− Se deja en el restaurante" (si hoy se
+  deja) y **"Efectivo a entregar en la noche"**, lo que va en el sobre;
+  abajo, el total de efectivo del día (apertura + noche). Con "+ Dejar
+  efectivo para el día siguiente" quien cierra registra el monto y para
+  qué (ej. hielo, retiro del dueño): sale del corte de ese día y entra
+  solo al del día siguiente. Lo que se pague con ese dinero se registra en
+  Gastos del día (no dentro del corte de apertura); el corte de apertura
+  lo recuerda con un aviso cuando hay efectivo dejado.
 - **Equipo**: menú con 5 opciones — "Meseros" (catálogo de
   meseros — solo nombre, para elegir a quién le haces el corte en Corte;
   vive aquí porque también son parte de tu equipo, aunque su lista está

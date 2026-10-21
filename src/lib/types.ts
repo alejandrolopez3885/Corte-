@@ -419,6 +419,10 @@ export interface DayData {
     ventaApps: number;
     ids: string[];
   };
+  // Efectivo que quien cerró deja en el restaurante para el día siguiente
+  // (ej. para pagar hielo): se resta del efectivo a entregar de este día y
+  // se suma solo al del día siguiente (desde el 21/10/2026).
+  efectivoDejado?: { monto: number; nota?: string };
 }
 
 // Control de gastos que los proveedores dan a crédito, pagados después por
