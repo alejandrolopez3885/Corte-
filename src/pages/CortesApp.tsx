@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Plus, Settings2, Users, Receipt, ArrowLeftRight, CircleDot, Circle, Pencil,
-  Smartphone, BarChart3, LogOut, Truck, Trash2, Home, Store, LayoutDashboard, Contact, Clock, Wallet, ChartLine, Martini, ChefHat, BookOpen,
+  Smartphone, BarChart3, LogOut, Truck, Trash2, Home, Store, LayoutDashboard, Contact, Clock, Wallet, ChartLine, Martini, ChefHat, BookOpen, MessageCircle,
   ShoppingCart, Handshake, Boxes, Package, Coins, History, Lock, FileUp,
 } from "lucide-react";
 import { useAuth } from "../lib/auth.tsx";
@@ -10,7 +10,7 @@ import { historialNombres } from "../lib/gastosBusqueda";
 import {
   addDaysIso, buildMonth, dateForDay, formatAssignedDate, formatDayNumber, formatLongDayDate, formatWeekRange,
   mondayOnOrBefore, money, mostRecentDayInWeek, mostRecentWeekIndex, resolveAssignmentLocation, resolveWeekStartDate,
-  normalizarNombre, round2, sumFromText, todayIso, uid, recalcularAcumulados, turnosActivos, acumuladosDelDia, quienesAbren, diaPorFecha,
+  normalizarNombre, round2, sumFromText, todayIso, uid, recalcularAcumulados, turnosActivos, acumuladosDelDia, quienesAbren, efectivoDelDia,
 } from "../lib/dataModel";
 import { removeAssignmentByStaffAndDate, upsertAssignment, useStaffAssignments } from "../lib/staffAssignments";
 import { DAYS, DAY_SHORT } from "../lib/types";
@@ -50,6 +50,7 @@ import { ActividadPanel, HistorialDiaSheet } from "../components/panels/Activida
 import { contarBitacoraDelDia, useRegistrarVista } from "../lib/bitacora";
 import StaffAccessShell from "./StaffAccessShell";
 import { NovedadesAlEntrar } from "../components/NovedadesAlEntrar";
+import { PreguntasSheet } from "../components/PreguntasSheet";
 
 type ModalState =
   | { type: "month" }
@@ -97,6 +98,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
   const [desdeInicio, setDesdeInicio] = useState<{ mk?: string; wi?: number; modo?: "completo" | "jueves"; conteo?: boolean } | null>(null);
   const [equipoView, setEquipoView] = useState<EquipoView>("menu");
   const [negocioView, setNegocioView] = useState<NegocioView>("menu");
+  const [preguntasAbierto, setPreguntasAbierto] = useState(false);
   const [modal, setModal] = useState<ModalState>(null);
   const [selectedAssignedDate, setSelectedAssignedDate] = useState<string | null>(null);
 
@@ -1151,22 +1153,9 @@ export default function CortesApp({ profile }: { profile: Profile }) {
       })()
     : null;
 
-  // Efectivo a entregar (desde el 21/10/2026): el de la apertura ya se lo
-  // llevó el dueño; se suma lo que se dejó el día anterior y se resta lo que
-  // se deja para el día siguiente.
+  // Efectivo a entregar (desde el 21/10/2026), ver efectivoDelDia.
   const efectivoDia =
-    day && totals && turnosDelDia && activeDayDate
-      ? (() => {
-          const aperturaEf = round2(day.meseros.filter((m) => m.apertura).reduce((s, m) => s + m.total, 0));
-          const ayer = diaPorFecha(data.months, addDaysIso(activeDayDate, -1))?.efectivoDejado;
-          const dejadoAyer = ayer?.monto || 0;
-          const dejadoHoy = day.efectivoDejado?.monto || 0;
-          const tieneApertura = !!day.apertura;
-          const resto = round2(totals.efectivo - (tieneApertura ? aperturaEf : 0));
-          const entregar = round2(resto + dejadoAyer - dejadoHoy);
-          return { tieneApertura, aperturaEf, resto, ayer, dejadoAyer, dejadoHoy, entregar, totalDia: round2(entregar + (tieneApertura ? aperturaEf : 0)) };
-        })()
-      : null;
+    day && totals && turnosDelDia && activeDayDate ? efectivoDelDia(data.months, activeDayDate, day, totals.efectivo) : null;
 
   return (
     <div className={`app-shell ${isOwner ? "with-bottom-nav" : ""}`}>
@@ -2083,6 +2072,23 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           </>
         )}
       </>
+      )}
+
+      {isOwner && !modal && (
+        <button type="button" className="preguntas-fab" onClick={() => setPreguntasAbierto(true)} aria-label="Pregúntale a Cortes">
+          <MessageCircle size={24} />
+        </button>
+      )}
+      {isOwner && preguntasAbierto && (
+        <PreguntasSheet
+          data={data}
+          onClose={() => setPreguntasAbierto(false)}
+          onIr={(destino) => {
+            setPreguntasAbierto(false);
+            if (destino.tipo === "dashboard") goToTab("dashboard");
+            else irDesdeInicio(destino);
+          }}
+        />
       )}
 
       {isOwner && (

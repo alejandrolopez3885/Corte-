@@ -535,6 +535,20 @@ export function diaPorFecha(months: Record<string, MonthData>, fechaIso: string)
   return null;
 }
 
+// Efectivo a entregar (desde el 21/10/2026): el de la apertura ya se lo
+// llevó el dueño; se suma lo que se dejó el día anterior y se resta lo que
+// se deja para el día siguiente. "efectivo" es el efectivo del día completo.
+export function efectivoDelDia(months: Record<string, MonthData>, fechaIso: string, day: DayData, efectivo: number) {
+  const aperturaEf = round2(day.meseros.filter((m) => m.apertura).reduce((s, m) => s + m.total, 0));
+  const ayer = diaPorFecha(months, addDaysIso(fechaIso, -1))?.efectivoDejado;
+  const dejadoAyer = ayer?.monto || 0;
+  const dejadoHoy = day.efectivoDejado?.monto || 0;
+  const tieneApertura = !!day.apertura;
+  const resto = round2(efectivo - (tieneApertura ? aperturaEf : 0));
+  const entregar = round2(resto + dejadoAyer - dejadoHoy);
+  return { tieneApertura, aperturaEf, resto, ayer, dejadoAyer, dejadoHoy, entregar, totalDia: round2(entregar + (tieneApertura ? aperturaEf : 0)) };
+}
+
 // Quién abre ese día según el horario: X = abre, Z = dobla.
 export function quienesAbren(semana: HorarioSemana | null | undefined, dia: DayName): { empleadoId: string; nombre: string; marca: string }[] {
   const res: { empleadoId: string; nombre: string; marca: string }[] = [];

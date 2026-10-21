@@ -1336,3 +1336,48 @@ button.pill { cursor: pointer; }
 .tend-tabla td.gv-baja { color: var(--good); font-weight: 600; }
 .gv-sube-item { display: flex; flex-direction: column; gap: 4px; padding: 9px 11px; border-radius: 10px; background: var(--bad-soft); font-size: 12.5px; line-height: 1.4; }
 .gv-sube-item small { color: var(--ink-soft); font-size: 11.5px; }
+
+/* ---- Pregúntale a Cortes (solo dueño) ---- */
+.preguntas-fab {
+  position: fixed; z-index: 35; right: max(16px, calc(50% - 450px + 16px));
+  bottom: calc(74px + env(safe-area-inset-bottom));
+  width: 54px; height: 54px; border-radius: 50%; border: none; cursor: pointer;
+  background: var(--accent); color: white; display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 6px 16px rgba(20, 40, 30, 0.28);
+}
+.preguntas-fab:active { transform: scale(0.95); }
+.pregunta-barra { display: flex; gap: 10px; align-items: center; }
+.pregunta-barra .text-input { flex: 1; }
+.pregunta-mic {
+  flex-shrink: 0; width: 50px; height: 50px; border-radius: 50%; border: none; cursor: pointer;
+  background: var(--accent); color: white; display: flex; align-items: center; justify-content: center;
+}
+.pregunta-mic.escuchando { background: var(--bad); box-shadow: 0 0 0 6px var(--bad-soft); animation: pregunta-pulso 1.2s ease-in-out infinite; }
+@keyframes pregunta-pulso { 50% { box-shadow: 0 0 0 10px var(--bad-soft); } }
+.pregunta-grupo { display: flex; flex-direction: column; gap: 8px; }
+.pregunta-grupo-titulo { font-size: 11.5px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-soft); }
+.pregunta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.pregunta-chip {
+  border: 1px solid var(--border); background: var(--surface); color: var(--ink); border-radius: 999px;
+  padding: 9px 15px; font-size: 14.5px; font-family: inherit; cursor: pointer;
+}
+.pregunta-chip.destacada { border: 1.5px solid var(--accent); color: var(--accent); background: var(--accent-soft); font-weight: 500; }
+.pregunta-respuesta { display: flex; flex-direction: column; gap: 8px; }
+.pregunta-respuesta .hint { margin: 0; }
+.pregunta-tarjeta {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 14px 16px;
+  display: flex; flex-direction: column; gap: 3px;
+}
+.pregunta-titulo { font-size: 13px; color: var(--ink-soft); }
+.pregunta-valor { font-size: 30px; font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; line-height: 1.15; margin: 2px 0 4px; }
+.pregunta-linea { font-size: 13.5px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+.pregunta-enlace { display: inline-flex; align-items: center; gap: 4px; font-weight: 600; margin-top: 6px; align-self: flex-start; }
+.pregunta-dias { display: flex; gap: 6px; }
+.pregunta-dias button {
+  flex: 1; border: 1px solid var(--border); background: var(--surface); border-radius: 10px; padding: 8px 0;
+  font-size: 13px; font-family: inherit; color: var(--ink); cursor: pointer;
+}
+.pregunta-dias button.activo { background: var(--accent); border-color: var(--accent); color: white; }
+.pregunta-dias button:disabled { opacity: 0.35; cursor: not-allowed; }
+.pregunta-no { gap: 10px; font-size: 14px; }
+.pregunta-no em { font-style: normal; font-weight: 500; }

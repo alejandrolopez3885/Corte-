@@ -896,6 +896,58 @@ sección ("Novedad 4 de 5 · Inventario"), el dibujo lleva encima "Ejemplo ·
 así se ve en la app" con borde punteado y no responde a toques, y arriba
 del botón dice "Solo es informativo — no tienes que hacer nada aquí".
 
+**Pregúntale a Cortes (solo dueño)**: en todas las pantallas del dueño hay
+un botón verde redondo 💬 encima de la barra de abajo (a la derecha) que
+abre "Pregúntale a Cortes". Se pregunta de tres formas: escribiendo y
+tocando enviar, dictando con el micrófono 🎤 (usa el dictado del navegador,
+gratis, en español de México; el botón se pone rojo mientras escucha y al
+terminar responde solo; si el celular no lo tiene, el micrófono no sale y
+se puede usar el dictado del teclado) o tocando una pregunta. Las preguntas
+vienen en botones agrupados en **Ventas** (venta de hoy, de ayer, de la
+semana, semana pasada, "¿Cuánto se vendió el…?"), **Dinero** (efectivo a
+entregar hoy, gastos de la semana, propinas de hoy, utilidad de la semana)
+y **Equipo** (nómina actual, nómina de la semana pasada). Hasta arriba
+salen **"Las que más preguntas"**: las 3 que más usas (al inicio: venta de
+hoy, nómina actual y venta de la semana); cuántas veces usas cada una se
+guarda en tu cuenta (en Supabase Auth), así que es igual en el celular y en
+la computadora, y el orden se acomoda la siguiente vez que abres la
+pantalla (no mientras la usas, para que los botones no se muevan).
+
+No usa IA: reconoce palabras clave. El tema: venta/vendí, efectivo/
+entregar/sobre, gastos, propinas, utilidad/ganancia/margen y nómina/sueldo.
+El cuándo: hoy, ayer, antier, un día de la semana ("el martes" = el martes
+más reciente que ya pasó; "el martes pasado" = el de la semana anterior),
+un número de día ("el 15", "el 3 de octubre"), "esta semana" o "semana
+pasada". Sin cuándo, venta, efectivo y propinas responden por hoy y gastos
+por la semana; utilidad y nómina siempre son de la semana. Cada número sale
+de los mismos cálculos que ya usan Corte, Dashboard y Nómina, así que nunca
+da otra cifra:
+
+- **Venta de un día**: total con su desglose (local · apps, tarjetas ·
+  efectivo) y "Ver el corte de ese día". Debajo vienen los días Lun–Dom de
+  esa semana para cambiar la respuesta con un toque (los días que no han
+  llegado se ven apagados). Igual para propinas (cuántos meseros y la más
+  alta), gastos y efectivo de un día.
+- **Efectivo a entregar**: desde el 21/10/2026 es el mismo de "Efectivo del
+  día" (sin lo de la apertura, más lo que se dejó el día anterior, menos lo
+  que se deja), con su desglose; antes, el efectivo del día.
+- **Venta de la semana**: total hasta hoy, cuántos días con venta, local ·
+  apps y el mejor día, con "Ver el resumen de la semana".
+- **Gastos de la semana**: total en efectivo, cuántos son, las 3 categorías
+  más altas y los pendientes de ingresar.
+- **Utilidad de la semana**: la del Dashboard (con la nómina generada hasta
+  hoy), venta − gastos, margen y nómina con su %, con "Ver Dashboard".
+- **Nómina actual**: lo generado hasta hoy (como en el Dashboard), del lunes
+  a hoy, cuántas personas y la semana completa proyectada. **Semana
+  pasada**: el bruto completo, el neto a pagar y cuántas ya están pagadas.
+  Ambas con "Ver nómina" (abre esa semana).
+
+Si un día o semana no tiene nada capturado, lo dice ("Todavía no hay nada
+capturado ese día"). Si no entiende la pregunta, responde "No entendí…" con
+un ejemplo y las 3 preguntas más usadas para tocarlas. Por ahora solo la ve
+el dueño; la lógica vive en `src/lib/preguntas.ts` y la pantalla en
+`src/components/PreguntasSheet.tsx`.
+
 ## 1. Crear el proyecto en Supabase
 
 1. Ve a [supabase.com](https://supabase.com) → **New project**.
