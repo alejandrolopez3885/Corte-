@@ -982,8 +982,10 @@ export type DashboardReport = ReturnType<typeof computeDashboardReport>;
 export const META_GASTOS_OPERATIVOS_PCT = 42;
 // Metas de la imagen del resultado semanal (Dashboard): nómina 16% o menos
 // de la venta y margen operativo 15% o más. Cerca de la meta (a 3 puntos o
-// menos) se pinta en amarillo.
+// menos) se pinta en amarillo — salvo la nómina, que es verde hasta 15%,
+// amarilla de 15 a 16% y roja arriba de 16% (igual que en Tendencias).
 export const META_NOMINA_PCT = 16;
+export const META_NOMINA_VERDE_PCT = 15;
 export const META_MARGEN_OPERATIVO_PCT = 15;
 export const TOLERANCIA_AMARILLO_PCT = 3;
 

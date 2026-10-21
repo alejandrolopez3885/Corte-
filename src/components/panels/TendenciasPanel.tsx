@@ -1,9 +1,10 @@
 import { useState, type ReactNode } from "react";
 import { ArrowLeft, ChartLine, ChevronRight, Minus, TrendingDown, TrendingUp } from "lucide-react";
 import { Empty } from "../ui";
-import { formatWeekRange, money, round2, todayIso } from "../../lib/dataModel";
+import { formatWeekRange, META_NOMINA_PCT, META_NOMINA_VERDE_PCT, money, round2, todayIso } from "../../lib/dataModel";
 import { type TendenciasSemana } from "../../lib/tendencias";
 import { calcularTendencias, type Alerta, type AnalisisTendencias, type TarjetaId } from "../../lib/tendenciasAnalisis";
+import { diaCorto, semaforoNomina, ultimoDiaContado, type NominaVenta } from "../../lib/nominaVenta";
 import type { EmpleadoEntry, HorarioMonthData, MeseroCatalogEntry, MonthData, MontoFijoSemanal, WeekTrendPoint } from "../../lib/types";
 
 const ACCENT = "#1F5D4C";
@@ -43,7 +44,7 @@ export function TendenciasPanel({
   const [verSinNovedades, setVerSinNovedades] = useState(false);
 
   const hoy = todayIso();
-  const { puntos, t, a } = calcularTendencias(months, horarios, empleados, meseros, montosFijos, meta, hoy);
+  const { puntos, t, a, nv } = calcularTendencias(months, horarios, empleados, meseros, montosFijos, meta, hoy);
   const proyeccion = t.proyeccionRitmo !== null && t.diasContados < 7 ? { monto: t.proyeccionRitmo } : null;
   // Cómo se cobra: sube si las tarjetas o apps se movieron 8 puntos o más.
   const { tarjetasPct, tarjetasAntes, appsPct, appsAntes } = t.mezcla;
@@ -61,7 +62,7 @@ export function TendenciasPanel({
     { id: "gastos", titulo: "Gastos por categoría", contenido: a.gastosCategoria.length > 0 ? <GastosCategoria a={a} /> : null },
     { id: "extras", titulo: "Propinas, cancelaciones y cortesías", contenido: <Extras a={a} /> },
     { id: "cobro", titulo: "Cómo se cobra", contenido: tarjetasPct !== null ? <MezclaCobro t={t} /> : null },
-    { id: "nomina", titulo: "Nómina como % de la venta", contenido: a.nomina.length > 0 ? <NominaPct a={a} /> : null },
+    { id: "nomina", titulo: "Nómina vs. venta", contenido: nv.semana || nv.cerradas.length > 0 ? <NominaVsVenta nv={nv} lunes={t.lunes} /> : null },
     { id: "efectivo", titulo: "Efectivo real vs. esperado", contenido: a.efectivo.length > 0 ? <Efectivo a={a} /> : null },
     { id: "patron", titulo: "Venta promedio por día de la semana", contenido: t.patron.some((p) => p.promedio > 0) ? <PatronSemanal t={t} /> : null },
     {
@@ -692,20 +693,115 @@ function Extras({ a }: { a: AnalisisTendencias }) {
   );
 }
 
-function NominaPct({ a }: { a: AnalisisTendencias }) {
-  const max = Math.max(1, ...a.nomina.map((n) => n.pct));
+// Meta de nómina 15–16%: verde hasta 15%, amarillo de 15 a 16%, rojo arriba.
+const ESCALA_NOMINA = 24; // % al final de la barra
+function NominaVsVenta({ nv, lunes }: { nv: NominaVenta; lunes: string }) {
+  const s = nv.semana;
+  const maxCerradas = Math.max(ESCALA_NOMINA * 0.75, ...nv.cerradas.map((c) => c.pct));
   return (
-    <div className="tend-card">
-      <h4>Nómina como % de la venta</h4>
-      {a.nomina.map((n) => (
-        <div key={n.label} className="tend-ranking" title={`${n.label}: ${n.pct}%`}>
-          <span>{n.label}</span>
-          <i style={{ width: `${(n.pct / max) * 100}%` }} />
-          <strong>{n.pct}%</strong>
+    <>
+      {s && (
+        <div className="tend-card">
+          <h4>Nómina vs. venta · esta semana</h4>
+          <div className="nomv-hero">
+            <strong className={`sem-${semaforoNomina(s.pct)}`}>{s.pct.toFixed(1)}%</strong>
+            <span className={`nomv-pill sem-${semaforoNomina(s.pct)}`}>
+              {{ verde: "Dentro de la meta", amarillo: "En el límite", rojo: "Arriba de la meta" }[semaforoNomina(s.pct)]}
+            </span>
+          </div>
+          <div className="nomv-escala" role="img" aria-label={`Nómina ${s.pct}% de la venta; meta ${META_NOMINA_VERDE_PCT} a ${META_NOMINA_PCT}%`}>
+            <span style={{ width: `${(META_NOMINA_VERDE_PCT / ESCALA_NOMINA) * 100}%` }} className="v" />
+            <span style={{ width: `${((META_NOMINA_PCT - META_NOMINA_VERDE_PCT) / ESCALA_NOMINA) * 100}%` }} className="a" />
+            <span className="r" />
+            <i style={{ left: `${Math.min(100, (s.pct / ESCALA_NOMINA) * 100)}%` }} />
+          </div>
+          <div className="nomv-ejes">
+            <span>0%</span>
+            <span>
+              Meta {META_NOMINA_VERDE_PCT}–{META_NOMINA_PCT}%
+            </span>
+            <span>{ESCALA_NOMINA}%</span>
+          </div>
+          <small className="tend-nota">
+            {s.diasContados < 7 ? `Lun a ${ultimoDiaContado(lunes, s.diasContados)}` : "Semana completa"}: nómina <b>{money(s.nomina)}</b> de{" "}
+            <b>{money(s.venta)}</b> de venta.
+            {s.diasContados < 7 && s.ventaPara16 !== null && (
+              <>
+                {" "}
+                Para cerrar en {META_NOMINA_PCT}% la semana necesita vender <b>{money(s.ventaPara16)}</b>
+                {s.proyeccion !== null ? <> (al ritmo de hoy cerraría en {money(s.proyeccion)})</> : null}
+                {s.recorte !== null ? <>, o recortar ~{money(s.recorte)} de nómina</> : null}.
+              </>
+            )}
+          </small>
         </div>
-      ))}
-    </div>
+      )}
+      {nv.cerradas.length > 0 && (
+        <div className="tend-card">
+          <h4>Nómina · semanas cerradas</h4>
+          {nv.cerradas.map((c) => (
+            <div key={c.label} className={`tend-ranking sem-${semaforoNomina(c.pct)}`} title={`${c.label}: ${c.pct}%`}>
+              <span>{c.label}</span>
+              <i style={{ width: `${(c.pct / maxCerradas) * 100}%` }} />
+              <strong>{c.pct.toFixed(1)}%</strong>
+            </div>
+          ))}
+        </div>
+      )}
+      {nv.semanasPorDia > 0 && (
+        <div className="tend-card">
+          <h4>
+            Por día · promedio de {nv.semanasPorDia} {nv.semanasPorDia === 1 ? "semana" : "semanas"}
+          </h4>
+          <table className="tend-tabla">
+            <thead>
+              <tr>
+                <th>Día</th>
+                <th>Venta</th>
+                <th>Personas</th>
+                <th>Nómina</th>
+                <th>%</th>
+              </tr>
+            </thead>
+            <tbody>
+              {nv.porDia.map((d) => (
+                <tr key={d.dia}>
+                  <td>{diaCorto(d.dia)}</td>
+                  <td>{d.venta > 0 ? money(d.venta) : "—"}</td>
+                  <td>{d.personas || "—"}</td>
+                  <td>{d.nomina > 0 ? money(d.nomina) : "—"}</td>
+                  <td className={d.pct === null ? "" : `nomv-pct sem-${semaforoNomina(d.pct)}`}>{d.pct === null ? "—" : `${d.pct.toFixed(1)}%`}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <small className="tend-nota">
+            Nómina del día = sueldo diario de quien trabaja según el horario (doble y festivo incluidos). Venta por persona:{" "}
+            {nv.porDia
+              .filter((d) => d.ventaPorPersona !== null)
+              .map((d) => `${diaCorto(d.dia).toLowerCase()} ${money(d.ventaPorPersona!)}`)
+              .join(" · ")}
+            .
+          </small>
+        </div>
+      )}
+      {nv.sugerencias.length > 0 && (
+        <div className="tend-card">
+          <h4>Sugerencias para el horario</h4>
+          {nv.sugerencias.map((x) => (
+            <div key={x.dia + x.tipo} className={`nomv-sug ${x.tipo}`}>
+              <span>{x.tipo === "menos" ? "⬇" : "⬆"}</span>
+              <span>{conNegritas(x.texto)}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </>
   );
+}
+
+function conNegritas(texto: string): ReactNode[] {
+  return texto.split(/\*\*(.+?)\*\*/g).map((parte, i) => (i % 2 === 1 ? <strong key={i}>{parte}</strong> : parte));
 }
 
 function Efectivo({ a }: { a: AnalisisTendencias }) {

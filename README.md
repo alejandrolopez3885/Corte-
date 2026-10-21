@@ -520,9 +520,26 @@ estando en Nómina te regresa al menú de Equipo):
   Tarjetas: ¿cómo cerraría la semana?, día a día vs. semana pasada (con la
   venta de cada día de esta semana y de la pasada; los días estimados
   quedan sin número), semanas, venta por mesero vs. su promedio, gastos por
-  categoría, propinas/cancelaciones/cortesías, cómo se cobra, nómina como %
-  de la venta, efectivo real vs. esperado, venta promedio por día de la
-  semana y resultados por semana cerrada. En detalle — cómo va
+  categoría, propinas/cancelaciones/cortesías, cómo se cobra, nómina vs.
+  venta, efectivo real vs. esperado, venta promedio por día de la
+  semana y resultados por semana cerrada. **Nómina vs. venta** (meta de
+  15–16% de la venta: verde hasta 15%, amarillo de 15 a 16%, rojo arriba
+  de 16%): esta semana, la nómina de los días que ya cuentan en la venta
+  (lunes a ayer, u hoy si ya tiene corte) entre esa venta, en grande con
+  su semáforo y una barra con la meta; abajo, cuánto tendría que vender la
+  semana completa para cerrar en 16% con la nómina de su horario, cómo
+  cerraría al ritmo de hoy y cuánto habría que recortar de nómina si no
+  alcanza. Luego las últimas 6 semanas cerradas con su % y color; "Por
+  día", el promedio de las últimas 4 semanas cerradas con horario de cada
+  día de la semana: venta, personas en el horario (quien no tiene OFF),
+  nómina y %, más la venta por persona; y "Sugerencias para el horario":
+  los 2 días con el % más alto arriba de 16% ("Con 7 personas bajaría a
+  ~X%") y, si un día vende por persona 1.8 veces o más que el más bajo y
+  está en verde, que ahí cabe alguien más. La nómina del día es el sueldo
+  diario de quien trabaja según el horario (doble, festivo y OFF pagado
+  incluidos); una semana sin horario no cuenta. Si esta semana (con 2
+  días o más) va arriba de 16%, sale en "Para revisar" y la tarjeta sube;
+  entre 15 y 16%, solo sube. En detalle — cómo va
   el negocio, por fecha real (semanas de lunes a domingo): **venta hasta
   hoy** de la semana en curso contra los mismos días de la semana pasada y
   contra el promedio de esos días en las últimas 4 semanas (el día de hoy
@@ -785,7 +802,7 @@ estando en Nómina te regresa al menú de Equipo):
   [fechas y año]" (con "hasta hoy (día)" si la semana no ha terminado); la
   **venta semanal** en grande con su cambio contra la venta de la semana
   pasada (por fecha real; ▲ verde o ▼ rojo); − **gastos operativos** (meta
-  42% o menos); − **nómina** (meta 16% o menos); − **otros gastos** en un
+  42% o menos); − **nómina** (meta 15–16%); − **otros gastos** en un
   renglón, con su desglose chico (fijos, comisiones de apps, banco y las
   demás categorías, sin la nómina en efectivo ni el retiro); dos
   recuadros: **Utilidad operativa** en pesos (venta − todos los gastos,
@@ -795,8 +812,9 @@ estando en Nómina te regresa al menú de Equipo):
   retiro** en grande, en verde si es positiva o rojo si no — es la misma
   Utilidad del reporte. Cada renglón lleva su % sobre la venta. Semáforo
   en gastos operativos, nómina y margen operativo: verde en la meta,
-  amarillo cerca (a 3 puntos o menos: gastos operativos hasta 45%, nómina
-  hasta 19%, margen desde 12%) y rojo fuera. Al pie, qué significa cada
+  amarillo cerca (a 3 puntos o menos: gastos operativos hasta 45%, margen
+  desde 12%) y rojo fuera; la nómina, igual que en Tendencias, es verde
+  hasta 15%, amarilla de 15 a 16% y roja arriba de 16%. Al pie, qué significa cada
   color y una nota (en una semana en curso, que los números son hasta
   hoy).
 
@@ -1000,6 +1018,7 @@ src/
     ConceptoInput.tsx  cuadro de concepto de gasto con autocompletado y ortografía
     panels/InicioPanel.tsx  Inicio del dueño (alertas); cálculo en lib/inicio.ts y lib/consumo.ts
     panels/ImportarCatalogoPanel.tsx  Negocio > Compras > Importar catálogo; lectura del Excel en lib/excelPrecios.ts
+    lib/nominaVenta.ts  Tendencias > Nómina vs. venta (meta 15–16%, por día y sugerencias)
     panels/RecetarioPanel.tsx  Recetario (dueño edita y carga varias, equipo consulta); formato en lib/recetasTexto.ts
     NovedadesAlEntrar.tsx  slider de novedades al entrar (cuentas de equipo); lista en lib/novedades.ts
     modals/       un modal por acción (mesero, gasto, transferencia, etc.)

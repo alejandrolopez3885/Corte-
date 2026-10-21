@@ -1300,3 +1300,29 @@ button.pill { cursor: pointer; }
 .efectivo-fila.total { border-top: 1px solid var(--border); margin-top: 4px; padding-top: 8px; font-weight: 700; font-size: 16px; color: var(--accent); }
 .efectivo-dia .link-btn { align-self: flex-start; margin-top: 4px; }
 .aviso-dejado { background: var(--warn-soft); color: #7a4b17; border-radius: 12px; padding: 9px 12px; font-size: 13px; margin: 0; }
+
+/* Tendencias > Nómina vs. venta (meta 15–16%) */
+.nomv-hero { display: flex; align-items: baseline; gap: 8px; }
+.nomv-hero strong { font-family: Fraunces, serif; font-size: 34px; }
+.nomv-pill { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 100px; }
+.sem-verde { color: var(--good); }
+.sem-amarillo { color: var(--warn); }
+.sem-rojo { color: var(--bad); }
+.nomv-pill.sem-verde { background: var(--good-soft); }
+.nomv-pill.sem-amarillo { background: var(--warn-soft); }
+.nomv-pill.sem-rojo { background: var(--bad-soft); }
+.nomv-escala { position: relative; display: flex; height: 10px; border-radius: 6px; overflow: visible; }
+.nomv-escala span { height: 100%; }
+.nomv-escala .v { background: var(--good-soft); border-radius: 6px 0 0 6px; }
+.nomv-escala .a { background: var(--warn-soft); }
+.nomv-escala .r { flex: 1; background: var(--bad-soft); border-radius: 0 6px 6px 0; }
+.nomv-escala i { position: absolute; top: -3px; width: 3px; height: 16px; margin-left: -1.5px; background: var(--ink); border-radius: 2px; }
+.nomv-ejes { display: flex; justify-content: space-between; font-size: 10.5px; color: var(--ink-soft); }
+.tend-tabla td.nomv-pct { font-weight: 600; }
+.tend-ranking.sem-verde i { background: var(--good); }
+.tend-ranking.sem-amarillo i { background: var(--warn); }
+.tend-ranking.sem-rojo i { background: var(--bad); }
+.tend-ranking.sem-verde span, .tend-ranking.sem-amarillo span, .tend-ranking.sem-rojo span { color: var(--ink); }
+.nomv-sug { display: flex; gap: 8px; font-size: 12.5px; line-height: 1.4; padding: 8px 10px; border-radius: 10px; }
+.nomv-sug.menos { background: var(--bad-soft); }
+.nomv-sug.mas { background: var(--good-soft); }

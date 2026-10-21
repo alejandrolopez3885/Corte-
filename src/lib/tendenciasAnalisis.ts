@@ -1,7 +1,9 @@
 import {
-  addDaysIso, computeNominaTotalHastaHoy, computeVentaTrend, dateForDay, money, resolveWeekStartDate, round2, todayIso,
+  addDaysIso, computeNominaTotalHastaHoy, computeVentaTrend, dateForDay, META_NOMINA_PCT, META_NOMINA_VERDE_PCT, money, resolveWeekStartDate,
+  round2, todayIso,
 } from "./dataModel";
 import { computeTendenciasSemana, lunesDe } from "./tendencias";
+import { calcularNominaVenta } from "./nominaVenta";
 import { DAYS, GASTO_CATEGORIAS } from "./types";
 import type {
   DayName, EmpleadoEntry, Gasto, HorarioMonthData, MeseroCatalogEntry, MonthData, MontoFijoSemanal, WeekTrendPoint,
@@ -20,6 +22,8 @@ const MIN_SEMANAS = 3;
 export type NivelAlerta = "incompleto" | "atipico" | "tendencia";
 export type TarjetaId =
   | "cierre" | "diaADia" | "semanas" | "patron" | "cobro" | "meseros" | "gastos" | "extras" | "nomina" | "efectivo" | "resultados";
+
+const ORDEN: Record<NivelAlerta, number> = { incompleto: 0, atipico: 1, tendencia: 2 };
 
 export interface Alerta {
   nivel: NivelAlerta;
@@ -436,7 +440,6 @@ export function analizarTendencias(
     }
   }
 
-  const ORDEN: Record<NivelAlerta, number> = { incompleto: 0, atipico: 1, tendencia: 2 };
   const deLaSemana = alertas.filter((x) => !x.soloTarjeta);
   deLaSemana.sort((a, b) => ORDEN[a.nivel] - ORDEN[b.nivel] || b.peso - a.peso);
   return { alertas: deLaSemana, relevancia: rel, meseros, gastosCategoria, extras, nomina, efectivo };
@@ -480,5 +483,24 @@ export function calcularTendencias(
     meta,
     sinHorarios,
   }, hoy);
-  return { puntos, t, a };
+  // Nómina vs. venta (meta 15–16%): arriba de 16% esta semana sale en
+  // "Para revisar" y sube su tarjeta; entre 15 y 16%, solo sube la tarjeta.
+  const nv = calcularNominaVenta(months, horarios, empleados, puntos, t);
+  if (nv.semana && nv.semana.diasContados >= 2) {
+    const p = nv.semana.pct;
+    if (p > META_NOMINA_PCT) {
+      a.alertas.push({
+        nivel: "tendencia",
+        titulo: `La nómina va en ${p.toFixed(1)}% de la venta`,
+        detalle: `Arriba de la meta de ${META_NOMINA_VERDE_PCT}–${META_NOMINA_PCT}% esta semana.`,
+        tarjeta: "nomina",
+        peso: 45,
+      });
+      a.alertas.sort((x, y) => ORDEN[x.nivel] - ORDEN[y.nivel] || y.peso - x.peso);
+      if (2 > a.relevancia.nomina.score) a.relevancia.nomina = { score: 2, motivo: `nómina ${p.toFixed(1)}%` };
+    } else if (p > META_NOMINA_VERDE_PCT && 1 > a.relevancia.nomina.score) {
+      a.relevancia.nomina = { score: 1, motivo: `nómina ${p.toFixed(1)}%` };
+    }
+  }
+  return { puntos, t, a, nv };
 }

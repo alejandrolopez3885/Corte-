@@ -1,5 +1,6 @@
 import type { DashboardReport } from "./dataModel";
-import { META_GASTOS_OPERATIVOS_PCT, META_MARGEN_OPERATIVO_PCT, META_NOMINA_PCT, TOLERANCIA_AMARILLO_PCT, money, round2 } from "./dataModel";
+import { META_GASTOS_OPERATIVOS_PCT, META_MARGEN_OPERATIVO_PCT, META_NOMINA_PCT, META_NOMINA_VERDE_PCT, TOLERANCIA_AMARILLO_PCT, money, round2 } from "./dataModel";
+import { semaforoNomina } from "./nominaVenta";
 import { copyCanvasAsPng } from "./imageExport";
 
 // Imagen del resultado semanal para mandar al grupo del jefe, con la misma
@@ -123,7 +124,13 @@ export function copyDashboardImage(r: ResultadoSemanal, subtitulo: string, nota:
       monto: r.gastosOperativos,
       colorPct: semaforo(pctNum(r.gastosOperativos), META_GASTOS_OPERATIVOS_PCT, true),
     },
-    { tipo: "resta", label: "Nómina", nota: `Meta: ${META_NOMINA_PCT}% o menos`, monto: r.nomina, colorPct: semaforo(pctNum(r.nomina), META_NOMINA_PCT, true) },
+    {
+      tipo: "resta",
+      label: "Nómina",
+      nota: `Meta: ${META_NOMINA_VERDE_PCT}–${META_NOMINA_PCT}%`,
+      monto: r.nomina,
+      colorPct: { verde: VERDE, amarillo: AMARILLO, rojo: ROJO }[semaforoNomina(pctNum(r.nomina))],
+    },
     { tipo: "resta", label: "Otros gastos", nota: r.otrosDesglose.map((x) => `${x.label} ${sinCentavos(x.monto)}`).join(" · "), monto: r.otros },
     { tipo: "recuadros" },
     { tipo: "resta", label: "Retiro", nota: "Gastos externos (no operativos)", monto: r.retiro },
