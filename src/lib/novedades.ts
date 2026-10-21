@@ -16,7 +16,7 @@ import type { AppData, PermisoStaff, Profile } from "./types";
 
 export type SeccionNovedad = "corte" | PermisoStaff;
 
-export type VisualNovedad = "sumar" | "autocompletar" | "categoria" | "faltan" | "guardarCorte" | "inventarioPasos";
+export type VisualNovedad = "sumar" | "autocompletar" | "categoria" | "faltan" | "guardarCorte" | "inventarioPasos" | "recetarioArea";
 
 export interface Novedad {
   id: string;
@@ -75,6 +75,14 @@ export const NOVEDADES: Novedad[] = [
     titulo: "El inventario va en orden",
     texto: "Primero el **jueves** y, ya guardado, el **domingo**. Cada uno se captura desde su día.",
     visual: "inventarioPasos",
+  },
+  {
+    id: "recetario-por-area",
+    fecha: "2026-10-21T00:50:00Z",
+    seccion: "recetario",
+    titulo: "Tu recetario, solo de tu área",
+    texto: "Cocina ve solo las recetas de **Cocina** y Barra solo las de **Bar**.",
+    visual: "recetarioArea",
   },
 ];
 

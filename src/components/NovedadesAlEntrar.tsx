@@ -168,6 +168,24 @@ function Visual({ tipo }: { tipo: VisualNovedad }) {
       </>
     );
   }
+  if (tipo === "recetarioArea") {
+    return (
+      <>
+        <span className="nv-etiqueta">Recetario de Cocina</span>
+        <div className="nv-lista">
+          <div>
+            <span>Hamburguesa clásica</span>
+            <small>Plato extendido</small>
+          </div>
+          <div>
+            <span>Tacos de carne</span>
+            <small>Plato extendido</small>
+          </div>
+        </div>
+        <span className="nv-antes">Antes: salían también las bebidas de Bar</span>
+      </>
+    );
+  }
   if (tipo === "inventarioPasos") {
     return (
       <>

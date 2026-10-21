@@ -226,10 +226,11 @@ estando en Nómina te regresa al menú de Equipo):
   la propia sección "Nómina") y "Propinas" (la misma pantalla de
   consulta que ve el dueño en Equipo > Propinas — totales del día de toda
   la semana y su reparto por área, sin poder editar nada; no se acota por
-  área ni por persona) y "Recetario" (consulta de las recetas de Bar y Cocina
-  que captura el dueño en Negocio > Bar/Cocina > Recetario, sin poder editar
-  nada; lo ve cualquiera que tenga el permiso, sin importar su puesto o
-  área, y es el único permiso que se puede habilitar aunque la persona no
+  área ni por persona) y "Recetario" (consulta de las recetas que captura
+  el dueño en Negocio > Bar/Cocina > Recetario, sin poder editar nada: los
+  puestos de Cocina — Cocinero, Jefe de cocina — ven solo el "Recetario de
+  Cocina", Barra solo el "Recetario de Bar", y cualquier otro puesto las
+  dos. Es el único permiso que se puede habilitar aunque la persona no
   tenga puesto asignado). Cada permiso se acota distinto: "Horarios" usa el área de
   Personal del puesto (Gerencia/Piso/Cocina) y muestra el horario
   completo de esa área (todo el personal de Piso, o todo el de Cocina,
@@ -598,10 +599,12 @@ estando en Nómina te regresa al menú de Equipo):
   de cada una) y, si un nombre ya existe en ese recetario, deja elegir
   "Reemplazar" (se actualiza la misma receta) o "Saltar"; "Agregar N
   recetas" las guarda todas. Hay un "Ver ejemplo del formato" ahí mismo;
-  las cuentas de equipo con el permiso "Recetario" ven un solo
-  "Recetario" desde su Inicio, con las recetas de Bar y de Cocina
-  (separadas con un encabezado por área cuando hay de las dos; si solo hay
-  de una, la lista sin encabezados), pero sin "+" ni lápiz. Por ahora es
+  las cuentas de equipo con el permiso "Recetario" lo ven desde su Inicio,
+  sin "+" ni lápiz, acotado a su área: Cocina (Cocinero, Jefe de cocina)
+  ve el "Recetario de Cocina" y Barra el "Recetario de Bar"; los demás
+  puestos ven un solo "Recetario" con las de Bar y de Cocina (separadas
+  con un encabezado por área cuando hay de las dos; si solo hay de una,
+  la lista sin encabezados). Por ahora es
   texto sencillo, sin fotos; bajo "General", "Control General" — mismo Catálogo (nombre,
   unidad libre entre Kg/Pieza, precio, proveedor), pero sin Conteo diario
   ni la marca de "alta rotación" (que no aplica sin conteo diario propio):
