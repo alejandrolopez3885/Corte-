@@ -66,7 +66,7 @@ export function ControlBarPanel({
         backLabel="Control de Bar"
         emptyIcon={<Martini size={26} strokeWidth={1.3} />}
         emptyText="Aún no marcas insumos de bar como alta rotación. Márcalos desde el Catálogo para que aparezcan aquí."
-        plantilla={plantillaConteo("bar", insumos)}
+        plantilla={plantillaConteo("bar")}
         insumos={insumosBar}
         proveedores={proveedores}
         months={months}

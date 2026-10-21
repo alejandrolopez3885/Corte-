@@ -1,4 +1,4 @@
-import { DAYS, GASTO_CATEGORIAS, HORARIO_AREAS_FIJAS, PLANTILLA_CONTEO_COCINA, type AppData, type ConteoTextoArea, type InsumoEntry, type AreaEntry, type DayData, type DayName, type EmpleadoEntry, type GastoCategoria, type HorarioFila, type HorarioMonthData, type HorarioSemana, type InsumoArea, type MeseroCatalogEntry, type MeseroCut, type MonthData, type MontoFijoSemanal, type NominaDescuento, type NominaDescuentosSemana, type NominaDia, type NominaEmpleadoSemana, type PuestoEntry, type VentaProyeccion, type WeekData, type WeekTrendPoint } from "./types";
+import { DAYS, GASTO_CATEGORIAS, HORARIO_AREAS_FIJAS, PLANTILLA_CONTEO_BAR, PLANTILLA_CONTEO_COCINA, type AppData, type ConteoTextoArea, type InsumoEntry, type AreaEntry, type DayData, type DayName, type EmpleadoEntry, type GastoCategoria, type HorarioFila, type HorarioMonthData, type HorarioSemana, type InsumoArea, type MeseroCatalogEntry, type MeseroCut, type MonthData, type MontoFijoSemanal, type NominaDescuento, type NominaDescuentosSemana, type NominaDia, type NominaEmpleadoSemana, type PuestoEntry, type VentaProyeccion, type WeekData, type WeekTrendPoint } from "./types";
 
 export const uid = (): string => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 
@@ -1111,12 +1111,8 @@ export function pidePorOtraUnidad(insumo: InsumoEntry): boolean {
   return !(sinonimos[base] || [base]).includes(u);
 }
 
-export function plantillaConteo(area: ConteoTextoArea, insumos: InsumoEntry[]): string {
-  if (area === "cocina") return PLANTILLA_CONTEO_COCINA;
-  return insumos
-    .filter((i) => i.area === area && i.altaRotacion)
-    .map((i) => `${i.nombre} (${i.unidad === "pieza" ? "pz" : i.unidad}): `)
-    .join("\n");
+export function plantillaConteo(area: ConteoTextoArea): string {
+  return area === "cocina" ? PLANTILLA_CONTEO_COCINA : PLANTILLA_CONTEO_BAR;
 }
 
 export interface LineaConteoTexto {

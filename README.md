@@ -613,8 +613,13 @@ estando en Nómina te regresa al menú de Equipo):
   de WhatsApp. En Cocina la lista es fija (Papas a la francesa, Papas
   crisscut, Alitas, Pollo, Carne de hamburguesa, Carne de taco, Dedos de
   queso, Elotes, Pan de hamburguesa, Pan de hot dog, Tocino, Salchicha y
-  Guacamole); en Bar se arma con los insumos marcados de alta rotación en
-  su catálogo. Se guarda el texto tal cual, por área y por fecha real, con
+  Guacamole); en Bar también es fija, todo en pz (Agua natural Johnster,
+  Coca Cola Retornable Regular 355ml, XX Lager, Coca de sabor para llevar,
+  Agua natural, Tecate Light, Indio, XX Caguama, Tecate rojo, XX ámbar, XX
+  ultra, Amstel, Carta blanca, Coca zero, Coca light, Caguama Indio,
+  Caguama Tecate light, Pepsi regular y Pepsi black) — ya no se arma con
+  los insumos de alta rotación del catálogo, y los conteos ya guardados no
+  cambian. Se guarda el texto tal cual, por área y por fecha real, con
   los mismos filtros de Mes/Semana y chips de día que Corte. La lista de
   insumos con un campo por producto queda oculta por ahora (por eso los
   insumos de alta rotación de Inventario no reciben valores nuevos desde
