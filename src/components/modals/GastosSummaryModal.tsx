@@ -17,8 +17,9 @@ const DIA_CORTO: Record<DayName, string> = {
   Lunes: "Lun", Martes: "Mar", Miércoles: "Mié", Jueves: "Jue", Viernes: "Vie", Sábado: "Sáb", Domingo: "Dom",
 };
 
-// Semanas anteriores a revisar por pendientes olvidados.
-const SEMANAS_ATRAS = 8;
+// Semanas anteriores a revisar por pendientes olvidados: solo las 2
+// últimas — lo más viejo ya no se corrige.
+const SEMANAS_ATRAS = 2;
 import type { NombreHistorial } from "../../lib/gastosBusqueda";
 import { BuscarGastos } from "./BuscarGastos";
 import type { GastoFormValues } from "./GastoModal";
@@ -79,7 +80,7 @@ export function GastosSummaryModal({
   const montoVisible = dias.reduce((s, d) => s + d.visibles.reduce((x, i) => x + i.total, 0), 0);
   const cuantosVisibles = dias.reduce((n, d) => n + d.visibles.length, 0);
 
-  // Pendientes en las semanas anteriores (hasta 8), en cualquier mes.
+  // Pendientes en las 2 semanas anteriores, en cualquier mes.
   const anteriores: { mk: string; wi: number; lunes: string; n: number }[] = [];
   monthKeys.forEach((mk) =>
     months[mk].weeks.forEach((w, wi) => {

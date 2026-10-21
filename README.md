@@ -49,7 +49,7 @@ color. Al confirmar uno, sale el aviso "✓ Coca Cola $362.00 confirmado" y,
 en Pendientes, se quita de la lista. Cada gasto lleva además una etiqueta
 discreta con su día y fecha ("Lun 12 oct"). En el selector de semana, las
 que tienen pendientes lo dicen ("Sem 3 · 3 pdtes"), y si hay pendientes en
-las 8 semanas anteriores sale arriba "⚠ 1 pendiente en semanas anteriores
+las 2 semanas anteriores sale arriba "⚠ 1 pendiente en semanas anteriores
 (5 – 11 oct)" — al tocarlo, abre la más vieja.
 
 Desde **Control de gastos en efectivo** también se puede mover un gasto de
