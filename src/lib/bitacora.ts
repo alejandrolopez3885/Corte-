@@ -103,6 +103,8 @@ const CAMPOS: Record<string, string> = {
   comisionDidi: "Comisión DIDI", comisionUber: "Comisión UBER", comisionRappi: "Comisión RAPPI",
   sueldoDiario: "Sueldo diario", puestoId: "Puesto", areaId: "Área", numero: "Número", fecha: "Fecha",
   tipo: "Tipo", empleadoId: "Empleado", meseroId: "Mesero", label: "Nombre del mes",
+  medioTurno: "Medio turno guardado", lecturaSistema: "Lo que marca el sistema", cobro: "Cobró", acumulado: "Se acumula en el día",
+  fijosManual: "Gastos fijos editado a mano",
 };
 const CAMPOS_DINERO = new Set([
   "venta", "tarjetas", "transferencia", "propina", "gastosTotal", "total", "precio", "efectivoReal", "ventaApps",

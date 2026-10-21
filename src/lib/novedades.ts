@@ -16,7 +16,7 @@ import type { AppData, PermisoStaff, Profile } from "./types";
 
 export type SeccionNovedad = "corte" | PermisoStaff;
 
-export type VisualNovedad = "sumar" | "autocompletar" | "categoria" | "faltan" | "guardarCorte" | "inventarioPasos" | "recetarioArea";
+export type VisualNovedad = "sumar" | "autocompletar" | "categoria" | "faltan" | "guardarCorte" | "inventarioPasos" | "recetarioArea" | "medioTurno" | "paraLlevar";
 
 export interface Novedad {
   id: string;
@@ -84,6 +84,23 @@ export const NOVEDADES: Novedad[] = [
     texto: "Cocina ve solo las recetas de **Cocina** y Barra solo las de **Bar**.",
     visual: "recetarioArea",
   },
+  {
+    id: "medio-turno",
+    // Cortes desde el miércoles 21 de octubre (medianoche en Monterrey).
+    fecha: "2026-10-21T06:00:00Z",
+    seccion: "corte",
+    titulo: "Guardar medio turno",
+    texto: "Cuando se va el turno 1, toca **Guardar medio turno**. Su parte queda guardada y el turno 2 sigue capturando.",
+    visual: "medioTurno",
+  },
+  {
+    id: "para-llevar-acumulado",
+    fecha: "2026-10-21T06:00:00Z",
+    seccion: "corte",
+    titulo: "Para llevar: escribe lo que marca el sistema",
+    texto: "En cada corte de **Para llevar** pon la venta tal como la marca el sistema. La app resta sola lo ya cortado.",
+    visual: "paraLlevar",
+  },
 ];
 
 interface EstadoNovedades {
@@ -127,6 +144,10 @@ function ultimoCorteHecho(data: AppData, profile: Profile): string | null {
   return ultimo ? `${ultimo}T00:00:00` : null;
 }
 
+// Una novedad con fecha a futuro (un cambio que arranca después) todavía no
+// se muestra.
+const yaPublicada = (n: Novedad) => new Date(n.fecha).getTime() <= Date.now();
+
 // Novedades que le tocan a esta persona ahora mismo, de la más vieja a la
 // más nueva.
 export async function novedadesPendientes(profile: Profile, data: AppData, tieneCorte: boolean): Promise<Novedad[]> {
@@ -134,12 +155,12 @@ export async function novedadesPendientes(profile: Profile, data: AppData, tiene
   // El dueño ve todas las novedades de todas las secciones (aunque él haya
   // pedido el cambio), una sola vez cada una.
   if (profile.role === "owner") {
-    return NOVEDADES.filter((n) => !estado.vistas.includes(n.id)).sort((a, b) => a.fecha.localeCompare(b.fecha));
+    return NOVEDADES.filter((n) => yaPublicada(n) && !estado.vistas.includes(n.id)).sort((a, b) => a.fecha.localeCompare(b.fecha));
   }
   const secciones = seccionesConAcceso(profile, tieneCorte);
   const corteHecho = tieneCorte ? ultimoCorteHecho(data, profile) : null;
   return NOVEDADES.filter((n) => {
-    if (!secciones.includes(n.seccion) || estado.vistas.includes(n.id)) return false;
+    if (!yaPublicada(n) || !secciones.includes(n.seccion) || estado.vistas.includes(n.id)) return false;
     const tiempos: number[] = [];
     const acceso = estado.ultimoAcceso[n.seccion];
     if (acceso) tiempos.push(new Date(acceso).getTime());

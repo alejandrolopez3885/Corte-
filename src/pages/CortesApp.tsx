@@ -10,7 +10,7 @@ import { historialNombres } from "../lib/gastosBusqueda";
 import {
   addDaysIso, buildMonth, dateForDay, formatAssignedDate, formatDayNumber, formatLongDayDate, formatWeekRange,
   mondayOnOrBefore, money, mostRecentDayInWeek, mostRecentWeekIndex, resolveAssignmentLocation, resolveWeekStartDate,
-  normalizarNombre, round2, sumFromText, todayIso, uid,
+  normalizarNombre, round2, sumFromText, todayIso, uid, recalcularAcumulados, turnosActivos, acumuladosDelDia,
 } from "../lib/dataModel";
 import { removeAssignmentByStaffAndDate, upsertAssignment, useStaffAssignments } from "../lib/staffAssignments";
 import { DAYS, DAY_SHORT } from "../lib/types";
@@ -57,6 +57,8 @@ type ModalState =
   | { type: "transfer"; editing?: Transferencia }
   | { type: "apps" }
   | { type: "guardarCorte" }
+  | { type: "guardarMedioTurno" }
+  | { type: "quitarMedioTurno" }
   | { type: "reabrirCorte" }
   | { type: "weekSummary" }
   | { type: "gastosSummary" }
@@ -259,6 +261,12 @@ export default function CortesApp({ profile }: { profile: Profile }) {
   const week = month ? month.weeks[activeWeek] : null;
   const weekStartDate = activeMonth && month ? resolveWeekStartDate(activeMonth, activeWeek, month) : null;
   const activeDayDate = activeMonth && month ? dateForDay(activeMonth, activeWeek, month, activeDay) : null;
+  // Medio turno y "Para llevar" acumulado: solo en cortes desde el 21/10/2026.
+  const turnosDelDia = turnosActivos(activeDayDate);
+  // Lo guardado con "Guardar medio turno" ya no lo puede cambiar el personal.
+  function bloqueadoMedioTurno(id?: string) {
+    return !isOwner && !!id && !!day?.medioTurno?.ids.includes(id);
+  }
 
   // Mes/semana más reciente del negocio, sin depender de qué esté viendo
   // el dueño en la pestaña Corte — para que Negocio y Dashboard siempre
@@ -683,6 +691,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
   }
 
   function saveMeseroCut(form: MeseroFormValues, editingId?: string) {
+    if (bloqueadoMedioTurno(editingId)) return;
     updateDay((d) => {
       const venta = parseFloat(form.venta) || 0;
       const tarjetas = sumFromText(form.tarjetas);
@@ -708,6 +717,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
         venta, tarjetas, transferencia, propinaTipo: form.propinaTipo, propina, gastosTotal, total,
         ...(form.tarjetasDesglose ? { tarjetasDesglose: form.tarjetasDesglose } : {}),
         ...(transferencia > 0 && form.transferDesglose ? { transferenciaDesglose: form.transferDesglose } : {}),
+        ...(form.lecturaSistema !== undefined ? { lecturaSistema: form.lecturaSistema, ...(form.cobro ? { cobro: form.cobro } : {}) } : {}),
       };
       if (editingId) {
         const i = d.meseros.findIndex((m) => m.id === editingId);
@@ -737,19 +747,24 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           ...(form.transferDesglose ? { desglose: form.transferDesglose } : {}),
         });
       }
+      // "Para llevar": la venta de cada corte es lectura − corte anterior.
+      recalcularAcumulados(d);
     });
     setModal(null);
   }
 
   function deleteMeseroCut(id: string) {
+    if (bloqueadoMedioTurno(id)) return;
     updateDay((d) => {
       d.meseros = d.meseros.filter((m) => m.id !== id);
       d.transferencias = d.transferencias.filter((t) => t.meseroCutId !== id);
+      recalcularAcumulados(d);
     });
     setModal(null);
   }
 
   function saveGasto(form: GastoFormValues, editingId?: string) {
+    if (bloqueadoMedioTurno(editingId)) return;
     updateDay((d) => {
       // empleadoId/meseroId solo aplican a las categorías que representan
       // dinero dado/gastado en alguien específico — si la categoría cambió
@@ -775,6 +790,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
   }
 
   function toggleGastoEstado(id: string) {
+    if (bloqueadoMedioTurno(id)) return;
     updateDay((d) => {
       const g = d.gastos.find((x) => x.id === id);
       if (g) g.estado = g.estado === "pendiente" ? "ingresado" : "pendiente";
@@ -876,6 +892,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
   }
 
   function deleteGasto(id: string) {
+    if (bloqueadoMedioTurno(id)) return;
     updateDay((d) => {
       d.gastos = d.gastos.filter((g) => g.id !== id);
     });
@@ -883,6 +900,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
   }
 
   function saveTransfer(form: TransferFormValues, editingId?: string) {
+    if (bloqueadoMedioTurno(editingId)) return;
     updateDay((d) => {
       const entry = {
         id: editingId || uid(),
@@ -899,6 +917,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
   }
 
   function deleteTransfer(id: string) {
+    if (bloqueadoMedioTurno(id)) return;
     updateDay((d) => {
       d.transferencias = d.transferencias.filter((t) => t.id !== id);
     });
@@ -1015,6 +1034,26 @@ export default function CortesApp({ profile }: { profile: Profile }) {
   function guardarCorte() {
     updateDay((d) => {
       d.corteGuardado = { fecha: new Date().toISOString(), nombre: profile.display_name || (isOwner ? "Dueño" : "Alguien del equipo") };
+    });
+    setModal(null);
+  }
+
+  // "Guardar medio turno": bloquea para el personal todo lo capturado hasta
+  // ahora (cortes, gastos y transferencias) y deja el día abierto.
+  function guardarMedioTurno() {
+    updateDay((d) => {
+      d.medioTurno = {
+        fecha: new Date().toISOString(),
+        nombre: profile.display_name || (isOwner ? "Dueño" : "Alguien del equipo"),
+        ids: [...d.meseros.map((m) => m.id), ...d.gastos.map((g) => g.id), ...d.transferencias.map((t) => t.id)],
+      };
+    });
+    setModal(null);
+  }
+
+  function quitarMedioTurno() {
+    updateDay((d) => {
+      delete d.medioTurno;
     });
     setModal(null);
   }
@@ -1633,6 +1672,38 @@ export default function CortesApp({ profile }: { profile: Profile }) {
               </div>
             )}
 
+            {turnosDelDia && day?.medioTurno && !day.corteGuardado && (
+              <div className="medio-turno-banner">
+                <Lock size={15} />
+                <span>
+                  <strong>Medio turno guardado</strong> por {day.medioTurno.nombre} el {fechaHoraCorta(day.medioTurno.fecha)}.
+                  {isOwner ? (
+                    <>
+                      {" "}Lo del turno 1 ya no lo puede cambiar el personal.{" "}
+                      <button className="link-btn" onClick={() => setModal({ type: "quitarMedioTurno" })}>
+                        Quitar medio turno
+                      </button>
+                    </>
+                  ) : (
+                    " Lo del turno 1 ya no se puede editar."
+                  )}
+                </span>
+              </div>
+            )}
+
+            {turnosDelDia &&
+              day &&
+              acumuladosDelDia(day).map((a) => (
+                <div key={a.meseroId} className="acumulado-dia">
+                  <span>
+                    {a.nombre} del día <small>({a.cortes} {a.cortes === 1 ? "corte" : "cortes"})</small>
+                  </span>
+                  <span>
+                    <strong>{money(a.lectura)}</strong> <small>debe coincidir con el sistema</small>
+                  </span>
+                </div>
+              ))}
+
             {totals && (
               <section className="summary">
                 <div className="summary-item highlight">
@@ -1696,22 +1767,64 @@ export default function CortesApp({ profile }: { profile: Profile }) {
                 {day.meseros.length === 0 ? (
                   <Empty icon={<Users size={26} strokeWidth={1.3} />} text="Sin cortes capturados este día. Toca + para agregar el primero." />
                 ) : (
-                  <div className="card-list">
-                    {day.meseros.map((m) => (
-                      <button key={m.id} className="card mesero-card" onClick={() => setModal({ type: "mesero", editing: m })} disabled={corteBloqueado}>
-                        <div className="card-top">
-                          <span className="card-name">{m.nombre}</span>
-                          <span className="card-total">{money(m.total)}</span>
+                  (() => {
+                    // Número de corte de cada usuario acumulado ("Para llevar · Corte 2").
+                    const numCorte: Record<string, number> = {};
+                    const cuenta: Record<string, number> = {};
+                    day.meseros.forEach((m) => {
+                      if (m.lecturaSistema === undefined) return;
+                      cuenta[m.meseroId] = (cuenta[m.meseroId] || 0) + 1;
+                      numCorte[m.id] = cuenta[m.meseroId];
+                    });
+                    const tarjeta = (m: MeseroCut) => {
+                      const bloq = bloqueadoMedioTurno(m.id);
+                      return (
+                        <button
+                          key={m.id}
+                          className={`card mesero-card${bloq ? " bloqueado-mt" : ""}`}
+                          onClick={() => setModal({ type: "mesero", editing: m })}
+                          disabled={corteBloqueado || bloq}
+                        >
+                          <div className="card-top">
+                            <span className="card-name">
+                              {m.nombre}
+                              {numCorte[m.id] && <span className="tag-corte">Corte {numCorte[m.id]}</span>}
+                            </span>
+                            <span className="card-total">{money(m.total)}</span>
+                          </div>
+                          <div className="card-sub">
+                            {m.cobro && <span>Cobró: {m.cobro}</span>}
+                            {m.lecturaSistema !== undefined && <span>Sistema: {money(m.lecturaSistema)}</span>}
+                            <span>Venta {money(m.venta)}</span>
+                            <span>Tarjetas {money(m.tarjetas)}</span>
+                            {m.transferencia > 0 && <span>Transferencia {money(m.transferencia)}</span>}
+                            {m.gastosTotal > 0 && <span>Gastos {money(m.gastosTotal)}</span>}
+                          </div>
+                        </button>
+                      );
+                    };
+                    const mt = day.medioTurno;
+                    if (!turnosDelDia || !mt) return <div className="card-list">{day.meseros.map(tarjeta)}</div>;
+                    const turno1 = day.meseros.filter((m) => mt.ids.includes(m.id));
+                    const turno2 = day.meseros.filter((m) => !mt.ids.includes(m.id));
+                    return (
+                      <>
+                        <div className="turno-titulo">
+                          <span>Turno 1</span>
+                          <Lock size={13} />
                         </div>
-                        <div className="card-sub">
-                          <span>Venta {money(m.venta)}</span>
-                          <span>Tarjetas {money(m.tarjetas)}</span>
-                          {m.transferencia > 0 && <span>Transferencia {money(m.transferencia)}</span>}
-                          {m.gastosTotal > 0 && <span>Gastos {money(m.gastosTotal)}</span>}
+                        <div className="card-list">{turno1.map(tarjeta)}</div>
+                        <div className="turno-titulo">
+                          <span>Turno 2</span>
                         </div>
-                      </button>
-                    ))}
-                  </div>
+                        {turno2.length === 0 ? (
+                          <p className="hint">Aún no hay cortes del segundo turno.</p>
+                        ) : (
+                          <div className="card-list">{turno2.map(tarjeta)}</div>
+                        )}
+                      </>
+                    );
+                  })()
                 )}
               </section>
 
@@ -1732,7 +1845,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
                   <div className="card-list">
                     {day.gastos.map((g) => (
                       <div key={g.id} className="card gasto-card">
-                        <button className="gasto-main" onClick={() => setModal({ type: "gasto", editing: g })} disabled={corteBloqueado}>
+                        <button className="gasto-main" onClick={() => setModal({ type: "gasto", editing: g })} disabled={corteBloqueado || bloqueadoMedioTurno(g.id)}>
                           <div className="card-top">
                             <span className="card-name">{g.concepto}</span>
                             <span className="card-total">{money(g.total)}</span>
@@ -1751,7 +1864,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
                         </button>
                         <button
                           className={`estado-chip ${g.estado}`}
-                          disabled={corteBloqueado || (g.estado === "pendiente" && !g.categoria)}
+                          disabled={corteBloqueado || bloqueadoMedioTurno(g.id) || (g.estado === "pendiente" && !g.categoria)}
                           onClick={() => toggleGastoEstado(g.id)}
                         >
                           {g.estado === "pendiente" ? "Confirmar" : "Ingresado"}
@@ -1778,7 +1891,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
                 ) : (
                   <div className="card-list">
                     {day.transferencias.map((t) => (
-                      <button key={t.id} className="card" onClick={() => setModal({ type: "transfer", editing: t })} disabled={corteBloqueado}>
+                      <button key={t.id} className="card" onClick={() => setModal({ type: "transfer", editing: t })} disabled={corteBloqueado || bloqueadoMedioTurno(t.id)}>
                         <div className="card-top">
                           <span className="card-name">{t.persona}</span>
                           <span className="card-total">{money(t.total)}</span>
@@ -1792,6 +1905,11 @@ export default function CortesApp({ profile }: { profile: Profile }) {
 
               {!day.corteGuardado ? (
                 <div className="guardar-corte">
+                  {turnosDelDia && !day.medioTurno && day.meseros.length > 0 && (
+                    <button className="btn-medio-turno" onClick={() => setModal({ type: "guardarMedioTurno" })}>
+                      <Lock size={16} /> Guardar medio turno
+                    </button>
+                  )}
                   <button className="btn-primary" onClick={() => setModal({ type: "guardarCorte" })}>
                     <Lock size={16} /> Guardar corte
                   </button>
@@ -1851,6 +1969,8 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           catalog={data.meseros}
           existingGastos={modal.editing ? day.gastos.filter((g) => g.meseroCutId === (modal.editing as MeseroCut).id) : []}
           historial={historialGastos}
+          cortesDelDia={day.meseros}
+          turnos={turnosDelDia}
         />
       )}
       {modal?.type === "gasto" && (
@@ -1876,6 +1996,31 @@ export default function CortesApp({ profile }: { profile: Profile }) {
       {historialDia && <HistorialDiaSheet ownerId={profile.id} fecha={historialDia} onClose={() => setHistorialDia(null)} />}
       {modal?.type === "guardarCorte" && day && totals && (
         <GuardarCorteModal day={day} totals={totals} onGuardar={guardarCorte} onClose={() => setModal(null)} />
+      )}
+      {modal?.type === "guardarMedioTurno" && (
+        <Sheet title="Guardar medio turno" onClose={() => setModal(null)}>
+          <p className="hint">
+            Todo lo capturado hasta ahora (cortes, gastos y transferencias) queda guardado como Turno 1 y ya no se podrá
+            editar. El día sigue abierto para el segundo turno; al final, toca "Guardar corte" para cerrar todo.
+          </p>
+          <button className="btn-primary" onClick={guardarMedioTurno}>
+            Sí, guardar medio turno
+          </button>
+          <button className="link-btn" onClick={() => setModal(null)}>
+            Cancelar
+          </button>
+        </Sheet>
+      )}
+      {modal?.type === "quitarMedioTurno" && (
+        <Sheet title="Quitar medio turno" onClose={() => setModal(null)}>
+          <p className="hint">Lo del turno 1 se desbloquea para el personal y la lista vuelve a verse en un solo bloque.</p>
+          <button className="btn-primary" onClick={quitarMedioTurno}>
+            Sí, quitar medio turno
+          </button>
+          <button className="link-btn" onClick={() => setModal(null)}>
+            Cancelar
+          </button>
+        </Sheet>
       )}
       {modal?.type === "reabrirCorte" && (
         <Sheet title="Reabrir corte" onClose={() => setModal(null)}>

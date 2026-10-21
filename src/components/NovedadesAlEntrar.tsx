@@ -207,6 +207,36 @@ function Visual({ tipo }: { tipo: VisualNovedad }) {
       </>
     );
   }
+  if (tipo === "medioTurno") {
+    return (
+      <>
+        <span className="nv-etiqueta">Turno 1 · se va Ana</span>
+        <div className="nv-lista">
+          <div>
+            <span>Ana</span>
+            <small>$5,200</small>
+          </div>
+          <div>
+            <span>Para llevar · Corte 1</span>
+            <small>$2,100</small>
+          </div>
+        </div>
+        <div className="nv-boton">🔒 Guardar medio turno</div>
+        <span className="nv-suma">Al final del día: Guardar corte.</span>
+      </>
+    );
+  }
+  if (tipo === "paraLlevar") {
+    return (
+      <>
+        <span className="nv-etiqueta">Venta que marca el sistema</span>
+        <div className="nv-campo">6,800</div>
+        <span className="nv-suma">
+          Ya se cortaron hoy <strong>$2,100</strong> · Este corte: <strong>$4,700</strong>
+        </span>
+      </>
+    );
+  }
   if (tipo === "guardarCorte") {
     return (
       <>

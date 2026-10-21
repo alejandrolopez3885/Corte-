@@ -495,6 +495,46 @@ export function formatAssignedDate(dateStr: string): string {
   return label.charAt(0).toUpperCase() + label.slice(1);
 }
 
+// --- Turnos (desde el 21 de octubre de 2026) --------------------------
+// Medio turno y usuarios acumulados ("Para llevar") solo aplican a los
+// cortes de esta fecha en adelante; los días anteriores quedan como estaban.
+export const FECHA_INICIO_TURNOS = "2026-10-21";
+
+export function turnosActivos(fechaIso: string | null | undefined): boolean {
+  return !!fechaIso && fechaIso >= FECHA_INICIO_TURNOS;
+}
+
+// Usuarios acumulados: en cada corte se guarda lo que marcaba el sistema
+// (venta acumulada del día) y la venta del corte es la diferencia contra el
+// corte anterior del mismo usuario, en el orden en que se capturaron. Se
+// recalcula todo cada vez, así que corregir o borrar un corte anterior
+// ajusta solos los siguientes.
+export function recalcularAcumulados(d: DayData) {
+  const anterior: Record<string, number> = {};
+  d.meseros.forEach((m) => {
+    if (m.lecturaSistema === undefined) return;
+    const venta = round2(m.lecturaSistema - (anterior[m.meseroId] || 0));
+    anterior[m.meseroId] = m.lecturaSistema;
+    const propina =
+      m.propinaTipo === "p3" ? round2(venta * 0.03) : m.propinaTipo === "p2" ? round2(venta * 0.02) : m.propinaTipo === "manual" ? m.propina : 0;
+    m.venta = venta;
+    m.propina = propina;
+    m.total = round2(venta - m.tarjetas - m.transferencia + propina - m.gastosTotal);
+  });
+}
+
+// Venta del día de cada usuario acumulado según el sistema (la lectura del
+// último corte) — para compararla contra el punto de venta.
+export function acumuladosDelDia(d: DayData): { meseroId: string; nombre: string; lectura: number; cortes: number }[] {
+  const porMesero = new Map<string, { meseroId: string; nombre: string; lectura: number; cortes: number }>();
+  d.meseros.forEach((m) => {
+    if (m.lecturaSistema === undefined) return;
+    const prev = porMesero.get(m.meseroId);
+    porMesero.set(m.meseroId, { meseroId: m.meseroId, nombre: m.nombre, lectura: m.lecturaSistema, cortes: (prev?.cortes || 0) + 1 });
+  });
+  return [...porMesero.values()];
+}
+
 export function computeWeekGastos(week: WeekData) {
   let totalMonto = 0, totalIngresado = 0, totalPendiente = 0, countIngresado = 0, countPendiente = 0;
   const perDay = DAYS.map((d) => {

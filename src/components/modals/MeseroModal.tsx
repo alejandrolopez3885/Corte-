@@ -17,6 +17,9 @@ export interface MeseroFormValues {
   transferDesglose?: number[];
   gastos: { concepto: string; monto: string }[];
   transferMonto: string;
+  // Usuario acumulado ("Para llevar"): lo que marca el sistema y quién cobró.
+  lecturaSistema?: number;
+  cobro?: string;
 }
 
 interface GastoRow {
@@ -33,6 +36,8 @@ export function MeseroModal({
   catalog,
   existingGastos,
   historial,
+  cortesDelDia = [],
+  turnos = false,
 }: {
   onClose: () => void;
   onSave: (form: MeseroFormValues, editingId?: string) => void;
@@ -41,6 +46,10 @@ export function MeseroModal({
   catalog: MeseroCatalogEntry[];
   existingGastos: Gasto[];
   historial: NombreHistorial[];
+  // Cortes ya capturados ese día (para los usuarios acumulados).
+  cortesDelDia?: MeseroCut[];
+  // Turnos/usuarios acumulados activos para este día (desde el 21/10/2026).
+  turnos?: boolean;
 }) {
   const [meseroId, setMeseroId] = useState(editing?.meseroId || "");
   const [nombre, setNombre] = useState(editing?.nombre || "");
@@ -50,7 +59,10 @@ export function MeseroModal({
   const [manualPropina, setManualPropina] = useState(
     editing?.propinaTipo === "manual" ? String(editing.propina) : ""
   );
-  const [venta, setVenta] = useState(editing ? String(editing.venta) : "");
+  const [venta, setVenta] = useState(
+    editing ? String(editing.lecturaSistema !== undefined ? editing.lecturaSistema : editing.venta) : ""
+  );
+  const [cobro, setCobro] = useState(editing?.cobro || "");
   const [tarjetas, setTarjetas] = useState(editing ? String(editing.tarjetas) : "");
   const [tarjetasDesglose, setTarjetasDesglose] = useState<number[] | undefined>(editing?.tarjetasDesglose);
   const [transferDesglose, setTransferDesglose] = useState<number[] | undefined>(editing?.transferenciaDesglose);
@@ -78,7 +90,16 @@ export function MeseroModal({
     setGastos((g) => g.filter((x) => x.id !== id));
   }
 
-  const v = parseFloat(venta) || 0;
+  // Usuario acumulado: lo escrito es la lectura del sistema y la venta de
+  // este corte es la diferencia contra el corte anterior del mismo usuario.
+  const esAcumulado = turnos && !!catalog.find((c) => c.id === meseroId)?.acumulado;
+  const idxEditing = editing ? cortesDelDia.findIndex((m) => m.id === editing.id) : -1;
+  const previos = cortesDelDia.filter(
+    (m, i) => m.meseroId === meseroId && m.lecturaSistema !== undefined && m.id !== editing?.id && (idxEditing < 0 || i < idxEditing)
+  );
+  const lecturaPrevia = previos.length ? (previos[previos.length - 1].lecturaSistema as number) : 0;
+  const lectura = parseFloat(venta) || 0;
+  const v = esAcumulado ? round2(lectura - lecturaPrevia) : lectura;
   const t = sumFromText(tarjetas);
   const transferSum = showTransfer ? sumFromText(transferMonto) : 0;
   const existingGastosSum = (existingGastos || []).reduce((s, g) => s + g.total, 0);
@@ -134,11 +155,49 @@ export function MeseroModal({
         </Field>
       )}
 
-      <div className="field-row">
-        <Field label="Venta total">
+      {esAcumulado && (
+        <Field label="¿Quién cobró este turno?">
+          <select className="text-input" value={cobro} onChange={(e) => setCobro(e.target.value)}>
+            <option value="">Selecciona quién cobró</option>
+            {catalog
+              .filter((c) => !c.acumulado)
+              .map((c) => (
+                <option key={c.id} value={c.nombre}>
+                  {c.nombre}
+                </option>
+              ))}
+          </select>
+        </Field>
+      )}
+      {esAcumulado && (
+        <Field label="Venta que marca el sistema (acumulada del día)">
           <NumInput value={venta} onChange={(e) => setVenta(e.target.value)} placeholder="0.00" />
         </Field>
-        <Field label="Total tarjetas">
+      )}
+      {esAcumulado && venta && (
+        <div className={`acumulado-calculo${v < 0 ? " negativo" : ""}`}>
+          {previos.length > 0 ? (
+            <>
+              Ya se cortaron hoy <strong>{money(lecturaPrevia)}</strong> (
+              {previos.map((p, i) => `Corte ${i + 1}${p.cobro ? ` · ${p.cobro}` : ""}`).join(", ")}).
+              <br />
+              Este corte: <strong>{money(v)}</strong>
+              {v < 0 && " — es menor que lo ya cortado, revisa la lectura."}
+            </>
+          ) : (
+            <>
+              Primer corte del día de {nombre}: <strong>{money(v)}</strong>
+            </>
+          )}
+        </div>
+      )}
+      <div className="field-row">
+        {!esAcumulado && (
+          <Field label="Venta total">
+            <NumInput value={venta} onChange={(e) => setVenta(e.target.value)} placeholder="0.00" />
+          </Field>
+        )}
+        <Field label={esAcumulado ? "Tarjetas de este turno" : "Total tarjetas"}>
           <SumInput value={tarjetas} onChange={setTarjetas} onPartes={setTarjetasDesglose} placeholder="0.00 o 300+300+300" sumar />
         </Field>
       </div>
@@ -247,6 +306,7 @@ export function MeseroModal({
               transferDesglose: showTransfer ? transferDesglose : undefined,
               gastos: gastos.filter((g) => g.concepto && g.monto),
               transferMonto: showTransfer ? transferMonto : "",
+              ...(esAcumulado ? { lecturaSistema: lectura, cobro: cobro || undefined } : {}),
             },
             editing?.id
           );

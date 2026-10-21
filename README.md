@@ -200,6 +200,25 @@ estando en Nómina te regresa al menú de Equipo):
   transferencias, ventas de apps y sus resúmenes. Arriba de los totales del
   día hay una tarjeta de asignación: quién tiene asignado ese día (si
   alguien) y quién capturó su corte — ver "Asignar día" más abajo.
+- **Turnos y "Para llevar"** (en los cortes desde el **21 de octubre de
+  2026**; los días anteriores quedan como estaban): un día puede tener dos
+  turnos. Cuando se va el turno 1 se capturan sus cortes y se toca
+  **"Guardar medio turno"**: todo lo capturado hasta ese momento (cortes,
+  gastos y transferencias) queda bloqueado para el personal y el día sigue
+  abierto para el turno 2; la lista de meseros se ve separada en "Turno 1"
+  (con candado) y "Turno 2", con un aviso de quién guardó el medio turno y
+  cuándo. Al final, "Guardar corte" bloquea todo el día como siempre. El
+  dueño siempre puede editar, y con "Quitar medio turno" lo desbloquea.
+  En el catálogo de meseros (Equipo > Meseros) un usuario compartido del
+  sistema, como **"Para llevar"**, se marca "Se acumula en el día": puede
+  tener varios cortes en el mismo día y en cada uno se escribe la venta
+  **tal como la marca el sistema** (acumulada del día) y quién cobró ese
+  turno; la app muestra "Ya se cortaron hoy $X · Este corte: $Y" y la
+  venta de ese corte es la diferencia contra el corte anterior (se
+  recalcula sola si se corrige o borra un corte anterior). Las tarjetas y
+  transferencias son solo las de ese turno. En la lista sale "Para llevar
+  · Corte 1 / Corte 2" con quién cobró y lo que marcaba el sistema, y
+  arriba "Para llevar del día", que debe coincidir con el sistema.
 - **Equipo**: menú con 5 opciones — "Meseros" (catálogo de
   meseros — solo nombre, para elegir a quién le haces el corte en Corte;
   vive aquí porque también son parte de tu equipo, aunque su lista está

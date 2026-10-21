@@ -1263,3 +1263,23 @@ button.pill { cursor: pointer; }
 .inv-repetido-fila { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
 .inv-repetido .hint { margin: 0; font-size: 12px; }
 .inv-opcion-detalle { display: block; color: var(--ink-soft); font-size: 12px; }
+
+/* Turnos y usuarios acumulados ("Para llevar") */
+.catalog-row-mesero > div { gap: 6px; }
+.tag-acumulado, .tag-corte {
+  display: inline-block; font-size: 10.5px; padding: 2px 8px; border-radius: 100px; background: var(--accent-soft);
+  color: var(--accent); font-weight: 600; margin-left: 4px; vertical-align: 2px;
+}
+.acumulado-calculo { background: var(--good-soft); color: #1f5a3a; border-radius: 12px; padding: 10px 12px; font-size: 13px; line-height: 1.5; }
+.acumulado-calculo strong { font-size: 14.5px; }
+.acumulado-calculo.negativo { background: var(--bad-soft); color: #7d2a20; }
+.medio-turno-banner { display: flex; gap: 8px; align-items: flex-start; background: var(--accent-soft); color: var(--accent); border-radius: 12px; padding: 10px 12px; font-size: 13px; margin: 0 20px 12px; }
+.turno-titulo { display: flex; justify-content: space-between; align-items: center; font-size: 12px; font-weight: 700; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.04em; margin: 10px 0 6px; }
+.card.bloqueado-mt { background: var(--surface-alt); cursor: default; }
+.acumulado-dia { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 9px 12px; font-size: 13px; margin: 0 20px 12px; }
+.acumulado-dia strong { font-size: 15px; }
+.acumulado-dia small { color: var(--ink-soft); }
+.btn-medio-turno {
+  width: 100%; border: 1.5px solid var(--accent); background: var(--surface); color: var(--accent); border-radius: 100px;
+  padding: 12px; font-size: 15px; font-weight: 600; font-family: inherit; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 7px; margin-bottom: 10px;
+}

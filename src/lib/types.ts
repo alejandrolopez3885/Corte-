@@ -10,6 +10,10 @@ export type PropinaTipo = "p3" | "p2" | "manual" | "none";
 export interface MeseroCatalogEntry {
   id: string;
   nombre: string;
+  // Usuario compartido del sistema de punto de venta (ej. "Para llevar")
+  // que se acumula en el día: puede tener varios cortes y cada uno se
+  // captura con lo que marca el sistema — ver recalcularAcumulados.
+  acumulado?: boolean;
 }
 
 // Área/categoría a la que pertenece un puesto (Gerencia, Piso, Cocina, lo
@@ -202,6 +206,12 @@ export interface MeseroCut {
   // los vouchers — solo si se capturó más de uno.
   tarjetasDesglose?: number[];
   transferenciaDesglose?: number[];
+  // Solo en usuarios acumulados ("Para llevar"): la venta acumulada del día
+  // que marcaba el sistema en este corte. La venta del corte es esta
+  // lectura menos la del corte anterior del mismo usuario.
+  lecturaSistema?: number;
+  // Quién cobró este corte del usuario acumulado (nombre del mesero).
+  cobro?: string;
 }
 
 export type GastoEstado = "pendiente" | "ingresado";
@@ -390,6 +400,10 @@ export interface DayData {
   // "Guardar corte": quien termina el corte lo confirma y desde ahí queda
   // bloqueado para el personal (el dueño siempre puede editarlo o reabrirlo).
   corteGuardado?: { fecha: string; nombre: string }; // fecha: ISO con hora
+  // "Guardar medio turno": lo capturado hasta ese momento (cortes, gastos y
+  // transferencias, por id) queda bloqueado para el personal y el día sigue
+  // abierto para el segundo turno.
+  medioTurno?: { fecha: string; nombre: string; ids: string[] };
 }
 
 // Control de gastos que los proveedores dan a crédito, pagados después por
