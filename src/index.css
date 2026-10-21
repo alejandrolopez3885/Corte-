@@ -1444,6 +1444,7 @@ button.pill { cursor: pointer; }
 .pregunta-sugerencias span { flex: 1; min-width: 0; }
 .pregunta-sugerencias em { font-style: normal; font-size: 13px; color: var(--accent); font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .pregunta-ver-todas { display: inline-flex; align-items: center; gap: 4px; align-self: flex-start; font-weight: 600; }
+.nv-conteo { font-size: 13px; line-height: 1.6; }
 
 /* Pedidos pegados de WhatsApp (permiso "Pedidos") */
 .cp-texto { min-height: 220px; font-size: 13.5px; line-height: 1.45; resize: vertical; }

@@ -319,6 +319,29 @@ export const PLANTILLA_CONTEO_COCINA = [
   "Guacamole (bolsa): ",
 ].join("\n");
 
+// Lista fija del Conteo diario de Bar, en el orden en que se cuenta.
+export const PLANTILLA_CONTEO_BAR = [
+  "Agua natural Johnster (pz): ",
+  "Coca Cola Retornable Regular 355ml (pz): ",
+  "XX Lager (pz): ",
+  "Coca de sabor para llevar (pz): ",
+  "Agua natural (pz): ",
+  "Tecate Light (pz): ",
+  "Indio (pz): ",
+  "XX Caguama (pz): ",
+  "Tecate rojo (pz): ",
+  "XX ámbar (pz): ",
+  "XX ultra (pz): ",
+  "Amstel (pz): ",
+  "Carta blanca (pz): ",
+  "Coca zero (pz): ",
+  "Coca light (pz): ",
+  "Caguama Indio (pz): ",
+  "Caguama Tecate light (pz): ",
+  "Pepsi regular (pz): ",
+  "Pepsi black (pz): ",
+].join("\n");
+
 export interface InsumoEntry {
   id: string;
   area: InsumoArea;

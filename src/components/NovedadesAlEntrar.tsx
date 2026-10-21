@@ -205,6 +205,22 @@ function Visual({ tipo }: { tipo: VisualNovedad }) {
       </>
     );
   }
+  if (tipo === "conteoBar") {
+    return (
+      <>
+        <span className="nv-etiqueta">Conteo diario de Bar</span>
+        <div className="nv-campo nv-conteo">
+          Agua natural Johnster (pz): <strong>24</strong>
+          <br />
+          XX Lager (pz): <strong>96</strong>
+          <br />
+          Tecate Light (pz): <strong>73</strong>
+          <br />
+          Indio (pz): _
+        </div>
+      </>
+    );
+  }
   if (tipo === "inventarioPasos") {
     return (
       <>
