@@ -66,10 +66,17 @@ export function consumoSemana(data: AppData, domingoFin: string): Map<string, nu
       const previo = pedido.get(insumo.id);
       pedido.set(insumo.id, v === null || previo === null ? null : (previo || 0) + v);
     });
+  // Proveedores con la semana cargada (pedidos pegados de WhatsApp, por
+  // semana de lunes a domingo): se toma la carga y no los pedidos sueltos.
+  const cargados = data.pedidosCargados?.[addDaysIso(domingoIni, 1)] || {};
+  const sinCargados = (lista: Record<string, number> | undefined) =>
+    lista &&
+    Object.fromEntries(Object.entries(lista).filter(([clave]) => !cargados[porNombre.get(clave)?.proveedorId || "sin-proveedor"]));
   for (let f = domingoIni; f < domingoFin; f = addDaysIso(f, 1)) {
-    (["cocina", "bar"] as ConteoTextoArea[]).forEach((area) => sumarPedido(data.pedidosDiarios?.[area]?.[f]));
-    sumarPedido(data.pedidosInventario?.[f]);
+    (["cocina", "bar"] as ConteoTextoArea[]).forEach((area) => sumarPedido(sinCargados(data.pedidosDiarios?.[area]?.[f])));
+    sumarPedido(sinCargados(data.pedidosInventario?.[f]));
   }
+  Object.values(cargados).forEach((c) => sumarPedido(c.cantidades));
 
   new Set([...ini.keys(), ...fin.keys()]).forEach((id) => {
     const a = ini.get(id) ?? 0;

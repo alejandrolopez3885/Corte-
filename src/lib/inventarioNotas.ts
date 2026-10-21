@@ -51,8 +51,14 @@ function singular(w: string): string {
   return w;
 }
 
+// Palabras que no ayudan a distinguir un producto ("1 caja de francesa",
+// "carne para taco" ≈ "Carne de taco").
+const VACIAS = new Set(["de", "del", "la", "las", "el", "los", "para", "con", "y", "a", "al"]);
+
 function palabras(t: string): string[] {
-  return normalizar(t).split(" ").filter(Boolean).map(singular);
+  const todas = normalizar(t).split(" ").filter(Boolean);
+  const utiles = todas.filter((w) => !VACIAS.has(w));
+  return (utiles.length > 0 ? utiles : todas).map(singular);
 }
 
 const NUM = String.raw`(\d*[.,]?\d+)`;

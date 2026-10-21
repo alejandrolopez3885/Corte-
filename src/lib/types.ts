@@ -498,6 +498,9 @@ export interface AppData {
   // Lo que se pide desde ese inventario: fecha -> producto (nombre
   // normalizado) -> cantidad; 0 = no se pide.
   pedidosInventario: Record<string, Record<string, number>>;
+  // Pedidos cargados (permiso "Pedidos"): lunes de la semana -> proveedor
+  // ("sin-proveedor" si no tiene) -> lo pedido, ver lib/pedidosCargados.
+  pedidosCargados?: Record<string, Record<string, import("./pedidosCargados").PedidoCargado>>;
   // Inventario semanal (Negocio > Inventario, mismas semanas que
   // Corte/Horarios) — lo que hay en existencia, no lo que se pide.
   inventarioSemanal: Record<string, InventarioSemanalMonthData>;
@@ -571,7 +574,7 @@ export type Role = "owner" | "staff";
 // allá del acceso por día asignado (mesero) — ver EmpleadoEntry.staffProfileId
 // y PERMISOS_DISPONIBLES. Se agregan más conforme el dueño los vaya
 // necesitando, sin rehacer el checklist.
-export type PermisoStaff = "horarios" | "conteo_diario" | "inventario" | "nomina" | "propinas" | "recetario";
+export type PermisoStaff = "horarios" | "conteo_diario" | "inventario" | "pedidos" | "nomina" | "propinas" | "recetario";
 
 export const PERMISOS_DISPONIBLES: { value: PermisoStaff; label: string; description: string }[] = [
   {
@@ -588,6 +591,11 @@ export const PERMISOS_DISPONIBLES: { value: PermisoStaff; label: string; descrip
     value: "inventario",
     label: "Inventario",
     description: "Capturar el inventario del domingo y del jueves en notas, y el pedido que sale de ahí.",
+  },
+  {
+    value: "pedidos",
+    label: "Pedidos",
+    description: "Pegar los mensajes de WhatsApp con los pedidos de la semana: la app suma cada producto por proveedor y se lo pasa al dueño.",
   },
   {
     value: "nomina",

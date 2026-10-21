@@ -286,7 +286,8 @@ estando en Nómina te regresa al menú de Equipo):
   puestos de Cocina — Cocinero, Jefe de cocina — ven solo el "Recetario de
   Cocina", Barra solo el "Recetario de Bar", y cualquier otro puesto las
   dos. Es el único permiso que se puede habilitar aunque la persona no
-  tenga puesto asignado). Cada permiso se acota distinto: "Horarios" usa el área de
+  tenga puesto asignado) y "Pedidos" (pegar los pedidos de la semana
+  desde WhatsApp, sin área — ver abajo en Negocio > Pedidos). Cada permiso se acota distinto: "Horarios" usa el área de
   Personal del puesto (Gerencia/Piso/Cocina) y muestra el horario
   completo de esa área (todo el personal de Piso, o todo el de Cocina,
   no solo su propia fila); "Conteo diario" usa el catálogo de insumos
@@ -770,7 +771,28 @@ estando en Nómina te regresa al menú de Equipo):
   a un producto le falta esa equivalencia, se queda en su presentación y
   se marca en naranja. Arriba, qué días ya tienen pedido guardado (y aviso
   de los que ya pasaron sin él). Con Mes/Semana se ve cualquier semana
-  anterior. La captura semanal que vivía antes aquí se quitó;
+  anterior. **Pedidos cargados** (permiso "Pedidos" en "Acceso a la app",
+  pensado para el jefe de cocina): en su pantalla "Pedidos" elige la
+  semana (esta o la pasada) y pega de un jalón los mensajes de WhatsApp
+  con los pedidos — copiados tal cual, con fecha y nombre, y mezclados de
+  varios proveedores ("Apodaca / 1 caja de francesa / 5kg carne molida /
+  1paq salchicha"). "Leer y sumar" quita lo que agrega WhatsApp, reconoce
+  cada producto del catálogo (por nombre o apodo, sin fijarse en palabras
+  como "de" o "para": "carne para taco" = Carne de taco), lo acomoda con
+  su proveedor y suma sus cantidades ("1 + 1 + 1 = 3 cajas"), pasando lo
+  escrito a la presentación "Se pide por" (ej. kg a cajas con la
+  equivalencia; si no se puede, lo avisa). Si los mensajes traen fecha,
+  la semana se elige sola según el mensaje más reciente. Lo que no
+  reconozca se liga una vez a su producto ("¿Qué producto es?") y queda
+  como apodo para la próxima; lo que no se ligue no se suma. "Guardar
+  pedidos de la semana" lo guarda por semana y proveedor (al volver a
+  pegar los de un proveedor, se reemplazan) con quién y cuándo lo cargó.
+  Aquí, en Pedidos, cada proveedor cargado dice "✓ Cargado por … · día",
+  sus productos vienen de esa carga ("Cargado 3") en lugar de los
+  pedidos sueltos del Conteo diario y del Inventario de esa semana (para
+  no contar doble), y arriba se ve cuántos proveedores de Cocina ya están
+  cargados y cuáles faltan. El consumo de insumos de Inicio usa lo mismo.
+  La captura semanal que vivía antes aquí se quitó;
   y "Importar catálogo": se elige el Excel de inventario de Johnster
   (.xlsx o .xlsm) y la app lee ahí mismo su hoja "PRECIOS BASE" (nada se
   sube a ningún lado). Compara cada insumo contra el catálogo por nombre (o
@@ -1169,6 +1191,7 @@ src/
     panels/InicioPanel.tsx  Inicio del dueño (alertas); cálculo en lib/inicio.ts y lib/consumo.ts
     panels/ImportarCatalogoPanel.tsx  Negocio > Compras > Importar catálogo; lectura del Excel en lib/excelPrecios.ts
     lib/nominaVenta.ts  Tendencias > Nómina vs. venta (meta 15–16%, por día y sugerencias)
+    panels/CargarPedidosPanel.tsx  Pedidos pegados de WhatsApp (permiso "Pedidos"); lectura y suma en lib/pedidosCargados.ts
     panels/RecetarioPanel.tsx  Recetario (dueño edita y carga varias, equipo consulta); formato en lib/recetasTexto.ts
     NovedadesAlEntrar.tsx  slider de novedades al entrar (cuentas de equipo); lista en lib/novedades.ts
     modals/       un modal por acción (mesero, gasto, transferencia, etc.)

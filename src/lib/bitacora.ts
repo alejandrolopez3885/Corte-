@@ -228,6 +228,8 @@ function ubicar(h: Hoja, prev: AppData, next: AppData): { seccion: string; donde
       return { seccion: "Inventario", donde: `Inventario · ${p[1] ? fechaCorta(p[1]) : ""}`, campo: "Notas", fecha: p[1] };
     case "pedidosInventario":
       return { seccion: "Inventario", donde: `Pedido de inventario · ${p[1] ? fechaCorta(p[1]) : ""}`, campo: p[2], fecha: p[1] };
+    case "pedidosCargados":
+      return { seccion: "Pedidos", donde: `Pedidos cargados · semana del ${p[1] ? fechaCorta(p[1]) : ""}`, campo: "Pedido pegado", fecha: p[1] };
     case "conteosDiarios":
       return { seccion: "Conteo diario", donde: `Conteo diario · ${p[1] ? fechaCorta(p[1]) : ""}`, campo: p[2] };
     case "insumos":

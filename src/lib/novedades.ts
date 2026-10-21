@@ -16,7 +16,7 @@ import type { AppData, PermisoStaff, Profile } from "./types";
 
 export type SeccionNovedad = "corte" | PermisoStaff;
 
-export type VisualNovedad = "sumar" | "autocompletar" | "categoria" | "faltan" | "guardarCorte" | "inventarioPasos" | "recetarioArea" | "apertura" | "cierreTotal" | "efectivoEntregar";
+export type VisualNovedad = "sumar" | "autocompletar" | "categoria" | "faltan" | "guardarCorte" | "inventarioPasos" | "recetarioArea" | "apertura" | "cierreTotal" | "efectivoEntregar" | "pedidosPegar";
 
 export interface Novedad {
   id: string;
@@ -108,6 +108,14 @@ export const NOVEDADES: Novedad[] = [
     titulo: "Cuánto efectivo entregar",
     texto: "En **Efectivo del día** ves lo que va en el sobre: sin lo de la apertura y con lo que se dejó el día anterior.",
     visual: "efectivoEntregar",
+  },
+  {
+    id: "pedidos-pegar",
+    fecha: "2026-10-21T16:45:00Z",
+    seccion: "pedidos",
+    titulo: "Pega tus pedidos y la app los suma",
+    texto: "Copia de WhatsApp los mensajes de pedidos de la semana y pégalos en **Pedidos**. La app suma cada producto por proveedor.",
+    visual: "pedidosPegar",
   },
 ];
 
