@@ -264,12 +264,16 @@ export default function StaffAccessShell({
     );
   }
 
-  // Recetario: lo mismo para cualquier puesto o área — solo consulta.
+  // Recetario: solo consulta. Cocina (cocinero, jefe de cocina…) ve solo las
+  // recetas de Cocina y Barra solo las de Bar; otros puestos ven las dos.
   if (view === "recetario" && permisos.includes("recetario")) {
+    const recetaArea = insumoAreaForPuesto(puesto?.nombre || "") ?? insumoAreaForPuesto(area?.nombre || "");
+    const recetas = (data.recetas || []).filter((r) => !recetaArea || r.area === recetaArea);
+    const titulo = recetaArea === "cocina" ? "Recetario de Cocina" : recetaArea === "bar" ? "Recetario de Bar" : "Recetario";
     return (
       <div className="app-shell">
         <ShellHeader subtitle={area?.nombre} onSignOut={onSignOut} />
-        <RecetarioPanel onBack={backToMenu} backLabel="Inicio" titulo="Recetario" recetas={data.recetas || []} />
+        <RecetarioPanel onBack={backToMenu} backLabel="Inicio" titulo={titulo} recetas={recetas} />
       </div>
     );
   }

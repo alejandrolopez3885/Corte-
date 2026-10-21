@@ -569,7 +569,7 @@ export const PERMISOS_DISPONIBLES: { value: PermisoStaff; label: string; descrip
   {
     value: "recetario",
     label: "Recetario",
-    description: "Consultar las recetas de bebidas: medidas, vaso, utensilios y preparación — sin editar nada.",
+    description: "Consultar las recetas de su área (Barra las de Bar, Cocina las de Cocina): medidas, vaso o presentación, utensilios y preparación — sin editar nada.",
   },
 ];
 
