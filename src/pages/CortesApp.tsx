@@ -10,14 +10,15 @@ import { historialNombres } from "../lib/gastosBusqueda";
 import {
   addDaysIso, buildMonth, dateForDay, formatAssignedDate, formatDayNumber, formatLongDayDate, formatWeekRange,
   mondayOnOrBefore, money, mostRecentDayInWeek, mostRecentWeekIndex, resolveAssignmentLocation, resolveWeekStartDate,
-  normalizarNombre, round2, sumFromText, todayIso, uid, recalcularAcumulados, turnosActivos, acumuladosDelDia,
+  normalizarNombre, round2, sumFromText, todayIso, uid, recalcularAcumulados, turnosActivos, acumuladosDelDia, quienesAbren,
 } from "../lib/dataModel";
 import { removeAssignmentByStaffAndDate, upsertAssignment, useStaffAssignments } from "../lib/staffAssignments";
 import { DAYS, DAY_SHORT } from "../lib/types";
-import type { AreaEntry, ConteoTextoArea, CreditoProveedores, DayData, DayName, EmpleadoEntry, Gasto, GastoCategoria, HorarioSemana, InsumoEntry, MeseroCatalogEntry, MeseroCut, NominaDescuentosSemana, Profile, ProveedorCatalogEntry, PuestoEntry, Receta, Transferencia, WeekData } from "../lib/types";
+import type { AppData, AreaEntry, ConteoTextoArea, CreditoProveedores, DayData, DayName, EmpleadoEntry, Gasto, GastoCategoria, HorarioSemana, InsumoEntry, MeseroCatalogEntry, MeseroCut, NominaDescuentosSemana, Profile, ProveedorCatalogEntry, PuestoEntry, Receta, Transferencia, WeekData } from "../lib/types";
 import { Empty, Sheet } from "../components/ui";
 import { MonthModal } from "../components/modals/MonthModal";
 import { MeseroModal, type MeseroFormValues } from "../components/modals/MeseroModal";
+import { AperturaModal, type AperturaValues } from "../components/modals/AperturaModal";
 import { GastoModal, type GastoFormValues } from "../components/modals/GastoModal";
 import { TransferModal, type TransferFormValues } from "../components/modals/TransferModal";
 import { CreditoProveedoresModal } from "../components/modals/CreditoProveedoresModal";
@@ -57,8 +58,8 @@ type ModalState =
   | { type: "transfer"; editing?: Transferencia }
   | { type: "apps" }
   | { type: "guardarCorte" }
-  | { type: "guardarMedioTurno" }
-  | { type: "quitarMedioTurno" }
+  | { type: "apertura" }
+  | { type: "quitarApertura" }
   | { type: "reabrirCorte" }
   | { type: "weekSummary" }
   | { type: "gastosSummary" }
@@ -265,8 +266,11 @@ export default function CortesApp({ profile }: { profile: Profile }) {
   const turnosDelDia = turnosActivos(activeDayDate);
   // Lo guardado con "Guardar medio turno" ya no lo puede cambiar el personal.
   function bloqueadoMedioTurno(id?: string) {
-    return !isOwner && !!id && !!day?.medioTurno?.ids.includes(id);
+    return !isOwner && !!id && !!day?.apertura?.ids.includes(id);
   }
+  // Quién abre hoy según el horario (X = abre, Z = dobla).
+  const abrenHoy =
+    turnosDelDia && activeMonth ? quienesAbren(data.horarios[activeMonth]?.weeks?.[activeWeek], activeDay) : [];
 
   // Mes/semana más reciente del negocio, sin depender de qué esté viendo
   // el dueño en la pestaña Corte — para que Negocio y Dashboard siempre
@@ -335,13 +339,13 @@ export default function CortesApp({ profile }: { profile: Profile }) {
     }
   }
 
-  function updateDay(mutator: (d: DayData) => void) {
+  function updateDay(mutator: (d: DayData, next: AppData) => void) {
     if (!data || !activeMonth) return;
     const next = structuredClone(data);
     const d = next.months[activeMonth].weeks[activeWeek].days[activeDay];
     // Corte ya guardado: el personal ya no lo puede cambiar (el dueño sí).
     if (!isOwner && d.corteGuardado) return;
-    mutator(d);
+    mutator(d, next);
     // Registro permanente de quién realmente capturó este corte — se
     // estampa en cualquier cambio que haga una cuenta de equipo (no el
     // dueño), y no se borra al reasignar o quitarle el acceso a esa
@@ -1038,22 +1042,66 @@ export default function CortesApp({ profile }: { profile: Profile }) {
     setModal(null);
   }
 
-  // "Guardar medio turno": bloquea para el personal todo lo capturado hasta
-  // ahora (cortes, gastos y transferencias) y deja el día abierto.
-  function guardarMedioTurno() {
-    updateDay((d) => {
-      d.medioTurno = {
+  // "Corte de apertura": crea los cortes (sin propina) del usuario de para
+  // llevar y del de quien abrió, con sus gastos y transferencias, anota las
+  // apps hasta ese momento y bloquea todo eso para el personal.
+  function guardarApertura(v: AperturaValues) {
+    updateDay((d, next) => {
+      const ids: string[] = [];
+      v.bloques.forEach((b) => {
+        const gastosTotal = round2(b.gastos.reduce((s, g) => s + g.monto, 0));
+        const cut: MeseroCut = {
+          id: uid(),
+          meseroId: b.meseroId,
+          nombre: b.nombre,
+          venta: b.venta,
+          tarjetas: b.tarjetas,
+          transferencia: b.transferencia,
+          propinaTipo: "none",
+          propina: 0,
+          gastosTotal,
+          total: round2(b.venta - b.tarjetas - b.transferencia - gastosTotal),
+          lecturaSistema: b.venta,
+          apertura: true,
+          ...(b.tarjetasDesglose ? { tarjetasDesglose: b.tarjetasDesglose } : {}),
+          ...(b.transferencia > 0 && b.transferDesglose ? { transferenciaDesglose: b.transferDesglose } : {}),
+        };
+        d.meseros.push(cut);
+        ids.push(cut.id);
+        b.gastos.forEach((g) => {
+          const id = uid();
+          d.gastos.push({ id, concepto: g.concepto, total: g.monto, estado: "pendiente", origen: "mesero", meseroNombre: b.nombre, meseroCutId: cut.id });
+          ids.push(id);
+        });
+        if (b.transferencia > 0) {
+          const id = uid();
+          d.transferencias.push({
+            id, persona: b.nombre, total: b.transferencia, origen: "mesero", meseroCutId: cut.id,
+            ...(b.transferDesglose ? { desglose: b.transferDesglose } : {}),
+          });
+          ids.push(id);
+        }
+      });
+      // Apps: el total del día empieza con lo de la apertura.
+      if ((d.ventaApps || 0) < v.ventaApps) d.ventaApps = v.ventaApps;
+      d.apertura = {
         fecha: new Date().toISOString(),
         nombre: profile.display_name || (isOwner ? "Dueño" : "Alguien del equipo"),
-        ids: [...d.meseros.map((m) => m.id), ...d.gastos.map((g) => g.id), ...d.transferencias.map((t) => t.id)],
+        ...(v.abrio ? { abrio: v.abrio } : {}),
+        ventaApps: v.ventaApps,
+        ids,
       };
+      recalcularAcumulados(d);
+      // Se recuerda el usuario del sistema de quien abrió.
+      const emp = next.empleados.find((e) => e.id === v.abrio?.empleadoId);
+      if (emp && v.usuarioSistemaId) emp.usuarioSistemaId = v.usuarioSistemaId;
     });
     setModal(null);
   }
 
-  function quitarMedioTurno() {
+  function quitarApertura() {
     updateDay((d) => {
-      delete d.medioTurno;
+      delete d.apertura;
     });
     setModal(null);
   }
@@ -1672,20 +1720,40 @@ export default function CortesApp({ profile }: { profile: Profile }) {
               </div>
             )}
 
-            {turnosDelDia && day?.medioTurno && !day.corteGuardado && (
+            {turnosDelDia && day && !day.apertura && !day.corteGuardado && (
+              <div className="apertura-aviso">
+                <span>
+                  {abrenHoy.length > 0 ? (
+                    <>
+                      Hoy abre: <strong>{abrenHoy.map((x) => x.nombre).join(", ")}</strong>{" "}
+                      <small>({abrenHoy.map((x) => x.marca).join(", ")} en el horario)</small>
+                    </>
+                  ) : (
+                    "Nadie tiene X ni Z hoy en el horario."
+                  )}
+                </span>
+                <button className="btn-primary" onClick={() => setModal({ type: "apertura" })}>
+                  Corte de apertura
+                </button>
+              </div>
+            )}
+
+            {turnosDelDia && day?.apertura && (
               <div className="medio-turno-banner">
                 <Lock size={15} />
                 <span>
-                  <strong>Medio turno guardado</strong> por {day.medioTurno.nombre} el {fechaHoraCorta(day.medioTurno.fecha)}.
+                  <strong>Corte de apertura</strong>
+                  {day.apertura.abrio ? ` (abrió ${day.apertura.abrio.nombre})` : ""} guardado por {day.apertura.nombre} el{" "}
+                  {fechaHoraCorta(day.apertura.fecha)}.
                   {isOwner ? (
                     <>
-                      {" "}Lo del turno 1 ya no lo puede cambiar el personal.{" "}
-                      <button className="link-btn" onClick={() => setModal({ type: "quitarMedioTurno" })}>
-                        Quitar medio turno
+                      {" "}El personal ya no lo puede cambiar.{" "}
+                      <button className="link-btn" onClick={() => setModal({ type: "quitarApertura" })}>
+                        Desbloquear apertura
                       </button>
                     </>
                   ) : (
-                    " Lo del turno 1 ya no se puede editar."
+                    " Ya no se puede editar."
                   )}
                 </span>
               </div>
@@ -1703,6 +1771,16 @@ export default function CortesApp({ profile }: { profile: Profile }) {
                   </span>
                 </div>
               ))}
+            {turnosDelDia && day?.apertura && (
+              <div className="acumulado-dia">
+                <span>
+                  Apps del día <small>(apertura {money(day.apertura.ventaApps)})</small>
+                </span>
+                <span>
+                  <strong>{money(day.ventaApps || 0)}</strong> <small>al cierre, escribe el total del día</small>
+                </span>
+              </div>
+            )}
 
             {totals && (
               <section className="summary">
@@ -1803,22 +1881,31 @@ export default function CortesApp({ profile }: { profile: Profile }) {
                         </button>
                       );
                     };
-                    const mt = day.medioTurno;
-                    if (!turnosDelDia || !mt) return <div className="card-list">{day.meseros.map(tarjeta)}</div>;
-                    const turno1 = day.meseros.filter((m) => mt.ids.includes(m.id));
-                    const turno2 = day.meseros.filter((m) => !mt.ids.includes(m.id));
+                    const ap = day.apertura;
+                    if (!turnosDelDia || !ap) return <div className="card-list">{day.meseros.map(tarjeta)}</div>;
+                    const turno1 = day.meseros.filter((m) => ap.ids.includes(m.id));
+                    const turno2 = day.meseros.filter((m) => !ap.ids.includes(m.id));
+                    const hora = new Date(ap.fecha).toLocaleTimeString("es-MX", { hour: "numeric", minute: "2-digit" });
                     return (
                       <>
                         <div className="turno-titulo">
-                          <span>Turno 1</span>
+                          <span>Apertura · hasta {hora}</span>
                           <Lock size={13} />
                         </div>
-                        <div className="card-list">{turno1.map(tarjeta)}</div>
+                        <div className="card-list">
+                          {turno1.map(tarjeta)}
+                          <div className="card mesero-card bloqueado-mt">
+                            <div className="card-top">
+                              <span className="card-name">Apps</span>
+                              <span className="card-total">{money(ap.ventaApps)}</span>
+                            </div>
+                          </div>
+                        </div>
                         <div className="turno-titulo">
-                          <span>Turno 2</span>
+                          <span>Resto del día</span>
                         </div>
                         {turno2.length === 0 ? (
-                          <p className="hint">Aún no hay cortes del segundo turno.</p>
+                          <p className="hint">Aún no hay cortes después de la apertura. Al cierre, agrega el de {turno1.map((m) => m.nombre).join(" y ")} con el total del día.</p>
                         ) : (
                           <div className="card-list">{turno2.map(tarjeta)}</div>
                         )}
@@ -1905,11 +1992,6 @@ export default function CortesApp({ profile }: { profile: Profile }) {
 
               {!day.corteGuardado ? (
                 <div className="guardar-corte">
-                  {turnosDelDia && !day.medioTurno && day.meseros.length > 0 && (
-                    <button className="btn-medio-turno" onClick={() => setModal({ type: "guardarMedioTurno" })}>
-                      <Lock size={16} /> Guardar medio turno
-                    </button>
-                  )}
                   <button className="btn-primary" onClick={() => setModal({ type: "guardarCorte" })}>
                     <Lock size={16} /> Guardar corte
                   </button>
@@ -1997,25 +2079,23 @@ export default function CortesApp({ profile }: { profile: Profile }) {
       {modal?.type === "guardarCorte" && day && totals && (
         <GuardarCorteModal day={day} totals={totals} onGuardar={guardarCorte} onClose={() => setModal(null)} />
       )}
-      {modal?.type === "guardarMedioTurno" && (
-        <Sheet title="Guardar medio turno" onClose={() => setModal(null)}>
-          <p className="hint">
-            Todo lo capturado hasta ahora (cortes, gastos y transferencias) queda guardado como Turno 1 y ya no se podrá
-            editar. El día sigue abierto para el segundo turno; al final, toca "Guardar corte" para cerrar todo.
-          </p>
-          <button className="btn-primary" onClick={guardarMedioTurno}>
-            Sí, guardar medio turno
-          </button>
-          <button className="link-btn" onClick={() => setModal(null)}>
-            Cancelar
-          </button>
-        </Sheet>
+      {modal?.type === "apertura" && (
+        <AperturaModal
+          onClose={() => setModal(null)}
+          onGuardar={guardarApertura}
+          catalog={data.meseros}
+          empleados={data.empleados}
+          abren={abrenHoy}
+          historial={historialGastos}
+        />
       )}
-      {modal?.type === "quitarMedioTurno" && (
-        <Sheet title="Quitar medio turno" onClose={() => setModal(null)}>
-          <p className="hint">Lo del turno 1 se desbloquea para el personal y la lista vuelve a verse en un solo bloque.</p>
-          <button className="btn-primary" onClick={quitarMedioTurno}>
-            Sí, quitar medio turno
+      {modal?.type === "quitarApertura" && (
+        <Sheet title="Desbloquear apertura" onClose={() => setModal(null)}>
+          <p className="hint">
+            Los cortes de la apertura se quedan, pero el personal los podrá editar y la lista vuelve a verse en un solo bloque.
+          </p>
+          <button className="btn-primary" onClick={quitarApertura}>
+            Sí, desbloquear
           </button>
           <button className="link-btn" onClick={() => setModal(null)}>
             Cancelar

@@ -496,10 +496,9 @@ export function formatAssignedDate(dateStr: string): string {
 }
 
 // --- Turnos (desde el 21 de octubre de 2026) --------------------------
-// Medio turno y usuarios acumulados ("Para llevar") solo aplican a los
-// cortes de esta fecha en adelante; los días anteriores quedan como estaban.
-// En pausa mientras se arma el "corte de apertura" (se reactiva con su fecha).
-export const FECHA_INICIO_TURNOS = "2099-01-01";
+// Corte de apertura y usuarios acumulados solo aplican a los cortes de esta
+// fecha en adelante; los días anteriores quedan como estaban.
+export const FECHA_INICIO_TURNOS = "2026-10-21";
 
 export function turnosActivos(fechaIso: string | null | undefined): boolean {
   return !!fechaIso && fechaIso >= FECHA_INICIO_TURNOS;
@@ -522,6 +521,18 @@ export function recalcularAcumulados(d: DayData) {
     m.propina = propina;
     m.total = round2(venta - m.tarjetas - m.transferencia + propina - m.gastosTotal);
   });
+}
+
+// Quién abre ese día según el horario: X = abre, Z = dobla.
+export function quienesAbren(semana: HorarioSemana | null | undefined, dia: DayName): { empleadoId: string; nombre: string; marca: string }[] {
+  const res: { empleadoId: string; nombre: string; marca: string }[] = [];
+  (semana?.areas || []).forEach((a) =>
+    a.filas.forEach((f) => {
+      const v = (f.valores[dia] || "").trim().toUpperCase();
+      if (v === "X" || v === "Z") res.push({ empleadoId: f.empleadoId, nombre: f.nombre, marca: v });
+    })
+  );
+  return res;
 }
 
 // Venta del día de cada usuario acumulado según el sistema (la lectura del

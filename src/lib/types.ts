@@ -10,9 +10,10 @@ export type PropinaTipo = "p3" | "p2" | "manual" | "none";
 export interface MeseroCatalogEntry {
   id: string;
   nombre: string;
-  // Usuario compartido del sistema de punto de venta (ej. "Para llevar")
-  // que se acumula en el día: puede tener varios cortes y cada uno se
-  // captura con lo que marca el sistema — ver recalcularAcumulados.
+  // Usuario de para llevar del sistema (ej. "Johnster"): nunca lleva
+  // propina, siempre entra en el corte de apertura y se acumula en el día
+  // (cada corte se captura con lo que marca el sistema — ver
+  // recalcularAcumulados).
   acumulado?: boolean;
 }
 
@@ -46,6 +47,10 @@ export interface EmpleadoEntry {
   // de su profile — ver staffAccounts.ts. Sin esto, esta persona no tiene
   // acceso a la app (es normal, la mayoría no lo necesita).
   staffProfileId?: string;
+  // Su usuario en el sistema de punto de venta (un mesero del catálogo) —
+  // se recuerda al hacer el corte de apertura, porque el nombre del horario
+  // no siempre es igual al del sistema.
+  usuarioSistemaId?: string;
 }
 
 // Valores rápidos para una celda de horario — el resto de las celdas
@@ -212,6 +217,8 @@ export interface MeseroCut {
   lecturaSistema?: number;
   // Quién cobró este corte del usuario acumulado (nombre del mesero).
   cobro?: string;
+  // Corte hecho en el corte de apertura (turno 1).
+  apertura?: boolean;
 }
 
 export type GastoEstado = "pendiente" | "ingresado";
@@ -400,10 +407,18 @@ export interface DayData {
   // "Guardar corte": quien termina el corte lo confirma y desde ahí queda
   // bloqueado para el personal (el dueño siempre puede editarlo o reabrirlo).
   corteGuardado?: { fecha: string; nombre: string }; // fecha: ISO con hora
-  // "Guardar medio turno": lo capturado hasta ese momento (cortes, gastos y
-  // transferencias, por id) queda bloqueado para el personal y el día sigue
-  // abierto para el segundo turno.
-  medioTurno?: { fecha: string; nombre: string; ids: string[] };
+  // "Corte de apertura" (turno 1, desde el 21/10/2026): apps, el usuario de
+  // para llevar y el de quien abrió hasta ese momento. Lo que entró (cortes,
+  // gastos y transferencias, por id) queda bloqueado para el personal y el
+  // día sigue abierto; al cierre se captura el total del día de esos
+  // usuarios y la app resta lo de la apertura.
+  apertura?: {
+    fecha: string; // ISO con hora, cuándo se guardó
+    nombre: string; // quién lo guardó
+    abrio?: { empleadoId?: string; nombre: string };
+    ventaApps: number;
+    ids: string[];
+  };
 }
 
 // Control de gastos que los proveedores dan a crédito, pagados después por

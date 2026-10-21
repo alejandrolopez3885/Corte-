@@ -92,11 +92,14 @@ export function MeseroModal({
 
   // Usuario acumulado: lo escrito es la lectura del sistema y la venta de
   // este corte es la diferencia contra el corte anterior del mismo usuario.
-  const esAcumulado = turnos && !!catalog.find((c) => c.id === meseroId)?.acumulado;
+  // Es acumulado el usuario de para llevar y cualquiera que ya tenga corte
+  // ese día con lectura del sistema (los del corte de apertura).
+  const esParaLlevar = turnos && !!catalog.find((c) => c.id === meseroId)?.acumulado;
   const idxEditing = editing ? cortesDelDia.findIndex((m) => m.id === editing.id) : -1;
   const previos = cortesDelDia.filter(
     (m, i) => m.meseroId === meseroId && m.lecturaSistema !== undefined && m.id !== editing?.id && (idxEditing < 0 || i < idxEditing)
   );
+  const esAcumulado = turnos && (esParaLlevar || previos.length > 0 || editing?.lecturaSistema !== undefined);
   const lecturaPrevia = previos.length ? (previos[previos.length - 1].lecturaSistema as number) : 0;
   const lectura = parseFloat(venta) || 0;
   const v = esAcumulado ? round2(lectura - lecturaPrevia) : lectura;
@@ -105,8 +108,9 @@ export function MeseroModal({
   const existingGastosSum = (existingGastos || []).reduce((s, g) => s + g.total, 0);
   const newGastosSum = gastos.reduce((s, g) => s + (parseFloat(g.monto) || 0), 0);
   const gastosSum = round2(existingGastosSum + newGastosSum);
+  const tipoPropina: PropinaTipo = esParaLlevar ? "none" : propinaTipo;
   const propina =
-    propinaTipo === "p3" ? round2(v * 0.03) : propinaTipo === "p2" ? round2(v * 0.02) : propinaTipo === "manual" ? parseFloat(manualPropina) || 0 : 0;
+    tipoPropina === "p3" ? round2(v * 0.03) : tipoPropina === "p2" ? round2(v * 0.02) : tipoPropina === "manual" ? parseFloat(manualPropina) || 0 : 0;
   // A nivel de corte individual, la propina sí se suma: es lo que el mesero entrega en mano.
   const total = round2(v - t - transferSum + propina - gastosSum);
 
@@ -133,6 +137,9 @@ export function MeseroModal({
         )}
       </Field>
 
+      {esParaLlevar ? (
+        <p className="hint">{nombre} es el usuario de para llevar: no lleva propina.</p>
+      ) : (
       <Field label="Propina">
         <div className="segmented">
           <button type="button" className={propinaTipo === "p3" ? "active" : ""} onClick={() => setPropinaTipo("p3")}>
@@ -149,13 +156,14 @@ export function MeseroModal({
           </button>
         </div>
       </Field>
-      {propinaTipo === "manual" && (
+      )}
+      {!esParaLlevar && propinaTipo === "manual" && (
         <Field label="Monto de propina">
           <NumInput value={manualPropina} onChange={(e) => setManualPropina(e.target.value)} placeholder="0.00" />
         </Field>
       )}
 
-      {esAcumulado && (
+      {esParaLlevar && (
         <Field label="¿Quién cobró este turno?">
           <select className="text-input" value={cobro} onChange={(e) => setCobro(e.target.value)}>
             <option value="">Selecciona quién cobró</option>
@@ -170,7 +178,7 @@ export function MeseroModal({
         </Field>
       )}
       {esAcumulado && (
-        <Field label="Venta que marca el sistema (acumulada del día)">
+        <Field label="Venta total del día que marca el sistema">
           <NumInput value={venta} onChange={(e) => setVenta(e.target.value)} placeholder="0.00" />
         </Field>
       )}
@@ -178,10 +186,18 @@ export function MeseroModal({
         <div className={`acumulado-calculo${v < 0 ? " negativo" : ""}`}>
           {previos.length > 0 ? (
             <>
-              Ya se cortaron hoy <strong>{money(lecturaPrevia)}</strong> (
-              {previos.map((p, i) => `Corte ${i + 1}${p.cobro ? ` · ${p.cobro}` : ""}`).join(", ")}).
+              {previos.length === 1 && previos[0].apertura ? (
+                <>
+                  En la apertura: <strong>{money(lecturaPrevia)}</strong>
+                </>
+              ) : (
+                <>
+                  Ya se cortaron hoy <strong>{money(lecturaPrevia)}</strong> (
+                  {previos.map((p, i) => `${p.apertura ? "Apertura" : `Corte ${i + 1}`}${p.cobro ? ` · ${p.cobro}` : ""}`).join(", ")})
+                </>
+              )}
               <br />
-              Este corte: <strong>{money(v)}</strong>
+              Este corte (resto del día): <strong>{money(v)}</strong>
               {v < 0 && " — es menor que lo ya cortado, revisa la lectura."}
             </>
           ) : (
@@ -197,7 +213,7 @@ export function MeseroModal({
             <NumInput value={venta} onChange={(e) => setVenta(e.target.value)} placeholder="0.00" />
           </Field>
         )}
-        <Field label={esAcumulado ? "Tarjetas de este turno" : "Total tarjetas"}>
+        <Field label={esAcumulado ? "Tarjetas del resto del día" : "Total tarjetas"}>
           <SumInput value={tarjetas} onChange={setTarjetas} onPartes={setTarjetasDesglose} placeholder="0.00 o 300+300+300" sumar />
         </Field>
       </div>
@@ -298,7 +314,7 @@ export function MeseroModal({
             {
               meseroId,
               nombre,
-              propinaTipo,
+              propinaTipo: tipoPropina,
               manualPropina,
               venta,
               tarjetas,
@@ -306,7 +322,7 @@ export function MeseroModal({
               transferDesglose: showTransfer ? transferDesglose : undefined,
               gastos: gastos.filter((g) => g.concepto && g.monto),
               transferMonto: showTransfer ? transferMonto : "",
-              ...(esAcumulado ? { lecturaSistema: lectura, cobro: cobro || undefined } : {}),
+              ...(esAcumulado ? { lecturaSistema: lectura, cobro: esParaLlevar ? cobro || undefined : undefined } : {}),
             },
             editing?.id
           );

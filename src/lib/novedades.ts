@@ -16,7 +16,7 @@ import type { AppData, PermisoStaff, Profile } from "./types";
 
 export type SeccionNovedad = "corte" | PermisoStaff;
 
-export type VisualNovedad = "sumar" | "autocompletar" | "categoria" | "faltan" | "guardarCorte" | "inventarioPasos" | "recetarioArea" | "medioTurno" | "paraLlevar";
+export type VisualNovedad = "sumar" | "autocompletar" | "categoria" | "faltan" | "guardarCorte" | "inventarioPasos" | "recetarioArea" | "apertura" | "cierreTotal";
 
 export interface Novedad {
   id: string;
@@ -83,6 +83,23 @@ export const NOVEDADES: Novedad[] = [
     titulo: "Tu recetario, solo de tu área",
     texto: "Cocina ve solo las recetas de **Cocina** y Barra solo las de **Bar**.",
     visual: "recetarioArea",
+  },
+  {
+    id: "corte-apertura",
+    // Cortes desde el miércoles 21 de octubre (medianoche en Monterrey).
+    fecha: "2026-10-21T06:00:00Z",
+    seccion: "corte",
+    titulo: "Corte de apertura",
+    texto: "Al cambio de turno toca **Corte de apertura**: apps, Johnster y quien abrió hasta ese momento, sin propina.",
+    visual: "apertura",
+  },
+  {
+    id: "cierre-total-del-dia",
+    fecha: "2026-10-21T06:00:00Z",
+    seccion: "corte",
+    titulo: "Al cierre, el total del día",
+    texto: "Para Johnster, quien abrió y las apps escribe el **total del día** del sistema. La app resta sola la apertura.",
+    visual: "cierreTotal",
   },
 ];
 

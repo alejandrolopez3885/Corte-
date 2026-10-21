@@ -200,25 +200,32 @@ estando en Nómina te regresa al menú de Equipo):
   transferencias, ventas de apps y sus resúmenes. Arriba de los totales del
   día hay una tarjeta de asignación: quién tiene asignado ese día (si
   alguien) y quién capturó su corte — ver "Asignar día" más abajo.
-- **Turnos y "Para llevar"** (**en pausa**: se reemplazará por el "corte de
-  apertura"; mientras tanto no aparece en ningún día): un día puede tener dos
-  turnos. Cuando se va el turno 1 se capturan sus cortes y se toca
-  **"Guardar medio turno"**: todo lo capturado hasta ese momento (cortes,
-  gastos y transferencias) queda bloqueado para el personal y el día sigue
-  abierto para el turno 2; la lista de meseros se ve separada en "Turno 1"
-  (con candado) y "Turno 2", con un aviso de quién guardó el medio turno y
-  cuándo. Al final, "Guardar corte" bloquea todo el día como siempre. El
-  dueño siempre puede editar, y con "Quitar medio turno" lo desbloquea.
-  En el catálogo de meseros (Equipo > Meseros) un usuario compartido del
-  sistema, como **"Para llevar"**, se marca "Se acumula en el día": puede
-  tener varios cortes en el mismo día y en cada uno se escribe la venta
-  **tal como la marca el sistema** (acumulada del día) y quién cobró ese
-  turno; la app muestra "Ya se cortaron hoy $X · Este corte: $Y" y la
-  venta de ese corte es la diferencia contra el corte anterior (se
-  recalcula sola si se corrige o borra un corte anterior). Las tarjetas y
-  transferencias son solo las de ese turno. En la lista sale "Para llevar
-  · Corte 1 / Corte 2" con quién cobró y lo que marcaba el sistema, y
-  arriba "Para llevar del día", que debe coincidir con el sistema.
+- **Corte de apertura y cierre** (en los cortes desde el **21 de octubre
+  de 2026**; los días anteriores quedan como estaban): arriba del corte
+  aparece "Hoy abre: [nombre] (X en el horario)" — quien tiene **X** (abre)
+  o **Z** (dobla) ese día en Horarios — y el botón **"Corte de apertura"**.
+  Ahí, en una sola pantalla y sin propina, se captura lo que llevan hasta
+  ese momento: **Apps**, el **usuario de para llevar** (ej. "Johnster") y
+  el **usuario de quien abrió** (venta, tarjetas, transferencias y
+  gastos). "¿Quién abrió?" viene del horario y se puede cambiar a mano; "Su
+  usuario en el sistema" se elige (el nombre del horario no siempre es el
+  del sistema), la app lo sugiere si coincide con su primer nombre y lo
+  recuerda para la siguiente vez. Al guardarlo, esos cortes, gastos y
+  transferencias quedan bloqueados para el personal y la lista se ve en
+  "Apertura · hasta [hora]" (con candado, incluida la venta de apps) y
+  "Resto del día". Al cierre, el corte de Johnster y (si se le hace) el de
+  quien abrió se capturan con la **venta total del día que marca el
+  sistema** y las tarjetas/transferencias del resto del día: la app
+  muestra "En la apertura: $X · Este corte (resto del día): $Y" y guarda
+  solo la diferencia (se recalcula sola si se corrige la apertura).
+  Johnster nunca lleva propina; en el cierre de quien abrió se elige 3%,
+  2%, Nada o Manual. Las apps se cierran escribiendo el total del día en
+  "Ventas de apps". Arriba se muestran "Johnster del día", "[Quien abrió]
+  del día" y "Apps del día", que deben coincidir con el sistema. "Guardar
+  corte" al final bloquea todo; el dueño siempre puede editar y con
+  "Desbloquear apertura" libera esa parte. El usuario de para llevar se
+  marca una vez en Equipo > Meseros ("Usuario de para llevar (sin
+  propina)").
 - **Equipo**: menú con 5 opciones — "Meseros" (catálogo de
   meseros — solo nombre, para elegir a quién le haces el corte en Corte;
   vive aquí porque también son parte de tu equipo, aunque su lista está
