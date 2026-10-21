@@ -48,9 +48,12 @@ export interface ContextoEquipo {
   verPropinas: boolean;
 }
 
-export function contextoEquipo(profile: Profile, data: AppData, assignments: StaffAssignment[]): ContextoEquipo | null {
-  const empleado = data.empleados.find((e) => e.id === profile.empleado_id);
-  if (!empleado) return null;
+// Siempre regresa un contexto: una cuenta sin persona en Personal (p. ej.
+// un mesero con días asignados) solo pregunta de su corte.
+export function contextoEquipo(profile: Profile, data: AppData, assignments: StaffAssignment[]): ContextoEquipo {
+  const corteFechas = assignments.map((a) => a.assigned_date).sort();
+  const empleado = profile.empleado_id ? data.empleados.find((e) => e.id === profile.empleado_id) : undefined;
+  if (!empleado) return { empleadoId: "", nombre: profile.display_name || "", permisos: [], corteFechas, areaInsumo: null, verPropinas: false };
   const puesto = empleado.puestoId ? data.puestos.find((p) => p.id === empleado.puestoId) : undefined;
   const area = puesto ? data.areas.find((a) => a.id === puesto.areaId) : undefined;
   const permisos = profile.permisos || [];
@@ -59,7 +62,7 @@ export function contextoEquipo(profile: Profile, data: AppData, assignments: Sta
     empleadoId: empleado.id,
     nombre: empleado.nombre,
     permisos,
-    corteFechas: assignments.map((a) => a.assigned_date).sort(),
+    corteFechas,
     horarioAreaId: area ? HORARIO_AREAS_FIJAS.find((a) => a.nombre.toLowerCase() === area.nombre.toLowerCase())?.id : undefined,
     areaInsumo,
     verPropinas: permisos.includes("propinas") && !!areaInsumo,
@@ -340,6 +343,18 @@ export function responderReceta(data: AppData, c: Consulta, area: ConteoTextoAre
 
 export function responderEquipo(data: AppData, c: Consulta, hoy: string, ctx: ContextoEquipo): Respuesta {
   const ubicaciones = ubicarFechas(data);
+  // Candado: cada tema solo se responde si es de una de sus secciones,
+  // venga de donde venga la consulta.
+  const secciones = seccionesEquipo(ctx);
+  const permitido =
+    (c.tema === "receta" && secciones.includes("recetario")) ||
+    (c.tema === "corte" && secciones.includes("corte")) ||
+    (c.tema === "miNomina" && secciones.includes("nomina") && !!ctx.empleadoId) ||
+    (c.tema === "propinas" && ctx.verPropinas && !c.persona && !c.modo && !c.estadistica) ||
+    (c.tema === "horario" && secciones.includes("horarios") && !!ctx.horarioAreaId) ||
+    (c.tema === "conteo" && secciones.includes("conteo_diario") && !!ctx.areaInsumo) ||
+    (c.tema === "inventario" && secciones.includes("inventario"));
+  if (!permitido) return { titulo: "Pregúntale a Cortes", valor: "—", lineas: ["Esa información no está en tus secciones."], consulta: c };
 
   if (c.tema === "receta") return responderReceta(data, c, ctx.areaInsumo);
 

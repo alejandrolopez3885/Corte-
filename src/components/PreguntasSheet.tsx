@@ -79,7 +79,13 @@ export function PreguntasSheet({
   contexto?: ContextoEquipo | null;
 }) {
   const hoy = todayIso();
-  const ctx = contexto || null;
+  // Solo el dueño pregunta de todo; cualquier otra cuenta, aunque no traiga
+  // contexto, queda limitada a sus secciones (sin contexto, a ninguna).
+  const esDueno = profile.role === "owner";
+  const ctx = useMemo<ContextoEquipo | null>(
+    () => (esDueno ? null : contexto || { empleadoId: "", nombre: "", permisos: [], corteFechas: [], areaInsumo: null, verPropinas: false }),
+    [esDueno, contexto]
+  );
   const visibles = useMemo(
     () => (ctx ? preguntasDeEquipo(ctx) : PREGUNTAS.filter((p) => p.seccion === "dueno" || (p.seccion === "recetario" && (data.recetas || []).length > 0))),
     [ctx, data.recetas]

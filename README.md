@@ -1072,7 +1072,11 @@ permisos y sus días de corte asignados — y las respuestas salen de su
 propia información; nunca de venta de la semana, utilidad, la nómina de
 otra persona ni días que no tiene asignados. Si pregunta algo de fuera,
 responde "Eso no está en tus secciones" con las secciones de las que sí
-puede preguntar. Por sección:
+puede preguntar. Una cuenta que no está ligada a nadie en Personal (p. ej.
+un mesero con días asignados) solo pregunta de su corte; y cualquier cuenta
+que no sea la del dueño, aunque algo falle al armar sus secciones, nunca ve
+las preguntas del dueño. Además cada respuesta revisa otra vez que el tema
+sea de sus secciones antes de contestar. Por sección:
 
 - **Corte** (solo sus días asignados; arranca en hoy si se lo asignaron, si
   no en el último que ya pasó): efectivo a entregar (igual que "Efectivo
