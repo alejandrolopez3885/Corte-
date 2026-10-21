@@ -918,8 +918,28 @@ abre "Pregúntale a Cortes". Se pregunta de tres formas: escribiendo y
 tocando enviar, dictando con el micrófono 🎤 (usa el dictado del navegador,
 gratis, en español de México; el botón se pone rojo mientras escucha y al
 terminar responde solo; si el celular no lo tiene, el micrófono no sale y
-se puede usar el dictado del teclado) o tocando una pregunta. Las preguntas
-vienen en botones agrupados en **Ventas** (venta de hoy, de ayer, de la
+se puede usar el dictado del teclado) o tocando una pregunta.
+
+**Autocompletado**: mientras se escribe, debajo de la caja salen hasta 5
+preguntas completas armadas con lo que sí hay capturado, cada una con su
+número ya calculado a la derecha (ej. "Propinas de Dana esta semana ·
+$362"); al tocarla responde de inmediato y queda escrita en la caja. Salen
+de: las preguntas de siempre, los días de esta semana y la pasada (venta,
+propinas, gastos y efectivo de cada día), los promedios de cada día de la
+semana, las personas del horario de esta semana y la pasada ("Cuánto le
+toca a…", "Nómina de … de la semana pasada") y los meseros que tuvieron
+corte en las últimas 2 semanas (sus propinas de hoy, ayer, esta semana y
+la pasada). Busca cada palabra escrita aunque vaya a medias ("venta prom
+vi" → "Venta promedio de los viernes", "cuanto le toca a al" → Aldair
+primero), ignora palabras de relleno (de, la, el, cuánto…) y entiende
+sinónimos (vendimos → venta, sueldo → nómina, ganancia → utilidad, sobre →
+efectivo, normalmente → promedio). Primero las que coinciden con lo escrito
+y, entre ellas, las que más se usan. Si se manda la pregunta sin tocar una
+sugerencia, se interpreta como siempre y, si no se entiende, responde la
+primera sugerencia. Mientras hay sugerencias se esconden los botones.
+
+Al abrir, sin escribir nada, solo salen las 3 que más usas y "Ver todas las
+preguntas", que despliega todos los botones agrupados en **Ventas** (venta de hoy, de ayer, de la
 semana, semana pasada, "¿Cuánto se vendió el…?"), **Estadística** (venta
 promedio por día, "¿Qué día se vende más?", venta promedio semanal y mejor
 día de venta), **Dinero** (efectivo a
