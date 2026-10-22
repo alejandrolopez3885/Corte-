@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { Sheet, Field, SumInput, Toggle, NumInput } from "../ui";
 import { Avatar } from "../Avatar";
+import { DatoPagoFila } from "../DatoPagoFila";
+import type { DatosPago } from "../../lib/datosPago";
 import { insumoAreaForPuesto, money, sumFromText, uid } from "../../lib/dataModel";
 import { supabase } from "../../lib/supabaseClient";
 import { createStaffAccount, errorMessage, revokeStaffAccess, updateStaffPermisos, PIN_LENGTH } from "../../lib/staffAccounts";
@@ -18,6 +20,7 @@ export function EmpleadoModal({
   areas,
   puestos,
   ownerId,
+  datosPago,
 }: {
   onClose: () => void;
   onSave: (entry: EmpleadoEntry, nuevaArea?: AreaEntry, nuevoPuesto?: PuestoEntry) => void;
@@ -26,6 +29,8 @@ export function EmpleadoModal({
   areas: AreaEntry[];
   puestos: PuestoEntry[];
   ownerId: string;
+  // A dónde pagarle (lo pone la persona en Mi perfil).
+  datosPago?: DatosPago | "sin-datos" | null;
 }) {
   // Fijo desde el inicio (no solo al guardar) para poder vincular una
   // cuenta de acceso a este empleado desde el primer "Dar acceso", aunque
@@ -190,6 +195,12 @@ export function EmpleadoModal({
             )}
             <span className="hint">Su foto y descripción las pone desde Mi perfil.</span>
           </div>
+        </div>
+      )}
+      {datosPago && (
+        <div className="empleado-pago">
+          <span className="pregunta-grupo-titulo">Datos de pago</span>
+          {datosPago === "sin-datos" ? <p className="dato-pago-falta">Todavía no pone sus datos de pago en Mi perfil.</p> : <DatoPagoFila datos={datosPago} detalle />}
         </div>
       )}
       <Field label="Nombre">

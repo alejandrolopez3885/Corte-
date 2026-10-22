@@ -54,6 +54,7 @@ import { PreguntasSheet } from "../components/PreguntasSheet";
 import { Avatar } from "../components/Avatar";
 import { PerfilPanel } from "../components/panels/PerfilPanel";
 import { contextoEquipo } from "../lib/preguntasEquipo";
+import { useDatosPagoEquipo, type DatosPago } from "../lib/datosPago";
 
 type ModalState =
   | { type: "month" }
@@ -110,6 +111,13 @@ export default function CortesApp({ profile }: { profile: Profile }) {
   const ownerInitialized = useRef(false);
   const locatedForDate = useRef<string | null>(null);
   const { assignments, status: assignmentsStatus } = useStaffAssignments(isOwner ? null : profile.id);
+  // Datos para el pago de nómina de todo el equipo (solo dueño).
+  const { porPerfil: datosPago, estado: estadoDatosPago } = useDatosPagoEquipo(isOwner ? profile.id : null);
+  const pagoDeEmpleado = (empleadoId: string): DatosPago | "sin-datos" | null => {
+    const perfilId = data?.empleados.find((e) => e.id === empleadoId)?.staffProfileId;
+    if (!perfilId || estadoDatosPago !== "listo") return null;
+    return datosPago.get(perfilId) || "sin-datos";
+  };
 
   // Qué pantalla tiene abierta (para Negocio > Análisis > Actividad). Las
   // cuentas de equipo fuera del corte las registra StaffAccessShell.
@@ -1338,6 +1346,8 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           onSaveDescuentos={saveNominaDescuentos}
           onGoToHorarios={() => setEquipoView("horarios")}
           onTogglePagado={togglePagoNomina}
+          pagoDe={pagoDeEmpleado}
+          avisoPago={estadoDatosPago === "sin-tabla" ? "Para ver a dónde pagarle a cada quien, activa los datos de pago: corre supabase/migration_009_datos_pago.sql en Supabase." : undefined}
         />
       )}
 
@@ -2388,6 +2398,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           areas={data.areas}
           puestos={data.puestos}
           ownerId={profile.id}
+          datosPago={modal.editing ? pagoDeEmpleado((modal.editing as EmpleadoEntry).id) : null}
         />
       )}
       {modal?.type === "deleteMonth" && (

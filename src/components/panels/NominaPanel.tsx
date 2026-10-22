@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { DatoPagoFila } from "../DatoPagoFila";
+import type { DatosPago } from "../../lib/datosPago";
 import { ArrowLeft, Check, ChevronDown, ChevronUp, Copy, Trash2, Wallet } from "lucide-react";
 import { Empty, Field, Sheet, SumInput } from "../ui";
 import { computeNominaHastaHoyPorEmpleado, computeNominaSemana, computeWeekSummary, formatShortDayDate, formatWeekRange, isoWeekNumber, money, resolveWeekStartDate, sumFromText, todayIso, uid } from "../../lib/dataModel";
@@ -28,6 +30,8 @@ export function NominaPanel({
   onGoToHorarios,
   onTogglePagado,
   soloEmpleadoId,
+  pagoDe,
+  avisoPago,
 }: {
   onBack?: () => void;
   backLabel?: string;
@@ -48,6 +52,10 @@ export function NominaPanel({
   // propia nómina: se filtra a esa sola persona y queda de solo lectura
   // (sin agregar/quitar descuentos ni percepciones extra de nadie).
   soloEmpleadoId?: string;
+  // Solo dueño: a dónde pagarle a cada quien (Mi perfil > Datos para tu
+  // pago). "sin-datos" = tiene cuenta pero no los ha puesto.
+  pagoDe?: (empleadoId: string) => DatosPago | "sin-datos" | null;
+  avisoPago?: string;
 }) {
   const [monthKey, setMonthKey] = useState(initialMonthKey);
   const [weekIndex, setWeekIndex] = useState(initialWeekIndex);
@@ -171,6 +179,7 @@ export function NominaPanel({
         </button>
       )}
       <h2 className="page-title">Nómina</h2>
+      {avisoPago && <p className="aviso-dejado">{avisoPago}</p>}
       <p className="hint">
         Calculada sola a partir de Horarios y el sueldo diario de cada quien en Personal: Z paga doble, O/X pagan normal, el
         descanso (OFF) solo se paga si se trabajaron los otros 6 días, y un día marcado festivo en Horarios paga 1 turno
@@ -319,6 +328,11 @@ export function NominaPanel({
                     </span>
                   )}
                 </div>
+                {!soloLectura && pagoDe && (() => {
+                  const pago = pagoDe(e.empleadoId);
+                  if (!pago) return null;
+                  return pago === "sin-datos" ? <p className="dato-pago-falta">Sin datos de pago todavía</p> : <DatoPagoFila datos={pago} />;
+                })()}
                 {abierta && (
                   <>
                     {e.sueldoDiario === 0 ? (

@@ -296,6 +296,20 @@ function Visual({ tipo }: { tipo: VisualNovedad }) {
       </>
     );
   }
+  if (tipo === "datosPago") {
+    return (
+      <>
+        <span className="nv-etiqueta">Mi perfil · Datos para tu pago</span>
+        <div className="nv-lista">
+          <div>
+            <span>BBVA</span>
+            <small>•••• 4321</small>
+          </div>
+        </div>
+        <span className="nv-suma">☑ Confirmo que estos datos son correctos</span>
+      </>
+    );
+  }
   if (tipo === "perfil") {
     return (
       <>

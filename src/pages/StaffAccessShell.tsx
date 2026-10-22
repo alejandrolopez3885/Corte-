@@ -14,6 +14,7 @@ import { PreguntasSheet } from "../components/PreguntasSheet";
 import { contextoEquipo } from "../lib/preguntasEquipo";
 import { Avatar } from "../components/Avatar";
 import { PerfilPanel } from "../components/panels/PerfilPanel";
+import { DatosPagoSeccion } from "../components/DatosPagoSeccion";
 import { supabase } from "../lib/supabaseClient";
 import { CargarPedidosPanel } from "../components/panels/CargarPedidosPanel";
 
@@ -137,7 +138,9 @@ export default function StaffAccessShell({
           secciones={[...(tieneCorte ? ["Corte"] : []), ...PERMISOS_DISPONIBLES.filter((p) => permisos.includes(p.value)).map((p) => p.label)]}
           onGuardar={(cambios) => onGuardarPerfil(empleado.id, cambios)}
           onBack={volver}
-        />
+        >
+          <DatosPagoSeccion profile={profile} nombre={empleado.nombre} />
+        </PerfilPanel>
       </div>
     );
   }

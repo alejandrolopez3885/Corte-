@@ -27,6 +27,7 @@ export function PerfilPanel({
   onGuardar,
   onBack,
   backLabel = "Inicio",
+  children,
 }: {
   nombre: string;
   nombreEditable?: boolean;
@@ -39,6 +40,8 @@ export function PerfilPanel({
   onGuardar: (cambios: CambiosPerfil) => void;
   onBack?: () => void;
   backLabel?: string;
+  // Secciones extra al final (Datos para tu pago).
+  children?: React.ReactNode;
 }) {
   const [foto, setFoto] = useState(fotoInicial);
   const [descripcion, setDescripcion] = useState(descripcionInicial || "");
@@ -159,6 +162,8 @@ export function PerfilPanel({
       >
         {guardado && !cambio ? "Guardado ✓" : "Guardar"}
       </button>
+
+      {children}
 
       {eligiendo && (
         <div className="sheet-backdrop" onClick={() => setEligiendo(false)}>

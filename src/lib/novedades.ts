@@ -18,7 +18,7 @@ import type { AppData, ConteoTextoArea, PermisoStaff, Profile } from "./types";
 // "general" = de toda la app: le sale a cualquiera que ya entraba antes.
 export type SeccionNovedad = "corte" | PermisoStaff | "general";
 
-export type VisualNovedad = "sumar" | "autocompletar" | "categoria" | "faltan" | "guardarCorte" | "inventarioPasos" | "recetarioArea" | "apertura" | "cierreTotal" | "efectivoEntregar" | "conteoBar" | "pedidosPegar" | "preguntas" | "perfil";
+export type VisualNovedad = "sumar" | "autocompletar" | "categoria" | "faltan" | "guardarCorte" | "inventarioPasos" | "recetarioArea" | "apertura" | "cierreTotal" | "efectivoEntregar" | "conteoBar" | "pedidosPegar" | "preguntas" | "perfil" | "datosPago";
 
 export interface Novedad {
   id: string;
@@ -145,6 +145,14 @@ export const NOVEDADES: Novedad[] = [
     titulo: "Tu perfil",
     texto: "Toca tu círculo de arriba (o **Mi perfil** en tu inicio) para poner tu foto y una descripción. Ahí también ves tu puesto.",
     visual: "perfil",
+  },
+  {
+    id: "datos-pago",
+    fecha: "2026-10-22T06:15:00Z",
+    seccion: "general",
+    titulo: "Datos para tu pago",
+    texto: "En **Mi perfil** pon tu banco y tu número de tarjeta o CLABE para que te depositen tu nómina. Solo los ve el dueño.",
+    visual: "datosPago",
   },
 ];
 

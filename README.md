@@ -1086,6 +1086,31 @@ en Personal ya no se pierde lo que el formulario no muestra (su foto, su
 descripción ni su usuario del sistema del corte de apertura). Al entrar,
 al personal le sale la novedad "Tu perfil".
 
+**Datos para tu pago (Mi perfil del personal)**: abajo de la descripción,
+cada quien pone a dónde depositarle su nómina: **banco** (de una lista:
+BBVA, Banorte, Santander, Banamex, HSBC, Scotiabank, Banco Azteca,
+BanCoppel, Inbursa, Banregio, BanBajío, Afirme, Nu, Mercado Pago, Spin by
+OXXO, Hey Banco, Klar, Stori u Otro), **número de tarjeta (16 dígitos) o
+CLABE (18)** — se escribe de 4 en 4, dice cuántos dígitos lleva, y no deja
+guardar si faltan o sobran o si el número no es válido (revisa el dígito
+de control de la tarjeta y de la CLABE, para atrapar errores de dedo) —,
+**a nombre de quién** está (sale su nombre de Personal, editable) y la
+casilla "Confirmo que estos datos son correctos y son míos". Nunca se pide
+NIP, CVV ni fecha de vencimiento. Ya guardados se ven tapados ("BBVA ·
+•••• 4321 · Tarjeta · confirmado el 22 oct") con "Cambiar". Tú los ves
+completos con un botón **Copiar**: en Equipo > Nómina, debajo de cada
+persona (o "Sin datos de pago todavía" si tiene cuenta y no los ha puesto),
+y al abrir a alguien en Personal, con el titular y cuándo los confirmó.
+Cada cambio queda en Actividad ("Mi perfil · Datos de pago"), sin el número
+completo. Viven en su propia tabla de Supabase (`datos_pago`, fuera de los
+datos de la app) que **solo pueden leer la persona y su dueño** — ninguna
+otra cuenta del equipo, ni con conocimientos técnicos —; solo la persona
+los guarda o cambia, y el dueño solo los lee. Para activarla hay que correr
+una vez [`supabase/migration_009_datos_pago.sql`](./supabase/migration_009_datos_pago.sql)
+en el SQL Editor de Supabase; mientras no se corra, al personal le dice
+"Esta sección todavía no está activa" y a ti Nómina te avisa qué correr.
+Al entrar, al personal le sale la novedad "Datos para tu pago".
+
 **Tu perfil (dueño)**: arriba a la derecha, en todas tus pantallas, está
 tu foto en un círculo (sin foto, tus iniciales); tocarla abre **Mi
 perfil**: ahí cambias tu foto (igual que el personal: cámara, galería o
@@ -1174,14 +1199,17 @@ que ya entraba antes).
    Agrega los campos que permiten dar de alta cuentas de equipo adicionales
    (ej. jefe de cocina) con permisos por sección desde Equipo &gt; Personal
    (ver "Acceso a la app" en la sección de Personal, más abajo).
-8. Ve a **Authentication → Sign In / Providers → Email** y **apaga "Confirm
+8. Corre también [`supabase/migration_009_datos_pago.sql`](./supabase/migration_009_datos_pago.sql).
+   Crea la tabla protegida de los datos para el pago de nómina (Mi perfil),
+   que solo pueden ver cada persona y su dueño.
+9. Ve a **Authentication → Sign In / Providers → Email** y **apaga "Confirm
    email"**. Es obligatorio: las cuentas del equipo usan un correo técnico
    que no es real, así que nunca podrían confirmarse por correo.
-9. Ve a **Authentication → Users → Add user** y crea **un solo usuario para
+10. Ve a **Authentication → Users → Add user** y crea **un solo usuario para
    ti** (el dueño), con tu correo y una contraseña. Copia su **User UID** (lo
    verás en la lista de usuarios). A tu compañero **no** lo crees aquí — eso
    se hace desde la app en el paso 4 más abajo.
-10. Vuelve a **SQL Editor** y da de alta tu perfil de dueño, reemplazando el
+11. Vuelve a **SQL Editor** y da de alta tu perfil de dueño, reemplazando el
    UUID por el que copiaste:
 
    ```sql
@@ -1189,7 +1217,7 @@ que ya entraba antes).
      values ('UUID-DEL-DUEÑO', 'owner', 'Tu nombre');
    ```
 
-11. Ve a **Project Settings → API** y copia:
+12. Ve a **Project Settings → API** y copia:
    - **Project URL** → será `VITE_SUPABASE_URL`
    - **anon public key** → será `VITE_SUPABASE_ANON_KEY`
 
@@ -1301,4 +1329,5 @@ supabase/
   migration_004_assignment_week.sql    semana elegida a mano por asignación
   migration_005_realtime.sql           activa la sincronización en vivo
   migration_006_staff_permisos.sql     cuentas de equipo con permisos por sección
+  migration_009_datos_pago.sql         datos de pago de nómina (solo la persona y su dueño)
 ```
