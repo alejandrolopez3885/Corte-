@@ -1474,7 +1474,11 @@ button.pill { cursor: pointer; }
 .avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .avatar-btn { border: none; background: none; padding: 0; cursor: pointer; border-radius: 50%; display: inline-flex; }
 .menu-item-icon.avatar-icon { background: none; }
-.catalog-row.con-avatar { display: flex; align-items: center; gap: 12px; }
+/* Foto + nombre juntos a la izquierda (sin esto, en iPad o computadora el
+   nombre se va hasta la derecha). */
+.catalog-row.con-avatar { display: flex; align-items: center; gap: 12px; justify-content: flex-start; }
+.catalog-row.con-avatar > div { flex: 1; min-width: 0; }
+.catalog-row .avatar { color: var(--accent); }
 .perfil-foto { display: flex; flex-direction: column; align-items: center; gap: 8px; margin: 6px 0 16px; }
 .perfil-foto-btn { border: none; background: none; padding: 0; cursor: pointer; border-radius: 50%; box-shadow: 0 4px 14px rgba(20, 40, 30, 0.18); }
 .perfil-cambiar { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; }
