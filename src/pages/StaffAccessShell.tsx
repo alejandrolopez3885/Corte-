@@ -24,7 +24,7 @@ function ShellHeader({ subtitle, onSignOut, perfil }: { subtitle?: string; onSig
   return (
     <header className="topbar">
       <div className="brand">
-        <span className="brand-mark">Cortes</span>
+        <img className="brand-logo" src="/favicon.svg" alt="Cortes" />
         {subtitle && <span className="brand-month">{subtitle}</span>}
       </div>
       <div className="topbar-actions">

@@ -30,7 +30,7 @@ function OwnerLogin({ onSwitchToPin }: { onSwitchToPin: () => void }) {
   return (
     <div className="auth-shell">
       <form className="auth-card" onSubmit={handleSubmit}>
-        <h1 className="auth-title">Cortes</h1>
+        <img className="auth-logo" src="/favicon.svg" alt="Cortes" />
         <p className="auth-subtitle">Inicia sesión para capturar el corte del día.</p>
         {error && <div className="auth-error">{error}</div>}
         <label className="field">

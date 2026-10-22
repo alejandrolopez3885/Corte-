@@ -1302,6 +1302,13 @@ celular lo recorte en círculo o en la forma que use), declarados en
 la app en su pantalla de inicio muestre el ícono nuevo, hay que quitar ese
 acceso y volver a agregarlo.
 
+El mismo ícono (`favicon.svg`) es el logo dentro de la app: va arriba a la
+izquierda en lugar de la palabra "Cortes" (38 px, con esquinas redondeadas),
+en todas las pantallas del dueño y del personal — al lado sigue el mes en
+Corte o el área del personal —, y en grande (84 px) en lugar del título en
+la pantalla de entrar con correo. La pestaña del navegador y el nombre de
+la app en el celular siguen diciendo "Cortes".
+
 ## Estructura del proyecto
 
 ```

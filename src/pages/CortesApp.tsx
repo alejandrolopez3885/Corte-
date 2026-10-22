@@ -232,7 +232,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
         <div className="app-shell">
           <header className="topbar">
             <div className="brand">
-              <span className="brand-mark">Cortes</span>
+              <img className="brand-logo" src="/favicon.svg" alt="Cortes" />
             </div>
             <button className="icon-btn" onClick={signOut} aria-label="Cerrar sesión">
               <LogOut size={18} />
@@ -1223,7 +1223,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
       {isOwner && <NovedadesAlEntrar profile={profile} data={data} tieneCorte={false} />}
       <header className="topbar">
         <div className="brand">
-          <span className="brand-mark">Cortes</span>
+          <img className="brand-logo" src="/favicon.svg" alt="Cortes" />
           {isOwner && activeTab === "corte" && month && <span className="brand-month">{month.label}</span>}
           {!isOwner && <span className="brand-role">Acceso por día asignado</span>}
         </div>

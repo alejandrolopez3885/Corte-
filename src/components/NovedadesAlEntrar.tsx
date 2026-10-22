@@ -296,6 +296,18 @@ function Visual({ tipo }: { tipo: VisualNovedad }) {
       </>
     );
   }
+  if (tipo === "logo") {
+    return (
+      <>
+        <span className="nv-etiqueta">Arriba a la izquierda</span>
+        <div className="nv-perfil">
+          <img className="brand-logo" src="/favicon.svg" alt="" />
+          <small>Cocina</small>
+        </div>
+        <span className="nv-antes">Antes: decía "Cortes"</span>
+      </>
+    );
+  }
   if (tipo === "datosPago") {
     return (
       <>

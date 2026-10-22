@@ -18,7 +18,7 @@ import type { AppData, ConteoTextoArea, PermisoStaff, Profile } from "./types";
 // "general" = de toda la app: le sale a cualquiera que ya entraba antes.
 export type SeccionNovedad = "corte" | PermisoStaff | "general";
 
-export type VisualNovedad = "sumar" | "autocompletar" | "categoria" | "faltan" | "guardarCorte" | "inventarioPasos" | "recetarioArea" | "apertura" | "cierreTotal" | "efectivoEntregar" | "conteoBar" | "pedidosPegar" | "preguntas" | "perfil" | "datosPago";
+export type VisualNovedad = "sumar" | "autocompletar" | "categoria" | "faltan" | "guardarCorte" | "inventarioPasos" | "recetarioArea" | "apertura" | "cierreTotal" | "efectivoEntregar" | "conteoBar" | "pedidosPegar" | "preguntas" | "perfil" | "datosPago" | "logo";
 
 export interface Novedad {
   id: string;
@@ -153,6 +153,14 @@ export const NOVEDADES: Novedad[] = [
     titulo: "Datos para tu pago",
     texto: "En **Mi perfil** pon tu banco y tu número de tarjeta o CLABE para que te depositen tu nómina. Solo los ve el dueño.",
     visual: "datosPago",
+  },
+  {
+    id: "logo-anubis",
+    fecha: "2026-10-22T06:45:00Z",
+    seccion: "general",
+    titulo: "El logo de la app",
+    texto: "Arriba a la izquierda ahora está el ícono de la app en lugar de la palabra Cortes. Todo lo demás sigue igual.",
+    visual: "logo",
   },
 ];
 
