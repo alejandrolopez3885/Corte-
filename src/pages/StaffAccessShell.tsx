@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { BookOpen, ChefHat, ClipboardList, Clock, Coins, Home, LogOut, Martini, MessageCircle, Package, ShoppingCart, Wallet } from "lucide-react";
+import { BookOpen, ChefHat, ClipboardList, Clock, Coins, Home, LogOut, Martini, MessageCircle, Package, QrCode, ShoppingCart, Wallet } from "lucide-react";
 import { formatAssignedDate, insumoAreaForPuesto, plantillaConteo, mostRecentWeekIndex, puedeEditarHorarios } from "../lib/dataModel";
 import { HORARIO_AREAS_FIJAS, PERMISOS_DISPONIBLES } from "../lib/types";
 import type { AppData, ConteoTextoArea, HorarioSemana, PermisoStaff, Profile, StaffAssignment } from "../lib/types";
@@ -16,12 +16,13 @@ import { Avatar } from "../components/Avatar";
 import { PerfilPanel } from "../components/panels/PerfilPanel";
 import { DatosPagoSeccion } from "../components/DatosPagoSeccion";
 import { RankingPanel, RankingTarjeta } from "../components/panels/RankingPanel";
+import { EncuestaPanel } from "../components/panels/EncuestaPanel";
 import { esDePiso, meseroDeEmpleado } from "../lib/ranking";
 import { supabase } from "../lib/supabaseClient";
 import { CargarPedidosPanel } from "../components/panels/CargarPedidosPanel";
 import { RanuraTitulo, TituloPagina } from "../components/BarraTitulo";
 
-type StaffView = "menu" | PermisoStaff | "corte" | "perfil" | "ranking";
+type StaffView = "menu" | PermisoStaff | "corte" | "perfil" | "ranking" | "encuesta";
 
 function ShellHeader({ subtitle, onSignOut, perfil }: { subtitle?: string; onSignOut: () => void; perfil?: ReactNode }) {
   return (
@@ -95,7 +96,7 @@ export default function StaffAccessShell({
   // Cuántas veces entra a cada sección, en su propia cuenta: con eso se
   // acomodan arriba sus preguntas en Pregúntale a Cortes.
   useEffect(() => {
-    if (view === "menu" || view === "perfil" || view === "ranking") return;
+    if (view === "menu" || view === "perfil" || view === "ranking" || view === "encuesta") return;
     supabase.auth.getUser().then(({ data: u }) => {
       const uso = (u.user?.user_metadata?.seccionesUso || {}) as Record<string, number>;
       supabase.auth.updateUser({ data: { seccionesUso: { ...uso, [view]: (uso[view] || 0) + 1 } } });
@@ -192,6 +193,21 @@ export default function StaffAccessShell({
   // Con una sola sección en total no hay menú al que volver — nunca se
   // muestra la vista "menu" ni un botón de regreso.
   const backToMenu = totalSecciones > 1 ? () => setView("menu") : undefined;
+
+  if (view === "encuesta" && esPiso) {
+    const meseroId = meseroDeEmpleado(data, empleado);
+    return (
+      <div className="app-shell">
+        <ShellHeader subtitle={area?.nombre} onSignOut={onSignOut} perfil={perfilBtn} />
+        <EncuestaPanel
+          perfilId={profile.id}
+          meseroId={meseroId}
+          meseroNombre={data.meseros.find((m) => m.id === meseroId)?.nombre || empleado.nombre.split(" ")[0]}
+          onBack={backToMenu}
+        />
+      </div>
+    );
+  }
 
   if (view === "ranking" && esPiso) {
     return (
@@ -413,6 +429,17 @@ export default function StaffAccessShell({
         <TituloPagina titulo={`Hola, ${empleado.nombre.split(" ")[0]}`} subtitulo={area?.nombre} />
         {esPiso && <RankingTarjeta data={data} miMeseroId={meseroDeEmpleado(data, empleado)} onVer={() => setView("ranking")} />}
         <div className="menu-list">
+          {esPiso && (
+            <button className="menu-item" onClick={() => setView("encuesta")}>
+              <span className="menu-item-icon">
+                <QrCode size={20} />
+              </span>
+              <span className="menu-item-text">
+                <strong>Encuesta para el cliente</strong>
+                <span>Genera un QR con el total de la cuenta para que el cliente te califique</span>
+              </span>
+            </button>
+          )}
           {tieneCorte && (
             <button className="menu-item" onClick={() => setView("corte")}>
               <span className="menu-item-icon">

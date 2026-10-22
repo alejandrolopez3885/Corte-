@@ -1134,6 +1134,43 @@ lista, sin montos) y tú "ranking de meseros" o "¿quién va primero?" (con
 montos). Al entrar, a las cuentas de Piso les sale la novedad "Ranking de
 meseros". Cálculo en `src/lib/ranking.ts`.
 
+**Encuestas con QR**: las cuentas del área Piso tienen en su inicio
+**Encuesta para el cliente**: escriben el total de la cuenta (y la mesa,
+opcional), tocan "Generar QR" y le muestran al cliente un QR grande con un
+contador ("Vence en 29:41") y "Cancelar esta encuesta"; cuando el cliente
+la envía, en su celular sale "¡Gracias! Encuesta recibida" y "Generar
+otra". Ahí mismo ven cuántas llevan hoy (máximo 15 al día) y su
+calificación de la semana (⭐ promedio y cuántas válidas; los comentarios
+son solo del dueño). Su usuario del sistema tiene que estar ligado a su
+persona (por usuario del sistema o por nombre) para poder generarla. El
+cliente escanea y se abre la encuesta en la misma dirección de la app
+(`/?e=<código>`) sin iniciar sesión ni descargar nada, con Anubis: escribe
+el **total de su cuenta** (como viene en su ticket), califica **atención
+de su mesero**, **comida** y **rapidez** de 1 a 5 estrellas, deja un
+comentario opcional y envía; es anónima. **Para que no se ayuden entre
+ellos**, una respuesta solo cuenta si: el total que escribe el cliente
+coincide (±$1) con el que anotó el mesero; no se contesta desde un celular
+donde alguien del equipo haya iniciado sesión (la app lo marca al entrar)
+ni desde un celular que ya contestó otra en los últimos 7 días; se contesta
+en 10 segundos o más; no es fuera de horario (de 3 a 10 de la mañana); y la
+suma de los totales con encuesta de ese mesero en un día no pasa su venta
+de ese día en el corte (esto lo revisa la app del dueño al abrir
+Encuestas). Cada QR vale 30 minutos y una sola respuesta. Las que no
+cumplen quedan como **sospechosas** y no cuentan hasta que el dueño las
+aprueba. **En el ranking** sale como columna aparte "⭐ 4.8 · 12"
+(atención promedio y cuántas válidas; con menos de 3 sale "⭐ —"), sin
+cambiar los puntos. **El dueño**, en Equipo > Encuestas ("Esta semana",
+"Semana pasada" o "Mes"): **Respuestas** (las válidas, con estrellas,
+comida, rapidez, mesa, total y comentario), **Por mesero** (promedios y
+cuántas) y **Sospechosas** (con el motivo y "Aprobar" / "Descartar"). Se
+guarda en Supabase en tablas protegidas (`encuestas` y
+`encuesta_respuestas`, ver
+[`supabase/migration_011_encuestas.sql`](./supabase/migration_011_encuestas.sql),
+ya aplicada): el cliente solo puede ver el nombre del mesero y enviar su
+respuesta una vez, sin leer nada; el personal solo ve los promedios; las
+respuestas completas, solo el dueño. Al entrar, a las cuentas de Piso les
+sale la novedad "Encuestas para tus clientes".
+
 **Tu perfil (dueño)**: arriba a la derecha, en todas tus pantallas, está
 tu foto en un círculo (sin foto, tus iniciales); tocarla abre **Mi
 perfil**: ahí cambias tu foto (igual que el personal: cámara, galería o
@@ -1373,4 +1410,5 @@ supabase/
   migration_006_staff_permisos.sql     cuentas de equipo con permisos por sección
   migration_009_datos_pago.sql         datos de pago de nómina (solo la persona y su dueño)
   migration_010_cerrar_rls_auto_enable.sql  quita el acceso público a una función interna de Supabase
+  migration_011_encuestas.sql          encuestas con QR por mesero (tablas protegidas y funciones)
 ```

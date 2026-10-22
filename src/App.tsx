@@ -1,10 +1,16 @@
 import { useAuth } from "./lib/auth.tsx";
 import Login from "./pages/Login.tsx";
+import EncuestaPublica from "./pages/EncuestaPublica.tsx";
 import CortesApp from "./pages/CortesApp.tsx";
 import { BarraTituloProvider } from "./components/BarraTitulo";
 
+// Encuesta del cliente (QR): se abre sin iniciar sesión, antes de todo.
+const tokenEncuesta = new URLSearchParams(window.location.search).get("e");
+
 export default function App() {
   const { session, profile, status } = useAuth();
+
+  if (tokenEncuesta) return <EncuestaPublica token={tokenEncuesta} />;
 
   if (status === "loading") {
     return (

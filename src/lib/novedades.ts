@@ -19,7 +19,7 @@ import type { AppData, ConteoTextoArea, PermisoStaff, Profile } from "./types";
 // "general" = de toda la app: le sale a cualquiera que ya entraba antes.
 export type SeccionNovedad = "corte" | PermisoStaff | "general";
 
-export type VisualNovedad = "sumar" | "autocompletar" | "categoria" | "faltan" | "guardarCorte" | "inventarioPasos" | "recetarioArea" | "apertura" | "cierreTotal" | "efectivoEntregar" | "conteoBar" | "pedidosPegar" | "preguntas" | "perfil" | "datosPago" | "logo" | "barraTitulo" | "ranking";
+export type VisualNovedad = "sumar" | "autocompletar" | "categoria" | "faltan" | "guardarCorte" | "inventarioPasos" | "recetarioArea" | "apertura" | "cierreTotal" | "efectivoEntregar" | "conteoBar" | "pedidosPegar" | "preguntas" | "perfil" | "datosPago" | "logo" | "barraTitulo" | "ranking" | "encuesta";
 
 export interface Novedad {
   id: string;
@@ -181,6 +181,15 @@ export const NOVEDADES: Novedad[] = [
     titulo: "Ranking de meseros",
     texto: "En tu inicio ves en qué lugar vas esta semana. La venta suma puntos y las **cancelaciones** restan.",
     visual: "ranking",
+  },
+  {
+    id: "encuestas-qr",
+    fecha: "2026-10-22T08:40:00Z",
+    seccion: "general",
+    soloPiso: true,
+    titulo: "Encuestas para tus clientes",
+    texto: "En tu inicio toca **Encuesta para el cliente**, escribe el total de la cuenta y muéstrale el QR. Su calificación sale como ⭐ en el ranking.",
+    visual: "encuesta",
   },
 ];
 

@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Trophy } from "lucide-react";
 import { Avatar } from "../Avatar";
 import { Empty } from "../ui";
 import { TituloPagina } from "../BarraTitulo";
 import { money } from "../../lib/dataModel";
 import { MINIMO_DIAS_RANKING, calcularRanking, rangoRanking, type PeriodoRanking } from "../../lib/ranking";
+import { MINIMO_ENCUESTAS, calificaciones } from "../../lib/encuestas";
 import type { AppData } from "../../lib/types";
 
 // Ranking de meseros. Personal de Piso ("equipo"): lugar, foto, nombre,
@@ -26,6 +27,15 @@ export function RankingPanel({
   const [periodo, setPeriodo] = useState<PeriodoRanking>("semana");
   const { desde, hasta } = rangoRanking(periodo);
   const ranking = calcularRanking(data, desde, hasta);
+  // ⭐ de las encuestas: columna aparte, no cambia los puntos.
+  const [estrellas, setEstrellas] = useState<Map<string, { promedio: number; cantidad: number }>>(new Map());
+  useEffect(() => {
+    let vivo = true;
+    calificaciones(desde, hasta).then((m) => vivo && setEstrellas(m));
+    return () => {
+      vivo = false;
+    };
+  }, [desde, hasta]);
   const yo = ranking.filas.find((f) => f.meseroId === miMeseroId);
   const yoSinEntrar = ranking.sinEntrar.find((f) => f.meseroId === miMeseroId);
   const periodos: [PeriodoRanking, string][] = [
@@ -95,9 +105,20 @@ export function RankingPanel({
                   </div>
                 )}
               </div>
-              <span className="ranking-puntos">
-                {f.puntos}
-                {modo === "dueno" && <small> pts</small>}
+              <span className="ranking-derecha">
+                <span className="ranking-puntos">
+                  {f.puntos}
+                  {modo === "dueno" && <small> pts</small>}
+                </span>
+                {estrellas.get(f.meseroId) && (
+                  <span className="ranking-estrellas">
+                    ⭐{" "}
+                    {estrellas.get(f.meseroId)!.cantidad >= MINIMO_ENCUESTAS
+                      ? estrellas.get(f.meseroId)!.promedio.toLocaleString("es-MX", { minimumFractionDigits: 1, maximumFractionDigits: 1 })
+                      : "—"}{" "}
+                    · {estrellas.get(f.meseroId)!.cantidad}
+                  </span>
+                )}
               </span>
             </div>
           ))}
@@ -113,7 +134,8 @@ export function RankingPanel({
       <p className="hint">
         Cómo se calcula: la venta por día trabajado da hasta 100 puntos (100 = quien más vende por día {nombrePeriodo}) y cada 1% de
         cancelaciones sobre su venta resta 10 puntos. Para aparecer hacen falta {MINIMO_DIAS_RANKING} días trabajados.
-        {periodo === "semana" ? " La semana va de lunes a domingo." : ""}
+        {periodo === "semana" ? " La semana va de lunes a domingo." : ""} ⭐ = calificación de atención en las encuestas (1 a 5) y
+        cuántas válidas; se muestra con {MINIMO_ENCUESTAS} o más y no cambia los puntos.
       </p>
     </div>
   );

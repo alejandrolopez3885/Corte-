@@ -1,0 +1,203 @@
+import qrcode from "qrcode-generator";
+import { supabase } from "./supabaseClient";
+
+// Encuestas con QR por mesero (ver supabase/migration_011_encuestas.sql).
+// El mesero genera una con el total de la cuenta; el cliente la contesta
+// en /?e=<código> sin iniciar sesión, confirmando ese total. Crear,
+// contestar y sacar promedios va por funciones de la base que revisan
+// todo; los comentarios solo los lee el dueño.
+
+export const MINIMO_ENCUESTAS = 3;
+export const MAXIMO_ENCUESTAS_DIA = 15;
+
+// --- Este celular ---------------------------------------------------------
+// Un id al azar por celular (para contar una encuesta por celular a la
+// semana) y una marca si alguien del equipo inició sesión en él alguna vez.
+const LLAVE_DISPOSITIVO = "cortes-dispositivo";
+const LLAVE_PERSONAL = "cortes-dispositivo-personal";
+
+function guardado(llave: string): string | null {
+  try {
+    return localStorage.getItem(llave);
+  } catch {
+    return null;
+  }
+}
+
+export function idDispositivo(): string {
+  let id = guardado(LLAVE_DISPOSITIVO);
+  if (!id) {
+    id = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    try {
+      localStorage.setItem(LLAVE_DISPOSITIVO, id);
+    } catch {
+      // Sin almacenamiento (incógnito estricto): va sin id.
+    }
+  }
+  return id;
+}
+
+export function marcarDispositivoPersonal() {
+  try {
+    localStorage.setItem(LLAVE_PERSONAL, "1");
+  } catch {
+    // nada
+  }
+}
+export const esDispositivoPersonal = () => guardado(LLAVE_PERSONAL) === "1";
+
+// --- QR -------------------------------------------------------------------
+export const urlEncuesta = (token: string) => `${window.location.origin}/?e=${token}`;
+
+export function svgQr(texto: string): string {
+  const qr = qrcode(0, "M");
+  qr.addData(texto);
+  qr.make();
+  return qr.createSvgTag({ cellSize: 6, margin: 2, scalable: true });
+}
+
+// --- Mesero ---------------------------------------------------------------
+export interface EncuestaCreada {
+  id: string;
+  token: string;
+  vence_en: string;
+}
+
+export async function crearEncuesta(total: number, mesa: string, meseroId: string, meseroNombre: string): Promise<{ encuesta?: EncuestaCreada; error?: string }> {
+  const { data, error } = await supabase.rpc("crear_encuesta", { p_total: total, p_mesa: mesa, p_mesero_id: meseroId, p_mesero_nombre: meseroNombre });
+  if (error) {
+    console.error("No se pudo crear la encuesta", error);
+    const msg = error.message || "";
+    if (msg.includes("15 encuestas")) return { error: `Ya generaste las ${MAXIMO_ENCUESTAS_DIA} encuestas de hoy.` };
+    if (msg.includes("total")) return { error: "Escribe el total de la cuenta." };
+    if (error.code === "PGRST202" || error.code === "42883") return { error: "Las encuestas todavía no están activas." };
+    return { error: "No se pudo crear la encuesta. Revisa tu conexión e intenta de nuevo." };
+  }
+  const fila = (Array.isArray(data) ? data[0] : data) as EncuestaCreada | undefined;
+  return fila ? { encuesta: fila } : { error: "No se pudo crear la encuesta." };
+}
+
+export async function cancelarEncuesta(id: string) {
+  const { error } = await supabase.rpc("cancelar_encuesta", { p_id: id });
+  if (error) console.error("No se pudo cancelar la encuesta", error);
+}
+
+export async function estadoEncuesta(id: string): Promise<"abierta" | "respondida" | "cancelada" | "vencida" | null> {
+  const { data, error } = await supabase.from("encuestas").select("respondida_en, cancelada, vence_en").eq("id", id).maybeSingle();
+  if (error || !data) return null;
+  if (data.respondida_en) return "respondida";
+  if (data.cancelada) return "cancelada";
+  return new Date(data.vence_en).getTime() < Date.now() ? "vencida" : "abierta";
+}
+
+// Cuántas generó hoy esta cuenta.
+export async function encuestasDeHoy(perfilId: string): Promise<number> {
+  const inicio = new Date();
+  inicio.setHours(0, 0, 0, 0);
+  const { count, error } = await supabase
+    .from("encuestas")
+    .select("id", { count: "exact", head: true })
+    .eq("creado_por", perfilId)
+    .gte("creado_en", inicio.toISOString());
+  return error ? 0 : count || 0;
+}
+
+// Promedio de atención y cuántas válidas por mesero (sin comentarios).
+export async function calificaciones(desde: string, hasta: string): Promise<Map<string, { promedio: number; cantidad: number }>> {
+  const { data, error } = await supabase.rpc("calificaciones", { p_desde: desde, p_hasta: hasta });
+  const mapa = new Map<string, { promedio: number; cantidad: number }>();
+  if (error) {
+    console.error("No se pudieron leer las calificaciones", error);
+    return mapa;
+  }
+  ((data as { mesero_id: string; promedio: number; cantidad: number }[]) || []).forEach((f) =>
+    mapa.set(f.mesero_id, { promedio: Number(f.promedio), cantidad: Number(f.cantidad) })
+  );
+  return mapa;
+}
+
+// --- Cliente ----------------------------------------------------------------
+export async function encuestaPublica(token: string): Promise<{ mesero_nombre: string; estado: string } | null | "error"> {
+  const { data, error } = await supabase.rpc("encuesta_publica", { p_token: token });
+  if (error) return "error";
+  const fila = Array.isArray(data) ? data[0] : data;
+  return (fila as { mesero_nombre: string; estado: string }) || null;
+}
+
+export async function responderEncuesta(
+  token: string,
+  r: { total: number; atencion: number; comida: number; rapidez: number; comentario: string; segundos: number }
+): Promise<string> {
+  const { data, error } = await supabase.rpc("responder_encuesta", {
+    p_token: token,
+    p_total: r.total,
+    p_atencion: r.atencion,
+    p_comida: r.comida,
+    p_rapidez: r.rapidez,
+    p_comentario: r.comentario,
+    p_dispositivo: idDispositivo(),
+    p_dispositivo_personal: esDispositivoPersonal(),
+    p_segundos: r.segundos,
+  });
+  if (error) {
+    console.error("No se pudo enviar la encuesta", error);
+    return "error";
+  }
+  return String(data);
+}
+
+// --- Dueño ------------------------------------------------------------------
+export interface RespuestaEncuesta {
+  encuesta_id: string;
+  mesero_id: string;
+  mesero_nombre: string;
+  atencion: number;
+  comida: number;
+  rapidez: number;
+  comentario: string | null;
+  total_cliente: number;
+  segundos: number | null;
+  motivos: string[];
+  revision: "aprobada" | "descartada" | null;
+  respondida_en: string;
+  encuestas: { total: number; mesa: string | null } | null;
+}
+
+export const esValida = (r: Pick<RespuestaEncuesta, "motivos" | "revision">) =>
+  r.revision !== "descartada" && (r.motivos.length === 0 || r.revision === "aprobada");
+
+export const MOTIVOS: Record<string, string> = {
+  total: "el total no coincide",
+  personal: "celular del personal",
+  rapida: "contestada muy rápido",
+  repetido: "el mismo celular ya contestó esta semana",
+  horario: "fuera de horario",
+  venta: "sus encuestas del día pasan su venta del corte",
+};
+
+export async function cargarRespuestas(desde: string, hasta: string): Promise<RespuestaEncuesta[] | null> {
+  const fin = new Date(`${hasta}T00:00:00`);
+  fin.setDate(fin.getDate() + 1);
+  const { data, error } = await supabase
+    .from("encuesta_respuestas")
+    .select("*, encuestas(total, mesa)")
+    .gte("respondida_en", new Date(`${desde}T00:00:00`).toISOString())
+    .lt("respondida_en", fin.toISOString())
+    .order("respondida_en", { ascending: false });
+  if (error) {
+    console.error("No se pudieron leer las encuestas", error);
+    return null;
+  }
+  return (data as RespuestaEncuesta[]) || [];
+}
+
+export async function revisarRespuesta(encuestaId: string, revision: "aprobada" | "descartada" | null) {
+  const { error } = await supabase.from("encuesta_respuestas").update({ revision }).eq("encuesta_id", encuestaId);
+  if (error) console.error("No se pudo revisar la encuesta", error);
+  return !error;
+}
+
+export async function agregarMotivo(encuestaId: string, motivos: string[]) {
+  const { error } = await supabase.from("encuesta_respuestas").update({ motivos }).eq("encuesta_id", encuestaId);
+  if (error) console.error("No se pudo marcar la encuesta", error);
+}

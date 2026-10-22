@@ -296,6 +296,16 @@ function Visual({ tipo }: { tipo: VisualNovedad }) {
       </>
     );
   }
+  if (tipo === "encuesta") {
+    return (
+      <>
+        <span className="nv-etiqueta">Encuesta para el cliente</span>
+        <div className="nv-campo">Total de la cuenta: $1,240</div>
+        <div className="nv-boton">Generar QR</div>
+        <span className="nv-suma">⭐ 4.8 · 12 encuestas</span>
+      </>
+    );
+  }
   if (tipo === "ranking") {
     return (
       <>
