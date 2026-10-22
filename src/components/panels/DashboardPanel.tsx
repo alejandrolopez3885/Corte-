@@ -8,6 +8,7 @@ import {
 import { copyDashboardImage, resultadoSemanal } from "../../lib/dashboardImage";
 import { DAY_SHORT } from "../../lib/types";
 import type { EmpleadoEntry, HorarioMonthData, MeseroCatalogEntry, MonthData, MontoFijoSemanal } from "../../lib/types";
+import { TituloPagina } from "../BarraTitulo";
 
 // Categorías donde además del total conviene ver el detalle de cada gasto
 // que lo compone (concepto por concepto), porque agrupan cosas variadas.
@@ -95,7 +96,7 @@ export function DashboardPanel({
 
   return (
     <div className="page-section">
-      <h2 className="page-title">Dashboard</h2>
+      <TituloPagina titulo="Dashboard" />
       <p className="hint">
         Reporte de resultados de la semana — solo para leer. Nómina se calcula sola a partir de Horarios y el sueldo diario de
         cada quien en Personal, y muestra solo lo generado hasta hoy ({formatShortDayDate(todayIso())}) para que la Utilidad

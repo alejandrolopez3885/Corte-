@@ -1,8 +1,9 @@
-import { ArrowLeft, Plus, UsersRound } from "lucide-react";
+import { Plus, UsersRound } from "lucide-react";
 import { Empty } from "../ui";
 import { Avatar } from "../Avatar";
 import { money } from "../../lib/dataModel";
 import type { AreaEntry, EmpleadoEntry, PuestoEntry } from "../../lib/types";
+import { TituloPagina } from "../BarraTitulo";
 
 export function EmpleadosPanel({
   onBack,
@@ -46,11 +47,8 @@ export function EmpleadosPanel({
 
   return (
     <div className="page-section">
-      <button className="link-btn back-link" onClick={onBack}>
-        <ArrowLeft size={15} /> Equipo
-      </button>
+      <TituloPagina titulo="Personal" onBack={onBack} backLabel="Equipo" />
       <div className="page-title-row">
-        <h2 className="page-title">Personal</h2>
         <button className="icon-btn accent" onClick={onAdd} aria-label="Agregar empleado">
           <Plus size={18} />
         </button>

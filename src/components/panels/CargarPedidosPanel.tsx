@@ -1,10 +1,11 @@
 import { useMemo, useState } from "react";
-import { ArrowLeft, ClipboardPaste, TriangleAlert } from "lucide-react";
+import { ClipboardPaste, TriangleAlert } from "lucide-react";
 import { Field } from "../ui";
 import { addDaysIso, formatWeekRange, pluralizarUnidad, todayIso } from "../../lib/dataModel";
 import { lunesDe } from "../../lib/tendencias";
 import { leerPedidosPegados, semanaDeLosMensajes, type PedidoCargado } from "../../lib/pedidosCargados";
 import type { InsumoEntry, ProveedorCatalogEntry } from "../../lib/types";
+import { TituloPagina } from "../BarraTitulo";
 
 export const SIN_PROVEEDOR = "sin-proveedor";
 
@@ -65,12 +66,7 @@ export function CargarPedidosPanel({
 
   return (
     <div className="page-section">
-      {onBack && (
-        <button className="link-btn back-link" onClick={onBack}>
-          <ArrowLeft size={15} /> {backLabel}
-        </button>
-      )}
-      <h2 className="page-title">Pedidos</h2>
+      <TituloPagina titulo="Pedidos" onBack={onBack} backLabel={backLabel} />
       <Field label="Semana">
         <select
           className="text-input"

@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { ArrowLeft, ChefHat, ClipboardList, Package } from "lucide-react";
+import { ChefHat, ClipboardList, Package } from "lucide-react";
 import { InsumosPanel } from "./InsumosPanel";
 import { ConteoDiarioPanel } from "./ConteoDiarioPanel";
 import { plantillaConteo } from "../../lib/dataModel";
 import type { ConteoTextoArea, InsumoEntry, MonthData, ProveedorCatalogEntry } from "../../lib/types";
+import { TituloPagina } from "../BarraTitulo";
 
 type ControlCocinaView = "menu" | "catalogo" | "conteo";
 
@@ -83,10 +84,7 @@ export function ControlCocinaPanel({
 
   return (
     <div className="page-section">
-      <button className="link-btn back-link" onClick={onBack}>
-        <ArrowLeft size={15} /> Negocio
-      </button>
-      <h2 className="page-title">Control de Cocina</h2>
+      <TituloPagina titulo="Control de Cocina" onBack={onBack} backLabel="Negocio" />
       <div className="menu-list">
         <button className="menu-item" onClick={() => setView("conteo")}>
           <span className="menu-item-icon">

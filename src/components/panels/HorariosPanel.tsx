@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { ArrowLeft, Check, Clock, Copy, Trash2, TriangleAlert } from "lucide-react";
+import { Check, Clock, Copy, Trash2, TriangleAlert } from "lucide-react";
 import { Empty, Field, Sheet } from "../ui";
 import { findPreviousHorarioSemana, formatWeekRange, isoWeekNumber, normalizeHorarioSemana, resolveWeekStartDate } from "../../lib/dataModel";
 import { copyHorarioImage } from "../../lib/horarioImage";
 import { DAYS, DAY_SHORT, HORARIO_AREAS_FIJAS, HORARIO_CHIPS } from "../../lib/types";
 import type { DayName, EmpleadoEntry, HorarioArea, HorarioMonthData, HorarioSemana, MonthData } from "../../lib/types";
+import { TituloPagina } from "../BarraTitulo";
 
 type CellTarget = { areaId: string; empleadoId: string; nombre: string; day: DayName };
 
@@ -50,12 +51,7 @@ export function HorariosPanel({
   if (!month) {
     return (
       <div className="page-section">
-        {onBack && (
-          <button className="link-btn back-link" onClick={onBack}>
-            <ArrowLeft size={15} /> {backLabel}
-          </button>
-        )}
-        <h2 className="page-title">Horarios</h2>
+        <TituloPagina titulo="Horarios" onBack={onBack} backLabel={backLabel} />
         <Empty icon={<Clock size={26} strokeWidth={1.3} />} text="Primero crea un mes en Corte para poder armar horarios." />
       </div>
     );
@@ -84,12 +80,7 @@ export function HorariosPanel({
 
   return (
     <div className="page-section">
-      {onBack && (
-        <button className="link-btn back-link" onClick={onBack}>
-          <ArrowLeft size={15} /> {backLabel}
-        </button>
-      )}
-      <h2 className="page-title">Horarios</h2>
+      <TituloPagina titulo="Horarios" onBack={onBack} backLabel={backLabel} />
       <p className="hint">Por área, con el nombre, el día y la hora de entrada — igual que llevabas el control antes.</p>
 
       <div className="field-row">

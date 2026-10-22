@@ -1,9 +1,10 @@
 import { useMemo, useState } from "react";
-import { ArrowLeft, FileSpreadsheet, TriangleAlert } from "lucide-react";
+import { FileSpreadsheet, TriangleAlert } from "lucide-react";
 import { money, normalizarNombre } from "../../lib/dataModel";
 import { areaSugerida, compararCatalogo, leerHoja, leerPreciosBase, seDidePor, unidadDe } from "../../lib/excelPrecios";
 import type { CambioCatalogo } from "../../lib/excelPrecios";
 import type { InsumoArea, InsumoEntry, ProveedorCatalogEntry } from "../../lib/types";
+import { TituloPagina } from "../BarraTitulo";
 
 // Lo que se manda a guardar: insumos nuevos o actualizados y los nombres
 // de proveedores que hay que crear (se crean y ligan en el mismo persist).
@@ -133,10 +134,7 @@ export function ImportarCatalogoPanel({
 
   return (
     <div className="page-section">
-      <button className="link-btn back-link" onClick={onBack}>
-        <ArrowLeft size={15} /> Negocio
-      </button>
-      <h2 className="page-title">Importar catálogo</h2>
+      <TituloPagina titulo="Importar catálogo" onBack={onBack} backLabel="Negocio" />
       <p className="hint">
         Elige el Excel de inventario de Johnster: se lee la hoja “PRECIOS BASE” y se compara contra tu catálogo. Nada se guarda hasta
         que confirmes.

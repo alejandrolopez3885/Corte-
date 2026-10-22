@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { ArrowLeft, Check, Lock, Package, TriangleAlert } from "lucide-react";
+import { Check, Lock, Package, TriangleAlert } from "lucide-react";
 import { Empty, Field, Sheet } from "../ui";
 import { ErroresSheet, ListaPorProveedor, type ErroresCaptura } from "./ConteoDiarioPanel";
 import {
@@ -7,6 +7,7 @@ import {
 } from "../../lib/dataModel";
 import { leerNotasInventario, normalizar, type RenglonInventario } from "../../lib/inventarioNotas";
 import type { InsumoArea, InsumoEntry, MonthData, ProveedorCatalogEntry } from "../../lib/types";
+import { TituloPagina } from "../BarraTitulo";
 
 const NOMBRE_AREA: Record<InsumoArea, string> = { bar: "Bar", cocina: "Cocina", general: "General" };
 
@@ -103,12 +104,7 @@ export function InventarioNotasPanel({
   if (monthKeys.length === 0 || !month) {
     return (
       <div className="page-section">
-        {onBack && (
-          <button className="link-btn back-link" onClick={onBack}>
-            <ArrowLeft size={15} /> {backLabel}
-          </button>
-        )}
-        <h2 className="page-title">Inventario</h2>
+        <TituloPagina titulo="Inventario" onBack={onBack} backLabel={backLabel} />
         <Empty icon={<Package size={26} strokeWidth={1.3} />} text="Primero crea un mes en Corte para poder llevar el inventario." />
       </div>
     );
@@ -211,12 +207,7 @@ export function InventarioNotasPanel({
 
   return (
     <div className="page-section">
-      {onBack && (
-        <button className="link-btn back-link" onClick={onBack}>
-          <ArrowLeft size={15} /> {backLabel}
-        </button>
-      )}
-      <h2 className="page-title">Inventario</h2>
+      <TituloPagina titulo="Inventario" onBack={onBack} backLabel={backLabel} />
 
       <div className="field-row">
         <Field label="Mes">

@@ -5,6 +5,7 @@ import { normalizar } from "../../lib/gastosBusqueda";
 import { uid } from "../../lib/dataModel";
 import { EJEMPLO_RECETAS, leerRecetas, type RecetaLeida } from "../../lib/recetasTexto";
 import type { Receta } from "../../lib/types";
+import { TituloPagina } from "../BarraTitulo";
 
 // Recetario: lista de recetas con buscador y la receta completa en una
 // pantalla (vaso, ingredientes con medida, utensilios, preparación y
@@ -119,11 +120,8 @@ export function RecetarioPanel({
     const pasos = renglones(abierta.preparacion);
     return (
       <div className="page-section">
-        <button className="link-btn back-link" onClick={() => setAbiertaId(null)}>
-          <ArrowLeft size={15} /> {titulo}
-        </button>
+        <TituloPagina titulo={abierta.nombre} onBack={() => setAbiertaId(null)} backLabel={titulo} />
         <div className="receta-encabezado">
-          <h2 className="page-title">{abierta.nombre}</h2>
           {editable && (
             <button className="icon-btn" aria-label="Editar receta" onClick={() => setEditando(abierta)}>
               <Pencil size={16} />
@@ -182,13 +180,8 @@ export function RecetarioPanel({
 
   return (
     <div className="page-section">
-      {onBack && (
-        <button className="link-btn back-link" onClick={onBack}>
-          <ArrowLeft size={15} /> {backLabel}
-        </button>
-      )}
+      <TituloPagina titulo={titulo} onBack={onBack} backLabel={backLabel} />
       <div className="receta-encabezado">
-        <h2 className="page-title">{titulo}</h2>
         {editable && (
           <button className="icon-btn accent" aria-label="Nueva receta" onClick={() => setEditando("nueva")}>
             <Plus size={18} />

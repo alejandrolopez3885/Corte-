@@ -1,8 +1,9 @@
 import { useRef, useState } from "react";
-import { ArrowLeft, Camera, Image as ImageIcon, Trash2 } from "lucide-react";
+import { Camera, Image as ImageIcon, Trash2 } from "lucide-react";
 import { Avatar } from "../Avatar";
 import { Field } from "../ui";
 import { reducirFoto } from "../../lib/fotos";
+import { TituloPagina } from "../BarraTitulo";
 
 const MAX_DESCRIPCION = 200;
 
@@ -69,12 +70,7 @@ export function PerfilPanel({
 
   return (
     <div className="page-section">
-      {onBack && (
-        <button className="link-btn back-link" onClick={onBack}>
-          <ArrowLeft size={15} /> {backLabel}
-        </button>
-      )}
-      <h2 className="page-title">Mi perfil</h2>
+      <TituloPagina titulo="Mi perfil" onBack={onBack} backLabel={backLabel} />
 
       <div className="perfil-foto">
         <button type="button" className="perfil-foto-btn" onClick={() => setEligiendo(true)} aria-label="Cambiar foto">

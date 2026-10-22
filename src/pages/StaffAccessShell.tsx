@@ -17,6 +17,7 @@ import { PerfilPanel } from "../components/panels/PerfilPanel";
 import { DatosPagoSeccion } from "../components/DatosPagoSeccion";
 import { supabase } from "../lib/supabaseClient";
 import { CargarPedidosPanel } from "../components/panels/CargarPedidosPanel";
+import { RanuraTitulo, TituloPagina } from "../components/BarraTitulo";
 
 type StaffView = "menu" | PermisoStaff | "corte" | "perfil";
 
@@ -25,7 +26,7 @@ function ShellHeader({ subtitle, onSignOut, perfil }: { subtitle?: string; onSig
     <header className="topbar">
       <div className="brand">
         <img className="brand-logo" src="/favicon.svg" alt="Cortes" />
-        {subtitle && <span className="brand-month">{subtitle}</span>}
+        <RanuraTitulo respaldo={subtitle} />
       </div>
       <div className="topbar-actions">
         {perfil}
@@ -187,12 +188,7 @@ export default function StaffAccessShell({
         <ShellHeader subtitle={area?.nombre} onSignOut={onSignOut} perfil={perfilBtn} />
         {preguntas}
         <div className="page-section">
-          {backToMenu && (
-            <button className="link-btn back-link" onClick={backToMenu}>
-              Inicio
-            </button>
-          )}
-          <h2 className="page-title">Corte</h2>
+          <TituloPagina titulo="Corte" onBack={backToMenu} backLabel="Inicio" />
           <p className="hint">Toca el día que vas a capturar:</p>
           <div className="staff-name-grid">
             {assignments.map((a) => (
@@ -393,7 +389,7 @@ export default function StaffAccessShell({
       <ShellHeader subtitle={area?.nombre} onSignOut={onSignOut} perfil={perfilBtn} />
       {preguntas}
       <div className="page-section">
-        <h2 className="page-title">Hola, {empleado.nombre.split(" ")[0]}</h2>
+        <TituloPagina titulo={`Hola, ${empleado.nombre.split(" ")[0]}`} subtitulo={area?.nombre} />
         <div className="menu-list">
           {tieneCorte && (
             <button className="menu-item" onClick={() => setView("corte")}>

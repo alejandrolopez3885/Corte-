@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { ArrowLeft, ChartLine, ChevronRight, Minus, TrendingDown, TrendingUp } from "lucide-react";
+import { ChartLine, ChevronRight, Minus, TrendingDown, TrendingUp } from "lucide-react";
 import { Empty } from "../ui";
 import { formatWeekRange, META_NOMINA_PCT, META_NOMINA_VERDE_PCT, money, round2, todayIso } from "../../lib/dataModel";
 import { type TendenciasSemana } from "../../lib/tendencias";
@@ -9,6 +9,7 @@ import {
 import { diaCorto, semaforoNomina, ultimoDiaContado, type NominaVenta } from "../../lib/nominaVenta";
 import type { EmpleadoEntry, HorarioMonthData, MeseroCatalogEntry, MonthData, MontoFijoSemanal, WeekTrendPoint } from "../../lib/types";
 import { DAYS } from "../../lib/types";
+import { TituloPagina } from "../BarraTitulo";
 
 const ACCENT = "#1F5D4C";
 const WARN = "#B8752D";
@@ -99,10 +100,7 @@ export function TendenciasPanel({
 
   return (
     <div className="page-section">
-      <button className="link-btn back-link" onClick={onBack}>
-        <ArrowLeft size={15} /> Negocio
-      </button>
-      <h2 className="page-title">Tendencias</h2>
+      <TituloPagina titulo="Tendencias" onBack={onBack} backLabel="Negocio" />
 
       {t.semanasBase === 0 && t.hastaHoy === 0 ? (
         <Empty

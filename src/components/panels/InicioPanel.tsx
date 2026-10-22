@@ -5,6 +5,7 @@ import { cargarBitacora, type RenglonBitacora } from "../../lib/bitacora";
 import { calcularInicio, type AlertaInicio, type Destino } from "../../lib/inicio";
 import { pctCambio } from "../../lib/tendencias";
 import type { AppData } from "../../lib/types";
+import { TituloPagina } from "../BarraTitulo";
 
 // Inicio del dueño: lo que necesita su atención hoy, de lo más urgente a lo
 // menos. Un grupo sin pendientes no aparece; sin ninguno, "Todo al día".
@@ -103,7 +104,7 @@ export function InicioPanel({ data, ownerId, onIr }: { data: AppData; ownerId: s
   return (
     <div className="page-section">
       <div>
-        <h2 className="page-title">{saludo}</h2>
+        <TituloPagina titulo={saludo} />
         <p className="hint ini-fecha">{formatLongDayDate(hoy).replace(/ de \d{4}$/, "")}</p>
       </div>
 

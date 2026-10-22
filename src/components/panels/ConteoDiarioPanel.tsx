@@ -1,5 +1,5 @@
 import { useRef, useState, type ReactNode } from "react";
-import { ArrowLeft, Check, Circle, CircleDot, Copy, TriangleAlert } from "lucide-react";
+import { Check, Circle, CircleDot, Copy, TriangleAlert } from "lucide-react";
 import { Empty, Field, NumInput, Sheet } from "../ui";
 import {
   dateForDay,
@@ -16,6 +16,7 @@ import {
 } from "../../lib/dataModel";
 import { DAYS, DAY_SHORT } from "../../lib/types";
 import type { DayName, InsumoEntry, MonthData, ProveedorCatalogEntry } from "../../lib/types";
+import { TituloPagina } from "../BarraTitulo";
 
 export function ConteoDiarioPanel({
   onBack,
@@ -70,12 +71,7 @@ export function ConteoDiarioPanel({
   if (monthKeys.length === 0 || !month || !fecha || !weekStartDate) {
     return (
       <div className="page-section">
-        {onBack && (
-          <button className="link-btn back-link" onClick={onBack}>
-            <ArrowLeft size={15} /> {backLabel}
-          </button>
-        )}
-        <h2 className="page-title">Conteo diario</h2>
+        <TituloPagina titulo="Conteo diario" onBack={onBack} backLabel={backLabel} />
         <Empty icon={emptyIcon} text="Primero crea un mes en Corte para poder llevar el conteo diario." />
       </div>
     );
@@ -89,12 +85,7 @@ export function ConteoDiarioPanel({
 
   return (
     <div className="page-section">
-      {onBack && (
-        <button className="link-btn back-link" onClick={onBack}>
-          <ArrowLeft size={15} /> {backLabel}
-        </button>
-      )}
-      <h2 className="page-title">Conteo diario</h2>
+      <TituloPagina titulo="Conteo diario" onBack={onBack} backLabel={backLabel} />
 
       <div className="field-row">
         <Field label="Mes">

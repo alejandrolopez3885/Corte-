@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { ArrowLeft, Coins } from "lucide-react";
+import { Coins } from "lucide-react";
 import { Empty, Field } from "../ui";
 import { dateForDay, formatShortDayDate, formatWeekRange, money, repartoPropinas, resolveWeekStartDate, round2 } from "../../lib/dataModel";
 import { DAYS } from "../../lib/types";
 import type { MonthData } from "../../lib/types";
+import { TituloPagina } from "../BarraTitulo";
 
 // Consulta de propinas: total por día (sumando los cortes de todos los
 // meseros) y total de la semana, más el reparto por área. Solo lectura —
@@ -31,12 +32,7 @@ export function PropinasPanel({
   if (!month) {
     return (
       <div className="page-section">
-        {onBack && (
-          <button className="link-btn back-link" onClick={onBack}>
-            <ArrowLeft size={15} /> {backLabel}
-          </button>
-        )}
-        <h2 className="page-title">Propinas</h2>
+        <TituloPagina titulo="Propinas" onBack={onBack} backLabel={backLabel} />
         <Empty icon={<Coins size={26} strokeWidth={1.3} />} text="Todavía no hay ningún mes creado en Corte." />
       </div>
     );
@@ -54,12 +50,7 @@ export function PropinasPanel({
 
   return (
     <div className="page-section">
-      {onBack && (
-        <button className="link-btn back-link" onClick={onBack}>
-          <ArrowLeft size={15} /> {backLabel}
-        </button>
-      )}
-      <h2 className="page-title">Propinas</h2>
+      <TituloPagina titulo="Propinas" onBack={onBack} backLabel={backLabel} />
       <p className="hint">Total de propinas de cada día, tomado de los cortes de los meseros. Solo consulta.</p>
 
       <div className="field-row">

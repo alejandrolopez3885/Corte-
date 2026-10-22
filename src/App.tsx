@@ -1,6 +1,7 @@
 import { useAuth } from "./lib/auth.tsx";
 import Login from "./pages/Login.tsx";
 import CortesApp from "./pages/CortesApp.tsx";
+import { BarraTituloProvider } from "./components/BarraTitulo";
 
 export default function App() {
   const { session, profile, status } = useAuth();
@@ -25,5 +26,9 @@ export default function App() {
     );
   }
 
-  return <CortesApp profile={profile} />;
+  return (
+    <BarraTituloProvider>
+      <CortesApp profile={profile} />
+    </BarraTituloProvider>
+  );
 }

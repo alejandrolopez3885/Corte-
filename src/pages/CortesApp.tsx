@@ -51,6 +51,7 @@ import { contarBitacoraDelDia, useRegistrarVista } from "../lib/bitacora";
 import StaffAccessShell from "./StaffAccessShell";
 import { NovedadesAlEntrar } from "../components/NovedadesAlEntrar";
 import { PreguntasSheet } from "../components/PreguntasSheet";
+import { RanuraTitulo, TituloPagina } from "../components/BarraTitulo";
 import { Avatar } from "../components/Avatar";
 import { PerfilPanel } from "../components/panels/PerfilPanel";
 import { contextoEquipo } from "../lib/preguntasEquipo";
@@ -233,6 +234,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           <header className="topbar">
             <div className="brand">
               <img className="brand-logo" src="/favicon.svg" alt="Cortes" />
+              <RanuraTitulo />
             </div>
             <button className="icon-btn" onClick={signOut} aria-label="Cerrar sesión">
               <LogOut size={18} />
@@ -1224,8 +1226,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
       <header className="topbar">
         <div className="brand">
           <img className="brand-logo" src="/favicon.svg" alt="Cortes" />
-          {isOwner && activeTab === "corte" && month && <span className="brand-month">{month.label}</span>}
-          {!isOwner && <span className="brand-role">Acceso por día asignado</span>}
+          <RanuraTitulo />
         </div>
         <div className="topbar-actions">
           {saveState === "error" && <span className="save-badge error">No se guardó</span>}
@@ -1256,7 +1257,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
 
       {isOwner && activeTab === "equipo" && equipoView === "menu" && (
         <div className="page-section">
-          <h2 className="page-title">Equipo</h2>
+          <TituloPagina titulo="Equipo" />
           <div className="menu-list">
             <button className="menu-item" onClick={() => setEquipoView("personal")}>
               <span className="menu-item-icon">
@@ -1363,7 +1364,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
 
       {isOwner && activeTab === "negocio" && negocioView === "menu" && (
         <div className="page-section">
-          <h2 className="page-title">Negocio</h2>
+          <TituloPagina titulo="Negocio" />
           <div className="menu-list">
             <button className="menu-item" onClick={() => setModal({ type: "proveedores" })}>
               <span className="menu-item-icon">
@@ -1692,7 +1693,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           />
         ) : (
           <div className="page-section">
-            <h2 className="page-title">Dashboard</h2>
+            <TituloPagina titulo="Dashboard" />
             <p className="hint">Agrega un mes desde Corte para empezar a ver tu reporte de resultados.</p>
           </div>
         )
@@ -1700,6 +1701,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
 
       {(!isOwner || activeTab === "corte") && (
         <>
+        {isOwner && <TituloPagina titulo="Corte" subtitulo={month?.label} />}
         {isOwner && monthKeys.length > 0 && (
           <nav className="month-scroll">
             {monthKeys.map((mk) => (
@@ -1770,12 +1772,15 @@ export default function CortesApp({ profile }: { profile: Profile }) {
               </>
             ) : (
               <div className="staff-banner">
+                <TituloPagina
+                  titulo="Corte"
+                  subtitulo="Acceso por día asignado"
+                  onBack={
+                    (assignments && assignments.length > 1) || (profile.permisos || []).length > 0 ? () => setSelectedAssignedDate(null) : undefined
+                  }
+                  backLabel="Inicio"
+                />
                 <span>Capturando el corte de {selectedAssignedDate && formatAssignedDate(selectedAssignedDate)}</span>
-                {((assignments && assignments.length > 1) || (profile.permisos || []).length > 0) && (
-                  <button className="link-btn" onClick={() => setSelectedAssignedDate(null)}>
-                    Menú
-                  </button>
-                )}
               </div>
             )}
 

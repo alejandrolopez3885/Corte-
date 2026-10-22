@@ -1,9 +1,10 @@
 import { useState, type ReactNode } from "react";
-import { ArrowLeft, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { Empty } from "../ui";
 import { money } from "../../lib/dataModel";
 import { InsumoModal } from "../modals/InsumoModal";
 import type { InsumoArea, InsumoEntry, ProveedorCatalogEntry } from "../../lib/types";
+import { TituloPagina } from "../BarraTitulo";
 
 export function InsumosPanel({
   onBack,
@@ -49,11 +50,8 @@ export function InsumosPanel({
 
   return (
     <div className="page-section">
-      <button className="link-btn back-link" onClick={onBack}>
-        <ArrowLeft size={15} /> {backLabel}
-      </button>
+      <TituloPagina titulo={title} onBack={onBack} backLabel={backLabel} />
       <div className="page-title-row">
-        <h2 className="page-title">{title}</h2>
         <button className="icon-btn accent" onClick={() => setModal({})} aria-label="Agregar insumo">
           <Plus size={18} />
         </button>

@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, ChevronLeft, ChevronRight, History, LogIn, LogOut, Search, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, History, LogIn, LogOut, Search, X } from "lucide-react";
 import { Empty, Sheet } from "../ui";
 import { addDaysIso, formatAssignedDate, formatWeekRange, todayIso } from "../../lib/dataModel";
 import { SECCION_PREGUNTAS, cargarBitacora, cargarBitacoraDelDia, type RenglonBitacora } from "../../lib/bitacora";
+import { TituloPagina } from "../BarraTitulo";
 
 // Negocio > Análisis > Actividad: la bitácora de la app ordenada para
 // revisarla y estudiar el uso, en tres pestañas — Resumen (lo importante de
@@ -96,10 +97,7 @@ export function ActividadPanel({ onBack, ownerId }: { onBack: () => void; ownerI
 
   return (
     <div className="page-section">
-      <button className="link-btn back-link" onClick={onBack}>
-        <ArrowLeft size={15} /> Negocio
-      </button>
-      <h2 className="page-title">Actividad</h2>
+      <TituloPagina titulo="Actividad" onBack={onBack} backLabel="Negocio" />
 
       <div className="segmented">
         {(["resumen", "personas", "historial"] as Tab[]).map((t) => (

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowLeft, ShoppingCart, TriangleAlert } from "lucide-react";
+import { ShoppingCart, TriangleAlert } from "lucide-react";
 import { Empty, Field } from "../ui";
 import {
   dateForDay,
@@ -15,6 +15,7 @@ import { DAYS, DAY_SHORT } from "../../lib/types";
 import type { ConteoTextoArea, DayName, InsumoEntry, MonthData, ProveedorCatalogEntry } from "../../lib/types";
 import type { PedidoCargado } from "../../lib/pedidosCargados";
 import { SIN_PROVEEDOR } from "./CargarPedidosPanel";
+import { TituloPagina } from "../BarraTitulo";
 
 // Negocio > Pedidos: solo consulta. Suma lo guardado con "Guardar pedido"
 // en el Conteo diario (Cocina y Bar, lunes a domingo) y en el Inventario
@@ -52,10 +53,7 @@ export function PedidosTotalPanel({
   if (monthKeys.length === 0 || !month) {
     return (
       <div className="page-section">
-        <button className="link-btn back-link" onClick={onBack}>
-          <ArrowLeft size={15} /> Negocio
-        </button>
-        <h2 className="page-title">Pedidos</h2>
+        <TituloPagina titulo="Pedidos" onBack={onBack} backLabel="Negocio" />
         <Empty icon={<ShoppingCart size={26} strokeWidth={1.3} />} text="Primero crea un mes en Corte para poder ver los pedidos." />
       </div>
     );
@@ -119,10 +117,7 @@ export function PedidosTotalPanel({
 
   return (
     <div className="page-section">
-      <button className="link-btn back-link" onClick={onBack}>
-        <ArrowLeft size={15} /> Negocio
-      </button>
-      <h2 className="page-title">Pedidos</h2>
+      <TituloPagina titulo="Pedidos" onBack={onBack} backLabel="Negocio" />
       <p className="hint">Total de lo pedido en la semana, hasta hoy.</p>
 
       <div className="field-row">

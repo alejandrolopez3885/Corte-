@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { DatoPagoFila } from "../DatoPagoFila";
 import type { DatosPago } from "../../lib/datosPago";
-import { ArrowLeft, Check, ChevronDown, ChevronUp, Copy, Trash2, Wallet } from "lucide-react";
+import { Check, ChevronDown, ChevronUp, Copy, Trash2, Wallet } from "lucide-react";
 import { Empty, Field, Sheet, SumInput } from "../ui";
 import { computeNominaHastaHoyPorEmpleado, computeNominaSemana, computeWeekSummary, formatShortDayDate, formatWeekRange, isoWeekNumber, money, resolveWeekStartDate, sumFromText, todayIso, uid } from "../../lib/dataModel";
 import { copyNominaImage } from "../../lib/nominaImage";
@@ -15,6 +15,7 @@ import type {
   NominaDescuentoTipo,
   NominaExtraTipo,
 } from "../../lib/types";
+import { TituloPagina } from "../BarraTitulo";
 
 export function NominaPanel({
   onBack,
@@ -75,12 +76,7 @@ export function NominaPanel({
   if (!month) {
     return (
       <div className="page-section">
-        {onBack && (
-          <button className="link-btn back-link" onClick={onBack}>
-            <ArrowLeft size={15} /> {backLabel}
-          </button>
-        )}
-        <h2 className="page-title">Nómina</h2>
+        <TituloPagina titulo="Nómina" onBack={onBack} backLabel={backLabel} />
         <Empty icon={<Wallet size={26} strokeWidth={1.3} />} text="Primero crea un mes en Corte para poder calcular la nómina." />
       </div>
     );
@@ -173,12 +169,7 @@ export function NominaPanel({
 
   return (
     <div className="page-section">
-      {onBack && (
-        <button className="link-btn back-link" onClick={onBack}>
-          <ArrowLeft size={15} /> {backLabel}
-        </button>
-      )}
-      <h2 className="page-title">Nómina</h2>
+      <TituloPagina titulo="Nómina" onBack={onBack} backLabel={backLabel} />
       {avisoPago && <p className="aviso-dejado">{avisoPago}</p>}
       <p className="hint">
         Calculada sola a partir de Horarios y el sueldo diario de cada quien en Personal: Z paga doble, O/X pagan normal, el

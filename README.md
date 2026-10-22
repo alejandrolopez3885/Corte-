@@ -1309,6 +1309,18 @@ Corte o el área del personal —, y en grande (84 px) en lugar del título en
 la pantalla de entrar con correo. La pestaña del navegador y el nombre de
 la app en el celular siguen diciendo "Cortes".
 
+**Barra de arriba**: junto al logo va el nombre de la pantalla en la que
+estás y, si se puede regresar, una flecha **‹** antes (hace lo mismo que el
+"← Inicio" / "← Equipo" / "← Negocio" que antes iba abajo) — en todas las
+pantallas del dueño y del personal. En las pestañas principales no hay
+flecha: Inicio (el saludo), Corte (con el mes debajo), Equipo, Negocio,
+Dashboard y el inicio del personal ("Hola, Luis", con su área debajo). Los
+botones que iban junto al título (como el + de Personal) se quedan abajo,
+en su fila. Los nombres largos nunca se cortan: pasan completos al siguiente
+renglón, partiendo solo en los espacios (y con letra un poco más chica si
+son muy largos). Cada pantalla pone su título con `<TituloPagina>` (ver
+`src/components/BarraTitulo.tsx`) y este se dibuja en la barra.
+
 ## Estructura del proyecto
 
 ```

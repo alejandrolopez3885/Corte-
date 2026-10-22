@@ -296,6 +296,19 @@ function Visual({ tipo }: { tipo: VisualNovedad }) {
       </>
     );
   }
+  if (tipo === "barraTitulo") {
+    return (
+      <>
+        <span className="nv-etiqueta">Barra de arriba</span>
+        <div className="nv-perfil">
+          <img className="brand-logo" src="/favicon.svg" alt="" />
+          <span className="barra-atras">‹</span>
+          <strong>Mi perfil</strong>
+        </div>
+        <span className="nv-antes">Antes: "← Inicio" y el nombre iban abajo</span>
+      </>
+    );
+  }
   if (tipo === "logo") {
     return (
       <>
