@@ -38,6 +38,7 @@ export interface EncuestaSeguida {
   vence_en: string;
   cancelada: boolean;
   respondida_en: string | null;
+  prueba?: boolean;
   encuesta_respuestas: { motivos: string[]; revision: "aprobada" | "descartada" | null } | null;
 }
 
@@ -67,7 +68,7 @@ export async function cargarSeguimiento(desde: string, hasta: string): Promise<{
   const encuestas = await todas<EncuestaSeguida>((a, b) =>
     supabase
       .from("encuestas")
-      .select("id, mesero_id, mesero_nombre, total, mesa, creado_en, vence_en, cancelada, respondida_en, encuesta_respuestas(motivos, revision)")
+      .select("id, mesero_id, mesero_nombre, total, mesa, creado_en, vence_en, cancelada, respondida_en, prueba, encuesta_respuestas(motivos, revision)")
       .gte("creado_en", inicio)
       .lt("creado_en", fin)
       .order("creado_en", { ascending: false })
@@ -130,6 +131,7 @@ export interface FilaBitacora {
   mesa?: string | null;
   cuando: string;
   final: Final;
+  prueba?: boolean;
   pasos: Paso[];
 }
 
@@ -229,46 +231,45 @@ export function resumirSeguimiento(encuestas: EncuestaSeguida[], eventos: Evento
     const respondida = !!e.respondida_en;
     const vencida = !respondida && !e.cancelada && new Date(e.vence_en).getTime() < ahora;
     const resp = e.encuesta_respuestas;
-    const m = mesero(claveMesero(e.mesero_id, e.mesero_nombre), e.mesero_nombre);
-    m.genero++;
-    r.generadas++;
-    if (abierta || respondida) r.abiertas++;
-    if (tiene("empezada") || respondida) r.empezadas++;
-
+    const empezada = tiene("empezada");
     let final: Final;
-    if (respondida) {
-      r.enviadas++;
-      m.enviadas++;
-      if (resp && esValida(resp)) {
-        r.validas++;
-        final = "enviada";
-      } else if (resp?.revision === "descartada") {
-        final = "descartada";
-      } else {
+    if (respondida) final = resp && esValida(resp) ? "enviada" : resp?.revision === "descartada" ? "descartada" : "sospechosa";
+    else if (e.cancelada) final = "cancelada";
+    else if (vencida) final = abierta || empezada ? "medias" : "sin-abrir";
+    else final = "abierta";
+
+    // Las de prueba (del dueño) salen en la bitácora pero no cuentan.
+    const m = e.prueba ? null : mesero(claveMesero(e.mesero_id, e.mesero_nombre), e.mesero_nombre);
+    if (m) {
+      m.genero++;
+      r.generadas++;
+      if (abierta || respondida) r.abiertas++;
+      if (empezada || respondida) r.empezadas++;
+      if (respondida) {
+        r.enviadas++;
+        m.enviadas++;
+      }
+      if (final === "enviada") r.validas++;
+      if (final === "sospechosa") {
         r.sospechosas++;
         m.sospechosas++;
-        final = "sospechosa";
       }
-    } else if (e.cancelada) {
-      r.canceladas++;
-      m.canceladas++;
-      final = "cancelada";
-    } else if (vencida) {
-      if (abierta || tiene("empezada")) {
+      if (final === "cancelada") {
+        r.canceladas++;
+        m.canceladas++;
+      }
+      if (final === "medias") {
         r.medias++;
         m.medias++;
-        final = "medias";
-      } else {
+      }
+      if (final === "sin-abrir") {
         r.sinAbrir++;
         m.sinAbrir++;
-        final = "sin-abrir";
       }
-    } else {
-      r.abiertasAhora++;
-      final = "abierta";
+      if (final === "abierta") r.abiertasAhora++;
+      if (abierta) tAbrir.push(seg(e.creado_en, abierta.creado_en));
+      if (abierta && enviada) tContestar.push(seg(abierta.creado_en, enviada.creado_en));
     }
-    if (abierta) tAbrir.push(seg(e.creado_en, abierta.creado_en));
-    if (abierta && enviada) tContestar.push(seg(abierta.creado_en, enviada.creado_en));
 
     const pasos: Paso[] = [];
     let motivosVistos = new Set<string>();
@@ -337,8 +338,9 @@ export function resumirSeguimiento(encuestas: EncuestaSeguida[], eventos: Evento
     }
     r.bitacora.push({
       clave: e.id,
-      meseroClave: m.clave,
+      meseroClave: m ? m.clave : "prueba",
       meseroNombre: e.mesero_nombre,
+      prueba: e.prueba,
       total: e.total,
       mesa: e.mesa,
       cuando: e.creado_en,

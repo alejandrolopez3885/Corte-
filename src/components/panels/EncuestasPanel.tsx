@@ -1,19 +1,21 @@
 import { useEffect, useState } from "react";
-import { MessageSquareText } from "lucide-react";
+import { MessageSquareText, QrCode } from "lucide-react";
 import { Empty } from "../ui";
 import { TituloPagina } from "../BarraTitulo";
 import { SeguimientoEncuestas } from "../SeguimientoEncuestas";
+import { EncuestaPanel } from "./EncuestaPanel";
 import { addDaysIso, money, round2 } from "../../lib/dataModel";
 import { ubicarFechas } from "../../lib/inicio";
 import { rangoRanking, type PeriodoRanking } from "../../lib/ranking";
-import { MINIMO_ENCUESTAS, MOTIVOS, agregarMotivo, cargarRespuestas, esValida, revisarRespuesta, type RespuestaEncuesta } from "../../lib/encuestas";
+import { MINIMO_ENCUESTAS, MOTIVOS, agregarMotivo, cargarRespuestas, esPrueba, esValida, revisarRespuesta, type RespuestaEncuesta } from "../../lib/encuestas";
 import type { AppData } from "../../lib/types";
 
 // Encuestas (solo dueño): las respuestas con sus comentarios, el resumen
 // por mesero y las sospechosas — que no cuentan hasta aprobarlas. Al abrir,
 // marca como sospechosas las de un mesero cuyos totales con encuesta de un
 // día pasan su venta de ese día en el corte. En "Seguimiento", cada paso de
-// cada encuesta y dónde se quedan.
+// cada encuesta y dónde se quedan. "Generar QR de prueba" abre el mismo QR
+// del mesero, marcado como prueba (no cuenta en ningún promedio).
 type Pestana = "respuestas" | "meseros" | "sospechosas" | "seguimiento";
 
 const estrellas = (n: number) => "★".repeat(n) + "☆".repeat(5 - n);
@@ -24,7 +26,8 @@ const fechaLocal = (iso: string) => {
 const cuando = (iso: string) =>
   new Date(iso).toLocaleString("es-MX", { weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }).replace(".", "");
 
-export function EncuestasPanel({ data, onBack }: { data: AppData; onBack?: () => void }) {
+export function EncuestasPanel({ data, perfilId, nombreDueno, onBack }: { data: AppData; perfilId: string; nombreDueno: string; onBack?: () => void }) {
+  const [probando, setProbando] = useState(false);
   const [periodo, setPeriodo] = useState<PeriodoRanking>("semana");
   const [pestana, setPestana] = useState<Pestana>("respuestas");
   const [respuestas, setRespuestas] = useState<RespuestaEncuesta[] | null | "error">(null);
@@ -40,6 +43,7 @@ export function EncuestasPanel({ data, onBack }: { data: AppData; onBack?: () =>
       const ubicaciones = ubicarFechas(data);
       const grupos = new Map<string, RespuestaEncuesta[]>();
       lista.forEach((r) => {
+        if (esPrueba(r)) return;
         const k = `${r.mesero_id}|${fechaLocal(r.respondida_en)}`;
         grupos.set(k, [...(grupos.get(k) || []), r]);
       });
@@ -72,9 +76,9 @@ export function EncuestasPanel({ data, onBack }: { data: AppData; onBack?: () =>
   const validas = lista.filter(esValida);
   const sospechosas = lista.filter((r) => !esValida(r) && r.revision !== "descartada");
   const descartadas = lista.filter((r) => r.revision === "descartada").length;
-  const porMesero = [...new Set(lista.map((r) => r.mesero_id))]
+  const porMesero = [...new Set(lista.filter((r) => !esPrueba(r)).map((r) => r.mesero_id))]
     .map((id) => {
-      const rs = validas.filter((r) => r.mesero_id === id);
+      const rs = validas.filter((r) => r.mesero_id === id && !esPrueba(r));
       const prom = (k: "atencion" | "comida" | "rapidez") => (rs.length ? Math.round((rs.reduce((s, r) => s + r[k], 0) / rs.length) * 10) / 10 : 0);
       return {
         id,
@@ -83,7 +87,7 @@ export function EncuestasPanel({ data, onBack }: { data: AppData; onBack?: () =>
         atencion: prom("atencion"),
         comida: prom("comida"),
         rapidez: prom("rapidez"),
-        sospechosas: sospechosas.filter((r) => r.mesero_id === id).length,
+        sospechosas: sospechosas.filter((r) => r.mesero_id === id && !esPrueba(r)).length,
       };
     })
     .sort((a, b) => b.atencion - a.atencion || b.cantidad - a.cantidad);
@@ -97,7 +101,10 @@ export function EncuestasPanel({ data, onBack }: { data: AppData; onBack?: () =>
         <strong>
           {r.mesero_nombre} · <span className="encuesta-estrellas">{estrellas(r.atencion)}</span>
         </strong>
-        <span>{cuando(r.respondida_en)}</span>
+        <span className="encuesta-chips">
+          {esPrueba(r) && <span className="chip-prueba">Prueba</span>}
+          <span>{cuando(r.respondida_en)}</span>
+        </span>
       </div>
       <span className="encuesta-resp-sub">
         Comida {r.comida} · Rapidez {r.rapidez}
@@ -125,9 +132,14 @@ export function EncuestasPanel({ data, onBack }: { data: AppData; onBack?: () =>
     </div>
   );
 
+  if (probando) return <EncuestaPanel perfilId={perfilId} meseroNombre={nombreDueno} prueba onBack={() => setProbando(false)} />;
+
   return (
     <div className="page-section">
       <TituloPagina titulo="Encuestas" onBack={onBack} backLabel="Equipo" />
+      <button type="button" className="encuesta-prueba-btn" onClick={() => setProbando(true)}>
+        <QrCode size={18} /> Generar QR de prueba
+      </button>
       <div className="ranking-periodos">
         {(
           [

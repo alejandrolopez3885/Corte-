@@ -1376,7 +1376,14 @@ export default function CortesApp({ profile }: { profile: Profile }) {
         />
       )}
 
-      {isOwner && activeTab === "equipo" && equipoView === "encuestas" && <EncuestasPanel data={data} onBack={() => setEquipoView("menu")} />}
+      {isOwner && activeTab === "equipo" && equipoView === "encuestas" && (
+        <EncuestasPanel
+          data={data}
+          perfilId={profile.id}
+          nombreDueno={(data.perfilDueno?.nombre || profile.display_name || "").split(" ")[0]}
+          onBack={() => setEquipoView("menu")}
+        />
+      )}
 
       {isOwner && activeTab === "equipo" && equipoView === "ranking" && (
         <RankingPanel data={data} modo="dueno" onBack={() => setEquipoView("menu")} backLabel="Equipo" />

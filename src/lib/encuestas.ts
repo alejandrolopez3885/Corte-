@@ -67,12 +67,17 @@ export async function crearEncuesta(
   total: number,
   mesa: string,
   meseroId: string,
-  meseroNombre: string
+  meseroNombre: string,
+  prueba = false
 ): Promise<{ encuesta?: EncuestaCreada; error?: string; motivo?: MotivoIntento }> {
-  const { data, error } = await supabase.rpc("crear_encuesta", { p_total: total, p_mesa: mesa, p_mesero_id: meseroId, p_mesero_nombre: meseroNombre });
+  // La de prueba la genera el dueño: no cuenta en calificaciones ni ranking.
+  const { data, error } = prueba
+    ? await supabase.rpc("crear_encuesta_prueba", { p_total: total, p_mesa: mesa, p_nombre: meseroNombre })
+    : await supabase.rpc("crear_encuesta", { p_total: total, p_mesa: mesa, p_mesero_id: meseroId, p_mesero_nombre: meseroNombre });
   if (error) {
     console.error("No se pudo crear la encuesta", error);
     const msg = error.message || "";
+    if (msg.includes("30 encuestas de prueba")) return { error: "Ya generaste las 30 encuestas de prueba de hoy.", motivo: "limite" };
     if (msg.includes("15 encuestas")) return { error: `Ya generaste las ${MAXIMO_ENCUESTAS_DIA} encuestas de hoy.`, motivo: "limite" };
     if (msg.includes("total")) return { error: "Escribe el total de la cuenta.", motivo: "sin-total" };
     if (error.code === "PGRST202" || error.code === "42883") return { error: "Las encuestas todavía no están activas.", motivo: "otro" };
@@ -224,8 +229,10 @@ export interface RespuestaEncuesta {
   motivos: string[];
   revision: "aprobada" | "descartada" | null;
   respondida_en: string;
-  encuestas: { total: number; mesa: string | null } | null;
+  encuestas: { total: number; mesa: string | null; prueba?: boolean } | null;
 }
+
+export const esPrueba = (r: Pick<RespuestaEncuesta, "encuestas">) => !!r.encuestas?.prueba;
 
 export const esValida = (r: Pick<RespuestaEncuesta, "motivos" | "revision">) =>
   r.revision !== "descartada" && (r.motivos.length === 0 || r.revision === "aprobada");
@@ -244,7 +251,7 @@ export async function cargarRespuestas(desde: string, hasta: string): Promise<Re
   fin.setDate(fin.getDate() + 1);
   const { data, error } = await supabase
     .from("encuesta_respuestas")
-    .select("*, encuestas(total, mesa)")
+    .select("*, encuestas(total, mesa, prueba)")
     .gte("respondida_en", new Date(`${desde}T00:00:00`).toISOString())
     .lt("respondida_en", fin.toISOString())
     .order("respondida_en", { ascending: false });

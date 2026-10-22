@@ -22,15 +22,19 @@ import {
 // cuenta y la mesa (opcional), y muestra un QR que vale 30 minutos y una
 // sola respuesta. Aquí mismo ve cuántas lleva hoy y su calificación de la
 // semana (solo promedio y cuántas; los comentarios son del dueño).
+// Con `prueba`, es el QR de prueba del dueño: no cuenta en calificaciones,
+// ranking ni estadísticas.
 export function EncuestaPanel({
   perfilId,
   meseroId,
   meseroNombre,
+  prueba = false,
   onBack,
 }: {
   perfilId: string;
   meseroId?: string;
   meseroNombre: string;
+  prueba?: boolean;
   onBack?: () => void;
 }) {
   const [total, setTotal] = useState("");
@@ -44,13 +48,14 @@ export function EncuestaPanel({
   const [mia, setMia] = useState<{ promedio: number; cantidad: number } | null>(null);
 
   useEffect(() => {
-    enviarIntentosPendientes();
-  }, []);
+    if (!prueba) enviarIntentosPendientes();
+  }, [prueba]);
 
   useEffect(() => {
+    if (prueba) return;
     encuestasDeHoy(perfilId).then(setHoy);
     if (meseroId) calificaciones(mondayOnOrBefore(todayIso()), todayIso()).then((m) => setMia(m.get(meseroId) || { promedio: 0, cantidad: 0 }));
-  }, [perfilId, meseroId, estado]);
+  }, [perfilId, meseroId, estado, prueba]);
 
   // Mientras el QR está abierto: el contador y saber si ya la contestaron.
   useEffect(() => {
@@ -70,18 +75,18 @@ export function EncuestaPanel({
   async function generar() {
     const t = parseFloat(total);
     if (!(t > 0)) {
-      registrarIntento("sin-total", meseroId || null, meseroNombre);
+      if (!prueba) registrarIntento("sin-total", meseroId || null, meseroNombre);
       return setError("Escribe el total de la cuenta.");
     }
-    if (!meseroId) {
+    if (!meseroId && !prueba) {
       registrarIntento("sin-ligar", null, meseroNombre);
       return setError("Tu usuario del sistema no está ligado a tu cuenta. Pídele al dueño que lo revise.");
     }
     setCreando(true);
-    const r = await crearEncuesta(t, mesa.trim(), meseroId, meseroNombre);
+    const r = await crearEncuesta(t, mesa.trim(), meseroId || "prueba", meseroNombre, prueba);
     setCreando(false);
     if (r.error || !r.encuesta) {
-      registrarIntento(r.motivo || "otro", meseroId, meseroNombre);
+      if (!prueba) registrarIntento(r.motivo || "otro", meseroId || null, meseroNombre);
       return setError(r.error || "No se pudo crear la encuesta.");
     }
     setError(null);
@@ -98,11 +103,17 @@ export function EncuestaPanel({
 
   return (
     <div className="page-section">
-      <TituloPagina titulo="Encuesta" onBack={onBack} backLabel="Inicio" />
+      <TituloPagina titulo={prueba ? "QR de prueba" : "Encuesta"} onBack={onBack} backLabel={prueba ? "Encuestas" : "Inicio"} />
+      {prueba && (
+        <p className="encuesta-aviso-prueba">
+          Prueba: no cuenta en calificaciones, ranking ni estadísticas. Si la contestas desde tu celular saldrá como sospechosa (celular del
+          personal); usa otro celular para verla como la vería un cliente.
+        </p>
+      )}
 
       {!encuesta && (
         <div className="encuesta-form">
-          <h3>Encuesta para el cliente</h3>
+          <h3>{prueba ? "Encuesta de prueba" : "Encuesta para el cliente"}</h3>
           <p className="hint">Escribe el total de su cuenta: el cliente lo confirma al contestar.</p>
           <Field label="Total de la cuenta">
             <NumInput value={total} onChange={(e) => setTotal(e.target.value)} placeholder="0.00" />

@@ -1202,6 +1202,21 @@ eventos del cliente tienen un tope por encuesta para que no la llenen
 abriendo el enlace muchas veces. El mesero y el cliente no ven nada
 distinto.
 
+**QR de prueba (dueño)**: arriba de las pestañas de Equipo > Encuestas está
+**"Generar QR de prueba"**: abre la misma pantalla del mesero ("QR de
+prueba", regresa a "Encuestas") con un aviso de que es prueba; escribes el
+total y la mesa (opcional) y sale el QR de 30 minutos con su cuenta
+regresiva y "Cancelar esta encuesta". Al cliente le sale "Te atendió Prueba
+(tu nombre)" y se contesta con los mismos candados (si la contestas desde
+tu celular sale sospechosa por "celular del personal"; para verla como
+cliente usa otro celular). Queda marcada **Prueba**: sale con esa etiqueta
+en Respuestas, Sospechosas y la Bitácora de Seguimiento, pero no cuenta en
+las calificaciones, el ranking, "Por mesero", el embudo ni "Dónde se
+quedaron", ni en la revisión contra la venta del corte. Máximo 30 al día
+(ver
+[`supabase/migration_013_encuesta_prueba.sql`](./supabase/migration_013_encuesta_prueba.sql),
+ya aplicada).
+
 **Tu perfil (dueño)**: arriba a la derecha, en todas tus pantallas, está
 tu foto en un círculo (sin foto, tus iniciales); tocarla abre **Mi
 perfil**: ahí cambias tu foto (igual que el personal: cámara, galería o
@@ -1443,4 +1458,5 @@ supabase/
   migration_010_cerrar_rls_auto_enable.sql  quita el acceso público a una función interna de Supabase
   migration_011_encuestas.sql          encuestas con QR por mesero (tablas protegidas y funciones)
   migration_012_seguimiento_encuestas.sql  seguimiento de cada paso de las encuestas (solo el dueño)
+  migration_013_encuesta_prueba.sql    QR de prueba del dueño (no cuenta en calificaciones)
 ```

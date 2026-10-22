@@ -42,7 +42,7 @@ export function SeguimientoEncuestas({ desde, hasta, nombrePeriodo }: { desde: s
 
   if (datos === null) return <p className="hint">Cargando…</p>;
   if (datos === "error") return <p className="aviso-faltante">No se pudo leer el seguimiento. Revisa tu conexión.</p>;
-  if (!datos.generadas && !datos.fallidas)
+  if (!datos.generadas && !datos.fallidas && !datos.bitacora.length)
     return <Empty icon={<MessageSquareText size={26} strokeWidth={1.3} />} text={`Todavía no se ha generado ninguna encuesta ${nombrePeriodo}.`} />;
 
   const g = datos.generadas;
@@ -166,7 +166,10 @@ export function SeguimientoEncuestas({ desde, hasta, nombrePeriodo }: { desde: s
                 {b.mesa ? ` · Mesa ${b.mesa}` : ""}
                 {b.total !== undefined ? ` · ${money(b.total)}` : ""}
               </strong>
-              <span className={`seg-chip ${TONO_FINAL[b.final]}`}>{ETIQUETA_FINAL[b.final]}</span>
+              <span className="encuesta-chips">
+                {b.prueba && <span className="chip-prueba">Prueba</span>}
+                <span className={`seg-chip ${TONO_FINAL[b.final]}`}>{ETIQUETA_FINAL[b.final]}</span>
+              </span>
             </div>
             <span className="encuesta-resp-sub">{dia(b.cuando)}</span>
             <div className="seg-pasos">
