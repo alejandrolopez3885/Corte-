@@ -1111,6 +1111,29 @@ en el SQL Editor de Supabase; mientras no se corra, al personal le dice
 "Esta sección todavía no está activa" y a ti Nómina te avisa qué correr.
 Al entrar, al personal le sale la novedad "Datos para tu pago".
 
+**Ranking de meseros**: un puntaje por semana (lunes a domingo) con la venta
+y las cancelaciones de cada mesero del corte — sin el usuario de para
+llevar ni las apps —, con su foto de Personal (se liga por su usuario del
+sistema o por su nombre). **Puntos**: la venta promedio por día trabajado
+da hasta 100 (100 = quien más vende por día en ese periodo) y cada 1% de
+cancelaciones sobre su venta (gastos del corte con categoría Cancelaciones
+ligados al mesero) resta 10; nunca baja de 0. Para aparecer hacen falta 2
+días con venta en el periodo (los que llevan menos salen como "Aún sin
+entrar"); empates comparten lugar. **El personal del área Piso** (por el
+área de su puesto en Personal) lo ve sin ningún monto: en su inicio una
+tarjeta con su lugar de la semana ("3º de 8 meseros · 82 puntos" y cuántos
+puntos le faltan para subir, o "¡Vas en primer lugar!") que abre la
+sección **Ranking** — "Esta semana" / "Semana pasada", arriba sus puntos
+(venta +N, cancelaciones con su % −N y días trabajados) y la lista con
+lugar, foto, nombre, barra y puntos, su fila resaltada con "Tú". Con el
+ranking, una cuenta de Piso siempre entra a su inicio aunque tenga una sola
+sección. **Tú** lo ves en Equipo > Ranking con venta por día, días y
+cancelaciones en dinero y en %, y además el del **mes**. En Pregúntale a
+Cortes: el personal de Piso pregunta "¿en qué lugar voy?" (su lugar y la
+lista, sin montos) y tú "ranking de meseros" o "¿quién va primero?" (con
+montos). Al entrar, a las cuentas de Piso les sale la novedad "Ranking de
+meseros". Cálculo en `src/lib/ranking.ts`.
+
 **Tu perfil (dueño)**: arriba a la derecha, en todas tus pantallas, está
 tu foto en un círculo (sin foto, tus iniciales); tocarla abre **Mi
 perfil**: ahí cambias tu foto (igual que el personal: cámara, galería o

@@ -15,11 +15,13 @@ import { contextoEquipo } from "../lib/preguntasEquipo";
 import { Avatar } from "../components/Avatar";
 import { PerfilPanel } from "../components/panels/PerfilPanel";
 import { DatosPagoSeccion } from "../components/DatosPagoSeccion";
+import { RankingPanel, RankingTarjeta } from "../components/panels/RankingPanel";
+import { esDePiso, meseroDeEmpleado } from "../lib/ranking";
 import { supabase } from "../lib/supabaseClient";
 import { CargarPedidosPanel } from "../components/panels/CargarPedidosPanel";
 import { RanuraTitulo, TituloPagina } from "../components/BarraTitulo";
 
-type StaffView = "menu" | PermisoStaff | "corte" | "perfil";
+type StaffView = "menu" | PermisoStaff | "corte" | "perfil" | "ranking";
 
 function ShellHeader({ subtitle, onSignOut, perfil }: { subtitle?: string; onSignOut: () => void; perfil?: ReactNode }) {
   return (
@@ -73,15 +75,19 @@ export default function StaffAccessShell({
   assignments: StaffAssignment[];
   onPickCorteDate: (date: string) => void;
   // Sección en la que entra (al regresar del corte desde Pregúntale a Cortes).
-  vistaInicial?: PermisoStaff | "perfil" | null;
+  vistaInicial?: PermisoStaff | "perfil" | "ranking" | null;
   onGuardarPerfil: (empleadoId: string, cambios: { foto?: string; descripcion?: string }) => void;
 }) {
   const permisos = profile.permisos || [];
   const tieneCorte = assignments.length > 0;
-  const totalSecciones = permisos.length + (tieneCorte ? 1 : 0);
+  // El personal de Piso además ve el ranking de meseros (en su inicio): con
+  // eso siempre tiene menú, aunque tenga una sola sección.
+  const esPiso = esDePiso(data, profile);
+  const totalSecciones = permisos.length + (tieneCorte ? 1 : 0) + (esPiso ? 1 : 0);
   const [view, setView] = useState<StaffView>(() => {
-    if (vistaInicial === "perfil" || (vistaInicial && permisos.includes(vistaInicial))) return vistaInicial;
-    if (totalSecciones !== 1) return "menu";
+    if (vistaInicial === "perfil" || (vistaInicial === "ranking" && esPiso) || (vistaInicial && permisos.includes(vistaInicial as PermisoStaff)))
+      return vistaInicial;
+    if (totalSecciones !== 1 || esPiso) return "menu";
     return permisos.length === 1 ? permisos[0] : "corte";
   });
   const [preguntasAbierto, setPreguntasAbierto] = useState(false);
@@ -89,7 +95,7 @@ export default function StaffAccessShell({
   // Cuántas veces entra a cada sección, en su propia cuenta: con eso se
   // acomodan arriba sus preguntas en Pregúntale a Cortes.
   useEffect(() => {
-    if (view === "menu" || view === "perfil") return;
+    if (view === "menu" || view === "perfil" || view === "ranking") return;
     supabase.auth.getUser().then(({ data: u }) => {
       const uso = (u.user?.user_metadata?.seccionesUso || {}) as Record<string, number>;
       supabase.auth.updateUser({ data: { seccionesUso: { ...uso, [view]: (uso[view] || 0) + 1 } } });
@@ -126,7 +132,7 @@ export default function StaffAccessShell({
     </button>
   );
   if (view === "perfil") {
-    const volver = () => setView(totalSecciones === 1 ? (permisos[0] ?? "corte") : "menu");
+    const volver = () => setView(totalSecciones === 1 && !esPiso ? (permisos[0] ?? "corte") : "menu");
     return (
       <div className="app-shell">
         <ShellHeader subtitle={area?.nombre} onSignOut={onSignOut} />
@@ -171,7 +177,12 @@ export default function StaffAccessShell({
           onIr={(destino) => {
             setPreguntasAbierto(false);
             if (destino.tipo === "dia") onPickCorteDate(destino.fecha);
-            else if (destino.tipo === "seccion" && permisos.includes(destino.seccion)) setView(destino.seccion);
+            else if (destino.tipo === "seccion") {
+              const seccion = destino.seccion;
+              if (seccion === "ranking") {
+                if (esPiso) setView("ranking");
+              } else if (permisos.includes(seccion)) setView(seccion);
+            }
           }}
         />
       )}
@@ -181,6 +192,16 @@ export default function StaffAccessShell({
   // Con una sola sección en total no hay menú al que volver — nunca se
   // muestra la vista "menu" ni un botón de regreso.
   const backToMenu = totalSecciones > 1 ? () => setView("menu") : undefined;
+
+  if (view === "ranking" && esPiso) {
+    return (
+      <div className="app-shell">
+        <ShellHeader subtitle={area?.nombre} onSignOut={onSignOut} perfil={perfilBtn} />
+        {preguntas}
+        <RankingPanel data={data} modo="equipo" miMeseroId={meseroDeEmpleado(data, empleado)} onBack={backToMenu} backLabel="Inicio" />
+      </div>
+    );
+  }
 
   if (view === "corte" && tieneCorte) {
     return (
@@ -390,6 +411,7 @@ export default function StaffAccessShell({
       {preguntas}
       <div className="page-section">
         <TituloPagina titulo={`Hola, ${empleado.nombre.split(" ")[0]}`} subtitulo={area?.nombre} />
+        {esPiso && <RankingTarjeta data={data} miMeseroId={meseroDeEmpleado(data, empleado)} onVer={() => setView("ranking")} />}
         <div className="menu-list">
           {tieneCorte && (
             <button className="menu-item" onClick={() => setView("corte")}>

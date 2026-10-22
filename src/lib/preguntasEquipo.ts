@@ -2,6 +2,7 @@ import { DAYS, DAY_SHORT, HORARIO_AREAS_FIJAS } from "./types";
 import type { AppData, ConteoTextoArea, DayName, HorarioSemana, PermisoStaff, Profile, Receta, StaffAssignment } from "./types";
 import {
   addDaysIso,
+  money,
   computeNominaHastaHoyPorEmpleado,
   computeNominaSemana,
   computeWeekSummary,
@@ -18,6 +19,7 @@ import {
   turnosActivos,
 } from "./dataModel";
 import { ubicarFechas } from "./inicio";
+import { calcularRanking, esDePiso, meseroDeEmpleado, rangoRanking } from "./ranking";
 import { faltantesDelCorte } from "../components/modals/GuardarCorteModal";
 import {
   PREGUNTAS,
@@ -46,6 +48,9 @@ export interface ContextoEquipo {
   horarioAreaId?: string; // "piso" | "cocina"
   areaInsumo: ConteoTextoArea | null; // por su puesto: Bar o Cocina
   verPropinas: boolean;
+  // Área Piso: ve el ranking de meseros (sin montos). Su usuario del corte.
+  esPiso?: boolean;
+  miMeseroId?: string;
 }
 
 // Siempre regresa un contexto: una cuenta sin persona en Personal (p. ej.
@@ -54,6 +59,7 @@ export function contextoEquipo(profile: Profile, data: AppData, assignments: Sta
   const corteFechas = assignments.map((a) => a.assigned_date).sort();
   const empleado = profile.empleado_id ? data.empleados.find((e) => e.id === profile.empleado_id) : undefined;
   if (!empleado) return { empleadoId: "", nombre: profile.display_name || "", permisos: [], corteFechas, areaInsumo: null, verPropinas: false };
+  const esPiso = esDePiso(data, profile);
   const puesto = empleado.puestoId ? data.puestos.find((p) => p.id === empleado.puestoId) : undefined;
   const area = puesto ? data.areas.find((a) => a.id === puesto.areaId) : undefined;
   const permisos = profile.permisos || [];
@@ -66,6 +72,8 @@ export function contextoEquipo(profile: Profile, data: AppData, assignments: Sta
     horarioAreaId: area ? HORARIO_AREAS_FIJAS.find((a) => a.nombre.toLowerCase() === area.nombre.toLowerCase())?.id : undefined,
     areaInsumo,
     verPropinas: permisos.includes("propinas") && !!areaInsumo,
+    esPiso,
+    miMeseroId: esPiso ? meseroDeEmpleado(data, empleado) : undefined,
   };
 }
 
@@ -73,6 +81,7 @@ export function seccionesEquipo(ctx: ContextoEquipo): SeccionPregunta[] {
   return [
     ...(ctx.corteFechas.length ? (["corte"] as const) : []),
     ...ctx.permisos.filter((p) => p !== "propinas" || ctx.verPropinas),
+    ...(ctx.esPiso ? (["ranking"] as const) : []),
   ];
 }
 
@@ -161,6 +170,8 @@ export function consultaEquipo(id: PreguntaId, hoy: string, ctx: ContextoEquipo)
       return { tema: "inventario", alcance: "semana", fecha: hoy, sub: "pedido" };
     case "receta":
       return { tema: "receta", alcance: "dia", fecha: hoy };
+    case "mi-ranking":
+      return { tema: "ranking", alcance: "semana", fecha: hoy, sub: "mio" };
     case "propinas-semana":
       return { tema: "propinas", alcance: "semana", fecha: hoy };
     case "propinas-semana-pasada":
@@ -211,6 +222,9 @@ export function entenderPreguntaEquipo(texto: string, hoy: string, data: AppData
     const receta = buscarReceta(t, recetasDe(data, ctx.areaInsumo));
     if (receta) return { tema: "receta", alcance: "dia", fecha: hoy, objeto: { id: receta.id, nombre: receta.nombre } };
     if (/receta|como se (prepara|hace|sirve)|preparacion|ingredientes/.test(t)) return { tema: "receta", alcance: "dia", fecha: hoy };
+  }
+  if (secciones.includes("ranking") && /ranking|lugar|posicion|puntos|quien va (primero|ganando)/.test(t)) {
+    return { tema: "ranking", alcance: "semana", fecha: /semana (pasada|anterior)/.test(t) ? addDaysIso(hoy, -7) : hoy, sub: "mio" };
   }
   // La nómina de otra persona nunca se responde.
   if (/nomina|sueldo|toca|gana|pagaron|pagar/.test(t) && buscarOtraPersona(t, data, ctx)) return "fuera";
@@ -353,10 +367,12 @@ export function responderEquipo(data: AppData, c: Consulta, hoy: string, ctx: Co
     (c.tema === "propinas" && ctx.verPropinas && !c.persona && !c.modo && !c.estadistica) ||
     (c.tema === "horario" && secciones.includes("horarios") && !!ctx.horarioAreaId) ||
     (c.tema === "conteo" && secciones.includes("conteo_diario") && !!ctx.areaInsumo) ||
-    (c.tema === "inventario" && secciones.includes("inventario"));
+    (c.tema === "inventario" && secciones.includes("inventario")) ||
+    (c.tema === "ranking" && secciones.includes("ranking"));
   if (!permitido) return { titulo: "Pregúntale a Cortes", valor: "—", lineas: ["Esa información no está en tus secciones."], consulta: c };
 
   if (c.tema === "receta") return responderReceta(data, c, ctx.areaInsumo);
+  if (c.tema === "ranking") return responderRanking(data, c, hoy, ctx);
 
   if (c.tema === "corte") {
     const dias = ctx.corteFechas.map((f) => ({ fecha: f, etiqueta: `${DAY_SHORT[diaDe(f)]} ${Number(f.slice(8))}`, futuro: false }));
@@ -697,6 +713,9 @@ export function catalogoEquipo(data: AppData, hoy: string, ctx: ContextoEquipo):
       agregar(`Quién descansa el ${d}`, { tema: "horario", alcance: "dia", fecha: f, sub: "descansa" }, "horario off libre");
     });
   }
+  if (secciones.includes("ranking")) {
+    agregar("En qué lugar voy en el ranking de la semana pasada", { tema: "ranking", alcance: "semana", fecha: addDaysIso(hoy, -7), sub: "mio" }, "ranking puntos posicion");
+  }
   if (secciones.includes("recetario")) {
     recetasDe(data, ctx.areaInsumo).forEach((r) =>
       agregar(`Cómo se prepara ${r.nombre}`, { tema: "receta", alcance: "dia", fecha: hoy, objeto: { id: r.id, nombre: r.nombre } }, "receta hace ingredientes")
@@ -718,6 +737,7 @@ const SINONIMOS_EQUIPO: Partial<Record<string, string>> = {
   Conteo: "conteo contar",
   Inventario: "inventario",
   Propinas: "propina",
+  Ranking: "ranking lugar puntos posicion",
 };
 
 // Para el dueño también: "Cómo se prepara …" de todas las recetas.
@@ -727,4 +747,44 @@ export function sugerenciasRecetas(data: AppData, hoy: string): Sugerencia[] {
     consulta: { tema: "receta", alcance: "dia", fecha: hoy, objeto: { id: r.id, nombre: r.nombre } },
     claves: normalizarNombre(`Cómo se prepara ${r.nombre} receta hace ingredientes`),
   }));
+}
+
+// Ranking de meseros. Personal de Piso (ctx): su lugar y puntos, y los
+// lugares de los demás sin montos. Dueño (ctx null): con montos.
+export function responderRanking(data: AppData, c: Consulta, hoy: string, ctx: ContextoEquipo | null): Respuesta {
+  const pasada = mondayOnOrBefore(c.fecha) < mondayOnOrBefore(hoy);
+  const { desde, hasta } = rangoRanking(pasada ? "semanaPasada" : "semana", hoy);
+  const ranking = calcularRanking(data, desde, hasta);
+  const periodo = pasada ? "la semana pasada" : "esta semana";
+  const enlace = { texto: "Ver ranking", destino: ctx ? { tipo: "seccion" as const, seccion: "ranking" as const } : { tipo: "ranking" as const } };
+  const titulo = `Ranking de ${periodo}`;
+  if (ranking.filas.length === 0) return { titulo, valor: "—", lineas: ["Todavía nadie lleva 2 días con venta."], enlace, consulta: c };
+  const filas = ranking.filas.map((f) => ({
+    etiqueta: `${f.lugar}. ${f.nombre}${ctx ? "" : ` · ${money(f.ventaPorDia)}/día · cancel. ${f.pctCancelacion.toLocaleString("es-MX")}%`}`,
+    valor: `${f.puntos} pts`,
+  }));
+  if (!ctx) {
+    const primeros = ranking.filas.filter((f) => f.lugar === 1);
+    const nombres = primeros.map((f) => f.nombre);
+    return {
+      titulo,
+      valor: nombres.length > 1 ? `${nombres.slice(0, -1).join(", ")} y ${nombres[nombres.length - 1]}` : nombres[0],
+      lineas: [`${primeros.length > 1 ? "Empatados en" : "Va en"} primer lugar con ${primeros[0].puntos} puntos · ${plural(ranking.filas.length, "mesero", "meseros")}`],
+      filas,
+      enlace,
+      consulta: c,
+    };
+  }
+  const yo = ranking.filas.find((f) => f.meseroId === ctx.miMeseroId);
+  const arriba = yo ? ranking.filas.filter((f) => f.puntos > yo.puntos).pop() : undefined;
+  return {
+    titulo: `Tu lugar · ${periodo}`,
+    valor: yo ? `${yo.lugar}º de ${ranking.filas.length}` : "Sin lugar",
+    lineas: yo
+      ? [`${yo.puntos} puntos · venta +${yo.puntosVenta} · cancelaciones −${yo.puntosCancelacion}`, arriba ? `Te faltan ${arriba.puntos - yo.puntos} puntos para el ${arriba.lugar}º lugar.` : "¡Vas en primer lugar!"]
+      : ["Para aparecer necesitas 2 días con venta en la semana."],
+    filas,
+    enlace,
+    consulta: c,
+  };
 }

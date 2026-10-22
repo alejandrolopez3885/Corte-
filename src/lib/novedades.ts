@@ -1,5 +1,6 @@
 import { supabase } from "./supabaseClient";
 import { insumoAreaForPuesto } from "./dataModel";
+import { esDePiso } from "./ranking";
 import { DAYS } from "./types";
 import type { AppData, ConteoTextoArea, PermisoStaff, Profile } from "./types";
 
@@ -18,7 +19,7 @@ import type { AppData, ConteoTextoArea, PermisoStaff, Profile } from "./types";
 // "general" = de toda la app: le sale a cualquiera que ya entraba antes.
 export type SeccionNovedad = "corte" | PermisoStaff | "general";
 
-export type VisualNovedad = "sumar" | "autocompletar" | "categoria" | "faltan" | "guardarCorte" | "inventarioPasos" | "recetarioArea" | "apertura" | "cierreTotal" | "efectivoEntregar" | "conteoBar" | "pedidosPegar" | "preguntas" | "perfil" | "datosPago" | "logo" | "barraTitulo";
+export type VisualNovedad = "sumar" | "autocompletar" | "categoria" | "faltan" | "guardarCorte" | "inventarioPasos" | "recetarioArea" | "apertura" | "cierreTotal" | "efectivoEntregar" | "conteoBar" | "pedidosPegar" | "preguntas" | "perfil" | "datosPago" | "logo" | "barraTitulo" | "ranking";
 
 export interface Novedad {
   id: string;
@@ -29,6 +30,8 @@ export interface Novedad {
   visual: VisualNovedad;
   // Solo para quien cuenta en esa área (Conteo diario de Bar o de Cocina).
   soloArea?: ConteoTextoArea;
+  // Solo para las cuentas del área Piso (ranking de meseros).
+  soloPiso?: boolean;
 }
 
 export const NOVEDADES: Novedad[] = [
@@ -170,6 +173,15 @@ export const NOVEDADES: Novedad[] = [
     texto: "El nombre de cada pantalla y la flecha **‹** para regresar ahora están en la barra de arriba, junto al logo.",
     visual: "barraTitulo",
   },
+  {
+    id: "ranking-meseros",
+    fecha: "2026-10-22T07:55:00Z",
+    seccion: "general",
+    soloPiso: true,
+    titulo: "Ranking de meseros",
+    texto: "En tu inicio ves en qué lugar vas esta semana. La venta suma puntos y las **cancelaciones** restan.",
+    visual: "ranking",
+  },
 ];
 
 interface EstadoNovedades {
@@ -235,6 +247,7 @@ export async function novedadesPendientes(profile: Profile, data: AppData, tiene
     const general = n.seccion === "general";
     if (!yaPublicada(n) || (!general && !secciones.includes(n.seccion)) || estado.vistas.includes(n.id)) return false;
     if (n.soloArea && n.soloArea !== areaConteo) return false;
+    if (n.soloPiso && !esDePiso(data, profile)) return false;
     const tiempos: number[] = [];
     const accesos = general ? Object.values(estado.ultimoAcceso) : [estado.ultimoAcceso[n.seccion]];
     accesos.forEach((acceso) => acceso && tiempos.push(new Date(acceso).getTime()));

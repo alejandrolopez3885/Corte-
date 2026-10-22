@@ -296,6 +296,27 @@ function Visual({ tipo }: { tipo: VisualNovedad }) {
       </>
     );
   }
+  if (tipo === "ranking") {
+    return (
+      <>
+        <span className="nv-etiqueta">🏅 Ranking de esta semana</span>
+        <div className="nv-lista">
+          <div>
+            <span>1. Kevin</span>
+            <small>94 pts</small>
+          </div>
+          <div>
+            <span>2. María</span>
+            <small>86 pts</small>
+          </div>
+          <div>
+            <span>3. Tú</span>
+            <small>82 pts</small>
+          </div>
+        </div>
+      </>
+    );
+  }
   if (tipo === "barraTitulo") {
     return (
       <>

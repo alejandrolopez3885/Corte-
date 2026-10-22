@@ -27,6 +27,7 @@ import {
   preguntasDeEquipo,
   recetasDe,
   responderEquipo,
+  responderRanking,
   responderReceta,
   sugerenciasRecetas,
   type ContextoEquipo,
@@ -116,6 +117,7 @@ export function PreguntasSheet({
   const contestar = (c: Consulta): Respuesta => {
     if (ctx) return responderEquipo(data, c, hoy, ctx);
     if (c.tema === "receta") return responderReceta(data, c, null);
+    if (c.tema === "ranking") return responderRanking(data, c, hoy, null);
     return responder(data, c, hoy);
   };
   const avances = sugerencias.map((s) => contestar(s.consulta).valor);

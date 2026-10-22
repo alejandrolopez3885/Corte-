@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Plus, Settings2, Users, Receipt, ArrowLeftRight, CircleDot, Circle, Pencil,
-  Smartphone, BarChart3, LogOut, Truck, Trash2, Home, Store, LayoutDashboard, Contact, Clock, Wallet, ChartLine, Martini, ChefHat, BookOpen, MessageCircle,
+  Smartphone, BarChart3, LogOut, Truck, Trash2, Home, Store, LayoutDashboard, Contact, Clock, Wallet, ChartLine, Martini, ChefHat, BookOpen, MessageCircle, Trophy,
   ShoppingCart, Handshake, Boxes, Package, Coins, History, Lock, FileUp,
 } from "lucide-react";
 import { useAuth } from "../lib/auth.tsx";
@@ -51,6 +51,7 @@ import { contarBitacoraDelDia, useRegistrarVista } from "../lib/bitacora";
 import StaffAccessShell from "./StaffAccessShell";
 import { NovedadesAlEntrar } from "../components/NovedadesAlEntrar";
 import { PreguntasSheet } from "../components/PreguntasSheet";
+import { RankingPanel } from "../components/panels/RankingPanel";
 import { RanuraTitulo, TituloPagina } from "../components/BarraTitulo";
 import { Avatar } from "../components/Avatar";
 import { PerfilPanel } from "../components/panels/PerfilPanel";
@@ -78,7 +79,7 @@ type ModalState =
   | { type: "deleteMonth"; monthKey: string }
   | null;
 
-type EquipoView = "menu" | "personal" | "horarios" | "nomina" | "propinas";
+type EquipoView = "menu" | "personal" | "horarios" | "nomina" | "propinas" | "ranking";
 
 type NegocioView =
   | "menu" | "tendencias" | "bitacora" | "controlBar" | "controlCocina" | "controlGeneral" | "inventario" | "pedidos"
@@ -105,7 +106,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
   const [negocioView, setNegocioView] = useState<NegocioView>("menu");
   const [preguntasAbierto, setPreguntasAbierto] = useState(false);
   // Personal: la sección a la que regresa desde "Pregúntale a Cortes".
-  const [staffVista, setStaffVista] = useState<PermisoStaff | "perfil" | null>(null);
+  const [staffVista, setStaffVista] = useState<PermisoStaff | "perfil" | "ranking" | null>(null);
   const [modal, setModal] = useState<ModalState>(null);
   const [selectedAssignedDate, setSelectedAssignedDate] = useState<string | null>(null);
 
@@ -122,7 +123,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
 
   // Qué pantalla tiene abierta (para Negocio > Análisis > Actividad). Las
   // cuentas de equipo fuera del corte las registra StaffAccessShell.
-  const NOMBRE_EQUIPO: Record<EquipoView, string> = { menu: "Equipo", personal: "Personal", horarios: "Horarios", nomina: "Nómina", propinas: "Propinas" };
+  const NOMBRE_EQUIPO: Record<EquipoView, string> = { menu: "Equipo", personal: "Personal", horarios: "Horarios", nomina: "Nómina", propinas: "Propinas", ranking: "Ranking" };
   const NOMBRE_NEGOCIO: Record<NegocioView, string> = {
     menu: "Negocio", tendencias: "Tendencias", bitacora: "Actividad", controlBar: "Control de Bar", controlCocina: "Control de Cocina",
     controlGeneral: "Control General", inventario: "Inventario", pedidos: "Pedidos",
@@ -1304,6 +1305,15 @@ export default function CortesApp({ profile }: { profile: Profile }) {
                 <span>Consulta las propinas de cada día de la semana</span>
               </span>
             </button>
+            <button className="menu-item" onClick={() => setEquipoView("ranking")}>
+              <span className="menu-item-icon">
+                <Trophy size={20} />
+              </span>
+              <span className="menu-item-text">
+                <strong>Ranking</strong>
+                <span>Ranking de meseros por venta y cancelaciones (el personal de Piso lo ve sin montos)</span>
+              </span>
+            </button>
           </div>
         </div>
       )}
@@ -1350,6 +1360,10 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           pagoDe={pagoDeEmpleado}
           avisoPago={estadoDatosPago === "sin-tabla" ? "Para ver a dónde pagarle a cada quien, activa los datos de pago: corre supabase/migration_009_datos_pago.sql en Supabase." : undefined}
         />
+      )}
+
+      {isOwner && activeTab === "equipo" && equipoView === "ranking" && (
+        <RankingPanel data={data} modo="dueno" onBack={() => setEquipoView("menu")} backLabel="Equipo" />
       )}
 
       {isOwner && activeTab === "equipo" && equipoView === "propinas" && (
@@ -2207,7 +2221,10 @@ export default function CortesApp({ profile }: { profile: Profile }) {
               return;
             }
             if (destino.tipo === "dashboard") goToTab("dashboard");
-            else if (destino.tipo === "propinas") {
+            else if (destino.tipo === "ranking") {
+              goToTab("equipo");
+              setEquipoView("ranking");
+            } else if (destino.tipo === "propinas") {
               goToTab("equipo");
               setEquipoView("propinas");
             } else if (destino.tipo === "seccion") {

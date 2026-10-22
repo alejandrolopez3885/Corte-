@@ -64,7 +64,9 @@ export type PreguntaId =
   | "conteo-pedido"
   | "inventario-estado"
   | "inventario-pedido"
-  | "receta";
+  | "receta"
+  | "mi-ranking"
+  | "ranking-semana";
 
 export type GrupoPregunta =
   | "Ventas"
@@ -77,11 +79,12 @@ export type GrupoPregunta =
   | "Horario"
   | "Conteo"
   | "Inventario"
-  | "Recetario";
+  | "Recetario"
+  | "Ranking";
 
 // "dueno" = solo el dueño; las demás, quien tenga esa sección (el dueño
 // también ve las del Recetario).
-export type SeccionPregunta = "dueno" | "corte" | PermisoStaff;
+export type SeccionPregunta = "dueno" | "corte" | PermisoStaff | "ranking";
 
 export const PREGUNTAS: { id: PreguntaId; texto: string; grupo: GrupoPregunta; seccion: SeccionPregunta }[] = [
   { id: "venta-hoy", texto: "Venta de hoy", grupo: "Ventas", seccion: "dueno" },
@@ -123,6 +126,8 @@ export const PREGUNTAS: { id: PreguntaId; texto: string; grupo: GrupoPregunta; s
   { id: "conteo-pedido", texto: "¿Qué hay que pedir?", grupo: "Conteo", seccion: "conteo_diario" },
   { id: "inventario-estado", texto: "¿Ya se guardó el inventario?", grupo: "Inventario", seccion: "inventario" },
   { id: "inventario-pedido", texto: "Pedido del inventario", grupo: "Inventario", seccion: "inventario" },
+  { id: "mi-ranking", texto: "¿En qué lugar voy?", grupo: "Ranking", seccion: "ranking" },
+  { id: "ranking-semana", texto: "Ranking de meseros", grupo: "Ranking", seccion: "dueno" },
 ];
 
 // Las que salen arriba mientras todavía no hay suficientes preguntas hechas.
@@ -130,7 +135,7 @@ export const PREGUNTAS_INICIALES: PreguntaId[] = ["venta-hoy", "nomina-actual", 
 
 // Las que responde responder(); el resto son del personal y del Recetario.
 export type TemaDueno = "venta" | "efectivo" | "gastos" | "propinas" | "utilidad" | "nomina";
-export type Tema = "venta" | "efectivo" | "gastos" | "propinas" | "utilidad" | "nomina" | "corte" | "miNomina" | "horario" | "conteo" | "inventario" | "receta";
+export type Tema = "venta" | "efectivo" | "gastos" | "propinas" | "utilidad" | "nomina" | "corte" | "miNomina" | "horario" | "conteo" | "inventario" | "receta" | "ranking";
 
 export interface Consulta {
   tema: Tema;
@@ -150,7 +155,7 @@ export interface Consulta {
   objeto?: { id: string; nombre: string };
 }
 
-export type DestinoPregunta = Destino | { tipo: "dashboard" } | { tipo: "propinas" } | { tipo: "seccion"; seccion: PermisoStaff };
+export type DestinoPregunta = Destino | { tipo: "dashboard" } | { tipo: "propinas" } | { tipo: "seccion"; seccion: PermisoStaff | "ranking" } | { tipo: "ranking" };
 
 export interface Respuesta {
   titulo: string;
@@ -221,6 +226,8 @@ export function consultaDePregunta(id: PreguntaId, hoy: string): Consulta {
       return { tema: "venta", alcance: "dia", fecha: hoy, estadistica: "mejorDia" };
     case "receta":
       return { tema: "receta", alcance: "dia", fecha: hoy };
+    case "ranking-semana":
+      return { tema: "ranking", alcance: "semana", fecha: hoy };
     default:
       // Las del personal las arma consultaEquipo (preguntasEquipo.ts).
       return { tema: "venta", alcance: "dia", fecha: hoy };
@@ -269,6 +276,8 @@ export function preguntaDeConsulta(c: Consulta, hoy: string): PreguntaId {
       return c.sub === "pedido" ? "conteo-pedido" : "conteo-falta";
     case "inventario":
       return c.sub === "pedido" ? "inventario-pedido" : "inventario-estado";
+    case "ranking":
+      return c.sub === "mio" ? "mi-ranking" : "ranking-semana";
   }
 }
 
@@ -318,6 +327,9 @@ function entenderEstadistica(t: string): Consulta["estadistica"] | "promedio" | 
 
 export function entenderPregunta(texto: string, hoy: string, data?: AppData): Consulta | null {
   const t = normalizarNombre(texto).replace(/[¿?¡!.,]/g, " ");
+  if (/ranking|quien va (primero|ganando)|primer lugar|en que lugar/.test(t)) {
+    return { tema: "ranking", alcance: "semana", fecha: /semana (pasada|anterior)/.test(t) ? addDaysIso(hoy, -7) : hoy };
+  }
   const estadistica = entenderEstadistica(t);
   // "¿Cuál fue el mejor día?" sin tema es de venta.
   const tema = TEMAS.find(([, re]) => re.test(t))?.[0] || (estadistica ? "venta" : undefined);
@@ -903,6 +915,7 @@ const SINONIMOS: Record<Tema, string> = {
   conteo: "conteo contar",
   inventario: "inventario",
   receta: "receta prepara hace como",
+  ranking: "ranking lugar puntos voy posicion",
 };
 const SINONIMOS_ESTADISTICA = "promedio normalmente estadistica general";
 
