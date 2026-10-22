@@ -1086,6 +1086,17 @@ en Personal ya no se pierde lo que el formulario no muestra (su foto, su
 descripción ni su usuario del sistema del corte de apertura). Al entrar,
 al personal le sale la novedad "Tu perfil".
 
+**Tu perfil (dueño)**: arriba a la derecha, en todas tus pantallas, está
+tu foto en un círculo (sin foto, tus iniciales); tocarla abre **Mi
+perfil**: ahí cambias tu foto (igual que el personal: cámara, galería o
+quitarla), tu **nombre** y una descripción, y ves "Cuenta: Dueño · acceso a
+todo". No hay que ligar nada a mano: si en Personal hay alguien que se llama
+igual que el nombre de tu perfil (sin importar mayúsculas ni acentos), la
+app sabe que eres tú — en tu perfil sale su puesto ("Gerente · Gerencia") y
+en Personal esa fila lleva tu foto y la etiqueta "Tú". Si nadie se llama
+igual, tu perfil no muestra puesto. Tu perfil se guarda aparte del de esa
+persona; no cambia nada de tu acceso ni lo ve el personal.
+
 **Pregúntale a Cortes para el personal**: todas las cuentas de equipo tienen
 el mismo botón verde 💬 (abajo a la derecha, en todas sus pantallas: su
 inicio, cada sección y su corte), con el mismo autocompletado y micrófono.

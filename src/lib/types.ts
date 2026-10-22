@@ -544,6 +544,10 @@ export interface AppData {
   // Recetario (Negocio > Bar/Cocina > Recetario): las recetas que
   // captura el dueño y consulta el personal con el permiso "Recetario".
   recetas?: Receta[];
+  // Mi perfil del dueño: su nombre, foto y descripción. Si alguien de
+  // Personal se llama igual, es él (ver empleadoDelDueno): de ahí sale su
+  // puesto y en Personal esa fila lleva su foto y "Tú".
+  perfilDueno?: { nombre?: string; foto?: string; descripcion?: string };
 }
 
 export interface Receta {

@@ -9,6 +9,8 @@ export function EmpleadosPanel({
   onAdd,
   onEdit,
   empleados,
+  tuId,
+  fotoTu,
   areas,
   puestos,
 }: {
@@ -16,6 +18,9 @@ export function EmpleadosPanel({
   onAdd: () => void;
   onEdit: (entry: EmpleadoEntry) => void;
   empleados: EmpleadoEntry[];
+  // El dueño, si está en Personal: su fila lleva su foto y "Tú".
+  tuId?: string;
+  fotoTu?: string;
   areas: AreaEntry[];
   puestos: PuestoEntry[];
 }) {
@@ -66,9 +71,12 @@ export function EmpleadosPanel({
                 const puesto = e.puestoId ? puestoById.get(e.puestoId) : undefined;
                 return (
                   <button key={e.id} className="catalog-row catalog-row-button con-avatar" onClick={() => onEdit(e)}>
-                    <Avatar nombre={e.nombre} foto={e.foto} tamano={40} />
+                    <Avatar nombre={e.nombre} foto={e.id === tuId ? fotoTu : e.foto} tamano={40} />
                     <div>
-                      <strong>{e.nombre}</strong>
+                      <strong>
+                        {e.nombre}
+                        {e.id === tuId && <em className="etiqueta-tu">Tú</em>}
+                      </strong>
                       <span>
                         {puesto ? puesto.nombre : "Sin puesto"}
                         {e.sueldoDiario ? ` · ${money(e.sueldoDiario)} / día` : " · sin sueldo diario"}

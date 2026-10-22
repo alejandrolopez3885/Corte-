@@ -104,7 +104,7 @@ const CAMPOS: Record<string, string> = {
   sueldoDiario: "Sueldo diario", puestoId: "Puesto", areaId: "Área", numero: "Número", fecha: "Fecha",
   tipo: "Tipo", empleadoId: "Empleado", meseroId: "Mesero", label: "Nombre del mes",
   medioTurno: "Medio turno guardado", lecturaSistema: "Lo que marca el sistema", cobro: "Cobró", acumulado: "Se acumula en el día",
-  fijosManual: "Gastos fijos editado a mano", foto: "Foto de perfil", descripcion: "Descripción",
+  fijosManual: "Gastos fijos editado a mano", foto: "Foto de perfil", descripcion: "Descripción", perfilDueno: "Perfil del dueño",
   usuarioSistemaId: "Usuario en el sistema",
 };
 const CAMPOS_DINERO = new Set([

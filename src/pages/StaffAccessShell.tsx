@@ -129,7 +129,9 @@ export default function StaffAccessShell({
       <div className="app-shell">
         <ShellHeader subtitle={area?.nombre} onSignOut={onSignOut} />
         <PerfilPanel
-          empleado={empleado}
+          nombre={empleado.nombre}
+          foto={empleado.foto}
+          descripcion={empleado.descripcion}
           puesto={puesto?.nombre}
           area={area?.nombre}
           secciones={[...(tieneCorte ? ["Corte"] : []), ...PERMISOS_DISPONIBLES.filter((p) => permisos.includes(p.value)).map((p) => p.label)]}

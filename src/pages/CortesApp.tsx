@@ -10,7 +10,7 @@ import { historialNombres } from "../lib/gastosBusqueda";
 import {
   addDaysIso, buildMonth, dateForDay, formatAssignedDate, formatDayNumber, formatLongDayDate, formatWeekRange,
   mondayOnOrBefore, money, mostRecentDayInWeek, mostRecentWeekIndex, resolveAssignmentLocation, resolveWeekStartDate,
-  normalizarNombre, round2, sumFromText, todayIso, uid, recalcularAcumulados, turnosActivos, acumuladosDelDia, quienesAbren, efectivoDelDia,
+  normalizarNombre, round2, sumFromText, todayIso, uid, recalcularAcumulados, turnosActivos, acumuladosDelDia, quienesAbren, efectivoDelDia, empleadoDelDueno,
 } from "../lib/dataModel";
 import { removeAssignmentByStaffAndDate, upsertAssignment, useStaffAssignments } from "../lib/staffAssignments";
 import { DAYS, DAY_SHORT } from "../lib/types";
@@ -52,6 +52,7 @@ import StaffAccessShell from "./StaffAccessShell";
 import { NovedadesAlEntrar } from "../components/NovedadesAlEntrar";
 import { PreguntasSheet } from "../components/PreguntasSheet";
 import { Avatar } from "../components/Avatar";
+import { PerfilPanel } from "../components/panels/PerfilPanel";
 import { contextoEquipo } from "../lib/preguntasEquipo";
 
 type ModalState =
@@ -81,7 +82,7 @@ type NegocioView =
   | "menu" | "tendencias" | "bitacora" | "controlBar" | "controlCocina" | "controlGeneral" | "inventario" | "pedidos"
   | "recetarioBar" | "recetarioCocina" | "importarCatalogo";
 
-type OwnerTab = "inicio" | "corte" | "equipo" | "negocio" | "dashboard";
+type OwnerTab = "inicio" | "corte" | "equipo" | "negocio" | "dashboard" | "perfil";
 
 export default function CortesApp({ profile }: { profile: Profile }) {
   const { signOut } = useAuth();
@@ -127,7 +128,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
       ? "Corte"
       : null
     : (modal && NOMBRE_MODAL[modal.type]) ||
-      (activeTab === "inicio" ? "Inicio" : activeTab === "corte" ? "Corte" : activeTab === "dashboard" ? "Dashboard" : activeTab === "equipo" ? NOMBRE_EQUIPO[equipoView] : NOMBRE_NEGOCIO[negocioView]);
+      (activeTab === "inicio" ? "Inicio" : activeTab === "corte" ? "Corte" : activeTab === "dashboard" ? "Dashboard" : activeTab === "perfil" ? "Mi perfil" : activeTab === "equipo" ? NOMBRE_EQUIPO[equipoView] : NOMBRE_NEGOCIO[negocioView]);
   useRegistrarVista(profile, pantalla);
 
   // "Historial de este día" (solo el dueño): cuántos cambios tiene registrados
@@ -267,6 +268,9 @@ export default function CortesApp({ profile }: { profile: Profile }) {
   const monthKeys = Object.keys(data.months).sort();
   // Cuenta de equipo: su persona en Personal (para su foto arriba).
   const miEmpleado = !isOwner && profile.empleado_id ? data.empleados.find((e) => e.id === profile.empleado_id) : undefined;
+  // El dueño en Personal (si alguien se llama igual que en su perfil): su puesto.
+  const empDueno = isOwner ? empleadoDelDueno(data) : undefined;
+  const puestoDueno = empDueno?.puestoId ? data.puestos.find((p) => p.id === empDueno.puestoId) : undefined;
   const month = activeMonth ? data.months[activeMonth] : null;
   const day: DayData | null = month ? month.weeks[activeWeek].days[activeDay] : null;
   // Ya con "Guardar corte", el personal solo lo puede ver.
@@ -498,6 +502,18 @@ export default function CortesApp({ profile }: { profile: Profile }) {
     // conserva.
     if (idx >= 0) next.empleados[idx] = { ...next.empleados[idx], ...entry };
     else next.empleados.push(entry);
+    persist(next);
+  }
+
+  // Mi perfil del dueño: nombre, foto y descripción.
+  function guardarPerfilDueno(cambios: { foto?: string; descripcion?: string; nombre?: string }) {
+    if (!data) return;
+    const next = structuredClone(data);
+    next.perfilDueno = {
+      nombre: cambios.nombre || undefined,
+      foto: cambios.foto || undefined,
+      descripcion: cambios.descripcion?.trim() || undefined,
+    };
     persist(next);
   }
 
@@ -1206,6 +1222,11 @@ export default function CortesApp({ profile }: { profile: Profile }) {
         <div className="topbar-actions">
           {saveState === "error" && <span className="save-badge error">No se guardó</span>}
           {saveState === "saving" && <span className="save-badge">Guardando…</span>}
+          {isOwner && (
+            <button type="button" className="avatar-btn" aria-label="Mi perfil" onClick={() => goToTab("perfil")}>
+              <Avatar nombre={data.perfilDueno?.nombre || profile.display_name || "Tú"} foto={data.perfilDueno?.foto} tamano={36} />
+            </button>
+          )}
           {!isOwner && miEmpleado && (
             <button
               type="button"
@@ -1281,6 +1302,8 @@ export default function CortesApp({ profile }: { profile: Profile }) {
       {isOwner && activeTab === "equipo" && equipoView === "personal" && (
         <EmpleadosPanel
           empleados={data.empleados}
+          tuId={empleadoDelDueno(data)?.id}
+          fotoTu={data.perfilDueno?.foto}
           areas={data.areas}
           puestos={data.puestos}
           onAdd={() => setModal({ type: "empleado" })}
@@ -1621,6 +1644,21 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           pedidosDiarios={data.pedidosDiarios}
           pedidosInventario={data.pedidosInventario}
           pedidosCargados={data.pedidosCargados || {}}
+        />
+      )}
+
+      {isOwner && activeTab === "perfil" && (
+        <PerfilPanel
+          nombre={data.perfilDueno?.nombre || profile.display_name || ""}
+          nombreEditable
+          foto={data.perfilDueno?.foto}
+          descripcion={data.perfilDueno?.descripcion}
+          puesto={puestoDueno?.nombre}
+          area={puestoDueno ? data.areas.find((a) => a.id === puestoDueno.areaId)?.nombre : undefined}
+          secciones={[]}
+          etiquetaCuenta="Dueño · acceso a todo"
+          onGuardar={guardarPerfilDueno}
+          onBack={() => goToTab("inicio")}
         />
       )}
 

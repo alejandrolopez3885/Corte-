@@ -1157,6 +1157,13 @@ export function esCantidadValida(valor: string): boolean {
   return /^\d+(?:[.,]\d+)?$/.test(valor);
 }
 
+// La persona de Personal que es el dueño: la que se llama igual que en su
+// perfil.
+export function empleadoDelDueno(data: AppData): EmpleadoEntry | undefined {
+  const n = normalizarNombre(data.perfilDueno?.nombre || "");
+  return n ? data.empleados.find((e) => normalizarNombre(e.nombre) === n) : undefined;
+}
+
 export function normalizarNombre(t: string): string {
   return t.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/\s+/g, " ").trim();
 }
