@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { BookOpen, ChefHat, ClipboardList, Clock, Coins, Home, LogOut, Martini, MessageCircle, Package, ShoppingCart, Wallet } from "lucide-react";
 import { formatAssignedDate, insumoAreaForPuesto, plantillaConteo, mostRecentWeekIndex, puedeEditarHorarios } from "../lib/dataModel";
 import { HORARIO_AREAS_FIJAS, PERMISOS_DISPONIBLES } from "../lib/types";
@@ -12,21 +12,26 @@ import { PropinasPanel } from "../components/panels/PropinasPanel";
 import { RecetarioPanel } from "../components/panels/RecetarioPanel";
 import { PreguntasSheet } from "../components/PreguntasSheet";
 import { contextoEquipo } from "../lib/preguntasEquipo";
+import { Avatar } from "../components/Avatar";
+import { PerfilPanel } from "../components/panels/PerfilPanel";
 import { supabase } from "../lib/supabaseClient";
 import { CargarPedidosPanel } from "../components/panels/CargarPedidosPanel";
 
-type StaffView = "menu" | PermisoStaff | "corte";
+type StaffView = "menu" | PermisoStaff | "corte" | "perfil";
 
-function ShellHeader({ subtitle, onSignOut }: { subtitle?: string; onSignOut: () => void }) {
+function ShellHeader({ subtitle, onSignOut, perfil }: { subtitle?: string; onSignOut: () => void; perfil?: ReactNode }) {
   return (
     <header className="topbar">
       <div className="brand">
         <span className="brand-mark">Cortes</span>
         {subtitle && <span className="brand-month">{subtitle}</span>}
       </div>
-      <button className="icon-btn" onClick={onSignOut} aria-label="Cerrar sesión">
-        <LogOut size={18} />
-      </button>
+      <div className="topbar-actions">
+        {perfil}
+        <button className="icon-btn" onClick={onSignOut} aria-label="Cerrar sesión">
+          <LogOut size={18} />
+        </button>
+      </div>
     </header>
   );
 }
@@ -51,6 +56,7 @@ export default function StaffAccessShell({
   assignments,
   onPickCorteDate,
   vistaInicial,
+  onGuardarPerfil,
 }: {
   profile: Profile;
   data: AppData;
@@ -65,13 +71,14 @@ export default function StaffAccessShell({
   assignments: StaffAssignment[];
   onPickCorteDate: (date: string) => void;
   // Sección en la que entra (al regresar del corte desde Pregúntale a Cortes).
-  vistaInicial?: PermisoStaff | null;
+  vistaInicial?: PermisoStaff | "perfil" | null;
+  onGuardarPerfil: (empleadoId: string, cambios: { foto?: string; descripcion?: string }) => void;
 }) {
   const permisos = profile.permisos || [];
   const tieneCorte = assignments.length > 0;
   const totalSecciones = permisos.length + (tieneCorte ? 1 : 0);
   const [view, setView] = useState<StaffView>(() => {
-    if (vistaInicial && permisos.includes(vistaInicial)) return vistaInicial;
+    if (vistaInicial === "perfil" || (vistaInicial && permisos.includes(vistaInicial))) return vistaInicial;
     if (totalSecciones !== 1) return "menu";
     return permisos.length === 1 ? permisos[0] : "corte";
   });
@@ -80,7 +87,7 @@ export default function StaffAccessShell({
   // Cuántas veces entra a cada sección, en su propia cuenta: con eso se
   // acomodan arriba sus preguntas en Pregúntale a Cortes.
   useEffect(() => {
-    if (view === "menu") return;
+    if (view === "menu" || view === "perfil") return;
     supabase.auth.getUser().then(({ data: u }) => {
       const uso = (u.user?.user_metadata?.seccionesUso || {}) as Record<string, number>;
       supabase.auth.updateUser({ data: { seccionesUso: { ...uso, [view]: (uso[view] || 0) + 1 } } });
@@ -110,10 +117,33 @@ export default function StaffAccessShell({
     );
   }
 
-  if (totalSecciones === 0) {
+  // Mi perfil: su foto arriba, en todas sus pantallas.
+  const perfilBtn = (
+    <button type="button" className="avatar-btn" onClick={() => setView("perfil")} aria-label="Mi perfil">
+      <Avatar nombre={empleado.nombre} foto={empleado.foto} tamano={36} />
+    </button>
+  );
+  if (view === "perfil") {
+    const volver = () => setView(totalSecciones === 1 ? (permisos[0] ?? "corte") : "menu");
     return (
       <div className="app-shell">
         <ShellHeader subtitle={area?.nombre} onSignOut={onSignOut} />
+        <PerfilPanel
+          empleado={empleado}
+          puesto={puesto?.nombre}
+          area={area?.nombre}
+          secciones={[...(tieneCorte ? ["Corte"] : []), ...PERMISOS_DISPONIBLES.filter((p) => permisos.includes(p.value)).map((p) => p.label)]}
+          onGuardar={(cambios) => onGuardarPerfil(empleado.id, cambios)}
+          onBack={volver}
+        />
+      </div>
+    );
+  }
+
+  if (totalSecciones === 0) {
+    return (
+      <div className="app-shell">
+        <ShellHeader subtitle={area?.nombre} onSignOut={onSignOut} perfil={perfilBtn} />
         <div className="full-page-msg">Todavía no tienes ninguna sección habilitada. Pide al dueño que te dé acceso.</div>
       </div>
     );
@@ -149,7 +179,7 @@ export default function StaffAccessShell({
   if (view === "corte" && tieneCorte) {
     return (
       <div className="app-shell">
-        <ShellHeader subtitle={area?.nombre} onSignOut={onSignOut} />
+        <ShellHeader subtitle={area?.nombre} onSignOut={onSignOut} perfil={perfilBtn} />
         {preguntas}
         <div className="page-section">
           {backToMenu && (
@@ -176,7 +206,7 @@ export default function StaffAccessShell({
     if (!horarioAreaId) {
       return (
         <div className="app-shell">
-          <ShellHeader subtitle={area?.nombre} onSignOut={onSignOut} />
+          <ShellHeader subtitle={area?.nombre} onSignOut={onSignOut} perfil={perfilBtn} />
           {preguntas}
           <div className="full-page-msg">
             {area
@@ -192,7 +222,7 @@ export default function StaffAccessShell({
     });
     return (
       <div className="app-shell">
-        <ShellHeader subtitle={area?.nombre} onSignOut={onSignOut} />
+        <ShellHeader subtitle={area?.nombre} onSignOut={onSignOut} perfil={perfilBtn} />
         {preguntas}
         <HorariosPanel
           onBack={backToMenu}
@@ -216,7 +246,7 @@ export default function StaffAccessShell({
     if (!insumoArea) {
       return (
         <div className="app-shell">
-          <ShellHeader subtitle={area?.nombre} onSignOut={onSignOut} />
+          <ShellHeader subtitle={area?.nombre} onSignOut={onSignOut} perfil={perfilBtn} />
           {preguntas}
           <div className="full-page-msg">
             Tu puesto ("{puesto?.nombre}") todavía no tiene Conteo diario en la app — por ahora solo existe para
@@ -228,7 +258,7 @@ export default function StaffAccessShell({
     const insumoAreaLabel = insumoArea === "bar" ? "Bar" : "Cocina";
     return (
       <div className="app-shell">
-        <ShellHeader subtitle={insumoAreaLabel} onSignOut={onSignOut} />
+        <ShellHeader subtitle={insumoAreaLabel} onSignOut={onSignOut} perfil={perfilBtn} />
         {preguntas}
         <ConteoDiarioPanel
           onBack={backToMenu}
@@ -255,7 +285,7 @@ export default function StaffAccessShell({
   if (view === "inventario" && permisos.includes("inventario")) {
     return (
       <div className="app-shell">
-        <ShellHeader subtitle={area?.nombre} onSignOut={onSignOut} />
+        <ShellHeader subtitle={area?.nombre} onSignOut={onSignOut} perfil={perfilBtn} />
         {preguntas}
         <InventarioNotasPanel
           onBack={backToMenu}
@@ -280,7 +310,7 @@ export default function StaffAccessShell({
   if (view === "nomina" && permisos.includes("nomina")) {
     return (
       <div className="app-shell">
-        <ShellHeader subtitle={area?.nombre} onSignOut={onSignOut} />
+        <ShellHeader subtitle={area?.nombre} onSignOut={onSignOut} perfil={perfilBtn} />
         {preguntas}
         <NominaPanel
           onBack={backToMenu}
@@ -302,7 +332,7 @@ export default function StaffAccessShell({
   if (view === "propinas" && permisos.includes("propinas")) {
     return (
       <div className="app-shell">
-        <ShellHeader subtitle={area?.nombre} onSignOut={onSignOut} />
+        <ShellHeader subtitle={area?.nombre} onSignOut={onSignOut} perfil={perfilBtn} />
         {preguntas}
         <PropinasPanel
           onBack={backToMenu}
@@ -324,7 +354,7 @@ export default function StaffAccessShell({
     const titulo = recetaArea === "cocina" ? "Recetario de Cocina" : recetaArea === "bar" ? "Recetario de Bar" : "Recetario";
     return (
       <div className="app-shell">
-        <ShellHeader subtitle={area?.nombre} onSignOut={onSignOut} />
+        <ShellHeader subtitle={area?.nombre} onSignOut={onSignOut} perfil={perfilBtn} />
         {preguntas}
         <RecetarioPanel onBack={backToMenu} backLabel="Inicio" titulo={titulo} recetas={recetas} />
       </div>
@@ -334,7 +364,7 @@ export default function StaffAccessShell({
   if (view === "pedidos" && permisos.includes("pedidos")) {
     return (
       <div className="app-shell">
-        <ShellHeader subtitle={area?.nombre} onSignOut={onSignOut} />
+        <ShellHeader subtitle={area?.nombre} onSignOut={onSignOut} perfil={perfilBtn} />
         {preguntas}
         <CargarPedidosPanel
           onBack={backToMenu}
@@ -355,10 +385,10 @@ export default function StaffAccessShell({
 
   return (
     <div className="app-shell">
-      <ShellHeader subtitle={area?.nombre} onSignOut={onSignOut} />
+      <ShellHeader subtitle={area?.nombre} onSignOut={onSignOut} perfil={perfilBtn} />
       {preguntas}
       <div className="page-section">
-        <h2 className="page-title">Inicio</h2>
+        <h2 className="page-title">Hola, {empleado.nombre.split(" ")[0]}</h2>
         <div className="menu-list">
           {tieneCorte && (
             <button className="menu-item" onClick={() => setView("corte")}>
@@ -385,6 +415,15 @@ export default function StaffAccessShell({
               </button>
             );
           })}
+          <button className="menu-item" onClick={() => setView("perfil")}>
+            <span className="menu-item-icon avatar-icon">
+              <Avatar nombre={empleado.nombre} foto={empleado.foto} tamano={40} />
+            </span>
+            <span className="menu-item-text">
+              <strong>Mi perfil</strong>
+              <span>Tu foto, tu puesto y tu descripción</span>
+            </span>
+          </button>
         </div>
       </div>
     </div>

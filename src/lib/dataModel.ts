@@ -154,7 +154,7 @@ export function isoWeekNumber(dateIso: string): number {
 // al catálogo correcto.
 export function insumoAreaForPuesto(puestoNombre: string): ConteoTextoArea | null {
   const n = puestoNombre.toLowerCase();
-  if (n.includes("barra") || n === "bar") return "bar";
+  if (n.includes("barra") || n === "bar" || n.includes("bar tender") || n.includes("bartender") || n.includes("barman")) return "bar";
   if (n.includes("cocin")) return "cocina";
   return null;
 }
@@ -187,9 +187,11 @@ export function buildMonth(monthKey: string, week1Start?: string): MonthData {
 }
 
 // Áreas y puestos con los que arranca cualquier negocio nuevo — Gerencia
-// (Gerente, Subgerente), Piso (Barra, Mesero, Calidad) y Cocina (Jefe de
+// (Gerente, Subgerente), Piso (Bar tender, Mesero, Calidad, Capitán) y Cocina (Jefe de
 // cocina, Cocinero). Editable después desde Personal, esto es solo el
 // punto de partida para no empezar de cero.
+const PUESTO_CAPITAN_ID = "puesto-capitan";
+
 function seedAreasYPuestos(): { areas: AreaEntry[]; puestos: PuestoEntry[] } {
   const gerencia: AreaEntry = { id: uid(), nombre: "Gerencia" };
   const piso: AreaEntry = { id: uid(), nombre: "Piso" };
@@ -197,9 +199,10 @@ function seedAreasYPuestos(): { areas: AreaEntry[]; puestos: PuestoEntry[] } {
   const puestos: PuestoEntry[] = [
     { id: uid(), nombre: "Gerente", areaId: gerencia.id },
     { id: uid(), nombre: "Subgerente", areaId: gerencia.id },
-    { id: uid(), nombre: "Barra", areaId: piso.id },
+    { id: uid(), nombre: "Bar tender", areaId: piso.id },
     { id: uid(), nombre: "Mesero", areaId: piso.id },
     { id: uid(), nombre: "Calidad", areaId: piso.id },
+    { id: PUESTO_CAPITAN_ID, nombre: "Capitán", areaId: piso.id },
     { id: uid(), nombre: "Jefe de cocina", areaId: cocina.id },
     { id: uid(), nombre: "Cocinero", areaId: cocina.id },
   ];
@@ -231,6 +234,19 @@ export function migrateAppData(raw: AppData): { data: AppData; changed: boolean 
     const seed = seedAreasYPuestos();
     data.areas = data.areas || seed.areas;
     data.puestos = data.puestos || seed.puestos;
+    changed = true;
+  }
+  // "Barra" pasó a llamarse "Bar tender" (mismo puesto: quien lo tenía lo
+  // conserva) y se agregó "Capitán" en Piso. Id fijo para Capitán, para que
+  // dos aparatos que migran a la vez no creen dos distintos.
+  const barra = data.puestos.find((p) => normalizarNombre(p.nombre) === "barra");
+  if (barra) {
+    data.puestos = data.puestos.map((p) => (p === barra ? { ...p, nombre: "Bar tender" } : p));
+    changed = true;
+  }
+  const piso = data.areas.find((a) => normalizarNombre(a.nombre) === "piso");
+  if (piso && !data.puestos.some((p) => normalizarNombre(p.nombre) === "capitan")) {
+    data.puestos = [...data.puestos, { id: PUESTO_CAPITAN_ID, nombre: "Capitán", areaId: piso.id }];
     changed = true;
   }
   if (!data.proveedores) {

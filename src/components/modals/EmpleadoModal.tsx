@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Sheet, Field, SumInput, Toggle, NumInput } from "../ui";
+import { Avatar } from "../Avatar";
 import { insumoAreaForPuesto, money, sumFromText, uid } from "../../lib/dataModel";
 import { supabase } from "../../lib/supabaseClient";
 import { createStaffAccount, errorMessage, revokeStaffAccess, updateStaffPermisos, PIN_LENGTH } from "../../lib/staffAccounts";
@@ -31,6 +32,9 @@ export function EmpleadoModal({
   // el empleado en sí todavía no se haya guardado.
   const [empleadoId] = useState(() => editing?.id || uid());
   const [nombre, setNombre] = useState(editing?.nombre || "");
+  // La foto la pone cada quien desde Mi perfil; aquí el dueño solo la ve o
+  // la quita.
+  const [quitarFoto, setQuitarFoto] = useState(false);
   const [sueldoDiarioText, setSueldoDiarioText] = useState(editing?.sueldoDiario ? String(editing.sueldoDiario) : "");
   const [puestoId, setPuestoId] = useState(editing?.puestoId || "");
   const [nuevoPuestoNombre, setNuevoPuestoNombre] = useState("");
@@ -164,6 +168,7 @@ export function EmpleadoModal({
         sueldoDiario: sueldoDiario || undefined,
         puestoId: finalPuestoId,
         staffProfileId,
+        ...(quitarFoto ? { foto: undefined } : {}),
       },
       nuevaAreaEntry,
       nuevoPuestoEntry
@@ -173,6 +178,20 @@ export function EmpleadoModal({
 
   return (
     <Sheet title={editing ? "Editar empleado" : "Nuevo empleado"} onClose={onClose} onDelete={onDelete}>
+      {editing && (editing.foto || editing.descripcion) && (
+        <div className="empleado-perfil">
+          <Avatar nombre={editing.nombre} foto={quitarFoto ? undefined : editing.foto} tamano={64} />
+          <div>
+            {editing.descripcion && <p>“{editing.descripcion}”</p>}
+            {editing.foto && (
+              <button type="button" className="link-btn" onClick={() => setQuitarFoto(!quitarFoto)}>
+                {quitarFoto ? "No quitar la foto" : "Quitar foto"}
+              </button>
+            )}
+            <span className="hint">Su foto y descripción las pone desde Mi perfil.</span>
+          </div>
+        </div>
+      )}
       <Field label="Nombre">
         <input
           className="text-input"

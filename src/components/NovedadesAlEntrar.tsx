@@ -296,6 +296,21 @@ function Visual({ tipo }: { tipo: VisualNovedad }) {
       </>
     );
   }
+  if (tipo === "perfil") {
+    return (
+      <>
+        <span className="nv-etiqueta">Mi perfil</span>
+        <div className="nv-perfil">
+          <span className="nv-avatar">LP</span>
+          <div>
+            <strong>Luis Pérez</strong>
+            <small>Cocinero · Cocina</small>
+          </div>
+        </div>
+        <span className="nv-suma">📷 Cambiar foto · Descripción</span>
+      </>
+    );
+  }
   if (tipo === "preguntas") {
     return (
       <>

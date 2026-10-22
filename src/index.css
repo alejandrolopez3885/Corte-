@@ -1465,3 +1465,40 @@ button.pill { cursor: pointer; }
 .cp-reemplaza { font-size: 11px; font-weight: 600; color: var(--warn); text-transform: none; letter-spacing: 0; }
 .pedidos-cargado { display: block; font-size: 11px; font-weight: 600; color: var(--good); text-transform: none; letter-spacing: 0; }
 .pedidos-estado-cargados { font-size: 12px; color: var(--ink-soft); }
+
+/* ---- Foto de perfil y Mi perfil ---- */
+.avatar {
+  flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; overflow: hidden;
+  background: var(--accent-soft); color: var(--accent); font-weight: 700; letter-spacing: 0.02em;
+}
+.avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.avatar-btn { border: none; background: none; padding: 0; cursor: pointer; border-radius: 50%; display: inline-flex; }
+.menu-item-icon.avatar-icon { background: none; }
+.catalog-row.con-avatar { display: flex; align-items: center; gap: 12px; }
+.perfil-foto { display: flex; flex-direction: column; align-items: center; gap: 8px; margin: 6px 0 16px; }
+.perfil-foto-btn { border: none; background: none; padding: 0; cursor: pointer; border-radius: 50%; box-shadow: 0 4px 14px rgba(20, 40, 30, 0.18); }
+.perfil-cambiar { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; }
+.perfil-datos { display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; margin-bottom: 14px; }
+.perfil-dato { display: flex; flex-direction: column; gap: 3px; padding: 11px 14px; border-bottom: 1px solid var(--surface-alt); }
+.perfil-dato:last-child { border-bottom: none; }
+.perfil-dato > span { font-size: 12px; color: var(--ink-soft); }
+.perfil-dato strong { font-size: 15px; font-weight: 600; }
+.perfil-secciones { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 2px; }
+.perfil-secciones em { font-style: normal; font-size: 12.5px; font-weight: 600; color: var(--accent); background: var(--accent-soft); border-radius: 999px; padding: 3px 10px; }
+.perfil-descripcion { resize: vertical; min-height: 80px; }
+.perfil-contador { align-self: flex-end; text-align: right; display: block; margin: -8px 0 12px; }
+.perfil-opciones { display: flex; flex-direction: column; padding-bottom: 20px; }
+.perfil-opciones button {
+  display: flex; align-items: center; gap: 12px; border: none; border-bottom: 1px solid var(--surface-alt); background: none;
+  padding: 15px 4px; font-size: 15px; font-family: inherit; color: var(--ink); cursor: pointer; text-align: left;
+}
+.perfil-opciones button:last-child { border-bottom: none; }
+.perfil-opciones button.quitar { color: var(--bad); }
+.empleado-perfil { display: flex; gap: 14px; align-items: center; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 12px 14px; }
+.empleado-perfil > div { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.empleado-perfil p { margin: 0; font-size: 14px; }
+.empleado-perfil .link-btn { padding: 0; }
+.nv-perfil { display: flex; align-items: center; gap: 10px; }
+.nv-perfil > div { display: flex; flex-direction: column; }
+.nv-perfil small { color: var(--ink-soft); }
+.nv-avatar { width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, #e9b98f, #b9785a); color: white; font-weight: 700; display: flex; align-items: center; justify-content: center; }

@@ -51,6 +51,10 @@ export interface EmpleadoEntry {
   // se recuerda al hacer el corte de apertura, porque el nombre del horario
   // no siempre es igual al del sistema.
   usuarioSistemaId?: string;
+  // Mi perfil (lo llena cada quien desde su cuenta): foto chica en JPEG
+  // (data URL, ~10 KB, recortada en cuadro) y una descripción corta.
+  foto?: string;
+  descripcion?: string;
 }
 
 // Valores rápidos para una celda de horario — el resto de las celdas

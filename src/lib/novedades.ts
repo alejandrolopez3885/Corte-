@@ -18,7 +18,7 @@ import type { AppData, ConteoTextoArea, PermisoStaff, Profile } from "./types";
 // "general" = de toda la app: le sale a cualquiera que ya entraba antes.
 export type SeccionNovedad = "corte" | PermisoStaff | "general";
 
-export type VisualNovedad = "sumar" | "autocompletar" | "categoria" | "faltan" | "guardarCorte" | "inventarioPasos" | "recetarioArea" | "apertura" | "cierreTotal" | "efectivoEntregar" | "conteoBar" | "pedidosPegar" | "preguntas";
+export type VisualNovedad = "sumar" | "autocompletar" | "categoria" | "faltan" | "guardarCorte" | "inventarioPasos" | "recetarioArea" | "apertura" | "cierreTotal" | "efectivoEntregar" | "conteoBar" | "pedidosPegar" | "preguntas" | "perfil";
 
 export interface Novedad {
   id: string;
@@ -137,6 +137,14 @@ export const NOVEDADES: Novedad[] = [
     titulo: "Pregúntale a Cortes",
     texto: "Toca el botón verde 💬 y pregunta de tus secciones: escribe y elige una de las sugerencias, o toca una pregunta.",
     visual: "preguntas",
+  },
+  {
+    id: "mi-perfil",
+    fecha: "2026-10-22T05:29:00Z",
+    seccion: "general",
+    titulo: "Tu perfil",
+    texto: "Toca tu círculo de arriba (o **Mi perfil** en tu inicio) para poner tu foto y una descripción. Ahí también ves tu puesto.",
+    visual: "perfil",
   },
 ];
 

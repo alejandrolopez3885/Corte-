@@ -1,5 +1,6 @@
 import { ArrowLeft, Plus, UsersRound } from "lucide-react";
 import { Empty } from "../ui";
+import { Avatar } from "../Avatar";
 import { money } from "../../lib/dataModel";
 import type { AreaEntry, EmpleadoEntry, PuestoEntry } from "../../lib/types";
 
@@ -64,7 +65,8 @@ export function EmpleadosPanel({
               {g.items.map((e) => {
                 const puesto = e.puestoId ? puestoById.get(e.puestoId) : undefined;
                 return (
-                  <button key={e.id} className="catalog-row catalog-row-button" onClick={() => onEdit(e)}>
+                  <button key={e.id} className="catalog-row catalog-row-button con-avatar" onClick={() => onEdit(e)}>
+                    <Avatar nombre={e.nombre} foto={e.foto} tamano={40} />
                     <div>
                       <strong>{e.nombre}</strong>
                       <span>

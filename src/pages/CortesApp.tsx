@@ -51,6 +51,7 @@ import { contarBitacoraDelDia, useRegistrarVista } from "../lib/bitacora";
 import StaffAccessShell from "./StaffAccessShell";
 import { NovedadesAlEntrar } from "../components/NovedadesAlEntrar";
 import { PreguntasSheet } from "../components/PreguntasSheet";
+import { Avatar } from "../components/Avatar";
 import { contextoEquipo } from "../lib/preguntasEquipo";
 
 type ModalState =
@@ -101,7 +102,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
   const [negocioView, setNegocioView] = useState<NegocioView>("menu");
   const [preguntasAbierto, setPreguntasAbierto] = useState(false);
   // Personal: la sección a la que regresa desde "Pregúntale a Cortes".
-  const [staffVista, setStaffVista] = useState<PermisoStaff | null>(null);
+  const [staffVista, setStaffVista] = useState<PermisoStaff | "perfil" | null>(null);
   const [modal, setModal] = useState<ModalState>(null);
   const [selectedAssignedDate, setSelectedAssignedDate] = useState<string | null>(null);
 
@@ -256,6 +257,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           assignments={assignmentsStatus === "error" ? [] : assignments}
           onPickCorteDate={(date) => setSelectedAssignedDate(date)}
           vistaInicial={staffVista}
+          onGuardarPerfil={guardarPerfilEmpleado}
           />
         </>
       );
@@ -263,6 +265,8 @@ export default function CortesApp({ profile }: { profile: Profile }) {
   }
 
   const monthKeys = Object.keys(data.months).sort();
+  // Cuenta de equipo: su persona en Personal (para su foto arriba).
+  const miEmpleado = !isOwner && profile.empleado_id ? data.empleados.find((e) => e.id === profile.empleado_id) : undefined;
   const month = activeMonth ? data.months[activeMonth] : null;
   const day: DayData | null = month ? month.weeks[activeWeek].days[activeDay] : null;
   // Ya con "Guardar corte", el personal solo lo puede ver.
@@ -490,8 +494,21 @@ export default function CortesApp({ profile }: { profile: Profile }) {
     if (nuevaArea) next.areas.push(nuevaArea);
     if (nuevoPuesto) next.puestos.push(nuevoPuesto);
     const idx = next.empleados.findIndex((e) => e.id === entry.id);
-    if (idx >= 0) next.empleados[idx] = entry;
+    // Lo que el modal no edita (foto, descripción, usuario del sistema) se
+    // conserva.
+    if (idx >= 0) next.empleados[idx] = { ...next.empleados[idx], ...entry };
     else next.empleados.push(entry);
+    persist(next);
+  }
+
+  // Mi perfil: cada quien cambia solo su foto y su descripción.
+  function guardarPerfilEmpleado(empleadoId: string, cambios: { foto?: string; descripcion?: string }) {
+    if (!data) return;
+    const next = structuredClone(data);
+    const emp = next.empleados.find((e) => e.id === empleadoId);
+    if (!emp) return;
+    emp.foto = cambios.foto || undefined;
+    emp.descripcion = cambios.descripcion?.trim() || undefined;
     persist(next);
   }
 
@@ -1189,6 +1206,19 @@ export default function CortesApp({ profile }: { profile: Profile }) {
         <div className="topbar-actions">
           {saveState === "error" && <span className="save-badge error">No se guardó</span>}
           {saveState === "saving" && <span className="save-badge">Guardando…</span>}
+          {!isOwner && miEmpleado && (
+            <button
+              type="button"
+              className="avatar-btn"
+              aria-label="Mi perfil"
+              onClick={() => {
+                setStaffVista("perfil");
+                setSelectedAssignedDate(null);
+              }}
+            >
+              <Avatar nombre={miEmpleado.nombre} foto={miEmpleado.foto} tamano={36} />
+            </button>
+          )}
           <button className="icon-btn" onClick={signOut} aria-label="Cerrar sesión">
             <LogOut size={18} />
           </button>

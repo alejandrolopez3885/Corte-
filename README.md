@@ -262,8 +262,11 @@ estando en Nómina te regresa al menú de Equipo):
   personal — nombre, sueldo diario y un puesto opcional (Gerente, Mesero,
   Cocinero, ...); la lista se agrupa sola por área según el puesto de cada
   quien. Áreas y puestos son catálogos editables — arrancan con Gerencia
-  (Gerente, Subgerente), Piso (Barra, Mesero, Calidad) y Cocina (Jefe de
-  cocina, Cocinero) como punto de partida, y se puede crear un puesto
+  (Gerente, Subgerente), Piso (Bar tender, Mesero, Calidad, Capitán) y
+  Cocina (Jefe de cocina, Cocinero) como punto de partida (el puesto que
+  antes se llamaba "Barra" se renombró solo a "Bar tender" — mismo puesto,
+  así que quien lo tenía lo conserva con su conteo y recetario de Bar — y
+  "Capitán" se agregó solo en Piso), y se puede crear un puesto
   nuevo (y de paso un área nueva, si hace falta) al vuelo desde el propio
   empleado, igual que un insumo puede crear su proveedor al vuelo. Se
   agrega con un botón "+" en vez de tener el formulario siempre abierto,
@@ -284,7 +287,7 @@ estando en Nómina te regresa al menú de Equipo):
   área ni por persona) y "Recetario" (consulta de las recetas que captura
   el dueño en Negocio > Bar/Cocina > Recetario, sin poder editar nada: los
   puestos de Cocina — Cocinero, Jefe de cocina — ven solo el "Recetario de
-  Cocina", Barra solo el "Recetario de Bar", y cualquier otro puesto las
+  Cocina", Bar tender solo el "Recetario de Bar", y cualquier otro puesto las
   dos. Es el único permiso que se puede habilitar aunque la persona no
   tenga puesto asignado) y "Pedidos" (pegar los pedidos de la semana
   desde WhatsApp, sin área — ver abajo en Negocio > Pedidos). Cada permiso se acota distinto: "Horarios" usa el área de
@@ -292,9 +295,9 @@ estando en Nómina te regresa al menú de Equipo):
   completo de esa área (todo el personal de Piso, o todo el de Cocina,
   no solo su propia fila); "Conteo diario" usa el catálogo de insumos
   (Bar/Cocina/General) en vez del área de Personal, porque no son la
-  misma clasificación — un puesto de "Barra" vive bajo el área de
+  misma clasificación — un puesto de "Bar tender" vive bajo el área de
   Personal "Piso", pero sus insumos son los de Bar, así que ese permiso
-  se resuelve por el nombre del puesto (Barra → Bar, Cocinero/Jefe de
+  se resuelve por el nombre del puesto (Bar tender o Barra → Bar, Cocinero/Jefe de
   cocina → Cocina), no por su área; el checklist ya muestra la etiqueta
   correcta ("Conteo diario de Bar") y lo deja deshabilitado si el puesto
   actual no aplica a ninguna de las dos. "Nómina" es individual (no por
@@ -1063,6 +1066,25 @@ utensilios, preparación paso a paso y notas; el grupo **Recetario** sale en
 "Ver todas las preguntas" en cuanto hay recetas. La lógica vive en
 `src/lib/preguntas.ts` (dueño) y `src/lib/preguntasEquipo.ts` (personal) y
 la pantalla en `src/components/PreguntasSheet.tsx`.
+
+**Mi perfil (cuentas de equipo)**: arriba a la derecha, junto a cerrar
+sesión, cada quien ve su foto en un círculo (sin foto, sus iniciales) en
+todas sus pantallas, también en su corte; tocarla abre **Mi perfil**, que
+también está como última opción de su inicio (que ahora saluda "Hola,
+Luis"). Ahí ve su nombre, su puesto con su área ("Cocinero · Cocina") y
+sus secciones, sin poder cambiarlos — los asigna el dueño en Personal — y
+puede cambiar solo dos cosas: su **foto** (al tocar el círculo o "Cambiar
+foto": "Tomar foto" con la cámara, "Elegir de la galería" o "Quitar foto")
+y una **descripción** corta (hasta 200 letras, ej. "Me encanta preparar
+las alitas"), con "Guardar". La foto se recorta sola en cuadro al centro
+y se guarda chica (192 px en JPEG, ~10 KB) dentro de los datos, sin pasos
+extra en Supabase; en el historial de Actividad el cambio sale como "Foto
+de perfil" sin copiar la imagen. El dueño ve la foto de cada quien en
+Equipo > Personal y, al abrir a alguien, su foto y su descripción con la
+opción "Quitar foto" (por si subieron algo que no va). Al editar a alguien
+en Personal ya no se pierde lo que el formulario no muestra (su foto, su
+descripción ni su usuario del sistema del corte de apertura). Al entrar,
+al personal le sale la novedad "Tu perfil".
 
 **Pregúntale a Cortes para el personal**: todas las cuentas de equipo tienen
 el mismo botón verde 💬 (abajo a la derecha, en todas sus pantallas: su

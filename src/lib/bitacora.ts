@@ -104,7 +104,8 @@ const CAMPOS: Record<string, string> = {
   sueldoDiario: "Sueldo diario", puestoId: "Puesto", areaId: "Área", numero: "Número", fecha: "Fecha",
   tipo: "Tipo", empleadoId: "Empleado", meseroId: "Mesero", label: "Nombre del mes",
   medioTurno: "Medio turno guardado", lecturaSistema: "Lo que marca el sistema", cobro: "Cobró", acumulado: "Se acumula en el día",
-  fijosManual: "Gastos fijos editado a mano",
+  fijosManual: "Gastos fijos editado a mano", foto: "Foto de perfil", descripcion: "Descripción",
+  usuarioSistemaId: "Usuario en el sistema",
 };
 const CAMPOS_DINERO = new Set([
   "venta", "tarjetas", "transferencia", "propina", "gastosTotal", "total", "precio", "efectivoReal", "ventaApps",
@@ -115,6 +116,8 @@ const fmtNum = (n: number) => n.toLocaleString("es-MX", { maximumFractionDigits:
 
 function textoValor(v: Json, campo?: string): string {
   if (v === undefined || v === null || v === "") return "—";
+  // La foto de perfil es una imagen: nunca se copia al historial.
+  if (campo === "foto") return "Foto";
   // Montos sueltos que se sumaron: "300 + 450 + 750".
   if (campo && /desglose$/i.test(campo) && Array.isArray(v)) return v.map((n) => fmtNum(Number(n))).join(" + ");
   if (typeof v === "boolean") return v ? "Sí" : "No";
