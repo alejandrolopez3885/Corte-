@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { MessageSquareText } from "lucide-react";
 import { Empty } from "../ui";
 import { TituloPagina } from "../BarraTitulo";
+import { SeguimientoEncuestas } from "../SeguimientoEncuestas";
 import { addDaysIso, money, round2 } from "../../lib/dataModel";
 import { ubicarFechas } from "../../lib/inicio";
 import { rangoRanking, type PeriodoRanking } from "../../lib/ranking";
@@ -11,8 +12,9 @@ import type { AppData } from "../../lib/types";
 // Encuestas (solo dueño): las respuestas con sus comentarios, el resumen
 // por mesero y las sospechosas — que no cuentan hasta aprobarlas. Al abrir,
 // marca como sospechosas las de un mesero cuyos totales con encuesta de un
-// día pasan su venta de ese día en el corte.
-type Pestana = "respuestas" | "meseros" | "sospechosas";
+// día pasan su venta de ese día en el corte. En "Seguimiento", cada paso de
+// cada encuesta y dónde se quedan.
+type Pestana = "respuestas" | "meseros" | "sospechosas" | "seguimiento";
 
 const estrellas = (n: number) => "★".repeat(n) + "☆".repeat(5 - n);
 const fechaLocal = (iso: string) => {
@@ -149,10 +151,15 @@ export function EncuestasPanel({ data, onBack }: { data: AppData; onBack?: () =>
         <button type="button" className={pestana === "sospechosas" ? "activo" : ""} onClick={() => setPestana("sospechosas")}>
           Sospechosas{sospechosas.length ? ` · ${sospechosas.length}` : ""}
         </button>
+        <button type="button" className={pestana === "seguimiento" ? "activo" : ""} onClick={() => setPestana("seguimiento")}>
+          Seguimiento
+        </button>
       </div>
 
-      {respuestas === null && <p className="hint">Cargando…</p>}
-      {respuestas === "error" && <p className="aviso-faltante">No se pudieron leer las encuestas. Revisa tu conexión.</p>}
+      {pestana === "seguimiento" && <SeguimientoEncuestas desde={desde} hasta={hasta} nombrePeriodo={nombrePeriodo} />}
+
+      {pestana !== "seguimiento" && respuestas === null && <p className="hint">Cargando…</p>}
+      {pestana !== "seguimiento" && respuestas === "error" && <p className="aviso-faltante">No se pudieron leer las encuestas. Revisa tu conexión.</p>}
 
       {Array.isArray(respuestas) && pestana === "respuestas" &&
         (validas.length === 0 ? (
@@ -191,7 +198,7 @@ export function EncuestasPanel({ data, onBack }: { data: AppData; onBack?: () =>
             <p className="hint">Aprobar: cuenta para su calificación. Descartar: no cuenta y sale de aquí.</p>
           </div>
         ))}
-      {Array.isArray(respuestas) && descartadas > 0 && (
+      {Array.isArray(respuestas) && pestana !== "seguimiento" && descartadas > 0 && (
         <p className="hint">
           {descartadas} {descartadas === 1 ? "encuesta descartada" : "encuestas descartadas"} {nombrePeriodo}.
         </p>

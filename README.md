@@ -1171,6 +1171,37 @@ respuesta una vez, sin leer nada; el personal solo ve los promedios; las
 respuestas completas, solo el dueño. Al entrar, a las cuentas de Piso les
 sale la novedad "Encuestas para tus clientes".
 
+**Seguimiento de encuestas (solo el dueño)**: en Equipo > Encuestas, la
+cuarta pestaña **Seguimiento** (con el mismo periodo de arriba) muestra
+cada paso de cada encuesta. Se guarda todo para siempre, sin poder
+editarlo ni borrarlo: cada **intento del mesero que no se generó** y por
+qué (no escribió el total, no está ligado a su usuario en Personal, ya
+tenía las 15 del día o sin conexión; si no había conexión se guarda en su
+celular y se manda en el siguiente intento), cuando se **genera**, cuando
+el cliente la **abre** (y si la vuelve a abrir, ya contestada, vencida o
+cancelada), cuando **empieza a contestar** (primera estrella o el total),
+cuando la **envía** (válida, o sospechosa y por qué), cuando intenta
+enviarla y ya no se podía, cuando el mesero la **cancela**, cuando se le
+marca la venta del corte y cuando el dueño la **aprueba o descarta**; que
+**venció** se sabe por su hora de vencimiento. La pestaña tiene: el
+**embudo** (generadas → el cliente la abrió → empezó a contestar → la
+envió → válidas, con su porcentaje), **Dónde se quedaron** (vencieron sin
+abrirse, la abrieron y no la terminaron, canceladas, abiertas ahora,
+sospechosas por revisar e intentos que no se generaron) y el tiempo típico
+para abrirla y contestarla; **Por mesero** (cuántas generó, enviadas con
+su porcentaje, sin abrir y fallidos; tocar un mesero muestra su resumen,
+los intentos fallidos por motivo y solo su bitácora; "Ver a todos"
+regresa) y la **Bitácora**: cada encuesta (mesero, mesa y total) con una
+etiqueta de cómo terminó (Enviada, Sospechosa, Descartada, Se quedó a
+medias, Nadie la abrió, Cancelada, Abierta ahora o No se generó) y cada
+paso con su hora; de 30 en 30 con "Ver más". Se guarda en la tabla
+protegida `encuesta_eventos` (ver
+[`supabase/migration_012_seguimiento_encuestas.sql`](./supabase/migration_012_seguimiento_encuestas.sql),
+ya aplicada): solo la lee el dueño y nadie escribe en ella directo; los
+eventos del cliente tienen un tope por encuesta para que no la llenen
+abriendo el enlace muchas veces. El mesero y el cliente no ven nada
+distinto.
+
 **Tu perfil (dueño)**: arriba a la derecha, en todas tus pantallas, está
 tu foto en un círculo (sin foto, tus iniciales); tocarla abre **Mi
 perfil**: ahí cambias tu foto (igual que el personal: cámara, galería o
@@ -1411,4 +1442,5 @@ supabase/
   migration_009_datos_pago.sql         datos de pago de nómina (solo la persona y su dueño)
   migration_010_cerrar_rls_auto_enable.sql  quita el acceso público a una función interna de Supabase
   migration_011_encuestas.sql          encuestas con QR por mesero (tablas protegidas y funciones)
+  migration_012_seguimiento_encuestas.sql  seguimiento de cada paso de las encuestas (solo el dueño)
 ```

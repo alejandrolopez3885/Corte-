@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { CheckCircle2 } from "lucide-react";
-import { encuestaPublica, responderEncuesta } from "../lib/encuestas";
+import { empezarEncuesta, encuestaPublica, responderEncuesta } from "../lib/encuestas";
 
 // Lo que ve el cliente al escanear el QR (/?e=<código>), sin iniciar
 // sesión: confirma el total de su cuenta, califica atención del mesero,
@@ -33,6 +33,14 @@ export default function EncuestaPublica({ token }: { token: string }) {
   const [comentario, setComentario] = useState("");
   const [intento, setIntento] = useState(false);
   const inicio = useRef(0);
+  const empezo = useRef(false);
+
+  // La primera vez que toca algo queda en el seguimiento del dueño.
+  function tocar() {
+    if (empezo.current) return;
+    empezo.current = true;
+    empezarEncuesta(token);
+  }
 
   useEffect(() => {
     document.title = "Encuesta";
@@ -95,11 +103,41 @@ export default function EncuestaPublica({ token }: { token: string }) {
             <p className="hint">Te atendió {mesero} · toma 30 segundos</p>
             <label className="field">
               <span>Total de tu cuenta (como viene en tu ticket)</span>
-              <input className="text-input" inputMode="decimal" value={total} onChange={(e) => setTotal(e.target.value.replace(/[^\d.]/g, ""))} placeholder="$ 0.00" />
+              <input
+                className="text-input"
+                inputMode="decimal"
+                value={total}
+                onChange={(e) => {
+                  tocar();
+                  setTotal(e.target.value.replace(/[^\d.]/g, ""));
+                }}
+                placeholder="$ 0.00"
+              />
             </label>
-            <Estrellas etiqueta="Atención de tu mesero" valor={atencion} onChange={setAtencion} />
-            <Estrellas etiqueta="Comida" valor={comida} onChange={setComida} />
-            <Estrellas etiqueta="Rapidez" valor={rapidez} onChange={setRapidez} />
+            <Estrellas
+              etiqueta="Atención de tu mesero"
+              valor={atencion}
+              onChange={(n) => {
+                tocar();
+                setAtencion(n);
+              }}
+            />
+            <Estrellas
+              etiqueta="Comida"
+              valor={comida}
+              onChange={(n) => {
+                tocar();
+                setComida(n);
+              }}
+            />
+            <Estrellas
+              etiqueta="Rapidez"
+              valor={rapidez}
+              onChange={(n) => {
+                tocar();
+                setRapidez(n);
+              }}
+            />
             <label className="field">
               <span>Comentario (opcional)</span>
               <textarea className="text-input" rows={3} maxLength={500} value={comentario} onChange={(e) => setComentario(e.target.value)} />

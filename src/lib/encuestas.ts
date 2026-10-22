@@ -63,18 +63,76 @@ export interface EncuestaCreada {
   vence_en: string;
 }
 
-export async function crearEncuesta(total: number, mesa: string, meseroId: string, meseroNombre: string): Promise<{ encuesta?: EncuestaCreada; error?: string }> {
+export async function crearEncuesta(
+  total: number,
+  mesa: string,
+  meseroId: string,
+  meseroNombre: string
+): Promise<{ encuesta?: EncuestaCreada; error?: string; motivo?: MotivoIntento }> {
   const { data, error } = await supabase.rpc("crear_encuesta", { p_total: total, p_mesa: mesa, p_mesero_id: meseroId, p_mesero_nombre: meseroNombre });
   if (error) {
     console.error("No se pudo crear la encuesta", error);
     const msg = error.message || "";
-    if (msg.includes("15 encuestas")) return { error: `Ya generaste las ${MAXIMO_ENCUESTAS_DIA} encuestas de hoy.` };
-    if (msg.includes("total")) return { error: "Escribe el total de la cuenta." };
-    if (error.code === "PGRST202" || error.code === "42883") return { error: "Las encuestas todavía no están activas." };
-    return { error: "No se pudo crear la encuesta. Revisa tu conexión e intenta de nuevo." };
+    if (msg.includes("15 encuestas")) return { error: `Ya generaste las ${MAXIMO_ENCUESTAS_DIA} encuestas de hoy.`, motivo: "limite" };
+    if (msg.includes("total")) return { error: "Escribe el total de la cuenta.", motivo: "sin-total" };
+    if (error.code === "PGRST202" || error.code === "42883") return { error: "Las encuestas todavía no están activas.", motivo: "otro" };
+    const sinRed = !error.code || msg.includes("Failed to fetch") || msg.includes("NetworkError");
+    return { error: "No se pudo crear la encuesta. Revisa tu conexión e intenta de nuevo.", motivo: sinRed ? "conexion" : "otro" };
   }
   const fila = (Array.isArray(data) ? data[0] : data) as EncuestaCreada | undefined;
-  return fila ? { encuesta: fila } : { error: "No se pudo crear la encuesta." };
+  return fila ? { encuesta: fila } : { error: "No se pudo crear la encuesta.", motivo: "otro" };
+}
+
+// Intento que no se generó (sin total, sin ligar, límite, sin conexión):
+// queda en el seguimiento del dueño. Si no hay conexión se guarda en este
+// celular y se manda en el siguiente intento.
+export type MotivoIntento = "sin-total" | "sin-ligar" | "limite" | "conexion" | "otro";
+const LLAVE_INTENTOS = "cortes-intentos-encuesta";
+interface IntentoPendiente {
+  motivo: MotivoIntento;
+  meseroId: string | null;
+  meseroNombre: string;
+  cuando: string;
+}
+
+function intentosPendientes(): IntentoPendiente[] {
+  try {
+    return JSON.parse(guardado(LLAVE_INTENTOS) || "[]") as IntentoPendiente[];
+  } catch {
+    return [];
+  }
+}
+function guardarPendientes(lista: IntentoPendiente[]) {
+  try {
+    if (lista.length) localStorage.setItem(LLAVE_INTENTOS, JSON.stringify(lista.slice(-30)));
+    else localStorage.removeItem(LLAVE_INTENTOS);
+  } catch {
+    // nada
+  }
+}
+
+async function mandarIntento(i: IntentoPendiente): Promise<boolean> {
+  const { error } = await supabase.rpc("registrar_intento_encuesta", {
+    p_motivo: i.motivo,
+    p_mesero_id: i.meseroId,
+    p_mesero_nombre: i.meseroNombre,
+    p_cuando: i.cuando,
+  });
+  if (error) console.error("No se pudo guardar el intento de encuesta", error);
+  return !error;
+}
+
+export async function registrarIntento(motivo: MotivoIntento, meseroId: string | null, meseroNombre: string) {
+  const intento = { motivo, meseroId, meseroNombre, cuando: new Date().toISOString() };
+  if (!(await mandarIntento(intento))) guardarPendientes([...intentosPendientes(), intento]);
+}
+
+export async function enviarIntentosPendientes() {
+  const lista = intentosPendientes();
+  if (!lista.length) return;
+  const quedan: IntentoPendiente[] = [];
+  for (const i of lista) if (!(await mandarIntento(i))) quedan.push(i);
+  guardarPendientes(quedan);
 }
 
 export async function cancelarEncuesta(id: string) {
@@ -122,6 +180,12 @@ export async function encuestaPublica(token: string): Promise<{ mesero_nombre: s
   if (error) return "error";
   const fila = Array.isArray(data) ? data[0] : data;
   return (fila as { mesero_nombre: string; estado: string }) || null;
+}
+
+// El cliente empezó a contestar (primera estrella o el total).
+export async function empezarEncuesta(token: string) {
+  const { error } = await supabase.rpc("empezar_encuesta", { p_token: token });
+  if (error) console.error("No se pudo marcar la encuesta como empezada", error);
 }
 
 export async function responderEncuesta(

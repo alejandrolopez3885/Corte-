@@ -10,7 +10,9 @@ import {
   cancelarEncuesta,
   crearEncuesta,
   encuestasDeHoy,
+  enviarIntentosPendientes,
   estadoEncuesta,
+  registrarIntento,
   svgQr,
   urlEncuesta,
   type EncuestaCreada,
@@ -42,6 +44,10 @@ export function EncuestaPanel({
   const [mia, setMia] = useState<{ promedio: number; cantidad: number } | null>(null);
 
   useEffect(() => {
+    enviarIntentosPendientes();
+  }, []);
+
+  useEffect(() => {
     encuestasDeHoy(perfilId).then(setHoy);
     if (meseroId) calificaciones(mondayOnOrBefore(todayIso()), todayIso()).then((m) => setMia(m.get(meseroId) || { promedio: 0, cantidad: 0 }));
   }, [perfilId, meseroId, estado]);
@@ -63,12 +69,21 @@ export function EncuestaPanel({
 
   async function generar() {
     const t = parseFloat(total);
-    if (!(t > 0)) return setError("Escribe el total de la cuenta.");
-    if (!meseroId) return setError("Tu usuario del sistema no está ligado a tu cuenta. Pídele al dueño que lo revise.");
+    if (!(t > 0)) {
+      registrarIntento("sin-total", meseroId || null, meseroNombre);
+      return setError("Escribe el total de la cuenta.");
+    }
+    if (!meseroId) {
+      registrarIntento("sin-ligar", null, meseroNombre);
+      return setError("Tu usuario del sistema no está ligado a tu cuenta. Pídele al dueño que lo revise.");
+    }
     setCreando(true);
     const r = await crearEncuesta(t, mesa.trim(), meseroId, meseroNombre);
     setCreando(false);
-    if (r.error || !r.encuesta) return setError(r.error || "No se pudo crear la encuesta.");
+    if (r.error || !r.encuesta) {
+      registrarIntento(r.motivo || "otro", meseroId, meseroNombre);
+      return setError(r.error || "No se pudo crear la encuesta.");
+    }
     setError(null);
     setEstado("abierta");
     setEncuesta({ ...r.encuesta, total: t, mesa: mesa.trim() });
