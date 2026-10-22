@@ -188,19 +188,26 @@ export function calcularInicio(data: AppData, hoy: string, bitacora: RenglonBita
   });
 
   // ---- Operación -------------------------------------------------------
-  // Conteo diario de hoy (solo de las áreas que lo vienen usando).
+  // Conteo diario de ayer (solo de las áreas que lo vienen usando): el de
+  // hoy se hace en la noche, así que solo avisa si el de ayer no se hizo.
+  const ayer = addDaysIso(hoy, -1);
   (["cocina", "bar"] as ConteoTextoArea[]).forEach((area) => {
     const textos = data.conteosDiariosTexto?.[area] || {};
-    const loUsan = Object.keys(textos).some((f) => f >= addDaysIso(hoy, -14) && f < hoy);
+    const loUsan = Object.keys(textos).some((f) => f >= addDaysIso(hoy, -14) && f < ayer);
     if (!loUsan) return;
     const nombre = area === "cocina" ? "Cocina" : "Bar";
-    if (!textos[hoy]) {
-      operacion.push({ id: `conteo-${area}`, titulo: `Conteo diario de ${nombre} de hoy`, detalle: "Todavía no se captura.", ir: { tipo: "conteo", area } });
-    } else if (area === "cocina" && !data.pedidosDiarios?.cocina?.[hoy]) {
+    if (!textos[ayer]) {
+      operacion.push({
+        id: `conteo-${area}`,
+        titulo: `Conteo diario de ${nombre} de ayer`,
+        detalle: `${diaCorto(ayer)} · no se capturó.`,
+        ir: { tipo: "conteo", area },
+      });
+    } else if (area === "cocina" && !data.pedidosDiarios?.cocina?.[ayer]) {
       operacion.push({
         id: `pedido-${area}`,
-        titulo: `Pedido de ${nombre} de hoy sin guardar`,
-        detalle: "El conteo ya está, falta guardar lo que se va a pedir.",
+        titulo: `Pedido de ${nombre} de ayer sin guardar`,
+        detalle: `${diaCorto(ayer)} · el conteo ya está, falta guardar lo que se va a pedir.`,
         ir: { tipo: "conteo", area },
       });
     }
@@ -231,7 +238,12 @@ export function calcularInicio(data: AppData, hoy: string, bitacora: RenglonBita
         operacion.push({
           id: `inventario-${fecha}`,
           titulo: `Inventario ${nombre} ${diaCorto(fecha).split(" ")[1]}`,
-          detalle: modo === "jueves" && fecha === juevesDeEseDomingo ? "Todavía no se hace · el del domingo espera a este." : "Todavía no se hace.",
+          detalle:
+            modo === "jueves" && fecha === juevesDeEseDomingo
+              ? "Todavía no se hace · el del domingo espera a este."
+              : fecha === hoy
+                ? "Se hace hoy en la noche."
+                : "Todavía no se hace.",
           ir: { tipo: "inventario", fecha, modo },
         });
         return;
@@ -248,8 +260,8 @@ export function calcularInicio(data: AppData, hoy: string, bitacora: RenglonBita
     });
   }
 
-  // Horario de la próxima semana, de jueves en adelante.
-  if (["Jueves", "Viernes", "Sábado", "Domingo"].includes(diaSemana) && data.empleados.length > 0) {
+  // Horario de la próxima semana, solo sábado y domingo.
+  if (["Sábado", "Domingo"].includes(diaSemana) && data.empleados.length > 0) {
     const proximo = addDaysIso(lunes, 7);
     const s = semanas.get(proximo);
     if (!s || !data.horarios[s.mk]?.weeks?.[s.wi]) {
@@ -262,11 +274,12 @@ export function calcularInicio(data: AppData, hoy: string, bitacora: RenglonBita
     }
   }
 
-  // Días de aquí a una semana sin nadie asignado (solo si se usa asignar).
+  // Hoy y mañana sin nadie asignado (solo si se usa asignar): un día antes
+  // basta para asignarlo.
   const usaAsignar = [...dias.entries()].some(([f, u]) => f >= addDaysIso(hoy, -21) && !!u.day.asignadoA);
   if (usaAsignar) {
     const sinAsignar: string[] = [];
-    for (let f = hoy; f <= addDaysIso(hoy, 6); f = addDaysIso(f, 1)) {
+    for (let f = hoy; f <= addDaysIso(hoy, 1); f = addDaysIso(f, 1)) {
       const u = dias.get(f);
       if (u && !u.day.asignadoA && !tieneDatos(u.day)) sinAsignar.push(f);
     }
@@ -274,7 +287,10 @@ export function calcularInicio(data: AppData, hoy: string, bitacora: RenglonBita
       operacion.push({
         id: "sin-asignar",
         titulo: `${lista(sinAsignar)} sin asignar`,
-        detalle: `Nadie tiene asignado ${sinAsignar.length === 1 ? "ese corte" : "esos cortes"}.`,
+        detalle:
+          sinAsignar.length === 1
+            ? `${sinAsignar[0] === hoy ? "Hoy" : "Mañana"} · nadie tiene asignado ese corte.`
+            : "Hoy y mañana · nadie tiene asignado esos cortes.",
         ir: { tipo: "dia", fecha: sinAsignar[0] },
       });
     }

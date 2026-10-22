@@ -161,17 +161,18 @@ estando en Nómina te regresa al menú de Equipo):
     a Control de gastos en efectivo) y el efectivo real de las 2 últimas
     semanas cerradas sin capturar o que no cuadra con lo calculado (abre el
     Resumen semanal de esa semana).
-  - **Operación** (amarillo): conteo diario de hoy de Cocina o Bar sin
-    capturar, o el de Cocina con el pedido sin guardar (solo de las áreas
-    que lo vienen usando en las últimas 2 semanas; abre directo el Conteo
-    diario); inventario del domingo más reciente y, de jueves a sábado, el
+  - **Operación** (amarillo): conteo diario de **ayer** de Cocina o Bar sin
+    capturar, o el de Cocina con el pedido sin guardar (el de hoy no avisa
+    porque se hace en la noche; solo de las áreas que lo vienen usando en
+    las últimas 2 semanas; abre directo el Conteo diario); inventario del domingo más reciente y, de jueves a sábado, el
     del jueves — sin hacer o con "No reconocidos" por resolver, en el
     mismo orden que Inventario: si al domingo le falta su jueves (sin
     guardar ni saltado), avisa del jueves ("el del domingo espera a
     este"); un jueves saltado no avisa (abre Inventario en esa semana y
-    paso); horario de la próxima semana sin
-    guardar, de jueves en adelante; días de hoy a 6 días sin nadie
-    asignado ni corte capturado (solo si se ha usado "Asignar día" en las
+    paso; si es de hoy dice "Se hace hoy en la noche"); horario de la
+    próxima semana sin guardar, solo sábado y domingo; hoy y mañana sin
+    nadie asignado ni corte capturado ("Mañana · nadie tiene asignado ese
+    corte") (solo si se ha usado "Asignar día" en las
     últimas 3 semanas); la nómina de la semana que cerró (o la de hoy si
     es domingo) con personas sin marcar como pagadas; y el **consumo de
     insumos** de domingo a domingo: inventario del domingo anterior + lo
