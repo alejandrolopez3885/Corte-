@@ -1330,4 +1330,5 @@ supabase/
   migration_005_realtime.sql           activa la sincronización en vivo
   migration_006_staff_permisos.sql     cuentas de equipo con permisos por sección
   migration_009_datos_pago.sql         datos de pago de nómina (solo la persona y su dueño)
+  migration_010_cerrar_rls_auto_enable.sql  quita el acceso público a una función interna de Supabase
 ```
