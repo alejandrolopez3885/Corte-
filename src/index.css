@@ -1631,6 +1631,12 @@ button.pill { cursor: pointer; }
 .encuesta-resp-acciones .descartar { background: var(--surface); color: var(--bad); border: 1px solid #E8B3AA; }
 .encuesta-aviso-prueba { margin: 0; background: var(--warn-soft); border: 1px solid #EBC995; color: #7a4a10; border-radius: 14px; padding: 12px 14px; font-size: 13px; line-height: 1.45; }
 .encuesta-prueba-btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; border: 1px solid var(--border); background: var(--surface); border-radius: 12px; padding: 11px; font: inherit; font-size: 14px; font-weight: 600; color: var(--accent); cursor: pointer; }
+.borrar-prueba { align-self: flex-start; display: inline-flex; align-items: center; gap: 5px; border: 1px solid #E8B3AA; background: var(--surface); color: var(--bad); border-radius: 9px; padding: 6px 10px; font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; }
+.borrar-prueba-todas { align-self: center; display: inline-flex; align-items: center; gap: 5px; border: none; background: none; color: var(--bad); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; padding: 4px; }
+.borrar-prueba-confirmar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 12.5px; color: var(--bad); font-weight: 600; }
+.borrar-prueba-confirmar button { border: none; border-radius: 9px; padding: 6px 10px; font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; }
+.borrar-prueba-confirmar .si { background: var(--bad); color: #fff; }
+.borrar-prueba-confirmar .no { background: var(--surface); border: 1px solid var(--border); color: var(--ink); }
 .chip-prueba { font-size: 11px !important; font-weight: 700; border-radius: 20px; padding: 2px 8px; background: var(--warn-soft); color: var(--warn) !important; white-space: nowrap; }
 .encuesta-chips { display: inline-flex; gap: 5px; flex-shrink: 0; }
 .encuestas-pestanas { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }

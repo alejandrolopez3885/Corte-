@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { MessageSquareText } from "lucide-react";
 import { Empty } from "./ui";
+import { BorrarPrueba } from "./BorrarPrueba";
 import { money } from "../lib/dataModel";
 import { ETIQUETA_FINAL, MOTIVOS_INTENTO, cargarSeguimiento, duracion, resumirSeguimiento, type Final, type Seguimiento } from "../lib/seguimientoEncuestas";
 
 // Pestaña "Seguimiento" de Encuestas (solo dueño): el embudo, dónde se
-// quedaron, el resumen por mesero y la bitácora de cada encuesta paso a paso.
+// quedaron, el resumen por mesero y la bitácora de cada encuesta paso a paso
+// (las de prueba se pueden borrar desde ahí).
 const TONO_FINAL: Record<Final, string> = {
   enviada: "ok",
   sospechosa: "mal",
@@ -22,7 +24,17 @@ const hora = (iso: string) => new Date(iso).toLocaleTimeString("es-MX", { hour: 
 const dia = (iso: string) => new Date(iso).toLocaleDateString("es-MX", { weekday: "short", day: "numeric", month: "short" }).replace(".", "");
 const pct = (n: number, de: number) => (de ? `${Math.round((n / de) * 100)}%` : "—");
 
-export function SeguimientoEncuestas({ desde, hasta, nombrePeriodo }: { desde: string; hasta: string; nombrePeriodo: string }) {
+export function SeguimientoEncuestas({
+  desde,
+  hasta,
+  nombrePeriodo,
+  onBorrarPrueba,
+}: {
+  desde: string;
+  hasta: string;
+  nombrePeriodo: string;
+  onBorrarPrueba: (id: string) => Promise<boolean>;
+}) {
   const [datos, setDatos] = useState<Seguimiento | null | "error">(null);
   const [mesero, setMesero] = useState<string | null>(null);
   const [mostrar, setMostrar] = useState(POR_VISTA);
@@ -179,6 +191,7 @@ export function SeguimientoEncuestas({ desde, hasta, nombrePeriodo }: { desde: s
                 </span>
               ))}
             </div>
+            {b.prueba && <BorrarPrueba texto="Borrar esta prueba" pregunta="¿Borrar esta prueba?" onBorrar={() => onBorrarPrueba(b.clave)} />}
           </div>
         ))}
         {bitacora.length > mostrar && (

@@ -5,11 +5,12 @@ import { TituloPagina } from "../BarraTitulo";
 import { SeguimientoEncuestas } from "../SeguimientoEncuestas";
 import { EncuestaPanel } from "./EncuestaPanel";
 import { EncuestaRespondida } from "../EncuestaRespondida";
+import { BorrarPrueba } from "../BorrarPrueba";
 import { addDaysIso, money, round2 } from "../../lib/dataModel";
 import { ubicarFechas } from "../../lib/inicio";
 import { rangoRanking, type PeriodoRanking } from "../../lib/ranking";
 import {
-  MINIMO_ENCUESTAS, MOTIVOS, agregarMotivo, cargarRespuestas, esPrueba, esValida, revisarRespuesta, type EncuestaContestada, type RespuestaEncuesta,
+  MINIMO_ENCUESTAS, MOTIVOS, agregarMotivo, borrarPruebas, cargarRespuestas, contarPruebas, esPrueba, esValida, revisarRespuesta, type EncuestaContestada, type RespuestaEncuesta,
 } from "../../lib/encuestas";
 import type { AppData } from "../../lib/types";
 
@@ -19,7 +20,9 @@ import type { AppData } from "../../lib/types";
 // día pasan su venta de ese día en el corte. En "Seguimiento", cada paso de
 // cada encuesta y dónde se quedan. "Generar QR de prueba" abre el mismo QR
 // del mesero, marcado como prueba (no cuenta en ningún promedio). Tocar
-// una respuesta abre la encuesta tal cual la contestó el cliente.
+// una respuesta abre la encuesta tal cual la contestó el cliente. Las de
+// prueba se pueden borrar (una por una o todas), con su respuesta y sus
+// pasos del seguimiento.
 type Pestana = "respuestas" | "meseros" | "sospechosas" | "seguimiento";
 
 const estrellas = (n: number) => "★".repeat(n) + "☆".repeat(5 - n);
@@ -36,6 +39,20 @@ export function EncuestasPanel({ data, perfilId, nombreDueno, onBack }: { data: 
   const [pestana, setPestana] = useState<Pestana>("respuestas");
   const [respuestas, setRespuestas] = useState<RespuestaEncuesta[] | null | "error">(null);
   const [abierta, setAbierta] = useState<EncuestaContestada | null>(null);
+  const [pruebas, setPruebas] = useState(0);
+  // Sube al borrar pruebas, para que Seguimiento se vuelva a leer.
+  const [borradas, setBorradas] = useState(0);
+
+  useEffect(() => {
+    if (!probando) contarPruebas().then(setPruebas);
+  }, [probando, borradas]);
+
+  async function borrar(id?: string) {
+    if (!(await borrarPruebas(id))) return false;
+    setRespuestas((lista) => (Array.isArray(lista) ? lista.filter((r) => (id ? r.encuesta_id !== id : !esPrueba(r))) : lista));
+    setBorradas((n) => n + 1);
+    return true;
+  }
 
   useEffect(() => {
     const { desde, hasta } = rangoRanking(periodo);
@@ -141,6 +158,7 @@ export function EncuestasPanel({ data, perfilId, nombreDueno, onBack }: { data: 
           </div>
         </>
       )}
+      {esPrueba(r) && <BorrarPrueba texto="Borrar esta prueba" pregunta="¿Borrar esta prueba?" onBorrar={() => borrar(r.encuesta_id)} />}
       <span className="encuesta-resp-ver">Ver encuesta ›</span>
     </div>
   );
@@ -153,6 +171,14 @@ export function EncuestasPanel({ data, perfilId, nombreDueno, onBack }: { data: 
       <button type="button" className="encuesta-prueba-btn" onClick={() => setProbando(true)}>
         <QrCode size={18} /> Generar QR de prueba
       </button>
+      {pruebas > 0 && (
+        <BorrarPrueba
+          centrado
+          texto={`Borrar todas las de prueba (${pruebas})`}
+          pregunta={`¿Borrar ${pruebas === 1 ? "la encuesta de prueba" : `las ${pruebas} encuestas de prueba`}? No se puede deshacer.`}
+          onBorrar={() => borrar()}
+        />
+      )}
       <div className="ranking-periodos">
         {(
           [
@@ -181,7 +207,7 @@ export function EncuestasPanel({ data, perfilId, nombreDueno, onBack }: { data: 
         </button>
       </div>
 
-      {pestana === "seguimiento" && <SeguimientoEncuestas desde={desde} hasta={hasta} nombrePeriodo={nombrePeriodo} />}
+      {pestana === "seguimiento" && <SeguimientoEncuestas key={borradas} desde={desde} hasta={hasta} nombrePeriodo={nombrePeriodo} onBorrarPrueba={borrar} />}
 
       {pestana !== "seguimiento" && respuestas === null && <p className="hint">Cargando…</p>}
       {pestana !== "seguimiento" && respuestas === "error" && <p className="aviso-faltante">No se pudieron leer las encuestas. Revisa tu conexión.</p>}
