@@ -192,8 +192,17 @@ export const NOVEDADES: Novedad[] = [
     visual: "encuesta",
   },
   {
+    id: "ver-mis-encuestas",
+    fecha: "2026-10-23T01:48:00Z",
+    seccion: "general",
+    soloPiso: true,
+    titulo: "Ve lo que te contestaron",
+    texto: "En **Encuesta**, abajo, toca una de **Tus encuestas de esta semana** para verla tal cual la llenó el cliente, con su comentario.",
+    visual: "encuesta",
+  },
+  {
     id: "puntos-logros",
-    fecha: "2026-10-23T09:00:00Z",
+    fecha: "2026-10-23T01:53:00Z",
     seccion: "general",
     soloPiso: true,
     titulo: "Puntos y logros",

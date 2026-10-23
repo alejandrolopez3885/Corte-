@@ -4,10 +4,13 @@ import { Empty } from "../ui";
 import { TituloPagina } from "../BarraTitulo";
 import { SeguimientoEncuestas } from "../SeguimientoEncuestas";
 import { EncuestaPanel } from "./EncuestaPanel";
+import { EncuestaRespondida } from "../EncuestaRespondida";
 import { addDaysIso, money, round2 } from "../../lib/dataModel";
 import { ubicarFechas } from "../../lib/inicio";
 import { rangoRanking, type PeriodoRanking } from "../../lib/ranking";
-import { MINIMO_ENCUESTAS, MOTIVOS, agregarMotivo, cargarRespuestas, esPrueba, esValida, revisarRespuesta, type RespuestaEncuesta } from "../../lib/encuestas";
+import {
+  MINIMO_ENCUESTAS, MOTIVOS, agregarMotivo, cargarRespuestas, esPrueba, esValida, revisarRespuesta, type EncuestaContestada, type RespuestaEncuesta,
+} from "../../lib/encuestas";
 import type { AppData } from "../../lib/types";
 
 // Encuestas (solo dueño): las respuestas con sus comentarios, el resumen
@@ -15,7 +18,8 @@ import type { AppData } from "../../lib/types";
 // marca como sospechosas las de un mesero cuyos totales con encuesta de un
 // día pasan su venta de ese día en el corte. En "Seguimiento", cada paso de
 // cada encuesta y dónde se quedan. "Generar QR de prueba" abre el mismo QR
-// del mesero, marcado como prueba (no cuenta en ningún promedio).
+// del mesero, marcado como prueba (no cuenta en ningún promedio). Tocar
+// una respuesta abre la encuesta tal cual la contestó el cliente.
 type Pestana = "respuestas" | "meseros" | "sospechosas" | "seguimiento";
 
 const estrellas = (n: number) => "★".repeat(n) + "☆".repeat(5 - n);
@@ -31,6 +35,7 @@ export function EncuestasPanel({ data, perfilId, nombreDueno, onBack }: { data: 
   const [periodo, setPeriodo] = useState<PeriodoRanking>("semana");
   const [pestana, setPestana] = useState<Pestana>("respuestas");
   const [respuestas, setRespuestas] = useState<RespuestaEncuesta[] | null | "error">(null);
+  const [abierta, setAbierta] = useState<EncuestaContestada | null>(null);
 
   useEffect(() => {
     const { desde, hasta } = rangoRanking(periodo);
@@ -96,7 +101,14 @@ export function EncuestasPanel({ data, perfilId, nombreDueno, onBack }: { data: 
   const uno = (n: number) => n.toLocaleString("es-MX", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 
   const tarjeta = (r: RespuestaEncuesta, conAcciones: boolean) => (
-    <div key={r.encuesta_id} className={`encuesta-resp ${conAcciones ? "sospechosa" : ""}`}>
+    <div
+      key={r.encuesta_id}
+      className={`encuesta-resp encuesta-resp-abrir ${conAcciones ? "sospechosa" : ""}`}
+      role="button"
+      tabIndex={0}
+      onClick={() => setAbierta({ ...r, mesa: r.encuestas?.mesa ?? null })}
+      onKeyDown={(e) => e.key === "Enter" && setAbierta({ ...r, mesa: r.encuestas?.mesa ?? null })}
+    >
       <div className="encuesta-resp-top">
         <strong>
           {r.mesero_nombre} · <span className="encuesta-estrellas">{estrellas(r.atencion)}</span>
@@ -119,7 +131,7 @@ export function EncuestasPanel({ data, perfilId, nombreDueno, onBack }: { data: 
             No cuenta: {r.motivos.map((m) => (m === "total" ? `${MOTIVOS.total} (${money(r.total_cliente)} vs ${money(r.encuestas?.total || 0)})` : MOTIVOS[m] || m)).join(" · ")}
             {r.motivos.includes("rapida") && r.segundos !== null ? ` (${r.segundos} s)` : ""}
           </span>
-          <div className="encuesta-resp-acciones">
+          <div className="encuesta-resp-acciones" onClick={(e) => e.stopPropagation()}>
             <button type="button" className="aprobar" onClick={() => revisar(r, "aprobada")}>
               Aprobar
             </button>
@@ -129,6 +141,7 @@ export function EncuestasPanel({ data, perfilId, nombreDueno, onBack }: { data: 
           </div>
         </>
       )}
+      <span className="encuesta-resp-ver">Ver encuesta ›</span>
     </div>
   );
 
@@ -215,6 +228,7 @@ export function EncuestasPanel({ data, perfilId, nombreDueno, onBack }: { data: 
           {descartadas} {descartadas === 1 ? "encuesta descartada" : "encuestas descartadas"} {nombrePeriodo}.
         </p>
       )}
+      {abierta && <EncuestaRespondida r={abierta} onCerrar={() => setAbierta(null)} />}
       <p className="hint">
         Del {desde.slice(8)}/{desde.slice(5, 7)} al {addDaysIso(hasta, 0).slice(8)}/{hasta.slice(5, 7)}.
       </p>

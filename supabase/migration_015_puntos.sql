@@ -1,5 +1,5 @@
 -- Puntos y logros semanales. Ejecuta esto una vez en el SQL Editor de
--- Supabase después de migration_013 (ya está aplicado en el proyecto de
+-- Supabase después de migration_014 (ya está aplicado en el proyecto de
 -- Cortes con el conector).
 --
 -- Al guardar el corte del domingo, la app del dueño cierra la semana: el

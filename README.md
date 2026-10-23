@@ -1169,9 +1169,17 @@ meseros". Cálculo en `src/lib/ranking.ts`.
 opcional), tocan "Generar QR" y le muestran al cliente un QR grande con un
 contador ("Vence en 29:41") y "Cancelar esta encuesta"; cuando el cliente
 la envía, en su celular sale "¡Gracias! Encuesta recibida" y "Generar
-otra". Ahí mismo ven cuántas llevan hoy (máximo 15 al día) y su
-calificación de la semana (⭐ promedio y cuántas válidas; los comentarios
-son solo del dueño). Su usuario del sistema tiene que estar ligado a su
+otra". Ahí mismo ven cuántas llevan hoy (máximo 15 al día), su
+calificación de la semana (⭐ promedio y cuántas válidas) y, abajo, **Tus
+encuestas de esta semana**: las que cuentan para su calificación (no las
+sospechosas ni las descartadas), de la más nueva a la más vieja, cada una
+con sus estrellas de atención, día y hora, mesa, total y "con comentario"
+si dejó uno. Al tocar una ("Ver encuesta ›") se abre **la encuesta tal
+cual la vio el cliente, ya respondida**: el logo, "¿Cómo te atendimos?",
+"Te atendió …", una franja verde "✓ Contestada el [día y hora] · Mesa
+[n]", el total que escribió, las estrellas que marcó en atención, comida
+y rapidez, y su comentario (o "Sin comentario"), sin poder cambiar nada;
+"Cerrar" regresa. Su usuario del sistema tiene que estar ligado a su
 persona (por usuario del sistema o por nombre) para poder generarla. El
 cliente escanea y se abre la encuesta en la misma dirección de la app
 (`/?e=<código>`) sin iniciar sesión ni descargar nada, con Anubis: escribe
@@ -1192,13 +1200,19 @@ aprueba. **En el ranking** sale como columna aparte "⭐ 4.8 · 12"
 cambiar los puntos. **El dueño**, en Equipo > Encuestas ("Esta semana",
 "Semana pasada" o "Mes"): **Respuestas** (las válidas, con estrellas,
 comida, rapidez, mesa, total y comentario), **Por mesero** (promedios y
-cuántas) y **Sospechosas** (con el motivo y "Aprobar" / "Descartar"). Se
+cuántas) y **Sospechosas** (con el motivo y "Aprobar" / "Descartar"). Tocar una
+tarjeta de Respuestas o de Sospechosas ("Ver encuesta ›") abre la misma
+encuesta respondida que ve el mesero, tal cual la llenó el cliente
+(Aprobar y Descartar no la abren). Se
 guarda en Supabase en tablas protegidas (`encuestas` y
 `encuesta_respuestas`, ver
 [`supabase/migration_011_encuestas.sql`](./supabase/migration_011_encuestas.sql),
 ya aplicada): el cliente solo puede ver el nombre del mesero y enviar su
-respuesta una vez, sin leer nada; el personal solo ve los promedios; las
-respuestas completas, solo el dueño. Al entrar, a las cuentas de Piso les
+respuesta una vez, sin leer nada; el personal ve los promedios y cada
+mesero, solo sus propias respuestas que cuentan (con comentario, sin los
+motivos de sospecha ni el celular, por la función `mis_encuestas`, ver
+[`supabase/migration_014_mis_encuestas.sql`](./supabase/migration_014_mis_encuestas.sql),
+ya aplicada); todas las respuestas, solo el dueño. Al entrar, a las cuentas de Piso les
 sale la novedad "Encuestas para tus clientes".
 
 **Seguimiento de encuestas (solo el dueño)**: en Equipo > Encuestas, la
@@ -1275,7 +1289,7 @@ anula lo que esa semana había dado y lo vuelve a calcular, sin duplicar),
 muestra sus logros y su historial), **Ajustar puntos** (persona, puntos
 con − para quitar y motivo; aquí irán los canjes) y las semanas cerradas
 con "Recalcular". Se guarda en tablas protegidas (ver
-[`supabase/migration_014_puntos.sql`](./supabase/migration_014_puntos.sql),
+[`supabase/migration_015_puntos.sql`](./supabase/migration_015_puntos.sql),
 ya aplicada): los puntos son un historial de movimientos que nadie edita
 ni borra; cada quien lee solo los suyos (la app del dueño liga cada cuenta
 de equipo con su mesero del corte en `meseros_cuentas`), y solo el dueño
@@ -1503,6 +1517,7 @@ src/
     ConceptoInput.tsx  cuadro de concepto de gasto con autocompletado y ortografía
     panels/InicioPanel.tsx  Inicio del dueño (alertas); cálculo en lib/inicio.ts y lib/consumo.ts
     panels/ImportarCatalogoPanel.tsx  Negocio > Compras > Importar catálogo; lectura del Excel en lib/excelPrecios.ts
+    EncuestaRespondida.tsx  la encuesta del cliente ya respondida (dueño y mesero)
     lib/nominaVenta.ts  Tendencias > Nómina vs. venta (meta 15–16%, por día y sugerencias)
     lib/avanceImage.ts  Dashboard > Copiar avance al momento (imagen de mitad de semana)
     panels/CargarPedidosPanel.tsx  Pedidos pegados de WhatsApp (permiso "Pedidos"); lectura y suma en lib/pedidosCargados.ts
@@ -1525,5 +1540,6 @@ supabase/
   migration_011_encuestas.sql          encuestas con QR por mesero (tablas protegidas y funciones)
   migration_012_seguimiento_encuestas.sql  seguimiento de cada paso de las encuestas (solo el dueño)
   migration_013_encuesta_prueba.sql    QR de prueba del dueño (no cuenta en calificaciones)
-  migration_014_puntos.sql             puntos y logros semanales (cada quien ve solo los suyos)
+  migration_014_mis_encuestas.sql      el mesero ve sus encuestas contestadas
+  migration_015_puntos.sql             puntos y logros semanales (cada quien ve solo los suyos)
 ```

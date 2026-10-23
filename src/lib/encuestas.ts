@@ -179,6 +179,31 @@ export async function calificaciones(desde: string, hasta: string): Promise<Map<
   return mapa;
 }
 
+// Encuesta contestada, como la llenó el cliente: la abre el dueño (desde
+// sus respuestas) o el mesero (solo las suyas que cuentan, ver mis_encuestas).
+export interface EncuestaContestada {
+  encuesta_id: string;
+  mesero_nombre: string;
+  atencion: number;
+  comida: number;
+  rapidez: number;
+  comentario: string | null;
+  total_cliente: number;
+  mesa: string | null;
+  respondida_en: string;
+}
+
+// Las encuestas del mesero que cuentan para su calificación (sin prueba
+// ni sospechosas), con su comentario, de la más nueva a la más vieja.
+export async function misEncuestas(desde: string, hasta: string): Promise<EncuestaContestada[] | null> {
+  const { data, error } = await supabase.rpc("mis_encuestas", { p_desde: desde, p_hasta: hasta });
+  if (error) {
+    console.error("No se pudieron leer tus encuestas", error);
+    return null;
+  }
+  return ((data as EncuestaContestada[]) || []).map((r) => ({ ...r, total_cliente: Number(r.total_cliente) }));
+}
+
 // --- Cliente ----------------------------------------------------------------
 export async function encuestaPublica(token: string): Promise<{ mesero_nombre: string; estado: string } | null | "error"> {
   const { data, error } = await supabase.rpc("encuesta_publica", { p_token: token });
