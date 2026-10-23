@@ -2,10 +2,11 @@ import { useState } from "react";
 import { Check, ChevronDown, ChevronUp, Copy } from "lucide-react";
 import { Field } from "../ui";
 import {
-  META_GASTOS_OPERATIVOS_PCT, addDaysIso, computeDashboardReport, computeWeekSummary, dateForDay, computeNominaTotalHastaHoy, formatShortDayDate,
-  formatWeekRange, isoWeekNumber, money, resolveMontoFijo, resolveWeekStartDate, todayIso,
+  META_GASTOS_OPERATIVOS_PCT, addDaysIso, computeDashboardReport, computeNominaSemana, computeWeekSummary, dateForDay, computeNominaTotalHastaHoy,
+  formatShortDayDate, formatWeekRange, round2, isoWeekNumber, money, resolveMontoFijo, resolveWeekStartDate, todayIso,
 } from "../../lib/dataModel";
 import { copyDashboardImage, resultadoSemanal } from "../../lib/dashboardImage";
+import { copyAvanceImage } from "../../lib/avanceImage";
 import { DAY_SHORT } from "../../lib/types";
 import type { EmpleadoEntry, HorarioMonthData, MeseroCatalogEntry, MonthData, MontoFijoSemanal } from "../../lib/types";
 import { TituloPagina } from "../BarraTitulo";
@@ -25,6 +26,7 @@ export function DashboardPanel({
   horarios,
   meseros,
   montosFijos,
+  metaVenta,
   onGoToNomina,
 }: {
   months: Record<string, MonthData>;
@@ -35,6 +37,9 @@ export function DashboardPanel({
   horarios: Record<string, HorarioMonthData>;
   meseros: MeseroCatalogEntry[];
   montosFijos?: MontoFijoSemanal[];
+  // Venta presupuestada de la semana: la meta de venta semanal de
+  // Tendencias (se captura solo ahí).
+  metaVenta?: number;
   onGoToNomina: () => void;
 }) {
   const [monthKey, setMonthKey] = useState(initialMonthKey);
@@ -45,6 +50,7 @@ export function DashboardPanel({
   const [expandedCategorias, setExpandedCategorias] = useState<Set<string>>(new Set());
   // Resultado del último "Copiar imagen" — se borra solo a los pocos segundos.
   const [copiaEstado, setCopiaEstado] = useState<"copiada" | "descargada" | null>(null);
+  const [copiaAvance, setCopiaAvance] = useState<"copiada" | "descargada" | null>(null);
 
   function toggleCategoria(key: string) {
     setExpandedCategorias((prev) => {
@@ -92,6 +98,27 @@ export function DashboardPanel({
     );
     setCopiaEstado(copiada ? "copiada" : "descargada");
     setTimeout(() => setCopiaEstado(null), copiada ? 3000 : 6000);
+  }
+
+  // Imagen del avance a mitad de semana (lo que se llevaba en la libreta):
+  // venta y gastos operativos contra la venta presupuestada, y la nómina
+  // hasta hoy y al cierre según los horarios de la semana completa.
+  async function copiarAvance() {
+    if (!metaVenta) return;
+    const hoy = todayIso();
+    const enCurso = hoy >= weekStartDate && hoy <= addDaysIso(weekStartDate, 6);
+    const diaHoy = new Date(`${hoy}T00:00:00`).toLocaleDateString("es-MX", { weekday: "long" });
+    const nominaCierre = round2(computeNominaSemana(semana, empleados).reduce((s, e) => s + e.bruto, 0));
+    const copiada = await copyAvanceImage({
+      semana: `Semana ${isoWeekNumber(weekStartDate)} · ${enCurso ? `hasta hoy (${diaHoy})` : formatWeekRange(weekStartDate)}`,
+      venta: report.ventaTotal,
+      ventaPresupuesto: metaVenta,
+      gasto: report.gastosOperativos,
+      nominaHastaHoy: nominaCalculada,
+      nominaCierre,
+    });
+    setCopiaAvance(copiada ? "copiada" : "descargada");
+    setTimeout(() => setCopiaAvance(null), copiada ? 3000 : 6000);
   }
 
   return (
@@ -143,6 +170,22 @@ export function DashboardPanel({
         )}
       </button>
       {copiaEstado === "descargada" && <p className="hint">Tu navegador no permite copiar imágenes — se descargó el PNG.</p>}
+      {metaVenta ? (
+        <button type="button" className="link-btn" onClick={copiarAvance}>
+          {copiaAvance === "copiada" ? (
+            <>
+              <Check size={15} /> ¡Copiada! Pégala en WhatsApp
+            </>
+          ) : (
+            <>
+              <Copy size={15} /> Copiar avance al momento
+            </>
+          )}
+        </button>
+      ) : (
+        <p className="hint">Sin venta presupuestada: captúrala en Tendencias (meta de venta semanal) para copiar el avance.</p>
+      )}
+      {copiaAvance === "descargada" && <p className="hint">Tu navegador no permite copiar imágenes — se descargó el PNG.</p>}
 
       <div className="report-list">
         <div className="report-row">

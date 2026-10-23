@@ -1723,6 +1723,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
             horarios={data.horarios}
             meseros={data.meseros}
             montosFijos={data.montosFijosSemanales}
+            metaVenta={data.metaSemanal}
             onGoToNomina={() => {
               setActiveTab("equipo");
               setEquipoView("nomina");

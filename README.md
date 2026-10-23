@@ -877,6 +877,30 @@ estando en Nómina te regresa al menú de Equipo):
   hasta 15%, amarilla de 15 a 16% y roja arriba de 16%. Al pie, qué significa cada
   color y una nota (en una semana en curso, que los números son hasta
   hoy).
+  Debajo, el botón **"Copiar avance al momento"**: la imagen del avance a
+  mitad de semana (lo que antes se llevaba a mano en la libreta), con la
+  misma forma de copiar/descargar. La **venta presupuestada** es la meta de
+  venta semanal de Tendencias — se captura solo ahí; si no hay, en lugar
+  del botón sale el aviso "Sin venta presupuestada: captúrala en
+  Tendencias…". De ella salen el **gasto presupuestado** (42%) y la
+  **nómina presupuestada** (15%). La imagen trae: encabezado negro "Avance
+  al momento · Sucursal Metroplex · Semana [ISO] · hasta hoy (día)" (o las
+  fechas si la semana ya cerró); dos donas — **Venta** (lo capturado en el
+  corte contra la venta presupuestada: "de $X · faltan $Y") y **Gasto**
+  (los gastos operativos, efectivo y transferencia, contra el gasto
+  presupuestado: "de $X · quedan $Y"; roja si ya se pasó); **Ritmo de la
+  semana**: barras del % de avance de venta y gasto, con una marca de la
+  venta sobre la barra del gasto, y en grande el gasto acumulado como % de
+  la venta presupuestada (tope 42%); **Nómina** (meta 15%): barra con lo
+  generado hasta hoy ("Pagado", según Horarios hasta hoy, igual que el
+  reporte), lo que falta al cierre ("Por pagar", con los horarios de la
+  semana completa) y en rojo lo que pase del presupuesto; tres recuadros
+  (pagado al momento, estimado al cierre y exceso o sobra estimado) y la
+  nómina al cierre como % de la venta presupuestada (roja arriba de 15%).
+  Al final, tres avisos con su color: lo que queda de presupuesto de gasto
+  (verde) o cuánto se pasó (rojo); la nómina estimada al cierre arriba
+  (rojo) o abajo (verde) del presupuesto; y si el gasto va más de 5 puntos
+  adelante de la venta (amarillo, "cuidar compras") o al ritmo (verde).
 
 Hay 2 tipos de cuenta:
 
@@ -1440,6 +1464,7 @@ src/
     panels/InicioPanel.tsx  Inicio del dueño (alertas); cálculo en lib/inicio.ts y lib/consumo.ts
     panels/ImportarCatalogoPanel.tsx  Negocio > Compras > Importar catálogo; lectura del Excel en lib/excelPrecios.ts
     lib/nominaVenta.ts  Tendencias > Nómina vs. venta (meta 15–16%, por día y sugerencias)
+    lib/avanceImage.ts  Dashboard > Copiar avance al momento (imagen de mitad de semana)
     panels/CargarPedidosPanel.tsx  Pedidos pegados de WhatsApp (permiso "Pedidos"); lectura y suma en lib/pedidosCargados.ts
     panels/RecetarioPanel.tsx  Recetario (dueño edita y carga varias, equipo consulta); formato en lib/recetasTexto.ts
     NovedadesAlEntrar.tsx  slider de novedades al entrar (cuentas de equipo); lista en lib/novedades.ts
