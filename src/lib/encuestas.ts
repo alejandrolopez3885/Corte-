@@ -80,6 +80,7 @@ export async function crearEncuesta(
     if (msg.includes("30 encuestas de prueba")) return { error: "Ya generaste las 30 encuestas de prueba de hoy.", motivo: "limite" };
     if (msg.includes("15 encuestas")) return { error: `Ya generaste las ${MAXIMO_ENCUESTAS_DIA} encuestas de hoy.`, motivo: "limite" };
     if (msg.includes("total")) return { error: "Escribe el total de la cuenta.", motivo: "sin-total" };
+    if (msg.includes("mesa")) return { error: "Escribe la mesa.", motivo: "sin-mesa" };
     if (error.code === "PGRST202" || error.code === "42883") return { error: "Las encuestas todavía no están activas.", motivo: "otro" };
     const sinRed = !error.code || msg.includes("Failed to fetch") || msg.includes("NetworkError");
     return { error: "No se pudo crear la encuesta. Revisa tu conexión e intenta de nuevo.", motivo: sinRed ? "conexion" : "otro" };
@@ -88,10 +89,10 @@ export async function crearEncuesta(
   return fila ? { encuesta: fila } : { error: "No se pudo crear la encuesta.", motivo: "otro" };
 }
 
-// Intento que no se generó (sin total, sin ligar, límite, sin conexión):
+// Intento que no se generó (sin total, sin mesa, sin ligar, límite, sin conexión):
 // queda en el seguimiento del dueño. Si no hay conexión se guarda en este
 // celular y se manda en el siguiente intento.
-export type MotivoIntento = "sin-total" | "sin-ligar" | "limite" | "conexion" | "otro";
+export type MotivoIntento = "sin-total" | "sin-mesa" | "sin-ligar" | "limite" | "conexion" | "otro";
 const LLAVE_INTENTOS = "cortes-intentos-encuesta";
 interface IntentoPendiente {
   motivo: MotivoIntento;

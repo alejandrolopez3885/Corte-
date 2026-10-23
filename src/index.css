@@ -1711,6 +1711,8 @@ button.pill { cursor: pointer; }
 .ep-estrellas div { display: flex; gap: 2px; }
 .ep-estrellas button { border: none; background: none; font-size: 30px; line-height: 1; color: #D9DCD3; cursor: pointer; padding: 0 1px; }
 .ep-estrellas button.llena { color: #E0A100; }
+.ep-total { display: flex; justify-content: space-between; align-items: center; gap: 10px; background: var(--bg); border-radius: 12px; padding: 10px 12px; font-size: 14px; }
+.ep-total button { border: none; background: none; color: var(--accent); font: inherit; font-weight: 600; font-size: 13px; cursor: pointer; padding: 0; }
 .ep-estrella-fija { font-size: 30px; line-height: 1; color: #D9DCD3; padding: 0 1px; }
 .ep-estrella-fija.llena { color: #E0A100; }
 .ep-encima { position: fixed; inset: 0; z-index: 60; overflow-y: auto; min-height: 0; }

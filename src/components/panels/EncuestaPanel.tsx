@@ -22,7 +22,7 @@ import {
 } from "../../lib/encuestas";
 
 // Encuesta para el cliente (personal de Piso): escribe el total de la
-// cuenta y la mesa (opcional), y muestra un QR que vale 30 minutos y una
+// cuenta y la mesa (las dos obligatorias), y muestra un QR que vale 30 minutos y una
 // sola respuesta. Aquí mismo ve cuántas lleva hoy y su calificación de la
 // semana y, abajo, sus encuestas de la semana que cuentan para ella: al
 // tocar una la ve tal cual la contestó el cliente, con su comentario (las
@@ -89,6 +89,10 @@ export function EncuestaPanel({
       if (!prueba) registrarIntento("sin-total", meseroId || null, meseroNombre);
       return setError("Escribe el total de la cuenta.");
     }
+    if (!mesa.trim()) {
+      if (!prueba) registrarIntento("sin-mesa", meseroId || null, meseroNombre);
+      return setError("Escribe la mesa.");
+    }
     if (!meseroId && !prueba) {
       registrarIntento("sin-ligar", null, meseroNombre);
       return setError("Tu usuario del sistema no está ligado a tu cuenta. Pídele al dueño que lo revise.");
@@ -125,11 +129,11 @@ export function EncuestaPanel({
       {!encuesta && (
         <div className="encuesta-form">
           <h3>{prueba ? "Encuesta de prueba" : "Encuesta para el cliente"}</h3>
-          <p className="hint">Escribe el total de su cuenta: el cliente lo confirma al contestar.</p>
+          <p className="hint">Escribe el total de su cuenta y la mesa: el cliente confirma el total al contestar.</p>
           <Field label="Total de la cuenta">
             <NumInput value={total} onChange={(e) => setTotal(e.target.value)} placeholder="0.00" />
           </Field>
-          <Field label="Mesa (opcional)">
+          <Field label="Mesa">
             <input className="text-input" value={mesa} maxLength={20} onChange={(e) => setMesa(e.target.value)} placeholder="Ej. 7" />
           </Field>
           {error && <p className="aviso-faltante">{error}</p>}

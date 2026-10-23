@@ -112,6 +112,7 @@ export const ETIQUETA_FINAL: Record<Final, string> = {
 export const MOTIVOS_INTENTO: Record<string, string> = {
   limite: "ya tenía las 15 de hoy",
   "sin-total": "no escribió el total",
+  "sin-mesa": "no escribió la mesa",
   "sin-ligar": "no está ligado a su usuario en Personal",
   conexion: "sin conexión",
   otro: "no se pudo",

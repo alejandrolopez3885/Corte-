@@ -209,6 +209,15 @@ export const NOVEDADES: Novedad[] = [
     texto: "Cada semana del ranking suma **puntos** que se juntan en **Mi perfil** (se podrán canjear más adelante). Hay ganador cada semana y **logros** por rachas.",
     visual: "puntos",
   },
+  {
+    id: "encuesta-mesa-obligatoria",
+    fecha: "2026-10-23T02:00:00Z",
+    seccion: "general",
+    soloPiso: true,
+    titulo: "La mesa ya es obligatoria",
+    texto: "Para generar el QR escribe el **total** y la **mesa**. El cliente empieza escribiendo el total de su ticket.",
+    visual: "encuesta",
+  },
 ];
 
 interface EstadoNovedades {

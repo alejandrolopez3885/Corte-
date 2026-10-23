@@ -1,11 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { CheckCircle2 } from "lucide-react";
+import { money } from "../lib/dataModel";
 import { empezarEncuesta, encuestaPublica, responderEncuesta } from "../lib/encuestas";
 import { Estrellas } from "../components/EncuestaRespondida";
 
 // Lo que ve el cliente al escanear el QR (/?e=<código>), sin iniciar
-// sesión: confirma el total de su cuenta, califica atención del mesero,
-// comida y rapidez (1 a 5) y deja un comentario opcional. Anónima.
+// sesión. Primero solo escribe el total de su cuenta y toca "Empezar";
+// luego califica atención del mesero, comida y rapidez (1 a 5) y deja un
+// comentario opcional (arriba sigue su total, con "Cambiar"). Si el total
+// no coincide no se le dice nada: queda sospechosa. Anónima.
 type Fase = "cargando" | "abierta" | "enviando" | "gracias" | "cerrada" | "error";
 
 export default function EncuestaPublica({ token }: { token: string }) {
@@ -18,6 +21,7 @@ export default function EncuestaPublica({ token }: { token: string }) {
   const [rapidez, setRapidez] = useState(0);
   const [comentario, setComentario] = useState("");
   const [intento, setIntento] = useState(false);
+  const [conTotal, setConTotal] = useState(false);
   const inicio = useRef(0);
   const empezo = useRef(false);
 
@@ -87,53 +91,80 @@ export default function EncuestaPublica({ token }: { token: string }) {
           <>
             <h1>¿Cómo te atendimos?</h1>
             <p className="hint">Te atendió {mesero} · toma 30 segundos</p>
-            <label className="field">
-              <span>Total de tu cuenta (como viene en tu ticket)</span>
-              <input
-                className="text-input"
-                inputMode="decimal"
-                value={total}
-                onChange={(e) => {
-                  tocar();
-                  setTotal(e.target.value.replace(/[^\d.]/g, ""));
-                }}
-                placeholder="$ 0.00"
-              />
-            </label>
-            <Estrellas
-              etiqueta="Atención de tu mesero"
-              valor={atencion}
-              onChange={(n) => {
-                tocar();
-                setAtencion(n);
-              }}
-            />
-            <Estrellas
-              etiqueta="Comida"
-              valor={comida}
-              onChange={(n) => {
-                tocar();
-                setComida(n);
-              }}
-            />
-            <Estrellas
-              etiqueta="Rapidez"
-              valor={rapidez}
-              onChange={(n) => {
-                tocar();
-                setRapidez(n);
-              }}
-            />
-            <label className="field">
-              <span>Comentario (opcional)</span>
-              <textarea className="text-input" rows={3} maxLength={500} value={comentario} onChange={(e) => setComentario(e.target.value)} />
-            </label>
-            {intento && falta && <p className="aviso-faltante">{falta}</p>}
-            {mensaje && <p className="aviso-faltante">{mensaje}</p>}
-            <button className="btn-primary" disabled={fase === "enviando"} onClick={enviar}>
-              {fase === "enviando" ? "Enviando…" : "Enviar"}
-            </button>
-            <p className="hint ep-centro">Es anónima. ¡Gracias!</p>
+            {!conTotal ? (
+              <>
+                <label className="field">
+                  <span>Para empezar, escribe el total de tu cuenta (como viene en tu ticket)</span>
+                  <input
+                    className="text-input"
+                    inputMode="decimal"
+                    value={total}
+                    onChange={(e) => {
+                      tocar();
+                      setTotal(e.target.value.replace(/[^\d.]/g, ""));
+                    }}
+                    placeholder="$ 0.00"
+                  />
+                </label>
+                {intento && !(parseFloat(total) > 0) && <p className="aviso-faltante">Escribe el total de tu cuenta.</p>}
+                <button
+                  className="btn-primary"
+                  onClick={() => {
+                    if (!(parseFloat(total) > 0)) return setIntento(true);
+                    setIntento(false);
+                    setConTotal(true);
+                  }}
+                >
+                  Empezar
+                </button>
+                <p className="hint ep-centro">Es anónima. ¡Gracias!</p>
+              </>
+            ) : (
+              <>
+                <div className="ep-total">
+                  <span>
+                    Total de tu cuenta: <b>{money(parseFloat(total))}</b>
+                  </span>
+                  <button type="button" disabled={fase === "enviando"} onClick={() => setConTotal(false)}>
+                    Cambiar
+                  </button>
+                </div>
+                <Estrellas
+                  etiqueta="Atención de tu mesero"
+                  valor={atencion}
+                  onChange={(n) => {
+                    tocar();
+                    setAtencion(n);
+                  }}
+                />
+                <Estrellas
+                  etiqueta="Comida"
+                  valor={comida}
+                  onChange={(n) => {
+                    tocar();
+                    setComida(n);
+                  }}
+                />
+                <Estrellas
+                  etiqueta="Rapidez"
+                  valor={rapidez}
+                  onChange={(n) => {
+                    tocar();
+                    setRapidez(n);
+                  }}
+                />
+                <label className="field">
+                  <span>Comentario (opcional)</span>
+                  <textarea className="text-input" rows={3} maxLength={500} value={comentario} onChange={(e) => setComentario(e.target.value)} />
+                </label>
+                {intento && falta && <p className="aviso-faltante">{falta}</p>}
+                {mensaje && <p className="aviso-faltante">{mensaje}</p>}
+                <button className="btn-primary" disabled={fase === "enviando"} onClick={enviar}>
+                  {fase === "enviando" ? "Enviando…" : "Enviar"}
+                </button>
+                <p className="hint ep-centro">Es anónima. ¡Gracias!</p>
+              </>
+            )}
           </>
         )}
       </div>

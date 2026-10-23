@@ -1165,8 +1165,9 @@ montos). Al entrar, a las cuentas de Piso les sale la novedad "Ranking de
 meseros". Cálculo en `src/lib/ranking.ts`.
 
 **Encuestas con QR**: las cuentas del área Piso tienen en su inicio
-**Encuesta para el cliente**: escriben el total de la cuenta (y la mesa,
-opcional), tocan "Generar QR" y le muestran al cliente un QR grande con un
+**Encuesta para el cliente**: escriben el total de la cuenta y la mesa
+(las dos obligatorias: si falta una sale "Escribe el total de la cuenta."
+o "Escribe la mesa." y no se genera), tocan "Generar QR" y le muestran al cliente un QR grande con un
 contador ("Vence en 29:41") y "Cancelar esta encuesta"; cuando el cliente
 la envía, en su celular sale "¡Gracias! Encuesta recibida" y "Generar
 otra". Ahí mismo ven cuántas llevan hoy (máximo 15 al día), su
@@ -1182,10 +1183,14 @@ y rapidez, y su comentario (o "Sin comentario"), sin poder cambiar nada;
 "Cerrar" regresa. Su usuario del sistema tiene que estar ligado a su
 persona (por usuario del sistema o por nombre) para poder generarla. El
 cliente escanea y se abre la encuesta en la misma dirección de la app
-(`/?e=<código>`) sin iniciar sesión ni descargar nada, con Anubis: escribe
-el **total de su cuenta** (como viene en su ticket), califica **atención
-de su mesero**, **comida** y **rapidez** de 1 a 5 estrellas, deja un
-comentario opcional y envía; es anónima. **Para que no se ayuden entre
+(`/?e=<código>`) sin iniciar sesión ni descargar nada, con Anubis. Primero
+solo ve "Para empezar, escribe el total de tu cuenta (como viene en tu
+ticket)" y el botón **Empezar** (sin total no avanza); después, arriba
+queda "Total de tu cuenta: $…" con "Cambiar" (regresa a escribirlo), y
+califica **atención de su mesero**, **comida** y **rapidez** de 1 a 5
+estrellas, deja un comentario opcional y envía; es anónima. Si el total
+no coincide con el del mesero no se le avisa: la encuesta queda como
+sospechosa (ver abajo). **Para que no se ayuden entre
 ellos**, una respuesta solo cuenta si: el total que escribe el cliente
 coincide (±$1) con el que anotó el mesero; no se contesta desde un celular
 donde alguien del equipo haya iniciado sesión (la app lo marca al entrar)
@@ -1219,7 +1224,7 @@ sale la novedad "Encuestas para tus clientes".
 cuarta pestaña **Seguimiento** (con el mismo periodo de arriba) muestra
 cada paso de cada encuesta. Se guarda todo para siempre, sin poder
 editarlo ni borrarlo: cada **intento del mesero que no se generó** y por
-qué (no escribió el total, no está ligado a su usuario en Personal, ya
+qué (no escribió el total, no escribió la mesa, no está ligado a su usuario en Personal, ya
 tenía las 15 del día o sin conexión; si no había conexión se guarda en su
 celular y se manda en el siguiente intento), cuando se **genera**, cuando
 el cliente la **abre** (y si la vuelve a abrir, ya contestada, vencida o
@@ -1249,7 +1254,7 @@ distinto.
 **QR de prueba (dueño)**: arriba de las pestañas de Equipo > Encuestas está
 **"Generar QR de prueba"**: abre la misma pantalla del mesero ("QR de
 prueba", regresa a "Encuestas") con un aviso de que es prueba; escribes el
-total y la mesa (opcional) y sale el QR de 30 minutos con su cuenta
+total y la mesa (obligatorios, igual que el mesero) y sale el QR de 30 minutos con su cuenta
 regresiva y "Cancelar esta encuesta". Al cliente le sale "Te atendió Prueba
 (tu nombre)" y se contesta con los mismos candados (si la contestas desde
 tu celular sale sospechosa por "celular del personal"; para verla como
@@ -1259,6 +1264,9 @@ las calificaciones, el ranking, "Por mesero", el embudo ni "Dónde se
 quedaron", ni en la revisión contra la venta del corte. Máximo 30 al día
 (ver
 [`supabase/migration_013_encuesta_prueba.sql`](./supabase/migration_013_encuesta_prueba.sql),
+ya aplicada). La mesa obligatoria también la revisa Supabase al generar
+cualquiera de las dos (ver
+[`supabase/migration_015_mesa_obligatoria.sql`](./supabase/migration_015_mesa_obligatoria.sql),
 ya aplicada).
 
 **Puntos y logros**: al **guardar el corte del domingo** la app cierra la
