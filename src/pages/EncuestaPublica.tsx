@@ -1,26 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { CheckCircle2 } from "lucide-react";
 import { empezarEncuesta, encuestaPublica, responderEncuesta } from "../lib/encuestas";
+import { Estrellas } from "../components/EncuestaRespondida";
 
 // Lo que ve el cliente al escanear el QR (/?e=<código>), sin iniciar
 // sesión: confirma el total de su cuenta, califica atención del mesero,
 // comida y rapidez (1 a 5) y deja un comentario opcional. Anónima.
 type Fase = "cargando" | "abierta" | "enviando" | "gracias" | "cerrada" | "error";
-
-function Estrellas({ valor, onChange, etiqueta }: { valor: number; onChange: (n: number) => void; etiqueta: string }) {
-  return (
-    <div className="ep-estrellas">
-      <span>{etiqueta}</span>
-      <div role="radiogroup" aria-label={etiqueta}>
-        {[1, 2, 3, 4, 5].map((n) => (
-          <button key={n} type="button" className={n <= valor ? "llena" : ""} onClick={() => onChange(n)} aria-label={`${n} de 5`}>
-            ★
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 export default function EncuestaPublica({ token }: { token: string }) {
   const [fase, setFase] = useState<Fase>("cargando");

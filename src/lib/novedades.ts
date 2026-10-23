@@ -191,6 +191,15 @@ export const NOVEDADES: Novedad[] = [
     texto: "En tu inicio toca **Encuesta para el cliente**, escribe el total de la cuenta y muéstrale el QR. Su calificación sale como ⭐ en el ranking.",
     visual: "encuesta",
   },
+  {
+    id: "ver-mis-encuestas",
+    fecha: "2026-10-23T01:48:00Z",
+    seccion: "general",
+    soloPiso: true,
+    titulo: "Ve lo que te contestaron",
+    texto: "En **Encuesta**, abajo, toca una de **Tus encuestas de esta semana** para verla tal cual la llenó el cliente, con su comentario.",
+    visual: "encuesta",
+  },
 ];
 
 interface EstadoNovedades {

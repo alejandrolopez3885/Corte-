@@ -1680,5 +1680,13 @@ button.pill { cursor: pointer; }
 .ep-estrellas div { display: flex; gap: 2px; }
 .ep-estrellas button { border: none; background: none; font-size: 30px; line-height: 1; color: #D9DCD3; cursor: pointer; padding: 0 1px; }
 .ep-estrellas button.llena { color: #E0A100; }
+.ep-estrella-fija { font-size: 30px; line-height: 1; color: #D9DCD3; padding: 0 1px; }
+.ep-estrella-fija.llena { color: #E0A100; }
+.ep-encima { position: fixed; inset: 0; z-index: 60; overflow-y: auto; min-height: 0; }
+.ep-tarjeta input[readonly], .ep-tarjeta textarea[readonly] { background: var(--bg); }
+.ep-sello { display: flex; justify-content: center; align-items: center; gap: 6px; background: var(--good-soft); color: var(--good); border-radius: 12px; padding: 9px; font-size: 13px; font-weight: 600; text-align: center; }
+.encuesta-resp-abrir { cursor: pointer; text-align: left; font: inherit; color: inherit; }
+.encuesta-resp-ver { align-self: flex-end; font-size: 12px; font-weight: 600; color: var(--accent); }
+.encuesta-mias-titulo { margin: 16px 0 8px; font-size: 15px; }
 .ep-gracias { display: flex; flex-direction: column; align-items: center; gap: 8px; color: var(--good); text-align: center; padding: 10px 0; }
 .ep-gracias h1 { color: var(--ink); }
