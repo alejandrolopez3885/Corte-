@@ -3,7 +3,7 @@ import { ChevronRight, Trophy } from "lucide-react";
 import { Avatar } from "../Avatar";
 import { Empty, Sheet } from "../ui";
 import { TituloPagina } from "../BarraTitulo";
-import { money } from "../../lib/dataModel";
+import { money, todayIso } from "../../lib/dataModel";
 import { MINIMO_DIAS_RANKING, calcularRanking, rangoRanking, type FilaRanking, type PeriodoRanking } from "../../lib/ranking";
 import { MINIMO_ENCUESTAS, calificaciones } from "../../lib/encuestas";
 import {
@@ -40,15 +40,6 @@ export function RankingPanel({
   const [periodo, setPeriodo] = useState<PeriodoRanking>("semana");
   const { desde, hasta } = rangoRanking(periodo);
   const ranking = calcularRanking(data, desde, hasta);
-  // ⭐ de las encuestas: columna aparte, no cambia los puntos.
-  const [estrellas, setEstrellas] = useState<Map<string, { promedio: number; cantidad: number }>>(new Map());
-  useEffect(() => {
-    let vivo = true;
-    calificaciones(desde, hasta).then((m) => vivo && setEstrellas(m));
-    return () => {
-      vivo = false;
-    };
-  }, [desde, hasta]);
   // Ganador de la última semana cerrada y los logros de cada quien.
   const [ultima, setUltima] = useState<SemanaCerrada | null>(null);
   const [semanas, setSemanas] = useState<SemanaCerrada[]>([]);
@@ -101,7 +92,7 @@ export function RankingPanel({
       {modo === "equipo" && yo && (
         <div className="ranking-mio">
           <strong>
-            Tu puntaje en el ranking {nombrePeriodo}: {yo.puntos}
+            Tus puntos del ranking {nombrePeriodo}: {yo.puntos}
           </strong>
           <div>
             <span>Venta por día trabajado</span>
@@ -155,7 +146,6 @@ export function RankingPanel({
           fila={viendo}
           total={ranking.filas.length}
           nombrePeriodo={nombrePeriodo}
-          estrellas={estrellas.get(viendo.meseroId)}
           logros={logros.filter((l) => l.mesero_id === viendo.meseroId)}
           semanasGanadas={semanas.filter((s) => s.resultados.some((r) => r.meseroId === viendo.meseroId && r.lugar === 1)).length}
           dueno={modo === "dueno"}
@@ -172,8 +162,8 @@ export function RankingPanel({
       <p className="hint">
         Cómo se calcula: la venta por día trabajado da hasta 100 puntos (100 = quien más vende por día {nombrePeriodo}) y cada 1% de
         cancelaciones sobre su venta resta 10 puntos. Para aparecer hacen falta {MINIMO_DIAS_RANKING} días trabajados.
-        {periodo === "semana" ? " La semana va de lunes a domingo." : ""} En el perfil de cada quien, ⭐ = calificación de atención en
-        las encuestas (1 a 5) y cuántas válidas; se muestra con {MINIMO_ENCUESTAS} o más y no cambia el puntaje.
+        {periodo === "semana" ? " La semana va de lunes a domingo." : ""} En el perfil de cada quien, las estrellas son su calificación
+        de atención en las encuestas desde el inicio (1 a 5) y cuántas válidas; se muestra con {MINIMO_ENCUESTAS} o más y no cambia los puntos.
       </p>
     </div>
   );
@@ -216,14 +206,14 @@ export function RankingTarjeta({ data, miMeseroId, onVer }: { data: AppData; miM
   );
 }
 
-// Perfil público de alguien del ranking. Sin puntos acumulados ni montos,
-// salvo para el dueño (en el recuadro "Solo tú").
+// Perfil público de alguien del ranking: su lugar y puntos del periodo que
+// se ve, y sus encuestas desde el inicio con estrellas. Sin sus Monedas
+// Anubis ni montos, salvo para el dueño (en el recuadro "Solo tú").
 function PerfilRanking({
   data,
   fila,
   total,
   nombrePeriodo,
-  estrellas,
   logros,
   semanasGanadas,
   dueno,
@@ -233,13 +223,21 @@ function PerfilRanking({
   fila: FilaRanking;
   total: number;
   nombrePeriodo: string;
-  estrellas?: { promedio: number; cantidad: number };
   logros: LogroGanado[];
   semanasGanadas: number;
   dueno: boolean;
   onClose: () => void;
 }) {
   const [acumulados, setAcumulados] = useState<number | null>(null);
+  // Encuestas desde el inicio (válidas, sin las de prueba).
+  const [estrellas, setEstrellas] = useState<{ promedio: number; cantidad: number } | null>(null);
+  useEffect(() => {
+    let vivo = true;
+    calificaciones("2000-01-01", todayIso()).then((m) => vivo && setEstrellas(m.get(fila.meseroId) || { promedio: 0, cantidad: 0 }));
+    return () => {
+      vivo = false;
+    };
+  }, [fila.meseroId]);
   useEffect(() => {
     if (!dueno) return;
     let vivo = true;
@@ -269,16 +267,14 @@ function PerfilRanking({
         </div>
         <div>
           <b>{fila.puntos}</b>
-          <span>puntaje</span>
+          <span>puntos {nombrePeriodo}</span>
         </div>
         <div>
-          <b>
-            ⭐{" "}
-            {estrellas && estrellas.cantidad >= MINIMO_ENCUESTAS
-              ? estrellas.promedio.toLocaleString("es-MX", { minimumFractionDigits: 1, maximumFractionDigits: 1 })
-              : "—"}
-          </b>
+          {estrellas && estrellas.cantidad >= MINIMO_ENCUESTAS ? <Estrellas valor={estrellas.promedio} /> : <b>⭐ —</b>}
           <span>
+            {estrellas && estrellas.cantidad >= MINIMO_ENCUESTAS
+              ? `${estrellas.promedio.toLocaleString("es-MX", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} · `
+              : ""}
             {estrellas?.cantidad || 0} {estrellas?.cantidad === 1 ? "encuesta" : "encuestas"}
           </span>
         </div>
@@ -303,12 +299,25 @@ function PerfilRanking({
       {dueno && (
         <p className="perfil-publico-dueno">
           Solo tú: {money(fila.ventaPorDia)}/día · {fila.dias} días · cancelaciones {money(fila.cancelaciones)} (
-          {fila.pctCancelacion.toLocaleString("es-MX")}%){acumulados !== null ? ` · ${acumulados.toLocaleString("es-MX")} puntos acumulados` : ""}
+          {fila.pctCancelacion.toLocaleString("es-MX")}%){acumulados !== null ? ` · ${acumulados.toLocaleString("es-MX")} 🪙 Monedas Anubis` : ""}
         </p>
       )}
       <button type="button" className="btn-secundario" onClick={onClose}>
         Cerrar
       </button>
     </Sheet>
+  );
+}
+
+// Cinco estrellas con el promedio redondeado a media estrella.
+function Estrellas({ valor }: { valor: number }) {
+  const ancho = (Math.round(valor * 2) / 2 / 5) * 100;
+  return (
+    <b className="estrellas-calif" aria-label={`${valor} de 5 estrellas`}>
+      <span>★★★★★</span>
+      <span className="llenas" style={{ width: `${ancho}%` }}>
+        ★★★★★
+      </span>
+    </b>
   );
 }

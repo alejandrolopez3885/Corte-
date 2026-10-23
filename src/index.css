@@ -1677,6 +1677,9 @@ button.pill { cursor: pointer; }
 .perfil-publico-datos div { display: flex; flex-direction: column; align-items: center; gap: 2px; background: var(--surface-alt); border-radius: 12px; padding: 9px 4px; text-align: center; }
 .perfil-publico-datos b { font-size: 17px; font-variant-numeric: tabular-nums; }
 .perfil-publico-datos span { font-size: 11.5px; color: var(--ink-soft); }
+.estrellas-calif { position: relative; display: inline-block; font-size: 16px; letter-spacing: 1px; line-height: 1.2; }
+.estrellas-calif > span { color: #D9DCD3; }
+.estrellas-calif > span.llenas { position: absolute; left: 0; top: 0; overflow: hidden; white-space: nowrap; color: #E0A100; }
 .perfil-publico-logros { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
 .perfil-publico-logros .hint { margin: 0; }
 .perfil-publico-logros div { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -1684,6 +1687,7 @@ button.pill { cursor: pointer; }
 .perfil-publico-dueno { margin: 0 0 12px; background: var(--warn-soft); color: #7a4a10; border-radius: 12px; padding: 10px 12px; font-size: 13px; }
 /* ---- Puntos y logros ---- */
 .puntos-total { display: flex; flex-direction: column; gap: 2px; background: linear-gradient(135deg, var(--accent), var(--good)); color: white; border-radius: 16px; padding: 14px 16px; margin-bottom: 14px; }
+.puntos-total.monedas { background: linear-gradient(135deg, #7a5410, #C9971F 55%, #E8C766); }
 .puntos-total small { font-size: 12px; opacity: 0.85; }
 .puntos-total b { font-family: 'Fraunces', serif; font-size: 32px; line-height: 1.1; font-variant-numeric: tabular-nums; }
 .puntos-total span { font-size: 12.5px; opacity: 0.9; }
@@ -1691,13 +1695,13 @@ button.pill { cursor: pointer; }
 .puntos-seccion h4 { margin: 0; font-size: 14.5px; }
 .puntos-seccion .hint { margin: 0; }
 .puntos-mov { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; padding-top: 6px; border-top: 1px solid var(--surface-alt); font-size: 13px; }
-.puntos-mov b { color: var(--good); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.puntos-mov b { color: #9A6B10; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .puntos-mov b.neg { color: var(--bad); }
 .logros-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
 .logro { display: flex; flex-direction: column; gap: 2px; border: 1px solid var(--border); border-radius: 12px; padding: 8px 10px; background: var(--surface); }
 .logro b { font-size: 13px; }
 .logro span { font-size: 12px; color: var(--ink-soft); }
-.logro small { font-size: 11.5px; color: var(--good); font-weight: 600; }
+.logro small { font-size: 11.5px; color: #9A6B10; font-weight: 600; }
 .logro.pendiente { opacity: 0.5; border-style: dashed; }
 .logro.pendiente small { color: var(--ink-soft); }
 .ranking-ganador { display: flex; align-items: center; gap: 10px; background: #FFF6DA; border: 1px solid #EBD38A; border-radius: 14px; padding: 10px 14px; font-size: 13.5px; }

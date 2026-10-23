@@ -1152,18 +1152,21 @@ tarjeta con su lugar de la semana ("3º de 8 meseros · 82 puntos" y cuántos
 puntos le faltan para subir, o "¡Vas en primer lugar!") que abre la
 sección **Ranking** — arriba el ganador de la última semana cerrada ("Ganó
 la semana del 12–18: Jennifer" y "¡Felicidades, fuiste tú!" si fue esa
-persona), "Esta semana" / "Semana pasada", su puntaje en el ranking
+persona), "Esta semana" / "Semana pasada", sus puntos del ranking
 (venta +N, cancelaciones con su % −N y días trabajados) y la lista con
 lugar, foto, nombre, barra y puntaje (y una ›), su fila resaltada con
 "Tú". **Tocar a alguien** abre su perfil público: foto, nombre, puesto ·
-área, su descripción, su lugar y puntaje en el periodo que se ve ("2º esta
-semana · de 8"), su ⭐ de encuestas y cuántas, sus logros y cuántas semanas
-ha ganado — sin sus puntos acumulados ni montos. Con el
+área, su descripción, su lugar y sus puntos en el periodo que se ve ("2º
+esta semana · de 8", "95 puntos esta semana"), su calificación de
+encuestas **desde el inicio** en estrellas (redondeada a media estrella,
+con el promedio y el total de encuestas válidas: "4.6 · 23 encuestas"; con
+menos de 3 sale "⭐ —"), sus logros y cuántas semanas ha ganado — sin sus
+Monedas Anubis ni montos. Con el
 ranking, una cuenta de Piso siempre entra a su inicio aunque tenga una sola
 sección. **Tú** lo ves en Equipo > Ranking con la misma lista (y además el
 del **mes**); en el perfil de cada quien te sale además "Solo tú" con su
-venta por día, días, cancelaciones en dinero y en % y sus puntos
-acumulados. En Pregúntale a
+venta por día, días, cancelaciones en dinero y en % y sus Monedas
+Anubis. En Pregúntale a
 Cortes: el personal de Piso pregunta "¿en qué lugar voy?" (su lugar y la
 lista, sin montos) y tú "ranking de meseros" o "¿quién va primero?" (con
 montos). Al entrar, a las cuentas de Piso les sale la novedad "Ranking de
@@ -1274,40 +1277,44 @@ cualquiera de las dos (ver
 [`supabase/migration_015_mesa_obligatoria.sql`](./supabase/migration_015_mesa_obligatoria.sql),
 ya aplicada).
 
-**Puntos y logros**: al **guardar el corte del domingo** la app cierra la
-semana (lunes a domingo) con el ranking de esa semana: guarda al ganador
-(o ganadores si empatan), suma los puntos de cada quien y revisa los
-logros. Puntos por semana: 1º lugar 100, 2º 70, 3º 50, los demás que
-aparecen en el ranking 20; sin cancelaciones +30; cada encuesta válida +5
-(sin las de prueba ni las sospechosas sin aprobar); promedio de atención
-de 4.5⭐ o más con 3 o más encuestas +30. **Logros** (puntos extra la
-primera vez que se gana cada nivel): 🏆 Primer lugar (ganar una semana,
-+50); 🔥 Racha de campeón (2, 4 y 8 semanas seguidas en 1er lugar: +100,
-+200, +400); 🧼 Manos limpias (2, 4 y 8 semanas seguidas sin
-cancelaciones: +50, +100, +200); 😊 Clientes felices (2, 4 y 8 semanas
-seguidas sin malas encuestas —1 o 2⭐ de atención— con 3 o más encuestas:
-+50, +100, +200); 🥉 Siempre en el podio (3, 6 y 12 semanas seguidas en el
-top 3: +75, +150, +300); 13 en total. Una semana sin cerrar o en la que no
-aparece corta la racha. Los puntos se **acumulan** para canjearse más
-adelante. **Cada persona** (de Piso o con cortes) los ve en **Mi perfil**:
-"Mis puntos" con el total, lo que ganó la última semana y el historial
-(cada suma con su motivo; "Ver todo"), y **Mis logros · N de 13** con los
-ganados en color y los que siguen en gris con su puntaje y cuánto lleva
-("llevas 2"). Los puntos de los demás no los ve nadie más que tú; los
-logros y el ganador sí, en el ranking (el ganador arriba y los logros en el perfil de cada quien). **Tú**, en Equipo > **Puntos y
-logros**: la semana pasada (cerrada y quién ganó, o "Cerrar semana" si no
-se cerró; "Recalcular semana" si corregiste un corte de esa semana:
-anula lo que esa semana había dado y lo vuelve a calcular, sin duplicar),
-"Puntos de cada quien" (lo de la última semana y el total; tocar a alguien
-muestra sus logros y su historial), **Ajustar puntos** (persona, puntos
-con − para quitar y motivo; aquí irán los canjes) y las semanas cerradas
-con "Recalcular". Se guarda en tablas protegidas (ver
+**Monedas Anubis y logros**: "puntos" es solo lo del ranking (público);
+lo que se junta para canjear son las **Monedas Anubis 🪙** (privadas). Al
+**guardar el corte del domingo** la app cierra la semana (lunes a domingo)
+con el ranking de esa semana: guarda al ganador (o ganadores si empatan),
+suma las monedas de cada quien y revisa los logros. Monedas por semana: 1º
+lugar 100, 2º 70, 3º 50, los demás que aparecen en el ranking 20; sin
+cancelaciones +30; cada encuesta válida +5 (sin las de prueba ni las
+sospechosas sin aprobar); promedio de atención de 4.5⭐ o más con 3 o más
+encuestas +30. **Logros** (monedas extra la primera vez que se gana cada
+nivel): 🏆 Primer lugar (ganar una semana, +50); 🔥 Racha de campeón (2, 4
+y 8 semanas seguidas en 1er lugar: +100, +200, +400); 🧼 Manos limpias (2,
+4 y 8 semanas seguidas sin cancelaciones: +50, +100, +200); 😊 Clientes
+felices (2, 4 y 8 semanas seguidas sin malas encuestas —1 o 2⭐ de
+atención— con 3 o más encuestas: +50, +100, +200); 🥉 Siempre en el podio
+(3, 6 y 12 semanas seguidas en el top 3: +75, +150, +300); 13 en total.
+Una semana sin cerrar o en la que no aparece corta la racha. Las monedas se
+**acumulan** para canjearse más adelante. **Cada persona** (de Piso o con
+cortes) las ve en **Mi perfil**: la tarjeta dorada "🪙 Mis monedas Anubis"
+con el total, lo que ganó la última semana y el historial (cada suma con
+su motivo y 🪙; "Ver todo"), y **Mis logros · N de 13** con los ganados en
+color y los que siguen en gris con sus monedas y cuánto lleva ("llevas
+2"). Las monedas de los demás no las ve nadie más que tú; los logros y el
+ganador sí, en el ranking (el ganador arriba y los logros en el perfil de
+cada quien). **Tú**, en Equipo > **Monedas y logros**: la semana pasada
+(cerrada y quién ganó, o "Cerrar semana" si no se cerró; "Recalcular
+semana" si corregiste un corte de esa semana: anula lo que esa semana
+había dado y lo vuelve a calcular, sin duplicar), "Monedas de cada quien"
+(lo de la última semana y el total; tocar a alguien muestra sus logros y
+su historial), **Ajustar monedas** (persona, monedas con − para quitar y
+motivo; aquí irán los canjes) y las semanas cerradas con "Recalcular". Se
+guarda en tablas protegidas (ver
 [`supabase/migration_015_puntos.sql`](./supabase/migration_015_puntos.sql),
-ya aplicada): los puntos son un historial de movimientos que nadie edita
-ni borra; cada quien lee solo los suyos (la app del dueño liga cada cuenta
+ya aplicada): las monedas son un historial de movimientos que nadie edita
+ni borra; cada quien lee solo las suyas (la app del dueño liga cada cuenta
 de equipo con su mesero del corte en `meseros_cuentas`), y solo el dueño
-escribe. Al entrar, al personal de Piso y con cortes le sale la novedad
-"Puntos y logros". Cálculo en `src/lib/puntos.ts`.
+escribe. Al entrar, al personal de Piso y con cortes le salen las
+novedades "Puntos y logros" y "Monedas Anubis". Cálculo en
+`src/lib/puntos.ts`.
 
 **Tu perfil (dueño)**: arriba a la derecha, en todas tus pantallas, está
 tu foto en un círculo (sin foto, tus iniciales); tocarla abre **Mi
@@ -1554,5 +1561,5 @@ supabase/
   migration_012_seguimiento_encuestas.sql  seguimiento de cada paso de las encuestas (solo el dueño)
   migration_013_encuesta_prueba.sql    QR de prueba del dueño (no cuenta en calificaciones)
   migration_014_mis_encuestas.sql      el mesero ve sus encuestas contestadas
-  migration_015_puntos.sql             puntos y logros semanales (cada quien ve solo los suyos)
+  migration_015_puntos.sql             Monedas Anubis y logros semanales (cada quien ve solo las suyas)
 ```

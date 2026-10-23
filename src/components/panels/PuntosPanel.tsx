@@ -19,9 +19,9 @@ import {
 } from "../../lib/puntos";
 import type { AppData } from "../../lib/types";
 
-// Puntos y logros (solo dueño): la semana pasada (se cierra sola al
+// Monedas Anubis y logros (solo dueño): la semana pasada (se cierra sola al
 // guardar el corte del domingo; aquí se puede cerrar o recalcular), los
-// puntos de cada quien con su historial y logros, y ajustes a mano.
+// monedas de cada quien con su historial y logros, y ajustes a mano.
 export function PuntosPanel({ data, ownerId, onBack }: { data: AppData; ownerId: string; onBack?: () => void }) {
   const [datos, setDatos] = useState<{ semanas: SemanaCerrada[]; movimientos: Movimiento[]; logros: LogroGanado[] } | null | "error">(null);
   const [ocupado, setOcupado] = useState<string | null>(null);
@@ -51,12 +51,12 @@ export function PuntosPanel({ data, ownerId, onBack }: { data: AppData; ownerId:
     const puntos = Math.round(Number(ajuste.puntos));
     const nombre = nombres.get(ajuste.meseroId);
     if (!ajuste.meseroId || !nombre) return setAviso("Elige a la persona.");
-    if (!puntos) return setAviso("Escribe los puntos (con − para quitar).");
+    if (!puntos) return setAviso("Escribe las monedas (con − para quitar).");
     if (!ajuste.motivo.trim()) return setAviso("Escribe el motivo.");
     setOcupado("ajuste");
     const ok = await ajustarPuntos(ownerId, ajuste.meseroId, nombre, puntos, ajuste.motivo.trim());
     setOcupado(null);
-    setAviso(ok ? `Ajuste guardado: ${puntos > 0 ? "+" : ""}${puntos} a ${nombre}.` : "No se pudo guardar el ajuste. Revisa tu conexión.");
+    setAviso(ok ? `Ajuste guardado: ${puntos > 0 ? "+" : ""}${puntos} 🪙 a ${nombre}.` : "No se pudo guardar el ajuste. Revisa tu conexión.");
     if (ok) setAjuste({ meseroId: "", puntos: "", motivo: "" });
     cargar();
   }
@@ -67,7 +67,7 @@ export function PuntosPanel({ data, ownerId, onBack }: { data: AppData; ownerId:
   const logros = datos && datos !== "error" ? datos.logros : [];
   const pasadaCerrada = semanas.find((s) => s.lunes === lunesPasado);
 
-  // Personas: quienes tienen puntos y los meseros del corte.
+  // Personas: quienes tienen monedas y los meseros del corte.
   const nombres = new Map<string, string>();
   data.meseros.filter((m) => !m.acumulado).forEach((m) => nombres.set(m.id, m.nombre));
   movimientos.forEach((m) => nombres.set(m.mesero_id, nombres.get(m.mesero_id) || m.nombre));
@@ -88,9 +88,9 @@ export function PuntosPanel({ data, ownerId, onBack }: { data: AppData; ownerId:
 
   return (
     <div className="page-section">
-      <TituloPagina titulo="Puntos y logros" onBack={onBack} backLabel="Equipo" />
+      <TituloPagina titulo="Monedas y logros" onBack={onBack} backLabel="Equipo" />
       {datos === null && <p className="hint">Cargando…</p>}
-      {datos === "error" && <p className="aviso-faltante">No se pudieron leer los puntos. Revisa tu conexión.</p>}
+      {datos === "error" && <p className="aviso-faltante">No se pudieron leer las monedas. Revisa tu conexión.</p>}
       {aviso && <p className="puntos-aviso">{aviso}</p>}
 
       {datos && datos !== "error" && (
@@ -111,9 +111,9 @@ export function PuntosPanel({ data, ownerId, onBack }: { data: AppData; ownerId:
           </div>
 
           <div className="puntos-seccion">
-            <h4>Puntos de cada quien</h4>
+            <h4>Monedas de cada quien</h4>
             {totales.length === 0 ? (
-              <Empty icon={<Trophy size={26} strokeWidth={1.3} />} text="Todavía nadie tiene puntos. Se suman al cerrar la primera semana." />
+              <Empty icon={<Trophy size={26} strokeWidth={1.3} />} text="Todavía nadie tiene monedas. Se suman al cerrar la primera semana." />
             ) : (
               <div className="puntos-tabla">
                 <span className="izq">Persona</span>
@@ -125,7 +125,7 @@ export function PuntosPanel({ data, ownerId, onBack }: { data: AppData; ownerId:
                       {semanas[0]?.resultados.some((r) => r.meseroId === t.id && r.lugar === 1) ? "🏆 " : ""}
                       {t.nombre}
                     </b>
-                    <span>{t.semana ? `+${t.semana.toLocaleString("es-MX")}` : "—"}</span>
+                    <span>{t.semana ? `+${t.semana.toLocaleString("es-MX")} 🪙` : "—"}</span>
                     <span>{t.total.toLocaleString("es-MX")}</span>
                   </button>
                 ))}
@@ -137,7 +137,7 @@ export function PuntosPanel({ data, ownerId, onBack }: { data: AppData; ownerId:
           {elegido && (
             <div className="puntos-seccion">
               <h4>
-                {elegido.nombre} · {elegido.total.toLocaleString("es-MX")} puntos
+                {elegido.nombre} · {elegido.total.toLocaleString("es-MX")} 🪙
               </h4>
               <span className="hint">
                 Logros:{" "}
@@ -154,7 +154,7 @@ export function PuntosPanel({ data, ownerId, onBack }: { data: AppData; ownerId:
                     <span>{m.motivo}</span>
                     <b className={m.puntos < 0 ? "neg" : ""}>
                       {m.puntos > 0 ? "+" : ""}
-                      {m.puntos.toLocaleString("es-MX")}
+                      {m.puntos.toLocaleString("es-MX")} 🪙
                     </b>
                   </div>
                 ))}
@@ -162,7 +162,7 @@ export function PuntosPanel({ data, ownerId, onBack }: { data: AppData; ownerId:
           )}
 
           <div className="puntos-seccion">
-            <h4>Ajustar puntos</h4>
+            <h4>Ajustar monedas</h4>
             <Field label="Persona">
               <select className="text-input" value={ajuste.meseroId} onChange={(e) => setAjuste({ ...ajuste, meseroId: e.target.value })}>
                 <option value="">Elige…</option>
@@ -175,7 +175,7 @@ export function PuntosPanel({ data, ownerId, onBack }: { data: AppData; ownerId:
                   ))}
               </select>
             </Field>
-            <Field label="Puntos (con − para quitar)">
+            <Field label="Monedas (con − para quitar)">
               <input
                 className="text-input"
                 inputMode="numeric"
@@ -215,8 +215,8 @@ export function PuntosPanel({ data, ownerId, onBack }: { data: AppData; ownerId:
             </div>
           )}
           <p className="hint">
-            Puntos por semana: 1º 100 · 2º 70 · 3º 50 · los demás del ranking 20 · sin cancelaciones +30 · cada encuesta válida +5 · promedio de
-            4.5⭐ o más (con 3 o más) +30. Los logros dan puntos extra la primera vez. Cada quien ve solo sus puntos; los logros y el ganador los ve
+            Monedas Anubis por semana: 1º 100 · 2º 70 · 3º 50 · los demás del ranking 20 · sin cancelaciones +30 · cada encuesta válida +5 ·
+            promedio de 4.5⭐ o más (con 3 o más) +30. Los logros dan monedas extra la primera vez. Cada quien ve solo sus monedas; los logros y el ganador los ve
             todo el equipo.
           </p>
         </>

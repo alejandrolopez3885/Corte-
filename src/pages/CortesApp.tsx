@@ -136,7 +136,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
 
   // Qué pantalla tiene abierta (para Negocio > Análisis > Actividad). Las
   // cuentas de equipo fuera del corte las registra StaffAccessShell.
-  const NOMBRE_EQUIPO: Record<EquipoView, string> = { menu: "Equipo", personal: "Personal", horarios: "Horarios", nomina: "Nómina", propinas: "Propinas", ranking: "Ranking", encuestas: "Encuestas", puntos: "Puntos y logros" };
+  const NOMBRE_EQUIPO: Record<EquipoView, string> = { menu: "Equipo", personal: "Personal", horarios: "Horarios", nomina: "Nómina", propinas: "Propinas", ranking: "Ranking", encuestas: "Encuestas", puntos: "Monedas y logros" };
   const NOMBRE_NEGOCIO: Record<NegocioView, string> = {
     menu: "Negocio", tendencias: "Tendencias", bitacora: "Actividad", controlBar: "Control de Bar", controlCocina: "Control de Cocina",
     controlGeneral: "Control General", inventario: "Inventario", pedidos: "Pedidos",
@@ -1336,8 +1336,8 @@ export default function CortesApp({ profile }: { profile: Profile }) {
                 <Award size={20} />
               </span>
               <span className="menu-item-text">
-                <strong>Puntos y logros</strong>
-                <span>Ganador de cada semana, los puntos que junta cada quien y sus logros</span>
+                <strong>Monedas y logros</strong>
+                <span>Ganador de cada semana, las Monedas Anubis que junta cada quien y sus logros</span>
               </span>
             </button>
             <button className="menu-item" onClick={() => setEquipoView("encuestas")}>

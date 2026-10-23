@@ -227,6 +227,15 @@ export const NOVEDADES: Novedad[] = [
     texto: "En el **Ranking**, toca a alguien para ver su perfil: su foto, su lugar, su ⭐ de encuestas y sus **logros**.",
     visual: "ranking",
   },
+  {
+    id: "monedas-anubis",
+    fecha: "2026-10-23T02:55:00Z",
+    seccion: "general",
+    soloPiso: true,
+    titulo: "Monedas Anubis",
+    texto: "Lo que juntas cada semana ahora son **Monedas Anubis 🪙**, en **Mi perfil**; solo las ves tú. Los **puntos** son los del ranking.",
+    visual: "puntos",
+  },
 ];
 
 interface EstadoNovedades {
