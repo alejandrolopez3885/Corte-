@@ -29,6 +29,7 @@ export function PerfilPanel({
   onBack,
   backLabel = "Inicio",
   children,
+  arriba,
 }: {
   nombre: string;
   nombreEditable?: boolean;
@@ -43,6 +44,8 @@ export function PerfilPanel({
   backLabel?: string;
   // Secciones extra al final (Datos para tu pago).
   children?: React.ReactNode;
+  // Lo que va arriba de los datos (ej. su ranking y sus monedas).
+  arriba?: React.ReactNode;
 }) {
   const [foto, setFoto] = useState(fotoInicial);
   const [descripcion, setDescripcion] = useState(descripcionInicial || "");
@@ -83,6 +86,7 @@ export function PerfilPanel({
       </div>
       <input ref={camara} type="file" accept="image/*" capture="user" hidden onChange={elegir} />
       <input ref={galeria} type="file" accept="image/*" hidden onChange={elegir} />
+      {arriba}
 
       {nombreEditable && (
         <Field label="Nombre">

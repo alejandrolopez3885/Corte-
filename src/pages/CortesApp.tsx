@@ -57,7 +57,8 @@ import { SoloLecturaBarra, SoloLecturaGuard } from "../components/SoloLectura";
 import { Bienvenida, OpinionInvitado, Recorrido, buscarEn, type PasoRecorrido } from "../components/Recorrido";
 import { AccesoInvitados } from "../components/AccesoInvitados";
 import { NotificacionesDueno } from "../components/NotificacionesDueno";
-import { cerrarSemana, sincronizarCuentasMeseros } from "../lib/puntos";
+import { cargarSemanasPasadas, cerrarSemana, sincronizarCuentasMeseros } from "../lib/puntos";
+import { MiRankingDueno, meseroDelDueno } from "../components/MiRankingDueno";
 import { EncuestasPanel } from "../components/panels/EncuestasPanel";
 import { marcarDispositivoPersonal } from "../lib/encuestas";
 import { RanuraTitulo, TituloPagina } from "../components/BarraTitulo";
@@ -140,6 +141,26 @@ export default function CortesApp({ profile }: { profile: Profile }) {
   useEffect(() => {
     if (llaveCuentas && data && !soloLectura) sincronizarCuentasMeseros(data, profile.id);
   }, [llaveCuentas, profile.id, soloLectura]);
+
+  // Carga inicial de Monedas Anubis (una sola vez): cierra las semanas
+  // pasadas desde la primera con cortes. Solo avisa la novedad.
+  const cargandoMonedas = useRef(false);
+  const datosActuales = useRef(data);
+  useEffect(() => {
+    datosActuales.current = data;
+  }, [data]);
+  useEffect(() => {
+    if (!data || profile.role !== "owner" || soloLectura || data.monedasCargaInicial || cargandoMonedas.current) return;
+    cargandoMonedas.current = true;
+    cargarSemanasPasadas(data, todayIso()).then((n) => {
+      if (n === null) {
+        cargandoMonedas.current = false;
+        return;
+      }
+      const actual = datosActuales.current;
+      if (actual) persist({ ...actual, monedasCargaInicial: new Date().toISOString() });
+    });
+  }, [data, profile.role, soloLectura, persist]);
   // Datos para el pago de nómina de todo el equipo (solo dueño).
   const { porPerfil: datosPago, estado: estadoDatosPago } = useDatosPagoEquipo(isOwner ? duenoId : null);
   const pagoDeEmpleado = (empleadoId: string): DatosPago | "sin-datos" | null => {
@@ -1894,6 +1915,18 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           area={puestoDueno ? data.areas.find((a) => a.id === puestoDueno.areaId)?.nombre : undefined}
           secciones={[]}
           etiquetaCuenta="Dueño · acceso a todo"
+          arriba={
+            meseroDelDueno(data, data.perfilDueno?.nombre || profile.display_name || "") ? (
+              <MiRankingDueno
+                data={data}
+                meseroId={meseroDelDueno(data, data.perfilDueno?.nombre || profile.display_name || "")!}
+                onVerRanking={() => {
+                  setActiveTab("equipo");
+                  setEquipoView("ranking");
+                }}
+              />
+            ) : undefined
+          }
           onGuardar={guardarPerfilDueno}
           onBack={() => goToTab("inicio")}
         >

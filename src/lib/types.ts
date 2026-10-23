@@ -528,6 +528,9 @@ export interface AppData {
   conteosEditados?: Partial<Record<ConteoTextoArea, Record<string, { en: string; por: string }>>>;
   // Notificaciones del dueño en su iPhone (ver notificacionesLogica.ts).
   notificaciones?: Partial<ConfigNotificaciones>;
+  // Cuándo se cerraron de un jalón las semanas pasadas (Monedas Anubis):
+  // así la carga inicial corre una sola vez.
+  monedasCargaInicial?: string;
   // Cantidad a pedir que se captura junto al conteo diario en texto: por
   // área, fecha real (ISO) -> producto (nombre normalizado) -> cantidad.
   // 0 significa que ese día no se pide ese producto.

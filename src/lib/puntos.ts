@@ -1,8 +1,8 @@
 import { supabase } from "./supabaseClient";
-import { addDaysIso } from "./dataModel";
+import { addDaysIso, dateForDay, mondayOnOrBefore } from "./dataModel";
 import { calcularRanking, meseroDeEmpleado } from "./ranking";
 import { MINIMO_ENCUESTAS, cargarRespuestas, esPrueba, esValida, type RespuestaEncuesta } from "./encuestas";
-import type { AppData } from "./types";
+import { DAYS, type AppData } from "./types";
 
 // Puntos y logros semanales (ver supabase/migration_014_puntos.sql). Al
 // guardar el corte del domingo, la app del dueño cierra la semana con el
@@ -307,4 +307,34 @@ export function insigniasPorMesero(logros: LogroGanado[]): Map<string, string> {
     if (texto) mapa.set(meseroId, texto);
   });
   return mapa;
+}
+
+// Carga inicial (una sola vez): cierra todas las semanas pasadas que no
+// estén cerradas, desde la primera con cortes, de la más vieja a la más
+// reciente (así las rachas y los logros salen como si el sistema hubiera
+// existido desde el inicio). Regresa cuántas cerró.
+export async function cargarSemanasPasadas(data: AppData, hoy: string): Promise<number | null> {
+  let primera: string | null = null;
+  Object.keys(data.months).forEach((mk) => {
+    const month = data.months[mk];
+    month.weeks.forEach((w, wi) =>
+      DAYS.forEach((d) => {
+        if (!w?.days?.[d]?.meseros.some((m) => m.venta > 0)) return;
+        const f = dateForDay(mk, wi, month, d);
+        if (!primera || f < primera) primera = f;
+      })
+    );
+  });
+  if (!primera) return 0;
+  const cerradas = await cargarSemanas(200);
+  if (!cerradas) return null;
+  const ya = new Set(cerradas.map((s) => s.lunes));
+  const ultima = addDaysIso(mondayOnOrBefore(hoy), -7);
+  let n = 0;
+  for (let lunes = mondayOnOrBefore(primera); lunes <= ultima; lunes = addDaysIso(lunes, 7)) {
+    if (ya.has(lunes)) continue;
+    const r = await cerrarSemana(data, lunes);
+    if (r.ok) n++;
+  }
+  return n;
 }

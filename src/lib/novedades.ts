@@ -32,6 +32,8 @@ export interface Novedad {
   soloArea?: ConteoTextoArea;
   // Solo para las cuentas del área Piso (ranking de meseros).
   soloPiso?: boolean;
+  // Solo cuando ya se hizo la carga inicial de Monedas Anubis.
+  trasCargaMonedas?: boolean;
 }
 
 export const NOVEDADES: Novedad[] = [
@@ -236,6 +238,16 @@ export const NOVEDADES: Novedad[] = [
     texto: "Lo que juntas cada semana ahora son **Monedas Anubis 🪙**, en **Mi perfil**; solo las ves tú. Los **puntos** son los del ranking.",
     visual: "puntos",
   },
+  {
+    id: "monedas-semanas-pasadas",
+    fecha: "2026-10-23T21:59:00Z",
+    seccion: "general",
+    soloPiso: true,
+    trasCargaMonedas: true,
+    titulo: "Ya tienes monedas de semanas pasadas",
+    texto: "Calculamos tus **Monedas Anubis** y **logros** desde la primera semana con cortes, como si esto hubiera existido desde entonces. Míralos en **Mi perfil**.",
+    visual: "puntos",
+  },
 ];
 
 interface EstadoNovedades {
@@ -302,6 +314,7 @@ export async function novedadesPendientes(profile: Profile, data: AppData, tiene
     if (!yaPublicada(n) || (!general && !secciones.includes(n.seccion)) || estado.vistas.includes(n.id)) return false;
     if (n.soloArea && n.soloArea !== areaConteo) return false;
     if (n.soloPiso && !esDePiso(data, profile)) return false;
+    if (n.trasCargaMonedas && !data.monedasCargaInicial) return false;
     const tiempos: number[] = [];
     const accesos = general ? Object.values(estado.ultimoAcceso) : [estado.ultimoAcceso[n.seccion]];
     accesos.forEach((acceso) => acceso && tiempos.push(new Date(acceso).getTime()));
@@ -311,7 +324,9 @@ export async function novedadesPendientes(profile: Profile, data: AppData, tiene
     if ((n.seccion === "corte" || general) && corteHecho) tiempos.push(new Date(corteHecho).getTime() - 24 * 60 * 60 * 1000);
     if (tiempos.length === 0) return false;
     const ultimo = Math.max(...tiempos);
-    return ultimo < new Date(n.fecha).getTime();
+    // La de la carga de monedas cuenta desde que se hizo la carga.
+    const publicada = n.trasCargaMonedas && data.monedasCargaInicial && data.monedasCargaInicial > n.fecha ? data.monedasCargaInicial : n.fecha;
+    return ultimo < new Date(publicada).getTime();
   }).sort((a, b) => a.fecha.localeCompare(b.fecha));
 }
 

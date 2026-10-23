@@ -1328,7 +1328,15 @@ ya aplicada): las monedas son un historial de movimientos que nadie edita
 ni borra; cada quien lee solo las suyas (la app del dueño liga cada cuenta
 de equipo con su mesero del corte en `meseros_cuentas`), y solo el dueño
 escribe. Al entrar, al personal de Piso y con cortes le salen las
-novedades "Puntos y logros" y "Monedas Anubis". Cálculo en
+novedades "Puntos y logros" y "Monedas Anubis". **Carga inicial**: la
+primera vez que el dueño abre su app con esta versión, se cierran solas
+(una sola vez, `monedasCargaInicial`) todas las semanas pasadas que no
+estén cerradas, desde la primera con cortes hasta la semana pasada, de la
+más vieja a la más reciente, con las mismas reglas (así las rachas y los
+logros salen como si el sistema hubiera existido desde el inicio; las
+encuestas empezaron el 22 de octubre). No sale ningún aviso más que la
+novedad "Ya tienes monedas de semanas pasadas", que le aparece a quien
+juega el ranking solo cuando la carga ya se hizo. Cálculo en
 `src/lib/puntos.ts`.
 
 **Acceso de invitado (solo lectura, con recorrido)**: para enseñarle Cortes
@@ -1407,7 +1415,12 @@ silencio; para que se noten más, en Ajustes › Notificaciones › Cortes pon
 sonido y avisos "Persistentes", y agrega Cortes a las apps permitidas de
 No molestar / Dormir.
 
-**Tu perfil (dueño)**: arriba a la derecha, en todas tus pantallas, está
+**Tu perfil (dueño)**: si también tienes cortes como mesero (tu usuario
+del corte se liga por tu persona en Personal o por tu nombre), arriba de
+tus datos sale **🏆 Mi ranking** —tu lugar y tus puntos de esta semana,
+tus encuestas desde el inicio en estrellas, cuántas semanas has ganado y
+"Ver el ranking ›"— y debajo tus **Monedas Anubis** y **logros**, igual
+que el personal. Además, arriba a la derecha, en todas tus pantallas, está
 tu foto en un círculo (sin foto, tus iniciales); tocarla abre **Mi
 perfil**: ahí cambias tu foto (igual que el personal: cámara, galería o
 quitarla), tu **nombre** y una descripción, y ves "Cuenta: Dueño · acceso a
