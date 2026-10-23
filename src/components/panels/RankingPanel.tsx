@@ -1,17 +1,29 @@
 import { useEffect, useState } from "react";
-import { Trophy } from "lucide-react";
+import { ChevronRight, Trophy } from "lucide-react";
 import { Avatar } from "../Avatar";
-import { Empty } from "../ui";
+import { Empty, Sheet } from "../ui";
 import { TituloPagina } from "../BarraTitulo";
 import { money } from "../../lib/dataModel";
-import { MINIMO_DIAS_RANKING, calcularRanking, rangoRanking, type PeriodoRanking } from "../../lib/ranking";
+import { MINIMO_DIAS_RANKING, calcularRanking, rangoRanking, type FilaRanking, type PeriodoRanking } from "../../lib/ranking";
 import { MINIMO_ENCUESTAS, calificaciones } from "../../lib/encuestas";
-import { cargarLogros, cargarSemanas, insigniasPorMesero, nombreSemana, type SemanaCerrada } from "../../lib/puntos";
+import {
+  LOGROS,
+  cargarLogros,
+  cargarMovimientos,
+  cargarSemanas,
+  emojiLogro,
+  nombreLogro,
+  nombreSemana,
+  type LogroGanado,
+  type SemanaCerrada,
+} from "../../lib/puntos";
 import type { AppData } from "../../lib/types";
 
-// Ranking de meseros. Personal de Piso ("equipo"): lugar, foto, nombre,
-// barra y puntos, sin montos; arriba, cómo ganó sus propios puntos. Dueño:
-// con venta por día, días y cancelaciones en dinero, y también el del mes.
+// Ranking de meseros: lugar, foto, nombre, barra y puntaje, igual para
+// todos. Tocar a alguien abre su perfil público (descripción, lugar, ⭐,
+// logros y semanas ganadas); el dueño ve además venta, días, cancelaciones
+// y sus puntos acumulados. Personal: arriba, cómo ganó su propio puntaje.
+// Dueño: también el del mes.
 export function RankingPanel({
   data,
   modo,
@@ -39,11 +51,17 @@ export function RankingPanel({
   }, [desde, hasta]);
   // Ganador de la última semana cerrada y los logros de cada quien.
   const [ultima, setUltima] = useState<SemanaCerrada | null>(null);
-  const [insignias, setInsignias] = useState<Map<string, string>>(new Map());
+  const [semanas, setSemanas] = useState<SemanaCerrada[]>([]);
+  const [logros, setLogros] = useState<LogroGanado[]>([]);
+  const [viendo, setViendo] = useState<FilaRanking | null>(null);
   useEffect(() => {
     let vivo = true;
-    cargarSemanas(1).then((s) => vivo && setUltima(s?.[0] || null));
-    cargarLogros().then((l) => vivo && setInsignias(insigniasPorMesero(l)));
+    cargarSemanas(52).then((s) => {
+      if (!vivo) return;
+      setUltima(s?.[0] || null);
+      setSemanas(s || []);
+    });
+    cargarLogros().then((l) => vivo && setLogros(l));
     return () => {
       vivo = false;
     };
@@ -111,7 +129,7 @@ export function RankingPanel({
       ) : (
         <div className="ranking-lista">
           {ranking.filas.map((f) => (
-            <div key={f.meseroId} className={`ranking-fila ${f.meseroId === miMeseroId ? "yo" : ""}`}>
+            <button type="button" key={f.meseroId} className={`ranking-fila ${f.meseroId === miMeseroId ? "yo" : ""}`} onClick={() => setViendo(f)}>
               <span className={`ranking-lugar ${f.lugar <= 3 ? "podio" : ""}`}>{f.lugar}</span>
               <Avatar nombre={f.empleado?.nombre || f.nombre} foto={f.empleado?.foto} tamano={36} />
               <div className="ranking-nombre">
@@ -119,35 +137,30 @@ export function RankingPanel({
                   {f.nombre}
                   {f.meseroId === miMeseroId && <em className="etiqueta-tu">Tú</em>}
                 </strong>
-                {insignias.get(f.meseroId) && <span className="ranking-insignias">{insignias.get(f.meseroId)}</span>}
-                {modo === "dueno" ? (
-                  <span>
-                    {money(f.ventaPorDia)}/día · {f.dias} días · cancel. {money(f.cancelaciones)} ({f.pctCancelacion.toLocaleString("es-MX")}%)
-                  </span>
-                ) : (
-                  <div className="ranking-barra">
-                    <i style={{ width: `${Math.max(3, f.puntos)}%` }} />
-                  </div>
-                )}
+                <div className="ranking-barra">
+                  <i style={{ width: `${Math.max(3, f.puntos)}%` }} />
+                </div>
               </div>
-              <span className="ranking-derecha">
-                <span className="ranking-puntos">
-                  {f.puntos}
-                  {modo === "dueno" && <small> pts</small>}
-                </span>
-                {estrellas.get(f.meseroId) && (
-                  <span className="ranking-estrellas">
-                    ⭐{" "}
-                    {estrellas.get(f.meseroId)!.cantidad >= MINIMO_ENCUESTAS
-                      ? estrellas.get(f.meseroId)!.promedio.toLocaleString("es-MX", { minimumFractionDigits: 1, maximumFractionDigits: 1 })
-                      : "—"}{" "}
-                    · {estrellas.get(f.meseroId)!.cantidad}
-                  </span>
-                )}
-              </span>
-            </div>
+              <span className="ranking-puntos">{f.puntos}</span>
+              <ChevronRight size={16} className="ranking-ver" />
+            </button>
           ))}
         </div>
+      )}
+
+      {ranking.filas.length > 0 && <p className="hint">Toca a alguien para ver su perfil.</p>}
+      {viendo && (
+        <PerfilRanking
+          data={data}
+          fila={viendo}
+          total={ranking.filas.length}
+          nombrePeriodo={nombrePeriodo}
+          estrellas={estrellas.get(viendo.meseroId)}
+          logros={logros.filter((l) => l.mesero_id === viendo.meseroId)}
+          semanasGanadas={semanas.filter((s) => s.resultados.some((r) => r.meseroId === viendo.meseroId && r.lugar === 1)).length}
+          dueno={modo === "dueno"}
+          onClose={() => setViendo(null)}
+        />
       )}
 
       {ranking.sinEntrar.length > 0 && (
@@ -159,8 +172,8 @@ export function RankingPanel({
       <p className="hint">
         Cómo se calcula: la venta por día trabajado da hasta 100 puntos (100 = quien más vende por día {nombrePeriodo}) y cada 1% de
         cancelaciones sobre su venta resta 10 puntos. Para aparecer hacen falta {MINIMO_DIAS_RANKING} días trabajados.
-        {periodo === "semana" ? " La semana va de lunes a domingo." : ""} ⭐ = calificación de atención en las encuestas (1 a 5) y
-        cuántas válidas; se muestra con {MINIMO_ENCUESTAS} o más y no cambia los puntos.
+        {periodo === "semana" ? " La semana va de lunes a domingo." : ""} En el perfil de cada quien, ⭐ = calificación de atención en
+        las encuestas (1 a 5) y cuántas válidas; se muestra con {MINIMO_ENCUESTAS} o más y no cambia el puntaje.
       </p>
     </div>
   );
@@ -200,5 +213,102 @@ export function RankingTarjeta({ data, miMeseroId, onVer }: { data: AppData; miM
       )}
       <span className="ranking-tarjeta-ver">Ver ranking ›</span>
     </button>
+  );
+}
+
+// Perfil público de alguien del ranking. Sin puntos acumulados ni montos,
+// salvo para el dueño (en el recuadro "Solo tú").
+function PerfilRanking({
+  data,
+  fila,
+  total,
+  nombrePeriodo,
+  estrellas,
+  logros,
+  semanasGanadas,
+  dueno,
+  onClose,
+}: {
+  data: AppData;
+  fila: FilaRanking;
+  total: number;
+  nombrePeriodo: string;
+  estrellas?: { promedio: number; cantidad: number };
+  logros: LogroGanado[];
+  semanasGanadas: number;
+  dueno: boolean;
+  onClose: () => void;
+}) {
+  const [acumulados, setAcumulados] = useState<number | null>(null);
+  useEffect(() => {
+    if (!dueno) return;
+    let vivo = true;
+    cargarMovimientos(fila.meseroId).then((m) => vivo && m && setAcumulados(m.reduce((s, x) => s + x.puntos, 0)));
+    return () => {
+      vivo = false;
+    };
+  }, [dueno, fila.meseroId]);
+  const e = fila.empleado;
+  const puesto = e?.puestoId ? data.puestos.find((p) => p.id === e.puestoId) : undefined;
+  const area = puesto ? data.areas.find((a) => a.id === puesto.areaId) : undefined;
+  const ganados = LOGROS.flatMap((def) => logros.filter((l) => l.logro === def.id).map((l) => `${emojiLogro(def, l.nivel)} ${nombreLogro(def, l.nivel)}`));
+  return (
+    <Sheet title={fila.nombre} onClose={onClose}>
+      <div className="perfil-publico">
+        <Avatar nombre={e?.nombre || fila.nombre} foto={e?.foto} tamano={84} />
+        <strong>{e?.nombre || fila.nombre}</strong>
+        {(puesto || area) && <span className="hint">{[puesto?.nombre, area?.nombre].filter(Boolean).join(" · ")}</span>}
+        {e?.descripcion && <em>“{e.descripcion}”</em>}
+      </div>
+      <div className="perfil-publico-datos">
+        <div>
+          <b>{fila.lugar}º</b>
+          <span>
+            {nombrePeriodo} · de {total}
+          </span>
+        </div>
+        <div>
+          <b>{fila.puntos}</b>
+          <span>puntaje</span>
+        </div>
+        <div>
+          <b>
+            ⭐{" "}
+            {estrellas && estrellas.cantidad >= MINIMO_ENCUESTAS
+              ? estrellas.promedio.toLocaleString("es-MX", { minimumFractionDigits: 1, maximumFractionDigits: 1 })
+              : "—"}
+          </b>
+          <span>
+            {estrellas?.cantidad || 0} {estrellas?.cantidad === 1 ? "encuesta" : "encuestas"}
+          </span>
+        </div>
+      </div>
+      <div className="perfil-publico-logros">
+        <span className="hint">Logros</span>
+        {ganados.length ? (
+          <div>
+            {ganados.map((g) => (
+              <em key={g}>{g}</em>
+            ))}
+          </div>
+        ) : (
+          <span className="hint">Todavía ninguno.</span>
+        )}
+        {semanasGanadas > 0 && (
+          <span className="hint">
+            🏆 Ganó {semanasGanadas} {semanasGanadas === 1 ? "semana" : "semanas"}
+          </span>
+        )}
+      </div>
+      {dueno && (
+        <p className="perfil-publico-dueno">
+          Solo tú: {money(fila.ventaPorDia)}/día · {fila.dias} días · cancelaciones {money(fila.cancelaciones)} (
+          {fila.pctCancelacion.toLocaleString("es-MX")}%){acumulados !== null ? ` · ${acumulados.toLocaleString("es-MX")} puntos acumulados` : ""}
+        </p>
+      )}
+      <button type="button" className="btn-secundario" onClick={onClose}>
+        Cerrar
+      </button>
+    </Sheet>
   );
 }

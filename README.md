@@ -1154,11 +1154,16 @@ sección **Ranking** — arriba el ganador de la última semana cerrada ("Ganó
 la semana del 12–18: Jennifer" y "¡Felicidades, fuiste tú!" si fue esa
 persona), "Esta semana" / "Semana pasada", su puntaje en el ranking
 (venta +N, cancelaciones con su % −N y días trabajados) y la lista con
-lugar, foto, nombre, sus logros (un emoji por logro, repetido según el
-nivel), barra y puntos, su fila resaltada con "Tú". Con el
+lugar, foto, nombre, barra y puntaje (y una ›), su fila resaltada con
+"Tú". **Tocar a alguien** abre su perfil público: foto, nombre, puesto ·
+área, su descripción, su lugar y puntaje en el periodo que se ve ("2º esta
+semana · de 8"), su ⭐ de encuestas y cuántas, sus logros y cuántas semanas
+ha ganado — sin sus puntos acumulados ni montos. Con el
 ranking, una cuenta de Piso siempre entra a su inicio aunque tenga una sola
-sección. **Tú** lo ves en Equipo > Ranking con venta por día, días y
-cancelaciones en dinero y en %, y además el del **mes**. En Pregúntale a
+sección. **Tú** lo ves en Equipo > Ranking con la misma lista (y además el
+del **mes**); en el perfil de cada quien te sale además "Solo tú" con su
+venta por día, días, cancelaciones en dinero y en % y sus puntos
+acumulados. En Pregúntale a
 Cortes: el personal de Piso pregunta "¿en qué lugar voy?" (su lugar y la
 lista, sin montos) y tú "ranking de meseros" o "¿quién va primero?" (con
 montos). Al entrar, a las cuentas de Piso les sale la novedad "Ranking de
@@ -1289,7 +1294,7 @@ adelante. **Cada persona** (de Piso o con cortes) los ve en **Mi perfil**:
 (cada suma con su motivo; "Ver todo"), y **Mis logros · N de 13** con los
 ganados en color y los que siguen en gris con su puntaje y cuánto lleva
 ("llevas 2"). Los puntos de los demás no los ve nadie más que tú; los
-logros y el ganador sí, en el ranking. **Tú**, en Equipo > **Puntos y
+logros y el ganador sí, en el ranking (el ganador arriba y los logros en el perfil de cada quien). **Tú**, en Equipo > **Puntos y
 logros**: la semana pasada (cerrada y quién ganó, o "Cerrar semana" si no
 se cerró; "Recalcular semana" si corregiste un corte de esa semana:
 anula lo que esa semana había dado y lo vuelve a calcular, sin duplicar),

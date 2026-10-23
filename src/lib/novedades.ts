@@ -218,6 +218,15 @@ export const NOVEDADES: Novedad[] = [
     texto: "Para generar el QR escribe el **total** y la **mesa**. El cliente empieza escribiendo el total de su ticket.",
     visual: "encuesta",
   },
+  {
+    id: "ranking-perfiles",
+    fecha: "2026-10-23T02:41:00Z",
+    seccion: "general",
+    soloPiso: true,
+    titulo: "Ve el perfil de tus compañeros",
+    texto: "En el **Ranking**, toca a alguien para ver su perfil: su foto, su lugar, su ⭐ de encuestas y sus **logros**.",
+    visual: "ranking",
+  },
 ];
 
 interface EstadoNovedades {
