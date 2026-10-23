@@ -559,7 +559,7 @@ estando en Nómina te regresa al menú de Equipo):
   aquí: se ven en Resultados por semana cerrada. **Nómina vs. venta** (meta de
   15–16% de la venta: verde hasta 15%, amarillo de 15 a 16%, rojo arriba
   de 16%): esta semana, la nómina de los días que ya cuentan en la venta
-  (lunes a ayer, u hoy si ya tiene corte) entre esa venta, en grande con
+  (lunes a ayer, u hoy si ya se guardó su corte) entre esa venta, en grande con
   su semáforo y una barra con la meta; abajo, cuánto tendría que vender la
   semana completa para cerrar en 16% con la nómina de su horario, cómo
   cerraría al ritmo de hoy y cuánto habría que recortar de nómina si no
@@ -577,7 +577,9 @@ estando en Nómina te regresa al menú de Equipo):
   el negocio, por fecha real (semanas de lunes a domingo): **venta hasta
   hoy** de la semana en curso contra los mismos días de la semana pasada y
   contra el promedio de esos días en las últimas 4 semanas (el día de hoy
-  cuenta solo si ya tiene corte); **¿cómo cerraría la semana?**, con dos
+  cuenta solo cuando ya se guardó su corte con "Guardar corte" — un corte
+  de apertura o lo capturado a medio día no cuenta, para no bajar los
+  números ni sacar diagnósticos de un día a medias); **¿cómo cerraría la semana?**, con dos
   proyecciones — al ritmo actual (lo que llevas ÷ lo que suelen pesar esos
   días en tu semana) e histórica (lo que llevas + el promedio de los días
   que faltan) —, una barra de avance y cuánto falta para igualar la semana

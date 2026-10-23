@@ -15,6 +15,7 @@ interface VentaDia {
   venta: number; // meseros + apps (igual que el Dashboard)
   tarjetas: number;
   apps: number;
+  cerrado: boolean; // ya tiene "Guardar corte"
 }
 
 export function lunesDe(iso: string): string {
@@ -40,6 +41,7 @@ function ventasPorFecha(months: Record<string, MonthData>): Map<string, VentaDia
             venta: round2(meseros + apps),
             tarjetas: round2(day.meseros.reduce((s, m) => s + m.tarjetas, 0)),
             apps: round2(apps),
+            cerrado: !!day.corteGuardado,
           });
         })
       );
@@ -103,10 +105,11 @@ export function computeTendenciasSemana(months: Record<string, MonthData>, hoy =
   const semanaPasada = addDaysIso(lunes, -7);
 
   // Días de esta semana que ya cuentan: los anteriores a hoy, y hoy solo si
-  // ya se capturó algo (el corte se hace en la noche).
+  // ya se guardó su corte (se cierra en la noche; un corte de apertura o lo
+  // capturado a medio día todavía no es la venta del día).
   const fechas = fechasDe(lunes);
   let diasContados = fechas.filter((f) => f < hoy).length;
-  if (ventas.has(hoy)) diasContados += 1;
+  if (ventas.get(hoy)?.cerrado) diasContados += 1;
   const hastaHoy = suma(fechas.slice(0, diasContados).map(venta));
 
   const primeros = (l: string, n: number) => suma(fechasDe(l).slice(0, n).map(venta));

@@ -49,6 +49,7 @@ interface Dia {
   propina: number;
   gastos: Gasto[];
   meseros: { nombre: string; venta: number }[];
+  cerrado: boolean;
 }
 
 const NOMBRE_CORTO: Record<DayName, string> = {
@@ -85,6 +86,7 @@ function diasPorFecha(months: Record<string, MonthData>): Map<string, Dia> {
             propina: day.meseros.reduce((s, m) => s + m.propina, 0),
             gastos: day.gastos,
             meseros: day.meseros.map((m) => ({ nombre: m.nombre, venta: m.venta })),
+            cerrado: !!day.corteGuardado,
           });
         })
       );
@@ -140,8 +142,9 @@ export function analizarTendencias(
     }
     return out;
   };
-  // Días que ya cuentan esta semana (hoy solo si ya tiene corte).
-  const diasEstaSemana = DAYS.map((_, i) => addDaysIso(lunes, i)).filter((f) => f < hoy || (f === hoy && (dias.get(f)?.venta || 0) > 0));
+  // Días que ya cuentan esta semana (hoy solo si ya se guardó su corte).
+  const cuenta = (f: string) => f < hoy || (f === hoy && !!dias.get(f)?.cerrado);
+  const diasEstaSemana = DAYS.map((_, i) => addDaysIso(lunes, i)).filter(cuenta);
 
   // ---- Incompleto ------------------------------------------------------
   // 1. Días de esta semana (antes de hoy) sin corte, cuando ese día
@@ -169,7 +172,7 @@ export function analizarTendencias(
     const f = addDaysIso(hoy, -i);
     if (f < lunes) break;
     const d = dias.get(f);
-    if (!d || d.venta === 0 || d.gastos.length > 0) continue;
+    if (!d || !cuenta(f) || d.venta === 0 || d.gastos.length > 0) continue;
     const hist = historicoDe(f);
     const conGastos = hist.filter((h) => h.gastos.length > 0).length;
     if (hist.length >= MIN_SEMANAS && conGastos / hist.length >= 0.75) {
