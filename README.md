@@ -1370,6 +1370,43 @@ ninguna tabla; su opinión va a `invitado_opiniones` (solo la lee el
 dueño). De paso, una cuenta de equipo ya no puede cambiarse a sí misma el
 rol, los permisos, su persona de Personal ni el vencimiento.
 
+**Notificaciones en tu iPhone (solo el dueño)**: en **Mi perfil**, abajo,
+"🔔 Notificaciones en este iPhone". En iPhone solo funcionan con Cortes
+instalado en la pantalla de inicio (Safari → Compartir → "Agregar a
+pantalla de inicio"); si no, sale cómo instalarla. Con la app instalada,
+"Activar en este iPhone" pide el permiso y guarda el dispositivo
+("✓ Activadas en este iPhone", "Mandar notificación de prueba" y "Apagar
+en este iPhone"). Interruptores: **Conteo de Cocina** y **Conteo de Bar**
+(si no se ha hecho a su hora límite), **Al guardar un conteo** (quién lo
+hizo y qué productos quedaron en 0 o sin contar, o "✅ Completo"; llega
+cuando lleva 10 minutos sin cambios) y **Gastos pendientes** (todos los
+días a la hora elegida si hay 1 o más, con cuántos, el total y los
+primeros). En "Hora límite de cada conteo" eliges la hora de cada día para
+Cocina y para Bar (de 6:00 pm a 7:30 am; de 12:00 am en adelante es ya la
+madrugada siguiente — de inicio: lunes a jueves 1:00 am, viernes y sábado
+2:00 am, domingo 12:00 am), cada cuánto se repite si sigue sin hacerse
+(3, 6, 9 —de inicio—, 12 o 24 horas, hasta que se haga; se revisan los
+últimos 3 días) y a qué hora llegan los gastos pendientes (11:00 am de
+inicio). Al guardar un conteo la app anota quién y a qué hora
+(`conteosEditados`). Llegan aunque la app esté cerrada: en Supabase,
+pg_cron llama cada 5 minutos a la función `notificaciones`
+(`supabase/functions/notificaciones`), que revisa qué toca con
+`src/lib/notificacionesLogica.ts` (empaquetado como `logica.js`:
+`npx esbuild src/lib/notificacionesLogica.ts --bundle --format=esm
+--target=es2022 --outfile=supabase/functions/notificaciones/logica.js`),
+manda cada aviso una sola vez (`notif_enviadas`) por Web Push cifrado
+(`webpush.ts`, sin dependencias) y deja de usar un dispositivo que ya no
+existe. Ver
+[`supabase/migration_018_notificaciones.sql`](./supabase/migration_018_notificaciones.sql)
+(ya aplicada); la llave privada VAPID y el secreto de pg_cron viven en
+Supabase Vault, no en el código. La app ya se instala en pantalla
+completa (`manifest.webmanifest` con `display: standalone` y
+`public/sw.js`, que solo recibe las notificaciones y no guarda caché). Es
+una app web: el iPhone no le permite alertas "críticas" que suenen en
+silencio; para que se noten más, en Ajustes › Notificaciones › Cortes pon
+sonido y avisos "Persistentes", y agrega Cortes a las apps permitidas de
+No molestar / Dormir.
+
 **Tu perfil (dueño)**: arriba a la derecha, en todas tus pantallas, está
 tu foto en un círculo (sin foto, tus iniciales); tocarla abre **Mi
 perfil**: ahí cambias tu foto (igual que el personal: cámara, galería o
@@ -1619,4 +1656,5 @@ supabase/
   migration_015_mesa_obligatoria.sql   la mesa es obligatoria para generar la encuesta
   migration_016_borrar_pruebas.sql     el dueño borra sus encuestas de prueba
   migration_017_invitados.sql          acceso de invitado de solo lectura y su opinión
+  migration_018_notificaciones.sql     notificaciones del dueño en su iPhone (y pg_cron)
 ```

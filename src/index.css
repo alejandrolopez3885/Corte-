@@ -1749,6 +1749,28 @@ body.solo-lectura [data-bloqueado]::after { content: "🔒"; font-size: 11px; ma
 .invitados-opinion em { font-style: normal; }
 .invitados-opinion small { color: var(--ink-soft); font-size: 11.5px; }
 .invitados-confirmar { display: flex; flex-direction: column; gap: 6px; }
+/* ---- Notificaciones del dueño ---- */
+.notif { display: flex; flex-direction: column; gap: 14px; margin-bottom: 14px; }
+.notif-tarjeta { display: flex; flex-direction: column; gap: 10px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 13px 14px; font-size: 13px; }
+.notif-tarjeta h4 { margin: 0; font-size: 14.5px; display: flex; align-items: center; gap: 7px; }
+.notif-tarjeta .hint { margin: 0; }
+.notif-ok { background: var(--good-soft); color: var(--good); border-radius: 10px; padding: 8px 10px; font-weight: 600; font-size: 12.5px; }
+.notif-pasos { display: flex; flex-direction: column; gap: 4px; background: var(--warn-soft); color: #7a4a10; border-radius: 10px; padding: 9px 11px; font-size: 12.5px; }
+.notif-fila { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding-top: 8px; border-top: 1px solid var(--surface-alt); cursor: pointer; }
+.notif-fila span { display: flex; flex-direction: column; gap: 1px; }
+.notif-fila b { font-size: 13.5px; }
+.notif-fila small { color: var(--ink-soft); font-size: 12px; }
+.notif-switch { appearance: none; -webkit-appearance: none; width: 44px; height: 26px; border-radius: 13px; background: var(--border); position: relative; flex-shrink: 0; cursor: pointer; transition: background 0.15s; margin: 0; }
+.notif-switch::after { content: ""; position: absolute; left: 3px; top: 3px; width: 20px; height: 20px; border-radius: 50%; background: white; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25); transition: left 0.15s; }
+.notif-switch:checked { background: var(--good); }
+.notif-switch:checked::after { left: 21px; }
+.notif-botones { display: flex; flex-direction: column; gap: 6px; align-items: stretch; }
+.notif-horas { display: grid; grid-template-columns: auto minmax(0, 1fr) minmax(0, 1fr); gap: 6px 8px; align-items: center; }
+.notif-horas > span { font-size: 11.5px; color: var(--ink-soft); }
+.notif-horas-fila { display: contents; }
+.notif-horas-fila b { font-size: 12.5px; }
+.notif-horas select, .notif-campo select { padding: 7px 8px; font-size: 13px; }
+.notif-campo { display: flex; flex-direction: column; gap: 4px; font-size: 12.5px; color: var(--ink-soft); }
 /* ---- Puntos y logros ---- */
 .puntos-total { display: flex; flex-direction: column; gap: 2px; background: linear-gradient(135deg, var(--accent), var(--good)); color: white; border-radius: 16px; padding: 14px 16px; margin-bottom: 14px; }
 .puntos-total.monedas { background: linear-gradient(135deg, #7a5410, #C9971F 55%, #E8C766); }

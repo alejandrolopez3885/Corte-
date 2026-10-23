@@ -305,6 +305,17 @@ export type InsumoArea = "bar" | "cocina" | "general";
 
 export type ConteoTextoArea = "bar" | "cocina";
 
+export interface ConfigNotificaciones {
+  conteoCocina: boolean;
+  conteoBar: boolean;
+  alGuardar: boolean;
+  gastos: boolean;
+  // Hora límite de cada conteo por día ("01:00" = la madrugada siguiente).
+  horas: Record<ConteoTextoArea, Record<DayName, string>>;
+  repetirHoras: number;
+  horaGastos: string;
+}
+
 // Lista base del Conteo diario de Cocina — el jefe de cocina escribe la
 // cantidad después de cada ":"; la presentación ya va entre paréntesis.
 export const PLANTILLA_CONTEO_COCINA = [
@@ -512,6 +523,11 @@ export interface AppData {
   // la lista tal cual la escribe el jefe de cocina/barra, por área y por
   // fecha real (ISO) -> texto.
   conteosDiariosTexto: Record<ConteoTextoArea, Record<string, string>>;
+  // Última vez que se movió cada conteo diario y quién (para avisarle al
+  // dueño cuando quedó guardado).
+  conteosEditados?: Partial<Record<ConteoTextoArea, Record<string, { en: string; por: string }>>>;
+  // Notificaciones del dueño en su iPhone (ver notificacionesLogica.ts).
+  notificaciones?: Partial<ConfigNotificaciones>;
   // Cantidad a pedir que se captura junto al conteo diario en texto: por
   // área, fecha real (ISO) -> producto (nombre normalizado) -> cantidad.
   // 0 significa que ese día no se pide ese producto.

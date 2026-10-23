@@ -14,7 +14,7 @@ import {
 } from "../lib/dataModel";
 import { removeAssignmentByStaffAndDate, upsertAssignment, useStaffAssignments } from "../lib/staffAssignments";
 import { DAYS, DAY_SHORT } from "../lib/types";
-import type { AppData, AreaEntry, ConteoTextoArea, CreditoProveedores, DayData, DayName, EmpleadoEntry, Gasto, GastoCategoria, HorarioSemana, InsumoEntry, MeseroCatalogEntry, MeseroCut, NominaDescuentosSemana, PermisoStaff, Profile, ProveedorCatalogEntry, PuestoEntry, Receta, Transferencia, WeekData } from "../lib/types";
+import type { AppData, AreaEntry, ConfigNotificaciones, ConteoTextoArea, CreditoProveedores, DayData, DayName, EmpleadoEntry, Gasto, GastoCategoria, HorarioSemana, InsumoEntry, MeseroCatalogEntry, MeseroCut, NominaDescuentosSemana, PermisoStaff, Profile, ProveedorCatalogEntry, PuestoEntry, Receta, Transferencia, WeekData } from "../lib/types";
 import { Empty, Field, NumInput, Sheet } from "../components/ui";
 import { MonthModal } from "../components/modals/MonthModal";
 import { MeseroModal, type MeseroFormValues } from "../components/modals/MeseroModal";
@@ -56,6 +56,7 @@ import { PuntosPanel } from "../components/panels/PuntosPanel";
 import { SoloLecturaBarra, SoloLecturaGuard } from "../components/SoloLectura";
 import { Bienvenida, OpinionInvitado, Recorrido, buscarEn, type PasoRecorrido } from "../components/Recorrido";
 import { AccesoInvitados } from "../components/AccesoInvitados";
+import { NotificacionesDueno } from "../components/NotificacionesDueno";
 import { cerrarSemana, sincronizarCuentasMeseros } from "../lib/puntos";
 import { EncuestasPanel } from "../components/panels/EncuestasPanel";
 import { marcarDispositivoPersonal } from "../lib/encuestas";
@@ -784,6 +785,18 @@ export default function CortesApp({ profile }: { profile: Profile }) {
     if (!data) return;
     const next = structuredClone(data);
     next.conteosDiariosTexto[area][fecha] = texto;
+    // Para avisarle al dueño cuando quedó guardado (ver notificacionesLogica).
+    next.conteosEditados = {
+      ...next.conteosEditados,
+      [area]: { ...next.conteosEditados?.[area], [fecha]: { en: new Date().toISOString(), por: profile.display_name || (isOwner ? "Dueño" : "Equipo") } },
+    };
+    persist(next);
+  }
+
+  function guardarConfigNotificaciones(config: ConfigNotificaciones) {
+    if (!data) return;
+    const next = structuredClone(data);
+    next.notificaciones = config;
     persist(next);
   }
 
@@ -1883,7 +1896,9 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           etiquetaCuenta="Dueño · acceso a todo"
           onGuardar={guardarPerfilDueno}
           onBack={() => goToTab("inicio")}
-        />
+        >
+          {!soloLectura && <NotificacionesDueno ownerId={profile.id} data={data} onGuardar={guardarConfigNotificaciones} />}
+        </PerfilPanel>
       )}
 
       {isOwner && activeTab === "inicio" && <InicioPanel data={data} ownerId={duenoId} onIr={irDesdeInicio} />}

@@ -11,3 +11,10 @@ createRoot(document.getElementById("root")!).render(
     </AuthProvider>
   </StrictMode>
 );
+
+// Para las notificaciones del dueño en su iPhone (ver public/sw.js).
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js").catch((e) => console.error("No se pudo registrar el service worker", e));
+  });
+}
