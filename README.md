@@ -1318,6 +1318,45 @@ escribe. Al entrar, al personal de Piso y con cortes le salen las
 novedades "Puntos y logros" y "Monedas Anubis". Cálculo en
 `src/lib/puntos.ts`.
 
+**Acceso de invitado (solo lectura, con recorrido)**: para enseñarle Cortes
+a alguien (ej. un jefe) con los números reales sin que pueda cambiar nada.
+**Tú**, en Equipo > Personal, abajo, en **Acceso de invitado**: "▶ Probar
+el recorrido como lo verá" (abre la bienvenida y el recorrido en tu
+cuenta en solo lectura, con la franja "Vista de invitado (prueba) · Ver
+recorrido · Salir"; ahí la opinión no se guarda) y el formulario con
+nombre, PIN de 4 números y vencimiento (en 3, 7, 14 o 30 días, a las
+11:59 pm) → "Crear acceso" (entra igual que el personal: su nombre en
+"¿Quién eres?" y su PIN). Cada invitado sale con cuántos días le quedan,
+su último uso y qué pantallas vio (de la Actividad), su opinión y "Quitar
+acceso" (con confirmación). **El invitado** entra a la app como la ves tú
+—todas las secciones, sin ocultar nada— con la franja "Solo lectura ·
+puedes ver todo, no se guarda nada · Ver recorrido". Los botones que
+guardan, borran o cambian algo siguen a la vista pero deshabilitados con
+🔒 (al tocarlos sale "Solo lectura: aquí se puede ver todo, pero no se
+guarda nada"); la app no guarda nada en ese modo y la base rechaza
+cualquier escritura de esa cuenta (candado doble). Al entrar le sale la
+**bienvenida** (cortes capturados, personas en el equipo, semanas de
+historial y encuestas de clientes, reales) con "Empezar recorrido (3 min)"
+o "Explorar por mi cuenta". El **recorrido** son 11 pasos; cada uno abre
+la pantalla real, oscurece lo demás e ilumina la sección, con qué es y
+"Para el negocio: …": Inicio, Corte del día y efectivo, Gastos en efectivo
+y transferencias, Dashboard (el reporte al momento), Tendencias y
+diagnósticos, Horarios → nómina automática, Pregúntale a Cortes, Ranking
+de meseros, Encuestas con QR, Inventario/pedidos/recetarios y Seguridad y
+Actividad ("Siguiente", "‹", "Saltar" y los puntos de avance). Al terminar,
+**su opinión**: de 1 a 5 estrellas, "¿Qué fue lo que más te gustó?"
+(varias), "¿La usarías en otras sucursales?" (Sí / Tal vez / No) y "¿Qué
+le mejorarías o qué te gustaría que tuviera?"; si no la deja, puede
+hacerlo después desde "Ver recorrido". Al vencer, al entrar le sale "Tu
+acceso de invitado ya venció" y la base ya no le deja leer nada. Lo que
+abre queda en Actividad. Ver
+[`supabase/migration_016_invitados.sql`](./supabase/migration_016_invitados.sql)
+(ya aplicada): el invitado es una cuenta de equipo con `invitado_hasta`;
+mientras está vigente lee todo el negocio de su dueño y no escribe en
+ninguna tabla; su opinión va a `invitado_opiniones` (solo la lee el
+dueño). De paso, una cuenta de equipo ya no puede cambiarse a sí misma el
+rol, los permisos, su persona de Personal ni el vencimiento.
+
 **Tu perfil (dueño)**: arriba a la derecha, en todas tus pantallas, está
 tu foto en un círculo (sin foto, tus iniciales); tocarla abre **Mi
 perfil**: ahí cambias tu foto (igual que el personal: cámara, galería o
@@ -1564,4 +1603,6 @@ supabase/
   migration_013_encuesta_prueba.sql    QR de prueba del dueño (no cuenta en calificaciones)
   migration_014_mis_encuestas.sql      el mesero ve sus encuestas contestadas
   migration_015_puntos.sql             Monedas Anubis y logros semanales (cada quien ve solo las suyas)
+  migration_015_mesa_obligatoria.sql   la mesa es obligatoria para generar la encuesta
+  migration_016_invitados.sql          acceso de invitado de solo lectura y su opinión
 ```

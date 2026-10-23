@@ -655,6 +655,8 @@ export interface Profile {
   // saber su puesto/área) y qué secciones tienen habilitadas.
   empleado_id?: string | null;
   permisos?: PermisoStaff[];
+  // Acceso de invitado (solo lectura) hasta esta fecha; null = cuenta normal.
+  invitado_hasta?: string | null;
 }
 
 export interface StaffAssignment {

@@ -11,7 +11,9 @@ function ownerIdFor(profile: Profile): string {
   return profile.role === "owner" ? profile.id : (profile.owner_id as string);
 }
 
-export function useAppData(profile: Profile | null) {
+// soloLectura (invitado o la prueba del dueño): carga y recibe cambios en
+// vivo, pero no guarda nada ni cambia lo que se ve.
+export function useAppData(profile: Profile | null, soloLectura = false) {
   const [data, setData] = useState<AppData | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
   const [saveState, setSaveState] = useState<SaveState>("idle");
@@ -48,7 +50,7 @@ export function useAppData(profile: Profile | null) {
         const { data: migrated, changed } = migrateAppData(row.data as AppData);
         setData(migrated);
         guardado.current = migrated;
-        if (changed) {
+        if (changed && !soloLectura) {
           supabase
             .from("app_data")
             .update({ data: migrated, updated_at: new Date().toISOString() })
@@ -75,6 +77,7 @@ export function useAppData(profile: Profile | null) {
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [targetOwnerId]);
 
   // Cambios en vivo: si tú o tu compañero editan desde otro dispositivo,
@@ -100,6 +103,7 @@ export function useAppData(profile: Profile | null) {
 
   const persist = useCallback(
     (next: AppData) => {
+      if (soloLectura) return;
       setData(next);
       if (!targetOwnerId) return;
       if (saveTimer.current) clearTimeout(saveTimer.current);
@@ -121,7 +125,7 @@ export function useAppData(profile: Profile | null) {
         if (antes && profile) registrarCambios(profile, antes, next);
       }, 400);
     },
-    [targetOwnerId, profile]
+    [targetOwnerId, profile, soloLectura]
   );
 
   return { data, status, saveState, persist };

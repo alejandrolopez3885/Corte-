@@ -70,8 +70,10 @@ export async function createStaffAccount(options: {
   // creado antes sin este vínculo.
   empleadoId?: string;
   permisos?: PermisoStaff[];
+  // Acceso de invitado (solo lectura) hasta esta fecha (ISO).
+  invitadoHasta?: string;
 }): Promise<{ id: string }> {
-  const { displayName, pin, ownerId, empleadoId, permisos } = options;
+  const { displayName, pin, ownerId, empleadoId, permisos, invitadoHasta } = options;
   if (!/^\d{4}$/.test(pin)) {
     throw new Error(`El PIN debe tener exactamente ${PIN_LENGTH} dígitos.`);
   }
@@ -97,6 +99,7 @@ export async function createStaffAccount(options: {
     owner_id: ownerId,
     empleado_id: empleadoId,
     permisos: permisos || [],
+    ...(invitadoHasta ? { invitado_hasta: invitadoHasta } : {}),
   });
   if (profileError) throw profileError;
 
@@ -108,7 +111,7 @@ export async function createStaffAccount(options: {
   if (directoryError) throw directoryError;
 
   registrarEvento("Equipo", `Acceso a la app · ${displayName.trim()}`, [
-    { accion: "agregó", texto: `Cuenta con PIN${permisos?.length ? ` (permisos: ${permisos.join(", ")})` : ""}` },
+    { accion: "agregó", texto: invitadoHasta ? `Acceso de invitado (solo lectura) hasta ${invitadoHasta.slice(0, 10)}` : `Cuenta con PIN${permisos?.length ? ` (permisos: ${permisos.join(", ")})` : ""}` },
   ]);
   return { id: newId };
 }

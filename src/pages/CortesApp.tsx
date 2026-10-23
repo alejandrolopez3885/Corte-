@@ -53,6 +53,9 @@ import { NovedadesAlEntrar } from "../components/NovedadesAlEntrar";
 import { PreguntasSheet } from "../components/PreguntasSheet";
 import { RankingPanel } from "../components/panels/RankingPanel";
 import { PuntosPanel } from "../components/panels/PuntosPanel";
+import { SoloLecturaBarra, SoloLecturaGuard } from "../components/SoloLectura";
+import { Bienvenida, OpinionInvitado, Recorrido, buscarEn, type PasoRecorrido } from "../components/Recorrido";
+import { AccesoInvitados } from "../components/AccesoInvitados";
 import { cerrarSemana, sincronizarCuentasMeseros } from "../lib/puntos";
 import { EncuestasPanel } from "../components/panels/EncuestasPanel";
 import { marcarDispositivoPersonal } from "../lib/encuestas";
@@ -94,8 +97,18 @@ type OwnerTab = "inicio" | "corte" | "equipo" | "negocio" | "dashboard" | "perfi
 export default function CortesApp({ profile }: { profile: Profile }) {
   const { signOut } = useAuth();
 
-  const isOwner = profile.role === "owner";
-  const { data, status, saveState, persist } = useAppData(profile);
+  // Acceso de invitado: ve todo como el dueño, en solo lectura. El dueño
+  // también puede probar esa vista ("Probar el recorrido").
+  const esInvitado = !!profile.invitado_hasta;
+  const [ahoraInicio] = useState(() => Date.now());
+  const invitadoVencido = esInvitado && new Date(profile.invitado_hasta as string).getTime() < ahoraInicio;
+  const [pruebaInvitado, setPruebaInvitado] = useState(false);
+  const soloLectura = esInvitado || pruebaInvitado;
+  const isOwner = profile.role === "owner" || esInvitado;
+  // De quién es el negocio (para leer su Actividad, Inicio, etc.).
+  const duenoId = esInvitado ? (profile.owner_id as string) : profile.id;
+  const [recorrido, setRecorrido] = useState<"bienvenida" | "pasos" | "opinion" | null>(esInvitado ? "bienvenida" : null);
+  const { data, status, saveState, persist } = useAppData(profile, soloLectura);
   // Nombres de todos los gastos capturados, para autocompletar el concepto.
   const historialGastos = useMemo(() => (data ? historialNombres(data) : []), [data]);
 
@@ -124,10 +137,10 @@ export default function CortesApp({ profile }: { profile: Profile }) {
   // Qué cuenta de equipo es qué mesero, para que cada quien vea sus puntos.
   const llaveCuentas = isOwner && data ? JSON.stringify([data.empleados.map((e) => [e.id, e.nombre, e.usuarioSistemaId]), data.meseros.map((m) => m.id)]) : null;
   useEffect(() => {
-    if (llaveCuentas && data) sincronizarCuentasMeseros(data, profile.id);
-  }, [llaveCuentas, profile.id]);
+    if (llaveCuentas && data && !soloLectura) sincronizarCuentasMeseros(data, profile.id);
+  }, [llaveCuentas, profile.id, soloLectura]);
   // Datos para el pago de nómina de todo el equipo (solo dueño).
-  const { porPerfil: datosPago, estado: estadoDatosPago } = useDatosPagoEquipo(isOwner ? profile.id : null);
+  const { porPerfil: datosPago, estado: estadoDatosPago } = useDatosPagoEquipo(isOwner ? duenoId : null);
   const pagoDeEmpleado = (empleadoId: string): DatosPago | "sin-datos" | null => {
     const perfilId = data?.empleados.find((e) => e.id === empleadoId)?.staffProfileId;
     if (!perfilId || estadoDatosPago !== "listo") return null;
@@ -165,7 +178,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
     if (!fechaDiaActivo) return;
     let cancelado = false;
     const t = setTimeout(() => {
-      contarBitacoraDelDia(profile.id, fechaDiaActivo).then((n) => {
+      contarBitacoraDelDia(duenoId, fechaDiaActivo).then((n) => {
         if (!cancelado) setCambiosDelDia(n);
       });
     }, 1500);
@@ -173,7 +186,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
       cancelado = true;
       clearTimeout(t);
     };
-  }, [fechaDiaActivo, data, profile.id]);
+  }, [fechaDiaActivo, data, duenoId]);
 
   // Dueño: al cargar, ubica el mes/semana/día más reciente.
   useEffect(() => {
@@ -1121,7 +1134,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
     });
     setModal(null);
     // El corte del domingo cierra la semana: ganador, puntos y logros.
-    if (isOwner && data && activeDay === "Domingo" && activeDayDate) {
+    if (isOwner && !soloLectura && data && activeDay === "Domingo" && activeDayDate) {
       cerrarSemana(data, addDaysIso(activeDayDate, -6)).then((r) => !r.ok && console.error("No se cerró la semana:", r.error));
     }
   }
@@ -1238,9 +1251,125 @@ export default function CortesApp({ profile }: { profile: Profile }) {
   const efectivoDia =
     day && totals && turnosDelDia && activeDayDate ? efectivoDelDia(data.months, activeDayDate, day, totals.efectivo) : null;
 
+  if (invitadoVencido) {
+    return (
+      <div className="app-shell">
+        <div className="full-page-msg">
+          Tu acceso de invitado ya venció. Pídele al dueño que te lo renueve si quieres volver a verlo.
+          <button className="btn-secundario" onClick={signOut}>
+            Salir
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Recorrido guiado del acceso de invitado: cada paso abre la pantalla real.
+  const irTab = (tab: OwnerTab) => () => {
+    setModal(null);
+    goToTab(tab);
+  };
+  const irEquipo = (v: EquipoView) => () => {
+    setModal(null);
+    setActiveTab("equipo");
+    setEquipoView(v);
+  };
+  const irNegocio = (v: NegocioView) => () => {
+    setModal(null);
+    setActiveTab("negocio");
+    setNegocioView(v);
+  };
+  const pasosRecorrido: PasoRecorrido[] = [
+    {
+      titulo: "🏠 Inicio: lo que necesita atención hoy",
+      texto: "Al abrir la app sale la venta de la semana contra la anterior y solo los pendientes que ya tocan: cortes sin guardar, inventarios, nómina por pagar.",
+      valor: "en 10 segundos sabes cómo va el negocio y qué falta.",
+      ir: irTab("inicio"),
+      buscar: () => buscarEn(".ini-venta, .ini-resumen, .ini-grupo"),
+    },
+    {
+      titulo: "🧾 Corte del día y efectivo",
+      texto: "Cada mesero captura su venta, tarjetas, transferencias y gastos. La app calcula sola el efectivo a entregar y \"Guardar corte\" lo bloquea para que nadie lo cambie.",
+      valor: "cuadre exacto del efectivo y menos faltantes.",
+      ir: irTab("corte"),
+      buscar: () => buscarEn(".efectivo-fila.total")?.parentElement || buscarEn(".page-section"),
+    },
+    {
+      titulo: "💸 Gastos en efectivo y transferencias",
+      texto: "Cada gasto queda con su categoría, si está pagado o pendiente, a qué proveedor y si fue a crédito, por semana.",
+      valor: "sabes a dónde se va cada peso.",
+      ir: irTab("negocio"),
+      buscar: () => buscarEn(".menu-item", "Control de gastos en efectivo"),
+    },
+    {
+      titulo: "📊 Dashboard: el reporte al momento",
+      texto: "La utilidad de la semana hasta hoy: venta, nómina, gastos fijos y operativos, con \"Copiar avance\" para mandarlo por WhatsApp.",
+      valor: "el reporte que antes tomaba horas, en un toque.",
+      ir: irTab("dashboard"),
+      buscar: () => buscarEn(".page-section > *:nth-child(2)"),
+    },
+    {
+      titulo: "📈 Tendencias y diagnósticos",
+      texto: "Proyecta cómo cerrará la semana y avisa solo de lo raro: un gasto alto, un día sin corte, la nómina arriba de 16% de la venta.",
+      valor: "te avisa antes de que sea un problema.",
+      ir: irNegocio("tendencias"),
+      buscar: () => buscarEn(".tend-card"),
+    },
+    {
+      titulo: "🗓️ Horarios → nómina automática",
+      texto: "Se arma el horario de la semana y la nómina sale sola: dobles, festivos y descansos pagados, con su % sobre la venta.",
+      valor: "cero errores de pago y la nómina bajo control.",
+      ir: irEquipo("nomina"),
+      buscar: () => buscarEn(".page-section > *:nth-child(3)"),
+    },
+    {
+      titulo: "💬 Pregúntale a Cortes",
+      texto: "Se le pregunta como a una persona: \"¿venta promedio de los viernes?\", \"¿cuánto se pagó de nómina?\". El personal también, pero solo de lo suyo.",
+      valor: "respuestas al instante sin buscar en reportes.",
+      ir: irTab("inicio"),
+      buscar: () => buscarEn(".preguntas-fab"),
+    },
+    {
+      titulo: "🏆 Ranking de meseros",
+      texto: "Cada semana se califica a los meseros por venta por día trabajado y se restan las cancelaciones. El ganador y sus logros los ve todo el equipo, y juntan Monedas Anubis canjeables.",
+      valor: "competencia sana: más venta por mesa y menos cancelaciones.",
+      ir: irEquipo("ranking"),
+      buscar: () => buscarEn(".ranking-lista, .page-section > *:nth-child(2)"),
+    },
+    {
+      titulo: "⭐ Encuestas con QR",
+      texto: "El mesero muestra un QR y el cliente califica en 30 segundos, sin descargar nada. Tiene 5 candados contra trampas y se sigue cada paso.",
+      valor: "el servicio se mide con la voz del cliente, mesero por mesero.",
+      ir: irEquipo("encuestas"),
+      buscar: () => buscarEn(".encuestas-pestanas"),
+    },
+    {
+      titulo: "📦 Inventario, pedidos y recetarios",
+      texto: "Conteo diario por área, inventario semanal, lo que hay que pedir y las recetas de cocina y bar.",
+      valor: "menos merma y pedidos a tiempo.",
+      ir: irTab("negocio"),
+      buscar: () => buscarEn(".menu-item", "Inventario"),
+    },
+    {
+      titulo: "🔒 Seguridad y Actividad",
+      texto: "Cada quien ve solo lo que le toca y todo queda registrado: quién hizo qué cambio y cuándo.",
+      valor: "control y confianza en los números.",
+      ir: irNegocio("bitacora"),
+      buscar: () => buscarEn(".page-section > *:nth-child(3)"),
+    },
+  ];
+
   return (
     <div className={`app-shell ${isOwner ? "with-bottom-nav" : ""}`}>
-      {isOwner && <NovedadesAlEntrar profile={profile} data={data} tieneCorte={false} />}
+      {isOwner && !soloLectura && <NovedadesAlEntrar profile={profile} data={data} tieneCorte={false} />}
+      {soloLectura && <SoloLecturaGuard />}
+      {soloLectura && recorrido === "bienvenida" && (
+        <Bienvenida data={data} onEmpezar={() => setRecorrido("pasos")} onExplorar={() => setRecorrido(null)} />
+      )}
+      {soloLectura && recorrido === "pasos" && (
+        <Recorrido pasos={pasosRecorrido} onFin={() => setRecorrido("opinion")} onSalir={() => setRecorrido(null)} />
+      )}
+      {soloLectura && recorrido === "opinion" && <OpinionInvitado profile={profile} prueba={pruebaInvitado} onCerrar={() => setRecorrido(null)} />}
       <header className="topbar">
         <div className="brand">
           <img className="brand-logo" src="/favicon.svg" alt="Cortes" />
@@ -1272,6 +1401,18 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           </button>
         </div>
       </header>
+      {soloLectura && (
+        <SoloLecturaBarra
+          prueba={pruebaInvitado}
+          onRecorrido={() => setRecorrido("bienvenida")}
+          onSalir={() => {
+            setPruebaInvitado(false);
+            setRecorrido(null);
+            goToTab("equipo");
+            setEquipoView("personal");
+          }}
+        />
+      )}
 
       {isOwner && activeTab === "equipo" && equipoView === "menu" && (
         <div className="page-section">
@@ -1365,6 +1506,16 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           onBack={() => setEquipoView("menu")}
         />
       )}
+      {isOwner && activeTab === "equipo" && equipoView === "personal" && !soloLectura && (
+        <AccesoInvitados
+          ownerId={profile.id}
+          onProbar={() => {
+            setPruebaInvitado(true);
+            goToTab("inicio");
+            setRecorrido("bienvenida");
+          }}
+        />
+      )}
 
       {isOwner && activeTab === "equipo" && equipoView === "horarios" && (
         <HorariosPanel
@@ -1407,7 +1558,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
       )}
 
       {isOwner && activeTab === "equipo" && equipoView === "puntos" && (
-        <PuntosPanel data={data} ownerId={profile.id} onBack={() => setEquipoView("menu")} />
+        <PuntosPanel data={data} ownerId={duenoId} onBack={() => setEquipoView("menu")} />
       )}
 
       {isOwner && activeTab === "equipo" && equipoView === "ranking" && (
@@ -1603,7 +1754,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
       )}
 
       {isOwner && activeTab === "negocio" && negocioView === "bitacora" && (
-        <ActividadPanel onBack={() => setNegocioView("menu")} ownerId={profile.id} />
+        <ActividadPanel onBack={() => setNegocioView("menu")} ownerId={duenoId} />
       )}
 
       {isOwner && activeTab === "negocio" && negocioView === "controlBar" && (
@@ -1735,7 +1886,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
         />
       )}
 
-      {isOwner && activeTab === "inicio" && <InicioPanel data={data} ownerId={profile.id} onIr={irDesdeInicio} />}
+      {isOwner && activeTab === "inicio" && <InicioPanel data={data} ownerId={duenoId} onIr={irDesdeInicio} />}
 
       {isOwner && activeTab === "dashboard" && (
         monthKeys.length > 0 ? (
@@ -2345,7 +2496,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           catalog={data.meseros}
         />
       )}
-      {historialDia && <HistorialDiaSheet ownerId={profile.id} fecha={historialDia} onClose={() => setHistorialDia(null)} />}
+      {historialDia && <HistorialDiaSheet ownerId={duenoId} fecha={historialDia} onClose={() => setHistorialDia(null)} />}
       {modal?.type === "guardarCorte" && day && totals && (
         <GuardarCorteModal day={day} totals={totals} onGuardar={guardarCorte} onClose={() => setModal(null)} />
       )}
@@ -2468,7 +2619,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           editing={modal.editing}
           areas={data.areas}
           puestos={data.puestos}
-          ownerId={profile.id}
+          ownerId={duenoId}
           datosPago={modal.editing ? pagoDeEmpleado((modal.editing as EmpleadoEntry).id) : null}
         />
       )}
