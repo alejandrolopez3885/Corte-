@@ -248,6 +248,15 @@ export const NOVEDADES: Novedad[] = [
     texto: "Calculamos tus **Monedas Anubis** y **logros** desde la primera semana con cortes, como si esto hubiera existido desde entonces. Míralos en **Mi perfil**.",
     visual: "puntos",
   },
+  {
+    id: "ranking-turnos-encuestas",
+    fecha: "2026-10-23T23:00:00Z",
+    seccion: "general",
+    soloPiso: true,
+    titulo: "Nuevo ranking: por turno y con encuestas",
+    texto: "La venta ahora se mide **por turno** (doblar cuenta 2) y cada **encuesta contestada suma**. Hay un **Ranking de encuestas** con su propio premio.",
+    visual: "ranking",
+  },
 ];
 
 interface EstadoNovedades {

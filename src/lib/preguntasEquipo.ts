@@ -760,7 +760,7 @@ export function responderRanking(data: AppData, c: Consulta, hoy: string, ctx: C
   const titulo = `Ranking de ${periodo}`;
   if (ranking.filas.length === 0) return { titulo, valor: "—", lineas: ["Todavía nadie lleva 2 días con venta."], enlace, consulta: c };
   const filas = ranking.filas.map((f) => ({
-    etiqueta: `${f.lugar}. ${f.nombre}${ctx ? "" : ` · ${money(f.ventaPorDia)}/día · cancel. ${f.pctCancelacion.toLocaleString("es-MX")}%`}`,
+    etiqueta: `${f.lugar}. ${f.nombre}${ctx ? "" : ` · ${money(f.ventaPorTurno)}/turno · cancel. ${f.pctCancelacion.toLocaleString("es-MX")}%`}`,
     valor: `${f.puntos} pts`,
   }));
   if (!ctx) {

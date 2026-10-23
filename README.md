@@ -1141,12 +1141,18 @@ Al entrar, al personal le sale la novedad "Datos para tu pago".
 **Ranking de meseros**: un puntaje por semana (lunes a domingo) con la venta
 y las cancelaciones de cada mesero del corte — sin el usuario de para
 llevar ni las apps —, con su foto de Personal (se liga por su usuario del
-sistema o por su nombre). **Puntos**: la venta promedio por día trabajado
-da hasta 100 (100 = quien más vende por día en ese periodo) y cada 1% de
+sistema o por su nombre). Solo cuentan personas: meseros del corte ligados
+a alguien de Personal o el dueño (no "Domicilio", "Otro" ni usuarios
+genéricos). **Puntos**: la venta promedio **por turno** da hasta 100 (100 =
+quien más vende por turno en ese periodo). Cada día con venta es 1 turno y
+un día con **Z (dobla)** en el horario cuenta 2 turnos solo si su puesto es
+de mesero (un bar tender que dobla sigue contando 1). Cada 1% de
 cancelaciones sobre su venta (gastos del corte con categoría Cancelaciones
-ligados al mesero) resta 10; nunca baja de 0. Para aparecer hacen falta 2
-días con venta en el periodo (los que llevan menos salen como "Aún sin
-entrar"); empates comparten lugar. **El personal del área Piso** (por el
+ligados al mesero) resta 10. Cada **encuesta contestada válida** suma +3
+sin importar la calificación, y además por las estrellas de atención: 5⭐
++2, 4⭐ +1, 3⭐ 0, 2⭐ −2, 1⭐ −4. Nunca baja de 0. Se aparece desde el
+primer turno (con la etiqueta "1 turno"); para **ganar la semana** y sus
+monedas hacen falta 2 turnos. Empates comparten lugar. **El personal del área Piso** (por el
 área de su puesto en Personal) y quien tenga cortes como mesero en los
 últimos 3 meses aunque sea de otra área (ej. de barra) lo ve sin ningún
 monto (y también tiene Encuestas y Puntos): en su inicio una
@@ -1154,10 +1160,21 @@ tarjeta con su lugar de la semana ("3º de 8 meseros · 82 puntos" y cuántos
 puntos le faltan para subir, o "¡Vas en primer lugar!") que abre la
 sección **Ranking** — arriba el ganador de la última semana cerrada ("Ganó
 la semana del 12–18: Jennifer" y "¡Felicidades, fuiste tú!" si fue esa
-persona), "Esta semana" / "Semana pasada", sus puntos del ranking
-(venta +N, cancelaciones con su % −N y días trabajados) y la lista con
-lugar, foto, nombre, barra y puntaje (y una ›), su fila resaltada con
-"Tú". **Tocar a alguien** abre su perfil público: foto, nombre, puesto ·
+persona) y "⭐ En encuestas: …" con el ganador del ranking de encuestas,
+"Esta semana" / "Semana pasada", el desglose de sus puntos (venta +N con
+sus turnos y dobles, cancelaciones con su % −N, encuestas contestadas × 3
+y calificación ±N; "Llevas 1 turno: con 2 ya puedes ganar la semana") y
+dos rankings principales: **🏆 Ranking de venta** (lugar, foto, nombre,
+barra y puntaje, una › y su fila resaltada con "Tú") y **⭐ Ranking de
+encuestas** (solo los puntos de encuestas, con sus estrellas a media
+estrella, el promedio y cuántas contestadas; al final, en gris, quien
+generó pero no tiene contestadas — "Ninguna contestada todavía" — y quien
+no ha generado — "No ha generado encuestas"). Debajo, **Ver más
+rankings** abre cuatro listas chicas: 💰 Venta por turno (el personal ve
+solo lugar y barra, "sin montos"; tú ves $/turno y turnos), 🧼 Menos
+cancelaciones (%; tú además el monto), 📝 Más encuestas contestadas y ⭐
+Mejor calificación (mínimo 3 encuestas). Al final, "¿Cómo se calcula?"
+explica las reglas. **Tocar a alguien** abre su perfil público: foto, nombre, puesto ·
 área, su descripción, su lugar y sus puntos en el periodo que se ve ("2º
 esta semana · de 8", "95 puntos esta semana"), su calificación de
 encuestas **desde el inicio** en estrellas (redondeada a media estrella,
@@ -1167,12 +1184,16 @@ Monedas Anubis ni montos. Con el
 ranking, una cuenta de Piso siempre entra a su inicio aunque tenga una sola
 sección. **Tú** lo ves en Equipo > Ranking con la misma lista (y además el
 del **mes**); en el perfil de cada quien te sale además "Solo tú" con su
-venta por día, días, cancelaciones en dinero y en % y sus Monedas
+venta por turno, turnos, cancelaciones en dinero y en % y sus Monedas
 Anubis. En Pregúntale a
 Cortes: el personal de Piso pregunta "¿en qué lugar voy?" (su lugar y la
 lista, sin montos) y tú "ranking de meseros" o "¿quién va primero?" (con
-montos). Al entrar, a las cuentas de Piso les sale la novedad "Ranking de
-meseros". Cálculo en `src/lib/ranking.ts`.
+montos). Al entrar, a las cuentas de Piso les salen las novedades "Ranking
+de meseros" y "Nuevo ranking: por turno y con encuestas". Las encuestas de
+cada quien por periodo vienen de la función `ranking_encuestas` (ver
+[`supabase/migration_019_ranking_encuestas.sql`](./supabase/migration_019_ranking_encuestas.sql),
+ya aplicada: solo conteos y estrellas, del negocio de quien pregunta, sin
+las de prueba ni las sospechosas). Cálculo en `src/lib/ranking.ts`.
 
 **Encuestas con QR**: las cuentas del área Piso tienen en su inicio
 **Encuesta para el cliente**: escriben el total de la cuenta y la mesa
@@ -1210,9 +1231,9 @@ suma de los totales con encuesta de ese mesero en un día no pasa su venta
 de ese día en el corte (esto lo revisa la app del dueño al abrir
 Encuestas). Cada QR vale 30 minutos y una sola respuesta. Las que no
 cumplen quedan como **sospechosas** y no cuentan hasta que el dueño las
-aprueba. **En el ranking** sale como columna aparte "⭐ 4.8 · 12"
-(atención promedio y cuántas válidas; con menos de 3 sale "⭐ —"), sin
-cambiar los puntos. **El dueño**, en Equipo > Encuestas ("Esta semana",
+aprueba. **En el ranking** cada encuesta contestada válida suma puntos
+(+3 y lo de sus estrellas, ver Ranking de meseros) y tienen su propio
+**Ranking de encuestas**. **El dueño**, en Equipo > Encuestas ("Esta semana",
 "Semana pasada" o "Mes"): **Respuestas** (las válidas, con estrellas,
 comida, rapidez, mesa, total y comentario), **Por mesero** (promedios y
 cuántas) y **Sospechosas** (con el motivo y "Aprobar" / "Descartar"). Tocar una
@@ -1295,9 +1316,12 @@ borras, ese día puedes generar más.
 **Monedas Anubis y logros**: "puntos" es solo lo del ranking (público);
 lo que se junta para canjear son las **Monedas Anubis 🪙** (privadas). Al
 **guardar el corte del domingo** la app cierra la semana (lunes a domingo)
-con el ranking de esa semana: guarda al ganador (o ganadores si empatan),
-suma las monedas de cada quien y revisa los logros. Monedas por semana: 1º
-lugar 100, 2º 70, 3º 50, los demás que aparecen en el ranking 20; sin
+con el ranking de esa semana (solo quienes tienen 2 turnos o más, con los
+lugares recalculados entre ellos): guarda al ganador (o ganadores si
+empatan), suma las monedas de cada quien y revisa los logros. Monedas por
+semana: 1º lugar 100, 2º 70, 3º 50, los demás que aparecen en el ranking
+20; **ranking de encuestas** 1º 50, 2º 30, 3º 20 (solo con puntos de
+encuestas positivos); sin
 cancelaciones +30; cada encuesta válida +5 (sin las de prueba ni las
 sospechosas sin aprobar); promedio de atención de 4.5⭐ o más con 3 o más
 encuestas +30. **Logros** (monedas extra la primera vez que se gana cada
@@ -1670,4 +1694,5 @@ supabase/
   migration_016_borrar_pruebas.sql     el dueño borra sus encuestas de prueba
   migration_017_invitados.sql          acceso de invitado de solo lectura y su opinión
   migration_018_notificaciones.sql     notificaciones del dueño en su iPhone (y pg_cron)
+  migration_019_ranking_encuestas.sql  encuestas por mesero para el ranking (conteos y estrellas)
 ```

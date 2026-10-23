@@ -1,7 +1,7 @@
 import { supabase } from "./supabaseClient";
 import { addDaysIso, dateForDay, mondayOnOrBefore } from "./dataModel";
-import { calcularRanking, meseroDeEmpleado } from "./ranking";
-import { MINIMO_ENCUESTAS, cargarRespuestas, esPrueba, esValida, type RespuestaEncuesta } from "./encuestas";
+import { MINIMO_TURNOS_GANAR, calcularRanking, meseroDeEmpleado, rankingEncuestas, type EncuestasMesero } from "./ranking";
+import { MINIMO_ENCUESTAS, encuestasParaRanking } from "./encuestas";
 import { DAYS, type AppData } from "./types";
 
 // Puntos y logros semanales (ver supabase/migration_014_puntos.sql). Al
@@ -12,6 +12,7 @@ import { DAYS, type AppData } from "./types";
 
 // --- Reglas -----------------------------------------------------------------
 export const PUNTOS_LUGAR: Record<number, number> = { 1: 100, 2: 70, 3: 50 };
+export const PUNTOS_LUGAR_ENCUESTAS: Record<number, number> = { 1: 50, 2: 30, 3: 20 };
 export const PUNTOS_PARTICIPAR = 20;
 export const PUNTOS_SIN_CANCELACIONES = 30;
 export const PUNTOS_POR_ENCUESTA = 5;
@@ -88,6 +89,10 @@ export interface ResultadoSemana {
   nombre: string;
   lugar: number;
   dias: number;
+  turnos?: number;
+  puntos?: number; // del ranking
+  lugarEncuestas?: number | null;
+  puntosEncuestas?: number;
   sinCancelaciones: boolean;
   encuestas: number; // válidas, sin las de prueba
   promedio: number; // atención
@@ -124,19 +129,27 @@ export interface Movimiento {
 const diaMes = (f: string) => String(Number(f.slice(8)));
 export const nombreSemana = (lunes: string) => `${diaMes(lunes)}–${diaMes(addDaysIso(lunes, 6))}`;
 
-export function resultadosDeSemana(data: AppData, lunes: string, respuestas: RespuestaEncuesta[]): ResultadoSemana[] {
-  const ranking = calcularRanking(data, lunes, addDaysIso(lunes, 6));
-  return ranking.filas.map((f) => {
-    const suyas = respuestas.filter((r) => r.mesero_id === f.meseroId && !esPrueba(r) && esValida(r));
+// Resultados de una semana: solo quienes llevan 2 turnos o más compiten
+// por el lugar (y sus monedas); el lugar se vuelve a contar entre ellos.
+export function resultadosDeSemana(data: AppData, lunes: string, encuestas: Map<string, EncuestasMesero>): ResultadoSemana[] {
+  const filas = calcularRanking(data, lunes, addDaysIso(lunes, 6), encuestas).filas.filter((f) => f.turnos >= MINIMO_TURNOS_GANAR);
+  filas.forEach((f, i) => (f.lugar = i > 0 && filas[i - 1].puntos === f.puntos ? filas[i - 1].lugar : i + 1));
+  const lugaresEnc = new Map(rankingEncuestas(filas).map((f) => [f.meseroId, f.lugarEncuestas]));
+  return filas.map((f) => {
+    const e = f.encuestas;
     return {
       meseroId: f.meseroId,
       nombre: f.nombre,
       lugar: f.lugar,
       dias: f.dias,
+      turnos: f.turnos,
+      puntos: f.puntos,
+      lugarEncuestas: lugaresEnc.get(f.meseroId) ?? null,
+      puntosEncuestas: f.puntosEncuestas,
       sinCancelaciones: f.cancelaciones === 0,
-      encuestas: suyas.length,
-      promedio: suyas.length ? Math.round((suyas.reduce((s, r) => s + r.atencion, 0) / suyas.length) * 10) / 10 : 0,
-      malas: suyas.filter((r) => r.atencion <= MALA_ATENCION).length,
+      encuestas: e?.contestadas || 0,
+      promedio: e?.promedio ? Math.round(e.promedio * 10) / 10 : 0,
+      malas: e ? e.estrellas[1] + e.estrellas[2] : 0,
     };
   });
 }
@@ -174,6 +187,8 @@ export function calcularCierre(lunes: string, resultados: ResultadoSemana[], pre
     if (r.encuestas > 0)
       mov(r, r.encuestas * PUNTOS_POR_ENCUESTA, `Sem. ${semana} · ${r.encuestas} ${r.encuestas === 1 ? "encuesta válida" : "encuestas válidas"}`, "semana");
     if (r.encuestas >= MINIMO_ENCUESTAS && r.promedio >= BUEN_PROMEDIO) mov(r, PUNTOS_BUEN_PROMEDIO, `Sem. ${semana} · promedio ⭐ ${r.promedio}`, "semana");
+    const lugarEnc = r.lugarEncuestas && (r.puntosEncuestas || 0) > 0 ? PUNTOS_LUGAR_ENCUESTAS[r.lugarEncuestas] : undefined;
+    if (lugarEnc) mov(r, lugarEnc, `Sem. ${semana} · ${r.lugarEncuestas === 1 ? "⭐ " : ""}${r.lugarEncuestas}º en encuestas`, "semana");
 
     const tiene = (logro: LogroId, nivel: number) => yaGanados.some((g) => g.mesero_id === r.meseroId && g.logro === logro && g.nivel === nivel);
     for (const def of LOGROS) {
@@ -236,9 +251,9 @@ export async function cargarMovimientos(meseroId?: string): Promise<Movimiento[]
 
 // Cierra (o recalcula) la semana que empieza en `lunes`.
 export async function cerrarSemana(data: AppData, lunes: string): Promise<{ ok: true; ganador: string | null } | { ok: false; error: string }> {
-  const respuestas = (await cargarRespuestas(lunes, addDaysIso(lunes, 6))) || [];
-  const resultados = resultadosDeSemana(data, lunes, respuestas);
-  if (resultados.length === 0) return { ok: false, error: "Nadie entró al ranking esa semana (hacen falta 2 días con venta)." };
+  const encuestas = await encuestasParaRanking(lunes, addDaysIso(lunes, 6));
+  const resultados = resultadosDeSemana(data, lunes, encuestas);
+  if (resultados.length === 0) return { ok: false, error: "Nadie llegó a 2 turnos con venta esa semana." };
   const [semanas, logros] = await Promise.all([cargarSemanas(20), cargarLogros()]);
   if (!semanas) return { ok: false, error: "No se pudieron leer las semanas anteriores. Revisa tu conexión." };
   const previas = semanas.filter((s) => s.lunes < lunes);

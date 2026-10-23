@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { normalizarNombre, todayIso, empleadoDelDueno } from "../lib/dataModel";
-import { calcularRanking, meseroDeEmpleado, rangoRanking } from "../lib/ranking";
-import { MINIMO_ENCUESTAS, calificaciones } from "../lib/encuestas";
+import { calcularRanking, meseroDeEmpleado, rangoRanking, type EncuestasMesero } from "../lib/ranking";
+import { MINIMO_ENCUESTAS, calificaciones, encuestasParaRanking } from "../lib/encuestas";
 import { cargarSemanas } from "../lib/puntos";
 import { MisPuntos } from "./MisPuntos";
 import type { AppData } from "../lib/types";
@@ -19,7 +19,15 @@ export function meseroDelDueno(data: AppData, nombre: string): string | undefine
 
 export function MiRankingDueno({ data, meseroId, onVerRanking }: { data: AppData; meseroId: string; onVerRanking: () => void }) {
   const { desde, hasta } = rangoRanking("semana");
-  const ranking = calcularRanking(data, desde, hasta);
+  const [encSemana, setEncSemana] = useState<Map<string, EncuestasMesero>>(new Map());
+  useEffect(() => {
+    let vivo = true;
+    encuestasParaRanking(desde, hasta).then((m) => vivo && setEncSemana(m));
+    return () => {
+      vivo = false;
+    };
+  }, [desde, hasta]);
+  const ranking = calcularRanking(data, desde, hasta, encSemana);
   const yo = ranking.filas.find((f) => f.meseroId === meseroId);
   const [estrellas, setEstrellas] = useState<{ promedio: number; cantidad: number } | null>(null);
   const [ganadas, setGanadas] = useState(0);
@@ -64,7 +72,7 @@ export function MiRankingDueno({ data, meseroId, onVerRanking }: { data: AppData
             </span>
           </div>
         </div>
-        {!yo && <span className="hint">Esta semana todavía no entras al ranking (hacen falta 2 días con venta).</span>}
+        {!yo && <span className="hint">Esta semana todavía no tienes venta.</span>}
         <button type="button" className="link-btn mi-ranking-ver" onClick={onVerRanking}>
           {ganadas > 0 ? `🏆 Ganaste ${ganadas} ${ganadas === 1 ? "semana" : "semanas"} · ` : ""}Ver el ranking ›
         </button>

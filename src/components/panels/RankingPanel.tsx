@@ -4,8 +4,17 @@ import { Avatar } from "../Avatar";
 import { Empty, Sheet } from "../ui";
 import { TituloPagina } from "../BarraTitulo";
 import { money, todayIso } from "../../lib/dataModel";
-import { MINIMO_DIAS_RANKING, calcularRanking, rangoRanking, type FilaRanking, type PeriodoRanking } from "../../lib/ranking";
-import { MINIMO_ENCUESTAS, calificaciones } from "../../lib/encuestas";
+import {
+  MINIMO_TURNOS_GANAR,
+  PUNTOS_POR_ENCUESTA,
+  calcularRanking,
+  rangoRanking,
+  rankingEncuestas,
+  type EncuestasMesero,
+  type FilaRanking,
+  type PeriodoRanking,
+} from "../../lib/ranking";
+import { MINIMO_ENCUESTAS, calificaciones, encuestasParaRanking } from "../../lib/encuestas";
 import {
   LOGROS,
   cargarLogros,
@@ -19,11 +28,13 @@ import {
 } from "../../lib/puntos";
 import type { AppData } from "../../lib/types";
 
-// Ranking de meseros: lugar, foto, nombre, barra y puntaje, igual para
-// todos. Tocar a alguien abre su perfil público (descripción, lugar, ⭐,
-// logros y semanas ganadas); el dueño ve además venta, días, cancelaciones
-// y sus puntos acumulados. Personal: arriba, cómo ganó su propio puntaje.
-// Dueño: también el del mes.
+// Ranking de meseros. Dos principales: el de venta (venta por turno −
+// cancelaciones + encuestas) y el de encuestas (al final quien no tiene);
+// y cuatro secundarios encogidos en "Ver más rankings". Igual para todos
+// (el personal sin montos); tocar a alguien abre su perfil público. Arriba,
+// cómo sacó sus puntos (personal) y el ganador de la última semana.
+const uno = (n: number) => n.toLocaleString("es-MX", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+
 export function RankingPanel({
   data,
   modo,
@@ -39,12 +50,22 @@ export function RankingPanel({
 }) {
   const [periodo, setPeriodo] = useState<PeriodoRanking>("semana");
   const { desde, hasta } = rangoRanking(periodo);
-  const ranking = calcularRanking(data, desde, hasta);
+  const [encuestas, setEncuestas] = useState<Map<string, EncuestasMesero>>(new Map());
+  useEffect(() => {
+    let vivo = true;
+    encuestasParaRanking(desde, hasta).then((m) => vivo && setEncuestas(m));
+    return () => {
+      vivo = false;
+    };
+  }, [desde, hasta]);
+  const ranking = calcularRanking(data, desde, hasta, encuestas);
+  const deEncuestas = rankingEncuestas(ranking.filas);
   // Ganador de la última semana cerrada y los logros de cada quien.
   const [ultima, setUltima] = useState<SemanaCerrada | null>(null);
   const [semanas, setSemanas] = useState<SemanaCerrada[]>([]);
   const [logros, setLogros] = useState<LogroGanado[]>([]);
   const [viendo, setViendo] = useState<FilaRanking | null>(null);
+  const [masAbierto, setMasAbierto] = useState(false);
   useEffect(() => {
     let vivo = true;
     cargarSemanas(52).then((s) => {
@@ -58,13 +79,73 @@ export function RankingPanel({
     };
   }, []);
   const yo = ranking.filas.find((f) => f.meseroId === miMeseroId);
-  const yoSinEntrar = ranking.sinEntrar.find((f) => f.meseroId === miMeseroId);
   const periodos: [PeriodoRanking, string][] = [
     ["semana", "Esta semana"],
     ["semanaPasada", "Semana pasada"],
     ...(modo === "dueno" ? ([["mes", "Mes"]] as [PeriodoRanking, string][]) : []),
   ];
   const nombrePeriodo = periodo === "semana" ? "esta semana" : periodo === "semanaPasada" ? "la semana pasada" : "este mes";
+  const maxPuntos = Math.max(1, ...ranking.filas.map((f) => f.puntos));
+  const ganadorEnc = ultima?.resultados.filter((r) => r.lugarEncuestas === 1).map((r) => r.nombre) || [];
+
+  const fila = (f: FilaRanking, lugar: number | null, ancho: number, derecha: React.ReactNode, debajo?: React.ReactNode, apagada = false) => (
+    <button
+      type="button"
+      key={f.meseroId}
+      className={`ranking-fila ${f.meseroId === miMeseroId ? "yo" : ""} ${apagada ? "apagada" : ""}`}
+      onClick={() => setViendo(f)}
+    >
+      <span className={`ranking-lugar ${lugar && lugar <= 3 ? "podio" : ""}`}>{lugar ?? "—"}</span>
+      <Avatar nombre={f.empleado?.nombre || f.nombre} foto={f.empleado?.foto} tamano={36} />
+      <div className="ranking-nombre">
+        <strong>
+          {f.nombre}
+          {f.meseroId === miMeseroId && <em className="etiqueta-tu">Tú</em>}
+        </strong>
+        {debajo}
+        {ancho > 0 && (
+          <div className="ranking-barra">
+            <i style={{ width: `${Math.max(3, ancho)}%` }} />
+          </div>
+        )}
+      </div>
+      <span className="ranking-puntos">{derecha}</span>
+      <ChevronRight size={16} className="ranking-ver" />
+    </button>
+  );
+
+  // Secundarios.
+  const porTurno = [...ranking.filas].sort((a, b) => b.ventaPorTurno - a.ventaPorTurno);
+  const maxTurno = Math.max(1, ...porTurno.map((f) => f.ventaPorTurno));
+  const menosCancel = [...ranking.filas].sort((a, b) => a.pctCancelacion - b.pctCancelacion || b.venta - a.venta);
+  const masEnc = ranking.filas.filter((f) => (f.encuestas?.contestadas || 0) > 0).sort((a, b) => (b.encuestas?.contestadas || 0) - (a.encuestas?.contestadas || 0));
+  const mejorCalif = ranking.filas
+    .filter((f) => (f.encuestas?.contestadas || 0) >= MINIMO_ENCUESTAS && f.encuestas?.promedio !== null)
+    .sort((a, b) => (b.encuestas?.promedio || 0) - (a.encuestas?.promedio || 0) || (b.encuestas?.contestadas || 0) - (a.encuestas?.contestadas || 0));
+  const lugarDe = <T,>(xs: T[], i: number, igual: (a: T, b: T) => boolean) => {
+    let l = i + 1;
+    while (l > 1 && igual(xs[l - 2], xs[i])) l--;
+    return l;
+  };
+  const sub = (titulo: string, nota: string | null, xs: FilaRanking[], valor: (f: FilaRanking) => React.ReactNode, igual: (a: FilaRanking, b: FilaRanking) => boolean, vacio: string) => (
+    <div className="ranking-sub">
+      <h5>
+        <span>{titulo}</span>
+        {nota && <small>{nota}</small>}
+      </h5>
+      {xs.length === 0 ? (
+        <span className="hint">{vacio}</span>
+      ) : (
+        xs.map((f, i) => (
+          <button type="button" key={f.meseroId} className={`ranking-sub-fila ${f.meseroId === miMeseroId ? "yo" : ""}`} onClick={() => setViendo(f)}>
+            <b>{lugarDe(xs, i, igual)}</b>
+            <span>{f.nombre}</span>
+            <span className="ranking-sub-valor">{valor(f)}</span>
+          </button>
+        ))
+      )}
+    </div>
+  );
 
   return (
     <div className="page-section">
@@ -74,9 +155,9 @@ export function RankingPanel({
           <span>🏆</span>
           <div>
             <strong>
-              {ultima.resultados.filter((r) => r.lugar === 1).length > 1 ? "Ganadores" : "Ganó"} la semana del {nombreSemana(ultima.lunes)}:{" "}
-              {ultima.ganador_nombre}
+              {ultima.resultados.filter((r) => r.lugar === 1).length > 1 ? "Ganadores" : "Ganó"} la semana del {nombreSemana(ultima.lunes)}: {ultima.ganador_nombre}
             </strong>
+            {ganadorEnc.length > 0 && <small className="ranking-ganador-enc">⭐ En encuestas: {ganadorEnc.join(" y ")}</small>}
             {miMeseroId && ultima.resultados.some((r) => r.lugar === 1 && r.meseroId === miMeseroId) && <small>¡Felicidades, fuiste tú!</small>}
           </div>
         </div>
@@ -92,10 +173,13 @@ export function RankingPanel({
       {modo === "equipo" && yo && (
         <div className="ranking-mio">
           <strong>
-            Tus puntos del ranking {nombrePeriodo}: {yo.puntos}
+            Tus puntos {nombrePeriodo}: {yo.puntos}
           </strong>
           <div>
-            <span>Venta por día trabajado</span>
+            <span>
+              Venta por turno ({yo.turnos} {yo.turnos === 1 ? "turno" : "turnos"}
+              {yo.dobles ? `, ${yo.dobles} ${yo.dobles === 1 ? "doble" : "dobles"}` : ""})
+            </span>
             <b>+{yo.puntosVenta}</b>
           </div>
           <div>
@@ -103,39 +187,110 @@ export function RankingPanel({
             <b className={yo.puntosCancelacion > 0 ? "resta" : ""}>−{yo.puntosCancelacion}</b>
           </div>
           <div>
-            <span>Días trabajados</span>
-            <b>{yo.dias}</b>
+            <span>
+              {yo.encuestas?.contestadas || 0} {yo.encuestas?.contestadas === 1 ? "encuesta contestada" : "encuestas contestadas"} × {PUNTOS_POR_ENCUESTA}
+            </span>
+            <b>+{(yo.encuestas?.contestadas || 0) * PUNTOS_POR_ENCUESTA}</b>
           </div>
+          <div>
+            <span>Calificación de tus encuestas</span>
+            <b className={yo.puntosCalificacion < 0 ? "resta" : ""}>
+              {yo.puntosCalificacion >= 0 ? "+" : "−"}
+              {Math.abs(yo.puntosCalificacion)}
+            </b>
+          </div>
+          {yo.turnos < MINIMO_TURNOS_GANAR && <small>Llevas 1 turno: con {MINIMO_TURNOS_GANAR} ya puedes ganar la semana.</small>}
         </div>
       )}
-      {modo === "equipo" && !yo && yoSinEntrar && (
-        <p className="hint">
-          Llevas {yoSinEntrar.dias} {yoSinEntrar.dias === 1 ? "día" : "días"}: te falta{MINIMO_DIAS_RANKING - yoSinEntrar.dias === 1 ? "" : "n"}{" "}
-          {MINIMO_DIAS_RANKING - yoSinEntrar.dias} para entrar al ranking.
-        </p>
-      )}
 
+      <h4 className="ranking-titulo">🏆 Ranking de venta</h4>
       {ranking.filas.length === 0 ? (
-        <Empty icon={<Trophy size={26} strokeWidth={1.3} />} text={`Todavía nadie lleva ${MINIMO_DIAS_RANKING} días con venta ${nombrePeriodo}.`} />
+        <Empty icon={<Trophy size={26} strokeWidth={1.3} />} text={`Todavía nadie tiene venta ${nombrePeriodo}.`} />
       ) : (
         <div className="ranking-lista">
-          {ranking.filas.map((f) => (
-            <button type="button" key={f.meseroId} className={`ranking-fila ${f.meseroId === miMeseroId ? "yo" : ""}`} onClick={() => setViendo(f)}>
-              <span className={`ranking-lugar ${f.lugar <= 3 ? "podio" : ""}`}>{f.lugar}</span>
-              <Avatar nombre={f.empleado?.nombre || f.nombre} foto={f.empleado?.foto} tamano={36} />
-              <div className="ranking-nombre">
-                <strong>
-                  {f.nombre}
-                  {f.meseroId === miMeseroId && <em className="etiqueta-tu">Tú</em>}
-                </strong>
-                <div className="ranking-barra">
-                  <i style={{ width: `${Math.max(3, f.puntos)}%` }} />
-                </div>
-              </div>
-              <span className="ranking-puntos">{f.puntos}</span>
-              <ChevronRight size={16} className="ranking-ver" />
-            </button>
-          ))}
+          {ranking.filas.map((f) =>
+            fila(f, f.lugar, (f.puntos / maxPuntos) * 100, f.puntos, f.turnos < MINIMO_TURNOS_GANAR ? <small className="ranking-etiqueta">1 turno</small> : undefined)
+          )}
+        </div>
+      )}
+
+      <h4 className="ranking-titulo">⭐ Ranking de encuestas</h4>
+      {deEncuestas.length === 0 ? (
+        <p className="hint">Todavía nadie tiene venta {nombrePeriodo}.</p>
+      ) : (
+        <div className="ranking-lista">
+          {deEncuestas.map((f) =>
+            f.lugarEncuestas
+              ? fila(
+                  f,
+                  f.lugarEncuestas,
+                  0,
+                  f.puntosEncuestas,
+                  <span className="ranking-estrellas-fila">
+                    <Estrellas valor={f.encuestas?.promedio || 0} chica /> {uno(f.encuestas?.promedio || 0)} · {f.encuestas?.contestadas}
+                  </span>
+                )
+              : fila(
+                  f,
+                  null,
+                  0,
+                  0,
+                  <small className="ranking-sin">{(f.encuestas?.generadas || 0) > 0 ? "Ninguna contestada todavía" : "No ha generado encuestas"}</small>,
+                  true
+                )
+          )}
+        </div>
+      )}
+
+      <button type="button" className="ranking-mas" onClick={() => setMasAbierto(!masAbierto)}>
+        <span>{masAbierto ? "Ocultar más rankings" : "Ver más rankings"}</span>
+        <span>{masAbierto ? "▴" : "▾"}</span>
+      </button>
+      {masAbierto && (
+        <div className="ranking-secundarios">
+          {sub(
+            "💰 Venta por turno",
+            modo === "dueno" ? null : "sin montos",
+            porTurno,
+            (f) =>
+              modo === "dueno" ? (
+                `${money(f.ventaPorTurno)} · ${f.turnos} ${f.turnos === 1 ? "turno" : "turnos"}`
+              ) : (
+                <span className="ranking-barra ranking-sub-barra">
+                  <i style={{ width: `${Math.max(3, (f.ventaPorTurno / maxTurno) * 100)}%` }} />
+                </span>
+              ),
+            (a, b) => a.ventaPorTurno === b.ventaPorTurno,
+            "Sin venta."
+          )}
+          {sub(
+            "🧼 Menos cancelaciones",
+            null,
+            menosCancel,
+            (f) => `${f.pctCancelacion.toLocaleString("es-MX")}%${modo === "dueno" ? ` · ${money(f.cancelaciones)}` : ""}`,
+            (a, b) => a.pctCancelacion === b.pctCancelacion,
+            "Sin venta."
+          )}
+          {sub(
+            "📝 Más encuestas contestadas",
+            null,
+            masEnc,
+            (f) => f.encuestas?.contestadas || 0,
+            (a, b) => a.encuestas?.contestadas === b.encuestas?.contestadas,
+            "Nadie tiene encuestas contestadas todavía."
+          )}
+          {sub(
+            "🌟 Mejor calificación",
+            `mín. ${MINIMO_ENCUESTAS}`,
+            mejorCalif,
+            (f) => (
+              <span className="ranking-estrellas-fila">
+                <Estrellas valor={f.encuestas?.promedio || 0} chica /> {uno(f.encuestas?.promedio || 0)}
+              </span>
+            ),
+            (a, b) => a.encuestas?.promedio === b.encuestas?.promedio,
+            `Nadie tiene ${MINIMO_ENCUESTAS} encuestas contestadas todavía.`
+          )}
         </div>
       )}
 
@@ -152,19 +307,16 @@ export function RankingPanel({
           onClose={() => setViendo(null)}
         />
       )}
-
-      {ranking.sinEntrar.length > 0 && (
-        <p className="hint">
-          Para aparecer: {MINIMO_DIAS_RANKING} días trabajados. Aún sin entrar:{" "}
-          {ranking.sinEntrar.map((s) => `${s.nombre} (${s.dias} ${s.dias === 1 ? "día" : "días"})`).join(", ")}.
+      <div className="ranking-como">
+        <h4>¿Cómo se calcula?</h4>
+        <p>
+          <b>Venta por turno:</b> hasta 100 puntos (100 = quien más vende por turno {nombrePeriodo}). Un día con corte es 1 turno; si en el horario
+          dobla (Z) y es mesero, son 2. <b>Cancelaciones:</b> −10 por cada 1% de su venta. <b>Encuestas contestadas:</b> +{PUNTOS_POR_ENCUESTA} cada una,
+          sin importar la calificación, y según sus estrellas 5⭐ +2 · 4⭐ +1 · 3⭐ 0 · 2⭐ −2 · 1⭐ −4. Se aparece desde el primer turno; para
+          ganar la semana y sus monedas hacen falta {MINIMO_TURNOS_GANAR}. El ranking de encuestas usa solo los puntos de encuestas (con puntos positivos gana monedas: 1º 50 ·
+          2º 30 · 3º 20).{periodo === "semana" ? " La semana va de lunes a domingo." : ""}
         </p>
-      )}
-      <p className="hint">
-        Cómo se calcula: la venta por día trabajado da hasta 100 puntos (100 = quien más vende por día {nombrePeriodo}) y cada 1% de
-        cancelaciones sobre su venta resta 10 puntos. Para aparecer hacen falta {MINIMO_DIAS_RANKING} días trabajados.
-        {periodo === "semana" ? " La semana va de lunes a domingo." : ""} En el perfil de cada quien, las estrellas son su calificación
-        de atención en las encuestas desde el inicio (1 a 5) y cuántas válidas; se muestra con {MINIMO_ENCUESTAS} o más y no cambia los puntos.
-      </p>
+      </div>
     </div>
   );
 }
@@ -172,10 +324,17 @@ export function RankingPanel({
 // Tarjeta del inicio del personal de Piso: su lugar de la semana.
 export function RankingTarjeta({ data, miMeseroId, onVer }: { data: AppData; miMeseroId?: string; onVer: () => void }) {
   const { desde, hasta } = rangoRanking("semana");
-  const ranking = calcularRanking(data, desde, hasta);
+  const [encuestas, setEncuestas] = useState<Map<string, EncuestasMesero>>(new Map());
+  useEffect(() => {
+    let vivo = true;
+    encuestasParaRanking(desde, hasta).then((m) => vivo && setEncuestas(m));
+    return () => {
+      vivo = false;
+    };
+  }, [desde, hasta]);
+  const ranking = calcularRanking(data, desde, hasta, encuestas);
   const yo = ranking.filas.find((f) => f.meseroId === miMeseroId);
   const arriba = yo ? ranking.filas.filter((f) => f.puntos > yo.puntos).pop() : undefined;
-  const sinEntrar = ranking.sinEntrar.find((f) => f.meseroId === miMeseroId);
   return (
     <button type="button" className="ranking-tarjeta" onClick={onVer}>
       <span className="ranking-tarjeta-top">
@@ -194,11 +353,7 @@ export function RankingTarjeta({ data, miMeseroId, onVer }: { data: AppData; miM
         </>
       ) : (
         <span className="ranking-tarjeta-sub">
-          {sinEntrar
-            ? `Llevas ${sinEntrar.dias} día: con ${MINIMO_DIAS_RANKING} días entras al ranking.`
-            : ranking.filas.length
-              ? `Van ${ranking.filas.length} meseros en el ranking.`
-              : "Todavía nadie entra al ranking esta semana."}
+          {ranking.filas.length ? `Van ${ranking.filas.length} meseros en el ranking.` : "Todavía nadie entra al ranking esta semana."}
         </span>
       )}
       <span className="ranking-tarjeta-ver">Ver ranking ›</span>
@@ -298,7 +453,7 @@ function PerfilRanking({
       </div>
       {dueno && (
         <p className="perfil-publico-dueno">
-          Solo tú: {money(fila.ventaPorDia)}/día · {fila.dias} días · cancelaciones {money(fila.cancelaciones)} (
+          Solo tú: {money(fila.ventaPorTurno)}/turno · {fila.turnos} {fila.turnos === 1 ? "turno" : "turnos"} · cancelaciones {money(fila.cancelaciones)} (
           {fila.pctCancelacion.toLocaleString("es-MX")}%){acumulados !== null ? ` · ${acumulados.toLocaleString("es-MX")} 🪙 Monedas Anubis` : ""}
         </p>
       )}
@@ -310,10 +465,10 @@ function PerfilRanking({
 }
 
 // Cinco estrellas con el promedio redondeado a media estrella.
-function Estrellas({ valor }: { valor: number }) {
+function Estrellas({ valor, chica = false }: { valor: number; chica?: boolean }) {
   const ancho = (Math.round(valor * 2) / 2 / 5) * 100;
   return (
-    <b className="estrellas-calif" aria-label={`${valor} de 5 estrellas`}>
+    <b className={`estrellas-calif ${chica ? "chica" : ""}`} aria-label={`${valor} de 5 estrellas`}>
       <span>★★★★★</span>
       <span className="llenas" style={{ width: `${ancho}%` }}>
         ★★★★★

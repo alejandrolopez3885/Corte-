@@ -1685,6 +1685,7 @@ button.pill { cursor: pointer; }
 .perfil-publico-datos span { font-size: 11.5px; color: var(--ink-soft); }
 .estrellas-calif { position: relative; display: inline-block; font-size: 16px; letter-spacing: 1px; line-height: 1.2; }
 .estrellas-calif > span { color: #D9DCD3; }
+.estrellas-calif.chica { font-size: 12px; vertical-align: -1px; }
 .estrellas-calif > span.llenas { position: absolute; left: 0; top: 0; overflow: hidden; white-space: nowrap; color: #E0A100; }
 .perfil-publico-logros { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
 .perfil-publico-logros .hint { margin: 0; }
@@ -1771,6 +1772,29 @@ body.solo-lectura [data-bloqueado]::after { content: "🔒"; font-size: 11px; ma
 .notif-horas-fila b { font-size: 12.5px; }
 .notif-horas select, .notif-campo select { padding: 7px 8px; font-size: 13px; }
 .notif-campo { display: flex; flex-direction: column; gap: 4px; font-size: 12.5px; color: var(--ink-soft); }
+/* ---- Ranking: principales y secundarios ---- */
+.ranking-titulo { margin: 6px 0 -4px; font-size: 13px; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; color: var(--accent); }
+.ranking-etiqueta { font-size: 11px; font-weight: 600; color: var(--warn); }
+.ranking-sin { font-size: 12px; color: var(--ink-soft); }
+.ranking-fila.apagada { opacity: 0.65; }
+.ranking-estrellas-fila { font-size: 12px; color: #B98500; letter-spacing: 0.5px; white-space: nowrap; }
+.ranking-mas { display: flex; justify-content: space-between; align-items: center; width: 100%; border: 1px dashed var(--border); background: var(--surface); border-radius: 12px; padding: 11px 13px; font: inherit; font-size: 13.5px; font-weight: 600; color: var(--accent); cursor: pointer; }
+.ranking-secundarios { display: flex; flex-direction: column; gap: 10px; }
+.ranking-sub { display: flex; flex-direction: column; gap: 2px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; }
+.ranking-sub h5 { margin: 0 0 4px; font-size: 13.5px; display: flex; justify-content: space-between; gap: 8px; }
+.ranking-sub h5 small { font-size: 11.5px; color: var(--ink-soft); font-weight: 500; }
+.ranking-sub .hint { margin: 0; }
+.ranking-sub-fila { display: grid; grid-template-columns: 20px minmax(0, 1fr) auto; gap: 8px; align-items: center; border: none; background: none; padding: 5px 0; font: inherit; font-size: 13px; color: inherit; text-align: left; cursor: pointer; border-top: 1px solid var(--surface-alt); }
+.ranking-sub-fila:first-of-type { border-top: 0; }
+.ranking-sub-fila.yo { color: var(--accent); font-weight: 600; }
+.ranking-sub-fila b { color: #B98500; text-align: center; }
+.ranking-sub-valor { font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--ink-soft); font-size: 12.5px; }
+.ranking-sub-barra { display: block; width: 90px; }
+.ranking-como { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 11px 13px; font-size: 12.5px; color: var(--ink-soft); }
+.ranking-como h4 { margin: 0 0 4px; font-size: 13.5px; color: var(--ink); }
+.ranking-como p { margin: 0; line-height: 1.5; }
+.ranking-ganador small.ranking-ganador-enc { color: var(--accent); }
+.ranking-mio small { color: var(--warn); font-weight: 600; font-size: 12px; }
 /* ---- Puntos y logros ---- */
 .puntos-total { display: flex; flex-direction: column; gap: 2px; background: linear-gradient(135deg, var(--accent), var(--good)); color: white; border-radius: 16px; padding: 14px 16px; margin-bottom: 14px; }
 .puntos-total.monedas { background: linear-gradient(135deg, #7a5410, #C9971F 55%, #E8C766); }

@@ -1,4 +1,5 @@
 import qrcode from "qrcode-generator";
+import type { EncuestasMesero } from "./ranking";
 import { supabase } from "./supabaseClient";
 
 // Encuestas con QR por mesero (ver supabase/migration_011_encuestas.sql).
@@ -312,4 +313,26 @@ export async function borrarPruebas(id?: string): Promise<boolean> {
   const { error } = await supabase.rpc("borrar_encuestas_prueba", { p_id: id ?? null });
   if (error) console.error("No se pudieron borrar las pruebas", error);
   return !error;
+}
+
+// Encuestas de cada mesero para el ranking (todos lo pueden leer: sin
+// comentarios). Mapa mesero → generadas, contestadas y estrellas.
+export async function encuestasParaRanking(desde: string, hasta: string): Promise<Map<string, EncuestasMesero>> {
+  const mapa = new Map<string, EncuestasMesero>();
+  const { data, error } = await supabase.rpc("ranking_encuestas", { p_desde: desde, p_hasta: hasta });
+  if (error) {
+    console.error("No se pudieron leer las encuestas del ranking", error);
+    return mapa;
+  }
+  (
+    (data as { mesero_id: string; generadas: number; contestadas: number; e1: number; e2: number; e3: number; e4: number; e5: number; promedio: number | null }[]) || []
+  ).forEach((f) =>
+    mapa.set(f.mesero_id, {
+      generadas: Number(f.generadas),
+      contestadas: Number(f.contestadas),
+      estrellas: { 1: Number(f.e1), 2: Number(f.e2), 3: Number(f.e3), 4: Number(f.e4), 5: Number(f.e5) },
+      promedio: f.promedio === null ? null : Number(f.promedio),
+    })
+  );
+  return mapa;
 }
