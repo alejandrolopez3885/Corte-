@@ -119,10 +119,22 @@ export function rangoRanking(periodo: PeriodoRanking, hoy = todayIso()): { desde
   return { desde: lunes, hasta: hoy };
 }
 
-// Las cuentas de equipo del área Piso ven el ranking (sin montos).
+// Las cuentas de equipo del área Piso ven el ranking (sin montos), y
+// también quien tiene cortes como mesero aunque sea de otra área (ej. de
+// barra): ellos juegan en el ranking, las encuestas y los puntos.
 export function esDePiso(data: AppData, profile: Profile): boolean {
   const empleado = data.empleados.find((e) => e.id === profile.empleado_id);
   const puesto = empleado?.puestoId ? data.puestos.find((p) => p.id === empleado.puestoId) : undefined;
   const area = puesto ? data.areas.find((a) => a.id === puesto.areaId) : undefined;
-  return !!area && normalizarNombre(area.nombre) === "piso";
+  if (area && normalizarNombre(area.nombre) === "piso") return true;
+  const meseroId = meseroDeEmpleado(data, empleado);
+  return !!meseroId && tieneCortesRecientes(data, meseroId);
+}
+
+// Si ese mesero tiene venta en algún corte de los últimos 3 meses del corte.
+function tieneCortesRecientes(data: AppData, meseroId: string): boolean {
+  return Object.keys(data.months)
+    .sort()
+    .slice(-3)
+    .some((mk) => data.months[mk].weeks.some((w) => Object.values(w?.days || {}).some((d) => d.meseros.some((m) => m.meseroId === meseroId && m.venta > 0))));
 }

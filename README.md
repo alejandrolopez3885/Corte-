@@ -1145,12 +1145,17 @@ cancelaciones sobre su venta (gastos del corte con categoría Cancelaciones
 ligados al mesero) resta 10; nunca baja de 0. Para aparecer hacen falta 2
 días con venta en el periodo (los que llevan menos salen como "Aún sin
 entrar"); empates comparten lugar. **El personal del área Piso** (por el
-área de su puesto en Personal) lo ve sin ningún monto: en su inicio una
+área de su puesto en Personal) y quien tenga cortes como mesero en los
+últimos 3 meses aunque sea de otra área (ej. de barra) lo ve sin ningún
+monto (y también tiene Encuestas y Puntos): en su inicio una
 tarjeta con su lugar de la semana ("3º de 8 meseros · 82 puntos" y cuántos
 puntos le faltan para subir, o "¡Vas en primer lugar!") que abre la
-sección **Ranking** — "Esta semana" / "Semana pasada", arriba sus puntos
+sección **Ranking** — arriba el ganador de la última semana cerrada ("Ganó
+la semana del 12–18: Jennifer" y "¡Felicidades, fuiste tú!" si fue esa
+persona), "Esta semana" / "Semana pasada", su puntaje en el ranking
 (venta +N, cancelaciones con su % −N y días trabajados) y la lista con
-lugar, foto, nombre, barra y puntos, su fila resaltada con "Tú". Con el
+lugar, foto, nombre, sus logros (un emoji por logro, repetido según el
+nivel), barra y puntos, su fila resaltada con "Tú". Con el
 ranking, una cuenta de Piso siempre entra a su inicio aunque tenga una sola
 sección. **Tú** lo ves en Equipo > Ranking con venta por día, días y
 cancelaciones en dinero y en %, y además el del **mes**. En Pregúntale a
@@ -1241,6 +1246,41 @@ quedaron", ni en la revisión contra la venta del corte. Máximo 30 al día
 (ver
 [`supabase/migration_013_encuesta_prueba.sql`](./supabase/migration_013_encuesta_prueba.sql),
 ya aplicada).
+
+**Puntos y logros**: al **guardar el corte del domingo** la app cierra la
+semana (lunes a domingo) con el ranking de esa semana: guarda al ganador
+(o ganadores si empatan), suma los puntos de cada quien y revisa los
+logros. Puntos por semana: 1º lugar 100, 2º 70, 3º 50, los demás que
+aparecen en el ranking 20; sin cancelaciones +30; cada encuesta válida +5
+(sin las de prueba ni las sospechosas sin aprobar); promedio de atención
+de 4.5⭐ o más con 3 o más encuestas +30. **Logros** (puntos extra la
+primera vez que se gana cada nivel): 🏆 Primer lugar (ganar una semana,
++50); 🔥 Racha de campeón (2, 4 y 8 semanas seguidas en 1er lugar: +100,
++200, +400); 🧼 Manos limpias (2, 4 y 8 semanas seguidas sin
+cancelaciones: +50, +100, +200); 😊 Clientes felices (2, 4 y 8 semanas
+seguidas sin malas encuestas —1 o 2⭐ de atención— con 3 o más encuestas:
++50, +100, +200); 🥉 Siempre en el podio (3, 6 y 12 semanas seguidas en el
+top 3: +75, +150, +300); 13 en total. Una semana sin cerrar o en la que no
+aparece corta la racha. Los puntos se **acumulan** para canjearse más
+adelante. **Cada persona** (de Piso o con cortes) los ve en **Mi perfil**:
+"Mis puntos" con el total, lo que ganó la última semana y el historial
+(cada suma con su motivo; "Ver todo"), y **Mis logros · N de 13** con los
+ganados en color y los que siguen en gris con su puntaje y cuánto lleva
+("llevas 2"). Los puntos de los demás no los ve nadie más que tú; los
+logros y el ganador sí, en el ranking. **Tú**, en Equipo > **Puntos y
+logros**: la semana pasada (cerrada y quién ganó, o "Cerrar semana" si no
+se cerró; "Recalcular semana" si corregiste un corte de esa semana:
+anula lo que esa semana había dado y lo vuelve a calcular, sin duplicar),
+"Puntos de cada quien" (lo de la última semana y el total; tocar a alguien
+muestra sus logros y su historial), **Ajustar puntos** (persona, puntos
+con − para quitar y motivo; aquí irán los canjes) y las semanas cerradas
+con "Recalcular". Se guarda en tablas protegidas (ver
+[`supabase/migration_014_puntos.sql`](./supabase/migration_014_puntos.sql),
+ya aplicada): los puntos son un historial de movimientos que nadie edita
+ni borra; cada quien lee solo los suyos (la app del dueño liga cada cuenta
+de equipo con su mesero del corte en `meseros_cuentas`), y solo el dueño
+escribe. Al entrar, al personal de Piso y con cortes le sale la novedad
+"Puntos y logros". Cálculo en `src/lib/puntos.ts`.
 
 **Tu perfil (dueño)**: arriba a la derecha, en todas tus pantallas, está
 tu foto en un círculo (sin foto, tus iniciales); tocarla abre **Mi
@@ -1485,4 +1525,5 @@ supabase/
   migration_011_encuestas.sql          encuestas con QR por mesero (tablas protegidas y funciones)
   migration_012_seguimiento_encuestas.sql  seguimiento de cada paso de las encuestas (solo el dueño)
   migration_013_encuesta_prueba.sql    QR de prueba del dueño (no cuenta en calificaciones)
+  migration_014_puntos.sql             puntos y logros semanales (cada quien ve solo los suyos)
 ```

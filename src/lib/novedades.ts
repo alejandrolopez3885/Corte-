@@ -19,7 +19,7 @@ import type { AppData, ConteoTextoArea, PermisoStaff, Profile } from "./types";
 // "general" = de toda la app: le sale a cualquiera que ya entraba antes.
 export type SeccionNovedad = "corte" | PermisoStaff | "general";
 
-export type VisualNovedad = "sumar" | "autocompletar" | "categoria" | "faltan" | "guardarCorte" | "inventarioPasos" | "recetarioArea" | "apertura" | "cierreTotal" | "efectivoEntregar" | "conteoBar" | "pedidosPegar" | "preguntas" | "perfil" | "datosPago" | "logo" | "barraTitulo" | "ranking" | "encuesta";
+export type VisualNovedad = "sumar" | "autocompletar" | "categoria" | "faltan" | "guardarCorte" | "inventarioPasos" | "recetarioArea" | "apertura" | "cierreTotal" | "efectivoEntregar" | "conteoBar" | "pedidosPegar" | "preguntas" | "perfil" | "datosPago" | "logo" | "barraTitulo" | "ranking" | "encuesta" | "puntos";
 
 export interface Novedad {
   id: string;
@@ -190,6 +190,15 @@ export const NOVEDADES: Novedad[] = [
     titulo: "Encuestas para tus clientes",
     texto: "En tu inicio toca **Encuesta para el cliente**, escribe el total de la cuenta y muéstrale el QR. Su calificación sale como ⭐ en el ranking.",
     visual: "encuesta",
+  },
+  {
+    id: "puntos-logros",
+    fecha: "2026-10-23T09:00:00Z",
+    seccion: "general",
+    soloPiso: true,
+    titulo: "Puntos y logros",
+    texto: "Cada semana del ranking suma **puntos** que se juntan en **Mi perfil** (se podrán canjear más adelante). Hay ganador cada semana y **logros** por rachas.",
+    visual: "puntos",
   },
 ];
 

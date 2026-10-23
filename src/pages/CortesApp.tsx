@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Plus, Settings2, Users, Receipt, ArrowLeftRight, CircleDot, Circle, Pencil,
-  Smartphone, BarChart3, LogOut, Truck, Trash2, Home, Store, LayoutDashboard, Contact, Clock, Wallet, ChartLine, Martini, ChefHat, BookOpen, MessageCircle, Trophy, QrCode,
+  Smartphone, BarChart3, LogOut, Truck, Trash2, Home, Store, LayoutDashboard, Contact, Clock, Wallet, ChartLine, Martini, ChefHat, BookOpen, MessageCircle, Trophy, QrCode, Award,
   ShoppingCart, Handshake, Boxes, Package, Coins, History, Lock, FileUp,
 } from "lucide-react";
 import { useAuth } from "../lib/auth.tsx";
@@ -52,6 +52,8 @@ import StaffAccessShell from "./StaffAccessShell";
 import { NovedadesAlEntrar } from "../components/NovedadesAlEntrar";
 import { PreguntasSheet } from "../components/PreguntasSheet";
 import { RankingPanel } from "../components/panels/RankingPanel";
+import { PuntosPanel } from "../components/panels/PuntosPanel";
+import { cerrarSemana, sincronizarCuentasMeseros } from "../lib/puntos";
 import { EncuestasPanel } from "../components/panels/EncuestasPanel";
 import { marcarDispositivoPersonal } from "../lib/encuestas";
 import { RanuraTitulo, TituloPagina } from "../components/BarraTitulo";
@@ -81,7 +83,7 @@ type ModalState =
   | { type: "deleteMonth"; monthKey: string }
   | null;
 
-type EquipoView = "menu" | "personal" | "horarios" | "nomina" | "propinas" | "ranking" | "encuestas";
+type EquipoView = "menu" | "personal" | "horarios" | "nomina" | "propinas" | "ranking" | "encuestas" | "puntos";
 
 type NegocioView =
   | "menu" | "tendencias" | "bitacora" | "controlBar" | "controlCocina" | "controlGeneral" | "inventario" | "pedidos"
@@ -118,6 +120,12 @@ export default function CortesApp({ profile }: { profile: Profile }) {
   // Capa 3 de las encuestas: en este celular entró alguien del equipo, así
   // que una encuesta contestada desde aquí no cuenta.
   useEffect(() => marcarDispositivoPersonal(), []);
+
+  // Qué cuenta de equipo es qué mesero, para que cada quien vea sus puntos.
+  const llaveCuentas = isOwner && data ? JSON.stringify([data.empleados.map((e) => [e.id, e.nombre, e.usuarioSistemaId]), data.meseros.map((m) => m.id)]) : null;
+  useEffect(() => {
+    if (llaveCuentas && data) sincronizarCuentasMeseros(data, profile.id);
+  }, [llaveCuentas, profile.id]);
   // Datos para el pago de nómina de todo el equipo (solo dueño).
   const { porPerfil: datosPago, estado: estadoDatosPago } = useDatosPagoEquipo(isOwner ? profile.id : null);
   const pagoDeEmpleado = (empleadoId: string): DatosPago | "sin-datos" | null => {
@@ -128,7 +136,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
 
   // Qué pantalla tiene abierta (para Negocio > Análisis > Actividad). Las
   // cuentas de equipo fuera del corte las registra StaffAccessShell.
-  const NOMBRE_EQUIPO: Record<EquipoView, string> = { menu: "Equipo", personal: "Personal", horarios: "Horarios", nomina: "Nómina", propinas: "Propinas", ranking: "Ranking", encuestas: "Encuestas" };
+  const NOMBRE_EQUIPO: Record<EquipoView, string> = { menu: "Equipo", personal: "Personal", horarios: "Horarios", nomina: "Nómina", propinas: "Propinas", ranking: "Ranking", encuestas: "Encuestas", puntos: "Puntos y logros" };
   const NOMBRE_NEGOCIO: Record<NegocioView, string> = {
     menu: "Negocio", tendencias: "Tendencias", bitacora: "Actividad", controlBar: "Control de Bar", controlCocina: "Control de Cocina",
     controlGeneral: "Control General", inventario: "Inventario", pedidos: "Pedidos",
@@ -1112,6 +1120,10 @@ export default function CortesApp({ profile }: { profile: Profile }) {
       d.corteGuardado = { fecha: new Date().toISOString(), nombre: profile.display_name || (isOwner ? "Dueño" : "Alguien del equipo") };
     });
     setModal(null);
+    // El corte del domingo cierra la semana: ganador, puntos y logros.
+    if (isOwner && data && activeDay === "Domingo" && activeDayDate) {
+      cerrarSemana(data, addDaysIso(activeDayDate, -6)).then((r) => !r.ok && console.error("No se cerró la semana:", r.error));
+    }
   }
 
   // "Corte de apertura": crea los cortes (sin propina) del usuario de para
@@ -1319,6 +1331,15 @@ export default function CortesApp({ profile }: { profile: Profile }) {
                 <span>Ranking de meseros por venta y cancelaciones (el personal de Piso lo ve sin montos)</span>
               </span>
             </button>
+            <button className="menu-item" onClick={() => setEquipoView("puntos")}>
+              <span className="menu-item-icon">
+                <Award size={20} />
+              </span>
+              <span className="menu-item-text">
+                <strong>Puntos y logros</strong>
+                <span>Ganador de cada semana, los puntos que junta cada quien y sus logros</span>
+              </span>
+            </button>
             <button className="menu-item" onClick={() => setEquipoView("encuestas")}>
               <span className="menu-item-icon">
                 <QrCode size={20} />
@@ -1383,6 +1404,10 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           nombreDueno={(data.perfilDueno?.nombre || profile.display_name || "").split(" ")[0]}
           onBack={() => setEquipoView("menu")}
         />
+      )}
+
+      {isOwner && activeTab === "equipo" && equipoView === "puntos" && (
+        <PuntosPanel data={data} ownerId={profile.id} onBack={() => setEquipoView("menu")} />
       )}
 
       {isOwner && activeTab === "equipo" && equipoView === "ranking" && (

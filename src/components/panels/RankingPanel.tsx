@@ -6,6 +6,7 @@ import { TituloPagina } from "../BarraTitulo";
 import { money } from "../../lib/dataModel";
 import { MINIMO_DIAS_RANKING, calcularRanking, rangoRanking, type PeriodoRanking } from "../../lib/ranking";
 import { MINIMO_ENCUESTAS, calificaciones } from "../../lib/encuestas";
+import { cargarLogros, cargarSemanas, insigniasPorMesero, nombreSemana, type SemanaCerrada } from "../../lib/puntos";
 import type { AppData } from "../../lib/types";
 
 // Ranking de meseros. Personal de Piso ("equipo"): lugar, foto, nombre,
@@ -36,6 +37,17 @@ export function RankingPanel({
       vivo = false;
     };
   }, [desde, hasta]);
+  // Ganador de la última semana cerrada y los logros de cada quien.
+  const [ultima, setUltima] = useState<SemanaCerrada | null>(null);
+  const [insignias, setInsignias] = useState<Map<string, string>>(new Map());
+  useEffect(() => {
+    let vivo = true;
+    cargarSemanas(1).then((s) => vivo && setUltima(s?.[0] || null));
+    cargarLogros().then((l) => vivo && setInsignias(insigniasPorMesero(l)));
+    return () => {
+      vivo = false;
+    };
+  }, []);
   const yo = ranking.filas.find((f) => f.meseroId === miMeseroId);
   const yoSinEntrar = ranking.sinEntrar.find((f) => f.meseroId === miMeseroId);
   const periodos: [PeriodoRanking, string][] = [
@@ -48,6 +60,18 @@ export function RankingPanel({
   return (
     <div className="page-section">
       <TituloPagina titulo="Ranking" onBack={onBack} backLabel={backLabel} />
+      {ultima?.ganador_nombre && (
+        <div className="ranking-ganador">
+          <span>🏆</span>
+          <div>
+            <strong>
+              {ultima.resultados.filter((r) => r.lugar === 1).length > 1 ? "Ganadores" : "Ganó"} la semana del {nombreSemana(ultima.lunes)}:{" "}
+              {ultima.ganador_nombre}
+            </strong>
+            {miMeseroId && ultima.resultados.some((r) => r.lugar === 1 && r.meseroId === miMeseroId) && <small>¡Felicidades, fuiste tú!</small>}
+          </div>
+        </div>
+      )}
       <div className="ranking-periodos">
         {periodos.map(([p, t]) => (
           <button key={p} type="button" className={p === periodo ? "activo" : ""} onClick={() => setPeriodo(p)}>
@@ -59,7 +83,7 @@ export function RankingPanel({
       {modo === "equipo" && yo && (
         <div className="ranking-mio">
           <strong>
-            Tus puntos {nombrePeriodo}: {yo.puntos}
+            Tu puntaje en el ranking {nombrePeriodo}: {yo.puntos}
           </strong>
           <div>
             <span>Venta por día trabajado</span>
@@ -95,6 +119,7 @@ export function RankingPanel({
                   {f.nombre}
                   {f.meseroId === miMeseroId && <em className="etiqueta-tu">Tú</em>}
                 </strong>
+                {insignias.get(f.meseroId) && <span className="ranking-insignias">{insignias.get(f.meseroId)}</span>}
                 {modo === "dueno" ? (
                   <span>
                     {money(f.ventaPorDia)}/día · {f.dias} días · cancel. {money(f.cancelaciones)} ({f.pctCancelacion.toLocaleString("es-MX")}%)

@@ -296,6 +296,18 @@ function Visual({ tipo }: { tipo: VisualNovedad }) {
       </>
     );
   }
+  if (tipo === "puntos") {
+    return (
+      <>
+        <span className="nv-etiqueta">Mis puntos</span>
+        <div className="nv-campo">🏆 1º lugar · sin cancelaciones · 4 encuestas</div>
+        <span className="nv-suma">
+          +150 esta semana · <strong>1,240</strong> en total
+        </span>
+        <span className="nv-suma">Logros: 🏆 🔥 🧼 😊</span>
+      </>
+    );
+  }
   if (tipo === "encuesta") {
     return (
       <>

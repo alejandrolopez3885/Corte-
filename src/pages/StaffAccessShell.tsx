@@ -17,6 +17,7 @@ import { PerfilPanel } from "../components/panels/PerfilPanel";
 import { DatosPagoSeccion } from "../components/DatosPagoSeccion";
 import { RankingPanel, RankingTarjeta } from "../components/panels/RankingPanel";
 import { EncuestaPanel } from "../components/panels/EncuestaPanel";
+import { MisPuntos } from "../components/MisPuntos";
 import { esDePiso, meseroDeEmpleado } from "../lib/ranking";
 import { supabase } from "../lib/supabaseClient";
 import { CargarPedidosPanel } from "../components/panels/CargarPedidosPanel";
@@ -81,8 +82,8 @@ export default function StaffAccessShell({
 }) {
   const permisos = profile.permisos || [];
   const tieneCorte = assignments.length > 0;
-  // El personal de Piso además ve el ranking de meseros (en su inicio): con
-  // eso siempre tiene menú, aunque tenga una sola sección.
+  // El personal de Piso (y quien tiene cortes) además ve el ranking de
+  // meseros, sus puntos y encuestas: con eso siempre tiene menú.
   const esPiso = esDePiso(data, profile);
   const totalSecciones = permisos.length + (tieneCorte ? 1 : 0) + (esPiso ? 1 : 0);
   const [view, setView] = useState<StaffView>(() => {
@@ -147,6 +148,7 @@ export default function StaffAccessShell({
           onGuardar={(cambios) => onGuardarPerfil(empleado.id, cambios)}
           onBack={volver}
         >
+          {esPiso && meseroDeEmpleado(data, empleado) && <MisPuntos meseroId={meseroDeEmpleado(data, empleado)!} />}
           <DatosPagoSeccion profile={profile} nombre={empleado.nombre} />
         </PerfilPanel>
       </div>
