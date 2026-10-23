@@ -1775,6 +1775,7 @@ body.solo-lectura [data-bloqueado]::after { content: "🔒"; font-size: 11px; ma
 /* ---- Ranking: principales y secundarios ---- */
 .ranking-titulo { margin: 6px 0 -4px; font-size: 13px; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; color: var(--accent); }
 .ranking-etiqueta { font-size: 11px; font-weight: 600; color: var(--warn); }
+.ranking-titulo-sub { display: block; margin: 0 0 -4px; font-size: 12px; color: var(--ink-soft); }
 .ranking-sin { font-size: 12px; color: var(--ink-soft); }
 .ranking-fila.apagada { opacity: 0.65; }
 .ranking-estrellas-fila { font-size: 12px; color: #B98500; letter-spacing: 0.5px; white-space: nowrap; }

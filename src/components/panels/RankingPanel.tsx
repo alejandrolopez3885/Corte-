@@ -203,7 +203,8 @@ export function RankingPanel({
         </div>
       )}
 
-      <h4 className="ranking-titulo">🏆 Ranking de venta</h4>
+      <h4 className="ranking-titulo">🏆 Ranking general</h4>
+      <small className="ranking-titulo-sub">Venta por turno · cancelaciones · encuestas</small>
       {ranking.filas.length === 0 ? (
         <Empty icon={<Trophy size={26} strokeWidth={1.3} />} text={`Todavía nadie tiene venta ${nombrePeriodo}.`} />
       ) : (
