@@ -1363,7 +1363,7 @@ le mejorarías o qué te gustaría que tuviera?"; si no la deja, puede
 hacerlo después desde "Ver recorrido". Al vencer, al entrar le sale "Tu
 acceso de invitado ya venció" y la base ya no le deja leer nada. Lo que
 abre queda en Actividad. Ver
-[`supabase/migration_016_invitados.sql`](./supabase/migration_016_invitados.sql)
+[`supabase/migration_017_invitados.sql`](./supabase/migration_017_invitados.sql)
 (ya aplicada): el invitado es una cuenta de equipo con `invitado_hasta`;
 mientras está vigente lee todo el negocio de su dueño y no escribe en
 ninguna tabla; su opinión va a `invitado_opiniones` (solo la lee el
@@ -1617,5 +1617,6 @@ supabase/
   migration_014_mis_encuestas.sql      el mesero ve sus encuestas contestadas
   migration_015_puntos.sql             Monedas Anubis y logros semanales (cada quien ve solo las suyas)
   migration_015_mesa_obligatoria.sql   la mesa es obligatoria para generar la encuesta
-  migration_016_invitados.sql          acceso de invitado de solo lectura y su opinión
+  migration_016_borrar_pruebas.sql     el dueño borra sus encuestas de prueba
+  migration_017_invitados.sql          acceso de invitado de solo lectura y su opinión
 ```

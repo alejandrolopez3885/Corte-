@@ -1,5 +1,5 @@
 -- Acceso de invitado (solo lectura). Ejecuta esto una vez en el SQL Editor
--- de Supabase después de migration_015 (ya está aplicado en el proyecto de
+-- de Supabase después de migration_016 (ya está aplicado en el proyecto de
 -- Cortes con el conector).
 --
 -- Un invitado es una cuenta de equipo (role 'staff', entra con PIN) con
