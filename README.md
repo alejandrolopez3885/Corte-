@@ -1233,7 +1233,7 @@ sale la novedad "Encuestas para tus clientes".
 **Seguimiento de encuestas (solo el dueño)**: en Equipo > Encuestas, la
 cuarta pestaña **Seguimiento** (con el mismo periodo de arriba) muestra
 cada paso de cada encuesta. Se guarda todo para siempre, sin poder
-editarlo ni borrarlo: cada **intento del mesero que no se generó** y por
+editarlo ni borrarlo (salvo las encuestas de prueba, ver abajo): cada **intento del mesero que no se generó** y por
 qué (no escribió el total, no escribió la mesa, no está ligado a su usuario en Personal, ya
 tenía las 15 del día o sin conexión; si no había conexión se guarda en su
 celular y se manda en el siguiente intento), cuando se **genera**, cuando
@@ -1278,6 +1278,19 @@ ya aplicada). La mesa obligatoria también la revisa Supabase al generar
 cualquiera de las dos (ver
 [`supabase/migration_015_mesa_obligatoria.sql`](./supabase/migration_015_mesa_obligatoria.sql),
 ya aplicada).
+
+**Borrar encuestas de prueba (dueño)**: debajo de "Generar QR de prueba"
+sale **"Borrar todas las de prueba (n)"** (solo si hay alguna); al tocarlo
+pregunta "¿Borrar las n encuestas de prueba? No se puede deshacer." con
+"Sí, borrar" / "No". Para borrar una sola, cada encuesta de prueba trae
+**"Borrar esta prueba"** (con la misma confirmación) en Respuestas,
+Sospechosas y la Bitácora de Seguimiento — ahí también salen las que
+nunca se contestaron. Se borra la encuesta con su respuesta y todos sus
+pasos del seguimiento; las de los meseros no tienen el botón y Supabase
+no deja borrarlas (ver
+[`supabase/migration_016_borrar_pruebas.sql`](./supabase/migration_016_borrar_pruebas.sql),
+ya aplicada). El máximo de 30 pruebas al día cuenta las que existen: si
+borras, ese día puedes generar más.
 
 **Monedas Anubis y logros**: "puntos" es solo lo del ranking (público);
 lo que se junta para canjear son las **Monedas Anubis 🪙** (privadas). Al

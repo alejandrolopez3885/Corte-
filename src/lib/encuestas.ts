@@ -298,3 +298,18 @@ export async function agregarMotivo(encuestaId: string, motivos: string[]) {
   const { error } = await supabase.from("encuesta_respuestas").update({ motivos }).eq("encuesta_id", encuestaId);
   if (error) console.error("No se pudo marcar la encuesta", error);
 }
+
+// Encuestas de prueba del dueño: cuántas hay y borrarlas (una, o todas sin
+// id). Se van con su respuesta y sus pasos del seguimiento; las de los
+// meseros no se pueden borrar (lo revisa borrar_encuestas_prueba).
+export async function contarPruebas(): Promise<number> {
+  const { count, error } = await supabase.from("encuestas").select("id", { count: "exact", head: true }).eq("prueba", true);
+  if (error) console.error("No se pudieron contar las pruebas", error);
+  return count || 0;
+}
+
+export async function borrarPruebas(id?: string): Promise<boolean> {
+  const { error } = await supabase.rpc("borrar_encuestas_prueba", { p_id: id ?? null });
+  if (error) console.error("No se pudieron borrar las pruebas", error);
+  return !error;
+}
