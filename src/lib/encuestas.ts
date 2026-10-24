@@ -319,20 +319,20 @@ export async function borrarPruebas(id?: string): Promise<boolean> {
 // comentarios). Mapa mesero → generadas, contestadas y estrellas.
 export async function encuestasParaRanking(desde: string, hasta: string): Promise<Map<string, EncuestasMesero>> {
   const mapa = new Map<string, EncuestasMesero>();
-  const { data, error } = await supabase.rpc("ranking_encuestas", { p_desde: desde, p_hasta: hasta });
+  // Por día de trabajo: el ranking suma cada día solo si ya hay corte de ese mesero.
+  const { data, error } = await supabase.rpc("ranking_encuestas_dias", { p_desde: desde, p_hasta: hasta });
   if (error) {
     console.error("No se pudieron leer las encuestas del ranking", error);
     return mapa;
   }
   (
-    (data as { mesero_id: string; generadas: number; contestadas: number; e1: number; e2: number; e3: number; e4: number; e5: number; promedio: number | null }[]) || []
-  ).forEach((f) =>
-    mapa.set(f.mesero_id, {
-      generadas: Number(f.generadas),
-      contestadas: Number(f.contestadas),
-      estrellas: { 1: Number(f.e1), 2: Number(f.e2), 3: Number(f.e3), 4: Number(f.e4), 5: Number(f.e5) },
-      promedio: f.promedio === null ? null : Number(f.promedio),
-    })
-  );
+    (data as { mesero_id: string; dia: string; generadas: number; contestadas: number; e1: number; e2: number; e3: number; e4: number; e5: number }[]) || []
+  ).forEach((f) => {
+    const m = mapa.get(f.mesero_id) || { generadas: 0, contestadas: 0, estrellas: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }, promedio: null, porDia: {} };
+    const estrellas = { 1: Number(f.e1), 2: Number(f.e2), 3: Number(f.e3), 4: Number(f.e4), 5: Number(f.e5) };
+    m.generadas += Number(f.generadas);
+    m.porDia![f.dia] = { contestadas: Number(f.contestadas), estrellas };
+    mapa.set(f.mesero_id, m);
+  });
   return mapa;
 }

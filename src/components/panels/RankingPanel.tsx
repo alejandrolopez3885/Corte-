@@ -199,6 +199,11 @@ export function RankingPanel({
               {Math.abs(yo.puntosCalificacion)}
             </b>
           </div>
+          {!!yo.encuestas?.pendientes && (
+            <small>
+              {yo.encuestas.pendientes} {yo.encuestas.pendientes === 1 ? "encuesta más suma" : "encuestas más suman"} en cuanto se haga tu corte.
+            </small>
+          )}
           {yo.turnos < MINIMO_TURNOS_GANAR && <small>Llevas 1 turno: con {MINIMO_TURNOS_GANAR} ya puedes ganar la semana.</small>}
         </div>
       )}
@@ -236,7 +241,13 @@ export function RankingPanel({
                   null,
                   0,
                   0,
-                  <small className="ranking-sin">{(f.encuestas?.generadas || 0) > 0 ? "Ninguna contestada todavía" : "No ha generado encuestas"}</small>,
+                  <small className="ranking-sin">
+                    {f.encuestas?.pendientes
+                      ? `${f.encuestas.pendientes} ${f.encuestas.pendientes === 1 ? "contestada espera" : "contestadas esperan"} su corte`
+                      : (f.encuestas?.generadas || 0) > 0
+                        ? "Ninguna contestada todavía"
+                        : "No ha generado encuestas"}
+                  </small>,
                   true
                 )
           )}
@@ -313,7 +324,7 @@ export function RankingPanel({
         <p>
           <b>Venta por turno:</b> hasta 100 puntos (100 = quien más vende por turno {nombrePeriodo}). Un día con corte es 1 turno; si en el horario
           dobla (Z) y es mesero, son 2. <b>Cancelaciones:</b> −10 por cada 1% de su venta. <b>Encuestas contestadas:</b> +{PUNTOS_POR_ENCUESTA} cada una,
-          sin importar la calificación, y según sus estrellas 5⭐ +2 · 4⭐ +1 · 3⭐ 0 · 2⭐ −2 · 1⭐ −4. Se aparece desde el primer turno; para
+          sin importar la calificación, y según sus estrellas 5⭐ +2 · 4⭐ +1 · 3⭐ 0 · 2⭐ −2 · 1⭐ −4; las de un día suman cuando ya se hizo su corte. Se aparece desde el primer turno; para
           ganar la semana y sus monedas hacen falta {MINIMO_TURNOS_GANAR}. El ranking de encuestas usa solo los puntos de encuestas (con puntos positivos gana monedas: 1º 50 ·
           2º 30 · 3º 20).{periodo === "semana" ? " La semana va de lunes a domingo." : ""}
         </p>

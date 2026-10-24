@@ -19,16 +19,37 @@ const PUNTOS_POR_PCT_CANCELACION = 10;
 export const PUNTOS_POR_ENCUESTA = 3;
 export const PUNTOS_POR_ESTRELLA: Record<1 | 2 | 3 | 4 | 5, number> = { 5: 2, 4: 1, 3: 0, 2: -2, 1: -4 };
 
-// Encuestas de un mesero en el periodo (de la función ranking_encuestas).
+// Encuestas de un mesero en el periodo (de la función ranking_encuestas_dias).
+// porDia: contestadas y estrellas de cada día de trabajo; calcularRanking
+// suma solo los días en que ya se le hizo el corte.
 export interface EncuestasMesero {
   generadas: number;
   contestadas: number;
   estrellas: Record<1 | 2 | 3 | 4 | 5, number>;
   promedio: number | null;
+  pendientes?: number; // contestadas de días sin su corte todavía
+  porDia?: Record<string, { contestadas: number; estrellas: Record<1 | 2 | 3 | 4 | 5, number> }>;
+}
+
+const ESTRELLAS = [1, 2, 3, 4, 5] as const;
+
+// Solo los días en que ese mesero ya tiene corte (antes no cuentan sus encuestas).
+function encuestasConCorte(e: EncuestasMesero | undefined, diasConCorte: Set<string>): EncuestasMesero | undefined {
+  if (!e?.porDia) return e;
+  const estrellas = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+  let contestadas = 0;
+  let pendientes = 0;
+  Object.entries(e.porDia).forEach(([dia, d]) => {
+    if (!diasConCorte.has(dia)) return void (pendientes += d.contestadas);
+    contestadas += d.contestadas;
+    ESTRELLAS.forEach((n) => (estrellas[n] += d.estrellas[n]));
+  });
+  const suma = ESTRELLAS.reduce((s, n) => s + n * estrellas[n], 0);
+  return { generadas: e.generadas, contestadas, pendientes, estrellas, promedio: contestadas ? Math.round((suma / contestadas) * 100) / 100 : null };
 }
 
 export const puntosDeEncuestas = (e: EncuestasMesero | undefined) =>
-  e ? e.contestadas * PUNTOS_POR_ENCUESTA + ([1, 2, 3, 4, 5] as const).reduce((s, n) => s + e.estrellas[n] * PUNTOS_POR_ESTRELLA[n], 0) : 0;
+  e ? e.contestadas * PUNTOS_POR_ENCUESTA + ESTRELLAS.reduce((s, n) => s + e.estrellas[n] * PUNTOS_POR_ESTRELLA[n], 0) : 0;
 
 export interface FilaRanking {
   meseroId: string;
@@ -89,9 +110,9 @@ function esPersona(data: AppData, meseroId: string, nombre: string): boolean {
 export function calcularRanking(data: AppData, desde: string, hasta: string, encuestas?: Map<string, EncuestasMesero>): Ranking {
   const acumulados = new Set(data.meseros.filter((m) => m.acumulado).map((m) => m.id));
   const ubicaciones = ubicarFechas(data);
-  const porMesero = new Map<string, { nombre: string; venta: number; dias: Set<string>; dobles: number; cancelaciones: number }>();
+  const porMesero = new Map<string, { nombre: string; venta: number; dias: Set<string>; conCorte: Set<string>; dobles: number; cancelaciones: number }>();
   const de = (id: string, nombre: string) => {
-    if (!porMesero.has(id)) porMesero.set(id, { nombre, venta: 0, dias: new Set(), dobles: 0, cancelaciones: 0 });
+    if (!porMesero.has(id)) porMesero.set(id, { nombre, venta: 0, dias: new Set(), conCorte: new Set(), dobles: 0, cancelaciones: 0 });
     return porMesero.get(id)!;
   };
   for (let f = desde; f <= hasta; f = addDaysIso(f, 1)) {
@@ -102,6 +123,7 @@ export function calcularRanking(data: AppData, desde: string, hasta: string, enc
       if (acumulados.has(m.meseroId)) return;
       const x = de(m.meseroId, data.meseros.find((c) => c.id === m.meseroId)?.nombre || m.nombre);
       x.venta += m.venta;
+      x.conCorte.add(f);
       if (m.venta > 0) x.dias.add(f);
     });
     day.gastos.forEach((g) => {
@@ -129,7 +151,7 @@ export function calcularRanking(data: AppData, desde: string, hasta: string, enc
       const pctCancelacion = Math.round((x.cancelaciones / x.venta) * 1000) / 10;
       const puntosVenta = mejor > 0 ? Math.round((100 * ventaPorTurno) / mejor) : 0;
       const puntosCancelacion = Math.round(pctCancelacion * PUNTOS_POR_PCT_CANCELACION);
-      const enc = encuestas?.get(meseroId);
+      const enc = encuestasConCorte(encuestas?.get(meseroId), x.conCorte);
       const puntosEncuestas = puntosDeEncuestas(enc);
       return {
         meseroId,
