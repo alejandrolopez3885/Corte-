@@ -17,7 +17,8 @@ import type { AppData } from "../../lib/types";
 // Encuestas (solo dueño): las respuestas con sus comentarios, el resumen
 // por mesero y las sospechosas — que no cuentan hasta aprobarlas. Al abrir,
 // marca como sospechosas las de un mesero cuyos totales con encuesta de un
-// día pasan su venta de ese día en el corte. En "Seguimiento", cada paso de
+// día pasan su venta de ese día en el corte (solo si ese corte ya tiene su
+// venta; lo de antes de las 5 am es del día anterior). En "Seguimiento", cada paso de
 // cada encuesta y dónde se quedan. "Generar QR de prueba" abre el mismo QR
 // del mesero, marcado como prueba (no cuenta en ningún promedio). Tocar
 // una respuesta abre la encuesta tal cual la contestó el cliente. Las de
@@ -30,6 +31,9 @@ const fechaLocal = (iso: string) => {
   const d = new Date(iso);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 };
+// Día de trabajo: lo contestado antes de las 5 am es del turno del día anterior.
+const HORA_CAMBIO_DIA = 5;
+const diaDeTrabajo = (iso: string) => fechaLocal(new Date(new Date(iso).getTime() - HORA_CAMBIO_DIA * 3600000).toISOString());
 const cuando = (iso: string) =>
   new Date(iso).toLocaleString("es-MX", { weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }).replace(".", "");
 
@@ -66,15 +70,18 @@ export function EncuestasPanel({ data, perfilId, nombreDueno, onBack }: { data: 
       const grupos = new Map<string, RespuestaEncuesta[]>();
       lista.forEach((r) => {
         if (esPrueba(r)) return;
-        const k = `${r.mesero_id}|${fechaLocal(r.respondida_en)}`;
+        const k = `${r.mesero_id}|${diaDeTrabajo(r.respondida_en)}`;
         grupos.set(k, [...(grupos.get(k) || []), r]);
       });
       for (const [k, rs] of grupos) {
         const [meseroId, fecha] = k.split("|");
         const day = ubicaciones.get(fecha)?.day;
-        const venta = round2((day?.meseros || []).filter((m) => m.meseroId === meseroId).reduce((s, m) => s + m.venta, 0));
+        const cortes = (day?.meseros || []).filter((m) => m.meseroId === meseroId);
+        // Sin su corte de ese día todavía no hay contra qué comparar: se revisa cuando se guarde.
+        if (!cortes.length) continue;
+        const venta = round2(cortes.reduce((s, m) => s + m.venta, 0));
         const suma = round2(rs.reduce((s, r) => s + (r.encuestas?.total || 0), 0));
-        if (day && suma > venta) {
+        if (suma > venta) {
           for (const r of rs) {
             if (r.motivos.includes("venta")) continue;
             r.motivos = [...r.motivos, "venta"];
