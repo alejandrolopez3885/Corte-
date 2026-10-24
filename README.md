@@ -1164,8 +1164,9 @@ persona) y "⭐ En encuestas: …" con el ganador del ranking de encuestas,
 "Esta semana" / "Semana pasada", el desglose de sus puntos (venta +N con
 sus turnos y dobles, cancelaciones con su % −N, encuestas contestadas × 3
 y calificación ±N; "Llevas 1 turno: con 2 ya puedes ganar la semana") y
-dos rankings principales: **🏆 Ranking de venta** (lugar, foto, nombre,
-barra y puntaje, una › y su fila resaltada con "Tú") y **⭐ Ranking de
+dos rankings principales: **🏆 Ranking general** (debajo dice "Venta
+por turno · cancelaciones · encuestas", para que se vea que no solo cuenta
+vender; lugar, foto, nombre, barra y puntaje, una › y su fila resaltada con "Tú") y **⭐ Ranking de
 encuestas** (solo los puntos de encuestas, con sus estrellas a media
 estrella, el promedio y cuántas contestadas; al final, en gris, quien
 generó pero no tiene contestadas — "Ninguna contestada todavía" — y quien

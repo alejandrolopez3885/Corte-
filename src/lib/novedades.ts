@@ -254,7 +254,7 @@ export const NOVEDADES: Novedad[] = [
     seccion: "general",
     soloPiso: true,
     titulo: "Nuevo ranking: por turno y con encuestas",
-    texto: "La venta ahora se mide **por turno** (doblar cuenta 2) y cada **encuesta contestada suma**. Hay un **Ranking de encuestas** con su propio premio.",
+    texto: "El **Ranking general** suma venta **por turno** (doblar cuenta 2), cancelaciones y **encuestas contestadas**. Y hay un **Ranking de encuestas** con su propio premio.",
     visual: "ranking",
   },
 ];
