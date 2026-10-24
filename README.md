@@ -1233,7 +1233,8 @@ de ese día en el corte (esto lo revisa la app del dueño al abrir
 Encuestas, y solo cuando el corte de ese mesero de ese día ya está
 guardado: mientras no, la encuesta cuenta normal y se revisa después; lo
 contestado antes de las 5 am cuenta para el día anterior, porque es del
-mismo turno). Cada QR vale 30 minutos y una sola respuesta. Las que no
+mismo turno; si después ya no pasa, por ejemplo porque se corrigió el
+corte, se le quita esa marca sola). Cada QR vale 30 minutos y una sola respuesta. Las que no
 cumplen quedan como **sospechosas** y no cuentan hasta que el dueño las
 aprueba. **En el ranking** cada encuesta contestada válida suma puntos
 (+3 y lo de sus estrellas, ver Ranking de meseros) y tienen su propio

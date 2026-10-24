@@ -18,7 +18,8 @@ import type { AppData } from "../../lib/types";
 // por mesero y las sospechosas — que no cuentan hasta aprobarlas. Al abrir,
 // marca como sospechosas las de un mesero cuyos totales con encuesta de un
 // día pasan su venta de ese día en el corte (solo si ese corte ya tiene su
-// venta; lo de antes de las 5 am es del día anterior). En "Seguimiento", cada paso de
+// venta; lo de antes de las 5 am es del día anterior) y les quita esa marca
+// si ya no pasan (ej. se corrigió el corte). En "Seguimiento", cada paso de
 // cada encuesta y dónde se quedan. "Generar QR de prueba" abre el mismo QR
 // del mesero, marcado como prueba (no cuenta en ningún promedio). Tocar
 // una respuesta abre la encuesta tal cual la contestó el cliente. Las de
@@ -75,18 +76,20 @@ export function EncuestasPanel({ data, perfilId, nombreDueno, onBack }: { data: 
       });
       for (const [k, rs] of grupos) {
         const [meseroId, fecha] = k.split("|");
+        // De madrugada del lunes: es del domingo anterior, que no se cargó completo.
+        if (fecha < desde) continue;
         const day = ubicaciones.get(fecha)?.day;
         const cortes = (day?.meseros || []).filter((m) => m.meseroId === meseroId);
         // Sin su corte de ese día todavía no hay contra qué comparar: se revisa cuando se guarde.
         if (!cortes.length) continue;
         const venta = round2(cortes.reduce((s, m) => s + m.venta, 0));
         const suma = round2(rs.reduce((s, r) => s + (r.encuestas?.total || 0), 0));
-        if (suma > venta) {
-          for (const r of rs) {
-            if (r.motivos.includes("venta")) continue;
-            r.motivos = [...r.motivos, "venta"];
-            await agregarMotivo(r.encuesta_id, r.motivos);
-          }
+        const pasa = suma > venta;
+        for (const r of rs) {
+          // Se marca si pasa y se le quita la marca si ya no pasa (ej. se corrigió el corte).
+          if (pasa === r.motivos.includes("venta")) continue;
+          r.motivos = pasa ? [...r.motivos, "venta"] : r.motivos.filter((m) => m !== "venta");
+          await agregarMotivo(r.encuesta_id, r.motivos);
         }
       }
       if (vivo) setRespuestas([...lista]);
