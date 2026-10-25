@@ -337,49 +337,96 @@ export function CorteDelDia(p: CorteDelDiaProps) {
       ))
     );
 
+  // --- Efectivo: solo dinero, como cuenta de caja con lo que "lleva" ---
+  // + fondo que se dejó ayer, + lo que cobraron en efectivo (sin propinas,
+  // ya sin tarjetas ni transferencias), − todos los gastos del turno (de
+  // corte o generales; da igual si salieron de la caja o del fondo) = lo que
+  // debe haber en caja; − lo que se deja para mañana = a entregar.
   const fila = (texto: ReactNode, monto: string, clase = "") => (
     <div className={`efectivo-fila ${clase}`}>
       <span>{texto}</span>
       <strong>{monto}</strong>
     </div>
   );
+  const conApertura = !!efectivoDia?.tieneApertura;
+  const cobrado = round2(suma(cortes, (m) => m.venta - m.tarjetas) - suma(transferencias, (t) => t.total));
+  const gastado = suma(gastos, (g) => g.total);
+  const fondo = efectivoDia?.dejadoAyer || 0;
+  const seDeja = efectivoDia?.dejadoHoy || 0;
+  // Turno 2: lo que entregó la apertura ya salió; si en el turno 1 hubo
+  // propinas o gastos sin corte, la diferencia se muestra aparte para que
+  // la cuenta cierre igual que el efectivo del día.
+  const ajusteApertura = vista === "t2" && efectivoDia ? round2(efectivoDia.resto - (cobrado - gastado)) : 0;
+  const entregadoApertura = vista === "dia" && conApertura ? efectivoDia!.aperturaEf : 0;
+  const renglonesCaja: { texto: ReactNode; detalle?: string; monto: number }[] = [
+    ...(fondo > 0 ? [{ texto: "Fondo que se dejó ayer", detalle: efectivoDia?.ayer?.nota, monto: fondo }] : []),
+    {
+      texto: "Efectivo que cobraron los meseros",
+      detalle: `${cortes.length} ${cortes.length === 1 ? "corte" : "cortes"} · sin propinas, tarjetas ni transferencias`,
+      monto: cobrado,
+    },
+    {
+      texto: vista === "dia" ? "Gastos del día" : "Gastos del turno",
+      detalle: gastos.length ? `${gastos.length} ${gastos.length === 1 ? "gasto" : "gastos"} · de corte o generales` : "ninguno",
+      monto: -gastado,
+    },
+    ...(Math.abs(ajusteApertura) >= 0.01 ? [{ texto: "Ajuste de la apertura", detalle: "propinas y gastos del turno 1", monto: ajusteApertura }] : []),
+    ...(entregadoApertura ? [{ texto: "Ya se entregó en la apertura", detalle: "turno 1, se lo llevó el dueño", monto: -entregadoApertura }] : []),
+  ];
+  let lleva = 0;
+  const hayEnCaja = round2(renglonesCaja.reduce((t, r) => t + r.monto, 0));
+  const aEntregar = efectivoDia ? round2(hayEnCaja - seDeja) : totals.efectivo;
   const efectivo =
     vista === "t1" && ap ? (
       fila("Entregado al dueño en la apertura", money(efectivoDia?.aperturaEf ?? suma(cortes, (m) => m.total)), "total")
     ) : (
       <>
-        {efectivoDia ? (
-          <>
-            {fila(`${efectivoDia.tieneApertura ? "Efectivo del cierre" : "Efectivo de las ventas"} (sin propinas)`, money(efectivoDia.resto))}
-            {efectivoDia.dejadoAyer > 0 &&
-              fila(`+ Se dejó el día anterior${efectivoDia.ayer?.nota ? ` (${efectivoDia.ayer.nota})` : ""}`, `+${money(efectivoDia.dejadoAyer)}`)}
-            {efectivoDia.dejadoHoy > 0 &&
-              fila(`− Se deja en el restaurante${day.efectivoDejado?.nota ? ` (${day.efectivoDejado.nota})` : ""}`, `−${money(efectivoDia.dejadoHoy)}`, "menos")}
-            {fila(textoEntregar, money(efectivoDia.entregar), "total")}
-            {efectivoDia.tieneApertura && fila("Apertura ya entregada al dueño", money(efectivoDia.aperturaEf), "info")}
-            {efectivoDia.tieneApertura && fila("Total de efectivo del día (apertura + noche)", money(efectivoDia.totalDia), "info")}
-          </>
-        ) : (
-          fila(
-            <>
-              Efectivo a entregar <em>(sin propinas)</em>
-            </>,
-            money(totals.efectivo),
-            "total"
-          )
-        )}
-        {acumulados.map((a) =>
-          fila(
-            <>
-              {a.nombre} del día <small>({a.cortes} {a.cortes === 1 ? "corte" : "cortes"}) · debe coincidir con el sistema</small>
-            </>,
-            money(a.lectura),
-            "info"
-          )
+        <div className="cd-caja">
+          {renglonesCaja.map((r, i) => {
+            lleva = round2(lleva + r.monto);
+            return (
+              <div key={i} className="cd-caja-fila">
+                <span>
+                  {r.texto}
+                  {r.detalle && <small>{r.detalle}</small>}
+                </span>
+                <b className={r.monto < 0 ? "menos" : ""}>
+                  {r.monto < 0 ? "−" : "+"}
+                  {money(Math.abs(r.monto))}
+                </b>
+                <i>{money(lleva)}</i>
+              </div>
+            );
+          })}
+          {/* Sin efectivo que se deja, lo que hay en caja es lo que se entrega: un solo total. */}
+          {seDeja > 0 && (
+            <div className="cd-caja-fila subtotal">
+              <span>Debe haber en caja</span>
+              <b>{money(hayEnCaja)}</b>
+              <i />
+            </div>
+          )}
+          {seDeja > 0 && (
+            <div className="cd-caja-fila">
+              <span>
+                Se deja para mañana
+                {day.efectivoDejado?.nota && <small>{day.efectivoDejado.nota}</small>}
+              </span>
+              <b className="menos">−{money(seDeja)}</b>
+              <i>{money(aEntregar)}</i>
+            </div>
+          )}
+          {fila(textoEntregar, money(aEntregar), "total")}
+        </div>
+        {conApertura && vista === "t2" && (
+          <div className="cd-caja-info">
+            {fila("Turno 1 · ya entregado al dueño", money(efectivoDia!.aperturaEf), "info")}
+            {fila("Total de efectivo del día (apertura + noche)", money(efectivoDia!.totalDia), "info")}
+          </div>
         )}
         {!corteBloqueado && efectivoDia && (
           <button type="button" className="link-btn" onClick={p.onDejarEfectivo}>
-            {day.efectivoDejado ? "Cambiar el efectivo que se deja" : "+ Dejar efectivo para el día siguiente"}
+            {day.efectivoDejado ? "Cambiar el efectivo que se deja" : "+ Dejar efectivo para mañana"}
           </button>
         )}
       </>
@@ -500,18 +547,21 @@ export function CorteDelDia(p: CorteDelDiaProps) {
         )}
       </div>
 
+      {/* iPad: cortes y efectivo a la izquierda, gastos y transferencias a la derecha. Celular: cortes, gastos, transferencias y al final el efectivo (que los suma). */}
       <div className="cd-cols">
-        <div>{seccion(<Users size={17} />, vista === "t1" && ap ? "Cortes de apertura" : "Cortes de meseros", puedeAgregar ? p.onNuevoCorte : null, tablaCortes)}</div>
+        <div className="cd-a">
+          {seccion(<Users size={17} />, vista === "t1" && ap ? "Cortes de apertura" : "Cortes de meseros", puedeAgregar ? p.onNuevoCorte : null, tablaCortes)}
+        </div>
         <div className="cd-lado">
           {seccion(<Receipt size={17} />, "Gastos", puedeAgregar ? p.onNuevoGasto : null, listaGastos, "cd-gastos")}
           {seccion(<ArrowLeftRight size={17} />, "Transferencias", puedeAgregar ? p.onNuevaTransfer : null, listaTransfer)}
-          <section className="cd-card efectivo-dia">
-            <div className="cd-card-head">
-              <h3>Efectivo</h3>
-            </div>
-            {efectivo}
-          </section>
         </div>
+        <section className="cd-card efectivo-dia cd-c">
+          <div className="cd-card-head">
+            <h3>Efectivo · ¿cuánto debe haber?</h3>
+          </div>
+          {efectivo}
+        </section>
       </div>
 
       <div className={`cd-barra-fija ${p.isOwner ? "con-menu" : ""}`}>

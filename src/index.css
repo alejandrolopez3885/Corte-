@@ -1961,9 +1961,10 @@ body.solo-lectura [data-bloqueado]::after { content: "🔒"; font-size: 11px; ma
 .cd-kpi.h { background: var(--accent-soft); border-color: var(--accent-soft); }
 .cd-kpi.h b { color: var(--accent); }
 button.cd-kpi { cursor: pointer; }
-.cd-cols { display: grid; grid-template-columns: 1.6fr 1fr; gap: 14px; align-items: start; }
+.cd-cols { display: grid; grid-template-columns: 1.6fr 1fr; grid-template-areas: "a l" "c l"; gap: 14px; align-items: start; }
+.cd-a { grid-area: a; } .cd-cols > .cd-lado { grid-area: l; } .cd-c { grid-area: c; }
 .cd-lado { display: flex; flex-direction: column; gap: 14px; }
-@media (max-width: 820px) { .cd-cols { grid-template-columns: 1fr; } }
+@media (max-width: 820px) { .cd-cols { grid-template-columns: 1fr; grid-template-areas: "a" "l" "c"; } }
 .cd-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 12px 16px; }
 .cd-card-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; min-height: 36px; }
 .cd-card-head h3 { display: flex; align-items: center; gap: 7px; margin: 0; font-family: 'Fraunces', serif; font-size: 17px; font-weight: 600; }
@@ -2006,3 +2007,14 @@ button.cd-it { cursor: pointer; }
 @media (max-width: 560px) { .cd-largo { display: none; } .cd-btn.ocultar-movil { display: none; } .cd { padding-left: 16px; padding-right: 16px; } }
 .preguntas-fab.sobre-barra { bottom: calc(150px + env(safe-area-inset-bottom)); }
 .preguntas-fab.sin-barra.sobre-barra { bottom: calc(92px + env(safe-area-inset-bottom)); }
+.cd-caja { display: flex; flex-direction: column; }
+.cd-caja-fila { display: grid; grid-template-columns: 1fr auto 86px; gap: 10px; align-items: center; padding: 9px 0; border-bottom: 1px solid var(--surface-alt); font-size: 14px; }
+.cd-caja-fila span { display: flex; flex-direction: column; }
+.cd-caja-fila small { font-size: 12px; color: var(--ink-soft); }
+.cd-caja-fila b { font-weight: 600; white-space: nowrap; }
+.cd-caja-fila b.menos { color: var(--bad); }
+.cd-caja-fila i { font-style: normal; font-size: 12.5px; color: var(--ink-soft); text-align: right; white-space: nowrap; }
+.cd-caja-fila.subtotal { font-weight: 700; border-bottom: 1px solid var(--border); }
+.cd-caja-fila.subtotal b { font-size: 16px; }
+.cd-caja .efectivo-fila.total { margin-top: 4px; }
+.cd-caja-info { margin-top: 6px; padding-top: 4px; border-top: 1px dashed var(--border); }
