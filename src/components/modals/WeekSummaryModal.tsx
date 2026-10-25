@@ -27,16 +27,26 @@ export function WeekSummaryModal({
   const [realText, setRealText] = useState(s.efectivoReal != null ? String(s.efectivoReal) : "");
   const startDate = resolveWeekStartDate(monthKey, weekIndex, month);
   const [dateDraft, setDateDraft] = useState(startDate);
+  const [guardado, setGuardado] = useState(false);
+  // Lo que va escrito sin guardar todavía (null = nada nuevo).
+  const [borrador, setBorrador] = useState<string | null>(null);
 
-  function commitReal() {
-    const sum = sumFromText(realText);
-    const next = realText.trim() === "" ? "" : String(sum);
+  // Se guarda lo que se ve escrito: el campo avisa en cada tecla, porque en
+  // iPad tocar "Guardar" no siempre saca el foco del campo y se guardaba el
+  // valor anterior. También se guarda solo al salir del campo.
+  function commitReal(texto = realText) {
+    const next = texto.trim() === "" ? "" : String(sumFromText(texto));
     setRealText(next);
+    setBorrador(null);
+    if ((s.efectivoReal ?? "") === (next === "" ? "" : Number(next))) return setGuardado(true);
     onSaveEfectivoReal(next);
+    setGuardado(true);
   }
 
-  const hasReal = realText.trim() !== "";
-  const realValue = sumFromText(realText);
+  // La diferencia es con lo que se ve escrito.
+  const textoVisible = borrador ?? realText;
+  const hasReal = textoVisible.trim() !== "";
+  const realValue = sumFromText(textoVisible);
   const diff = round2(realValue - s.efectivoRecibido);
 
   return (
@@ -98,10 +108,19 @@ export function WeekSummaryModal({
 
       <div className="real-cash">
         <Field label="Efectivo real (lo que contaste)">
-          <SumInput value={realText} onChange={setRealText} placeholder="0.00 o 300+300+300" sumar />
+          <SumInput
+            value={realText}
+            onChange={(v) => commitReal(v)}
+            alEscribir={(t) => {
+              setBorrador(t);
+              setGuardado(false);
+            }}
+            placeholder="0.00 o 300+300+300"
+            sumar
+          />
         </Field>
-        <button className="link-btn" onClick={commitReal}>
-          Guardar efectivo real
+        <button className="link-btn" onClick={() => commitReal(borrador ?? realText)}>
+          {guardado ? "✓ Guardado" : "Guardar efectivo real"}
         </button>
         {hasReal && (
           <div className={`diff-box ${diff === 0 ? "ok" : diff > 0 ? "over" : "under"}`}>

@@ -55,9 +55,12 @@ export function SumInput({
   placeholder,
   sumar,
   onPartes,
+  alEscribir,
 }: {
   value: string;
   onChange: (v: string) => void;
+  // Lo que va escrito, en cada tecla (onChange solo avisa al salir del campo).
+  alEscribir?: (texto: string) => void;
   placeholder?: string;
   // Recibe los montos sueltos al sumar ("300+450" → [300, 450]); undefined
   // si quedó un solo monto.
@@ -96,7 +99,10 @@ export function SumInput({
       inputMode="decimal"
       className="num-input"
       value={text}
-      onChange={(e) => setText(e.target.value)}
+      onChange={(e) => {
+        setText(e.target.value);
+        alEscribir?.(e.target.value);
+      }}
       onBlur={commit}
       placeholder={placeholder}
     />

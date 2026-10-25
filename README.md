@@ -9,7 +9,10 @@ calculan las 4 semanas (siempre +7/+14/+21 días, nunca se desalinean entre
 sí). Así todo el corte (chips de día, encabezados, tablas) siempre muestra
 la fecha real (día, mes y año) en vez de solo el nombre del día — y si una
 semana se asoma al mes anterior o siguiente, se muestra tal cual, con su
-fecha exacta. También tiene, dentro de "Negocio" → "Control de gastos", dos
+fecha exacta. En el resumen semanal, **Efectivo real (lo que contaste)**
+se guarda tal como se ve escrito: al tocar "Guardar efectivo real" (que
+cambia a "✓ Guardado") o solo al salir del campo, y la diferencia contra
+el efectivo calculado se ve mientras se escribe. También tiene, dentro de "Negocio" → "Control de gastos", dos
 pantallas de solo control (cada una con su propio selector de mes/semana):
 **Control de gastos en efectivo** (los gastos ya categorizados que capturas
 en el corte diario) y **Control de gastos en transferencia** — 5 totales
