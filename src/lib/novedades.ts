@@ -322,6 +322,14 @@ export const NOVEDADES: Novedad[] = [
     texto: "Arriba del corte ves el **clima** del día: la temperatura y si **llovió** (o la probabilidad de lluvia en los días que vienen).",
     visual: "guardarCorte",
   },
+  {
+    id: "venta-esperada-horarios",
+    fecha: "2026-10-25T09:20:00Z",
+    seccion: "horarios",
+    titulo: "Venta esperada en el horario",
+    texto: "Cada día del horario muestra la **venta esperada** según los días parecidos anteriores. Tócalo para ver de dónde sale y armar el horario con eso en mente.",
+    visual: "ranking",
+  },
 ];
 
 interface EstadoNovedades {

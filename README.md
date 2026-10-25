@@ -304,6 +304,25 @@ estando en Nómina te regresa al menú de Equipo):
   Etiquetas y clima son los pasos 1 y 2 hacia el creador de horarios
   automático (luego: pronóstico de venta, reglas del personal y el horario
   sugerido).
+- **Venta esperada** (`src/lib/pronostico.ts`, `src/components/PronosticoDetalle.tsx`,
+  paso 3): para cada día, el **día típico** — la venta de en medio
+  (mediana) de los últimos 8 días iguales sin nada especial (sin
+  etiquetas, festivos, fechas especiales ni puentes), con un rango
+  (cuartiles) — ajustado por lo que tiene ese día (etiquetas, festivo,
+  fecha especial, puente, quincena), medido con la propia historia: cuánto
+  vendieron los días con eso contra su día típico, primero en días donde
+  solo pasó eso. Con 1–2 casos se aplica y dice "pocos datos" (y el rango
+  se abre); sin casos sale "todavía no hay días así para medirlo" y queda
+  el día típico. El clima todavía no entra al cálculo. Se ve en
+  **Horarios** (el dueño y quien edita horarios, ej. jefe de cocina): cada
+  día de la fila con "~$21k" y "Venta esperada de la semana"; al tocar un
+  día, el desglose (el dueño lo ve arriba de sus etiquetas; el jefe de
+  cocina, en una hoja de solo lectura). En el **Inicio** del dueño: "Venta
+  esperada esta semana", "Hoy se esperan $… ($…–$…)", cada día con lo
+  esperado y, si ya pasó, ▲▼ lo vendido contra lo esperado, y "La semana
+  que viene". En **Corte** (dueño): "Se esperan $…" o, ya cerrado,
+  "Esperábamos $… · vendiste $… (+15%)", y con 25% o más de diferencia y
+  sin etiqueta, "¿Pasó algo? Ponle una etiqueta".
 - **Horario entre varias personas**: al guardar, solo se reemplazan las
   áreas (y los festivos) que se cambiaron en esa pantalla; lo demás se toma
   de la versión más reciente guardada. Así el dueño (piso) y el jefe de
