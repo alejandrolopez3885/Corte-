@@ -2079,3 +2079,55 @@ button.cd-it { cursor: pointer; }
 .cd-fondo .cd-it-main { min-width: 0; }
 .cd-fondo .cd-it-main b { white-space: normal; overflow-wrap: anywhere; font-weight: 600; }
 .cd-fondo .cd-caja-fila i { display: none; }
+
+/* Horarios › Reglas del personal */
+.rg-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 14px; }
+.rg-card h3 { margin: 0 0 2px; font-size: 15px; }
+.rg-card > .hint { margin: 0 0 10px; }
+.rg-card-sheet { padding: 2px 14px; }
+.rg-dias { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
+.rg-num { display: flex; flex-direction: column; align-items: center; gap: 2px; background: var(--surface-alt); border: none; border-radius: 10px; padding: 6px 0 5px; font-family: inherit; color: var(--ink); cursor: pointer; }
+.rg-num b { font-size: 11px; color: var(--ink-soft); font-weight: 500; }
+.rg-num strong { font-size: 18px; }
+.rg-num small { font-size: 9.5px; color: var(--ink-soft); }
+.rg-num.fuerte { background: var(--accent-soft); color: var(--accent); }
+.rg-fila { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 9px 0; border-top: 1px solid var(--border); font-size: 14px; }
+.rg-card h3 + .rg-fila, .rg-card-sheet .rg-fila:first-child { border-top: none; }
+.rg-dias + .rg-fila { margin-top: 8px; }
+.rg-fila > span:first-child { display: flex; flex-direction: column; }
+.rg-fila small { color: var(--ink-soft); font-size: 12.5px; margin-top: 2px; }
+.rg-fila .toggle { flex: none; }
+.rg-fila .toggle-label:empty { display: none; }
+.rg-paso { display: flex; align-items: center; gap: 8px; flex: none; }
+.rg-paso button { width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--border); background: var(--surface); color: var(--accent); font-size: 17px; font-weight: 600; cursor: pointer; }
+.rg-paso b { min-width: 18px; text-align: center; }
+.rg-paso-grande { display: flex; justify-content: center; padding: 8px 0; }
+.rg-paso-grande .rg-paso { gap: 22px; }
+.rg-paso-grande .rg-paso button { width: 48px; height: 48px; font-size: 24px; }
+.rg-paso-grande .rg-paso b { font-size: 34px; min-width: 40px; }
+.rg-persona { display: flex; gap: 10px; align-items: center; width: 100%; padding: 10px 0; border: none; border-top: 1px solid var(--border); background: none; text-align: left; font-family: inherit; color: var(--ink); cursor: pointer; }
+.rg-card > .hint + .rg-persona { border-top: none; }
+.rg-av { width: 36px; height: 36px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; font-weight: 600; font-size: 13px; flex: none; }
+.rg-persona-t { flex: 1; min-width: 0; font-size: 14.5px; }
+.rg-persona-t .hint { font-size: 12px; }
+.rg-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.rg-chips i { font-style: normal; font-size: 11px; padding: 2px 7px; border-radius: 100px; background: var(--surface-alt); color: var(--ink-soft); }
+.rg-chips i.si { background: var(--good-soft); color: var(--good); }
+.rg-chips i.no { background: var(--bad-soft); color: var(--bad); }
+.rg-chips i.fijo { background: var(--warn-soft); color: var(--warn); }
+.rg-ver { color: var(--accent); }
+.rg-sub { margin: -12px 0 0; }
+.rg-lbl { margin: 4px 0 -6px; font-size: 12.5px; font-weight: 600; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.04em; }
+.rg-seg { display: flex; gap: 6px; }
+.rg-seg button { flex: 1; border: 1px solid var(--border); background: var(--surface); border-radius: 12px; padding: 10px 4px; font-size: 13.5px; font-family: inherit; color: var(--ink); cursor: pointer; }
+.rg-seg button.on { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.rg-fijos { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.rg-fijos button { display: flex; flex-direction: column; align-items: center; gap: 3px; border: 1px solid var(--border); background: var(--surface); border-radius: 9px; padding: 6px 0 8px; font-size: 12.5px; font-weight: 600; font-family: inherit; color: var(--ink-soft); cursor: pointer; }
+.rg-fijos button b { font-size: 10.5px; font-weight: 500; }
+.rg-fijos button.v { background: var(--warn-soft); border-color: #e7c79f; color: var(--warn); }
+.rg-fijo-editor { display: flex; flex-direction: column; gap: 12px; background: var(--surface-alt); border-radius: 14px; padding: 12px; }
+.rg-hora { display: flex; gap: 8px; }
+.rg-hora .btn-primary { width: auto; padding: 0 18px; }
+.rg-dsel { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.rg-dsel button { border: 1px solid var(--border); background: var(--surface); border-radius: 9px; padding: 8px 0; font-size: 12px; font-family: inherit; color: var(--ink); cursor: pointer; }
+.rg-dsel button.on { background: var(--ink); border-color: var(--ink); color: white; }

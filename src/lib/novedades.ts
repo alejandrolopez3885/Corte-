@@ -330,6 +330,14 @@ export const NOVEDADES: Novedad[] = [
     texto: "Cada día del horario muestra la **venta esperada** según los días parecidos anteriores. Tócalo para ver de dónde sale y armar el horario con eso en mente.",
     visual: "ranking",
   },
+  {
+    id: "reglas-del-personal",
+    fecha: "2026-10-25T09:33:00Z",
+    seccion: "horarios",
+    titulo: "Reglas del personal",
+    texto: "En Horarios, **Reglas del personal**: cuántos trabajan cada día, quién abre, cierra o dobla, descansos y días fijos. Ya vienen llenas con los últimos horarios; corrige lo que no esté bien.",
+    visual: "categoria",
+  },
 ];
 
 interface EstadoNovedades {

@@ -9,8 +9,9 @@ import { etiquetasDelDia } from "../../lib/etiquetas";
 import { EtiquetasDiaSheet, type ValorEtiquetas } from "../EtiquetasDia";
 import { copyHorarioImage } from "../../lib/horarioImage";
 import { DAYS, DAY_SHORT, HORARIO_AREAS_FIJAS, HORARIO_CHIPS } from "../../lib/types";
-import type { DayName, EmpleadoEntry, HorarioArea, HorarioMonthData, HorarioSemana, MonthData } from "../../lib/types";
+import type { DayName, EmpleadoEntry, HorarioArea, HorarioMonthData, HorarioSemana, MonthData, PuestoEntry, ReglasArea } from "../../lib/types";
 import { TituloPagina } from "../BarraTitulo";
+import { ReglasHorarioPanel } from "./ReglasHorarioPanel";
 
 type CellTarget = { areaId: string; empleadoId: string; nombre: string; day: DayName };
 
@@ -28,6 +29,9 @@ export function HorariosPanel({
   readOnly,
   onSaveEtiquetas,
   verPronostico = false,
+  puestos,
+  reglas,
+  onSaveReglas,
 }: {
   onBack?: () => void;
   backLabel?: string;
@@ -50,6 +54,11 @@ export function HorariosPanel({
   onSaveEtiquetas?: (monthKey: string, weekIndex: number, day: DayName, v: ValorEtiquetas | undefined) => void;
   // Venta esperada de cada día: el dueño y quien puede editar horarios.
   verPronostico?: boolean;
+  // Reglas del personal (paso 4 del horario automático): el dueño y quien
+  // puede editar horarios (con soloAreaId, solo las de su área).
+  puestos?: PuestoEntry[];
+  reglas?: Record<string, ReglasArea>;
+  onSaveReglas?: (cambios: Record<string, ReglasArea>) => void;
 }) {
   const [monthKey, setMonthKey] = useState(initialMonthKey);
   const [etiquetando, setEtiquetando] = useState<DayName | null>(null);
@@ -66,7 +75,25 @@ export function HorariosPanel({
   // "todas") — se borra solo a los pocos segundos.
   const [copia, setCopia] = useState<{ clave: string; copiada: boolean } | null>(null);
 
+  const [verReglas, setVerReglas] = useState(false);
+
   const month = months[monthKey];
+
+  if (verReglas && onSaveReglas && !readOnly) {
+    return (
+      <ReglasHorarioPanel
+        onBack={() => setVerReglas(false)}
+        months={months}
+        horarios={horarios}
+        empleados={empleados}
+        puestos={puestos}
+        guardadas={reglas}
+        soloAreaId={soloAreaId}
+        verPronostico={verPronostico}
+        onSave={onSaveReglas}
+      />
+    );
+  }
 
   if (!month) {
     return (
@@ -105,6 +132,11 @@ export function HorariosPanel({
     <div className="page-section">
       <TituloPagina titulo="Horarios" onBack={onBack} backLabel={backLabel} />
       <p className="hint">Por área, con el nombre, el día y la hora de entrada — igual que llevabas el control antes.</p>
+      {onSaveReglas && !readOnly && (
+        <button className="link-btn" onClick={() => setVerReglas(true)}>
+          Reglas del personal ›
+        </button>
+      )}
 
       <div className="field-row">
         <Field label="Mes">

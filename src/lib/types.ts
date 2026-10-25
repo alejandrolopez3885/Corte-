@@ -102,6 +102,32 @@ export interface HorarioSemana {
   festivos?: DayName[];
 }
 
+// Reglas del personal para el horario sugerido (Horarios › Reglas del
+// personal), por área. Lo que no se ha guardado se llena con lo que se
+// hizo en los últimos horarios — ver lib/reglasHorario.ts.
+export interface ReglaPersona {
+  // "fijos": trabaja solo ciertos días, siempre con el mismo valor
+  // (ej. Dana: Jue 6:30, Vie 6:30, Sáb O, Dom O).
+  modo: "completo" | "fijos";
+  fijos?: Partial<Record<DayName, string>>;
+  puedeAbrir: boolean;
+  puedeCerrar: boolean;
+  puedeDoblar: boolean;
+  // Tiempo completo: días en que prefiere descansar (vacío = flexible).
+  descanso?: DayName[];
+}
+
+export interface ReglasArea {
+  minimo: Record<DayName, number>;
+  // +1 persona por cada `ventaPorPersona` que la venta esperada pase de lo normal.
+  subirConVenta: boolean;
+  ventaPorPersona: number;
+  alguienAbre: boolean;
+  maxDobles: number;
+  descansoSemanal: boolean;
+  personas: Record<string, ReglaPersona>;
+}
+
 export interface HorarioMonthData {
   weeks: (HorarioSemana | null)[];
 }
@@ -529,6 +555,8 @@ export interface AppData {
   // duplicar la fecha ancla. Solo existe entrada para los meses/semanas
   // donde ya se capturó algo.
   horarios: Record<string, HorarioMonthData>;
+  // Reglas del personal por área (id de HORARIO_AREAS_FIJAS).
+  reglasHorario?: Record<string, ReglasArea>;
   // Descuentos de nómina por semana (mismas semanas que Horarios).
   nominaDescuentos: Record<string, NominaDescuentosMonthData>;
   // Catálogo de insumos de Bar y Cocina (Negocio > Control de Bar/Cocina).

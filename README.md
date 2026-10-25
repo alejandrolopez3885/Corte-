@@ -323,6 +323,28 @@ estando en Nómina te regresa al menú de Equipo):
   que viene". En **Corte** (dueño): "Se esperan $…" o, ya cerrado,
   "Esperábamos $… · vendiste $… (+15%)", y con 25% o más de diferencia y
   sin etiqueta, "¿Pasó algo? Ponle una etiqueta".
+- **Reglas del personal** (`src/components/panels/ReglasHorarioPanel.tsx`,
+  `src/lib/reglasHorario.ts`, paso 4): en Horarios, el enlace "Reglas del
+  personal ›" (dueño y quien edita horarios; el jefe de cocina solo ve su
+  área). Pestañas PISO y COCINA, cada una con:
+  **¿Cuántos trabajan cada día?** (mínimo por día; piso 3-3-3-4-6-6-6 y
+  cocina 2-2-2-2-3-3-3 de inicio; debajo de cada día su venta esperada;
+  tocar un día abre −/+), **Subir gente si se espera más venta** (+1 por
+  cada $6,000 arriba de lo normal en piso, $10,000 en cocina, apagado en
+  cocina; el monto se cambia con −/+ de $500), **Apertura y dobles** (cada
+  día alguien abre con X o Z, máximo de dobles por persona a la semana —2—
+  y 1 descanso por semana a tiempo completo) y **Cada persona**: quienes
+  salieron en esa área en los últimos 6 horarios, con chips Abre/Cierra/
+  Dobla y su descanso, o sus días fijos. Lo que no se ha guardado se deduce
+  de esos horarios: sin ningún OFF y con días vacíos = "Solo días fijos"
+  (el valor más común de cada día, ej. Dana: Jue 6:30 · Vie 6:30 · Sáb O ·
+  Dom O); abre si tuvo 2 o más X, dobla con al menos una Z, cierra con al
+  menos una O; descanso preferido = los días con OFF si fueron 3 o menos
+  (si no, "flexible"). Al tocar a alguien: "Tiempo completo" o "Solo días
+  fijos", sus días fijos (X, Z, O, vacío o una hora especial), qué puede
+  hacer y "Descanso preferido" (o "Días que no puede" con días fijos).
+  "Guardar reglas" escribe solo las áreas que cambiaron en
+  `AppData.reglasHorario`. El horario sugerido (paso 5) usará estas reglas.
 - **Horario entre varias personas**: al guardar, solo se reemplazan las
   áreas (y los festivos) que se cambiaron en esa pantalla; lo demás se toma
   de la versión más reciente guardada. Así el dueño (piso) y el jefe de

@@ -14,7 +14,7 @@ import {
 } from "../lib/dataModel";
 import { removeAssignmentByStaffAndDate, upsertAssignment, useStaffAssignments } from "../lib/staffAssignments";
 import { DAYS, DAY_SHORT } from "../lib/types";
-import type { AppData, AreaEntry, ConfigNotificaciones, ConteoTextoArea, CreditoProveedores, DayData, DayName, EmpleadoEntry, Gasto, GastoCategoria, HorarioSemana, InsumoEntry, MeseroCatalogEntry, MeseroCut, NominaDescuentosSemana, PermisoStaff, Profile, ProveedorCatalogEntry, PuestoEntry, Receta, Transferencia, WeekData } from "../lib/types";
+import type { AppData, AreaEntry, ConfigNotificaciones, ConteoTextoArea, CreditoProveedores, DayData, DayName, EmpleadoEntry, Gasto, GastoCategoria, HorarioSemana, InsumoEntry, MeseroCatalogEntry, MeseroCut, NominaDescuentosSemana, PermisoStaff, Profile, ProveedorCatalogEntry, PuestoEntry, Receta, ReglasArea, Transferencia, WeekData } from "../lib/types";
 import { Empty, Field, NumInput, Sheet } from "../components/ui";
 import { MonthModal } from "../components/modals/MonthModal";
 import { type MeseroFormValues } from "../components/modals/MeseroModal";
@@ -313,6 +313,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           profile={profile}
           data={data}
           onSaveHorarioSemana={saveHorarioSemana}
+          onSaveReglasHorario={guardarReglasHorario}
           onSaveConteoTexto={guardarConteoTexto}
           onSavePedidoDiario={guardarPedidoDiario}
           onSaveInventarioNotas={guardarInventarioNotas}
@@ -1128,6 +1129,15 @@ export default function CortesApp({ profile }: { profile: Profile }) {
 
   // Horario de una semana — usa las mismas semanas (mes/índice) que Corte,
   // pero vive aparte porque no afecta ningún total de caja.
+  // Reglas del personal: solo se escriben las áreas que cambiaron, para no
+  // pisar lo que haya guardado alguien más en la otra área.
+  function guardarReglasHorario(cambios: Record<string, ReglasArea>) {
+    if (!data) return;
+    const next = structuredClone(data);
+    next.reglasHorario = { ...next.reglasHorario, ...cambios };
+    persist(next);
+  }
+
   function saveHorarioSemana(monthKey: string, weekIndex: number, semana: HorarioSemana) {
     if (!data) return;
     const next = structuredClone(data);
@@ -1643,6 +1653,9 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           onSaveSemana={saveHorarioSemana}
           onSaveEtiquetas={guardarEtiquetas}
           verPronostico
+          puestos={data.puestos}
+          reglas={data.reglasHorario}
+          onSaveReglas={guardarReglasHorario}
         />
       )}
 

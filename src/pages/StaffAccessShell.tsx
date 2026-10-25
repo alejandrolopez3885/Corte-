@@ -2,7 +2,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { BookOpen, ChefHat, ClipboardList, Clock, Coins, Home, LogOut, Martini, MessageCircle, Package, QrCode, ShoppingCart, Wallet } from "lucide-react";
 import { formatAssignedDate, insumoAreaForPuesto, plantillaConteo, mostRecentWeekIndex, puedeEditarHorarios } from "../lib/dataModel";
 import { HORARIO_AREAS_FIJAS, PERMISOS_DISPONIBLES } from "../lib/types";
-import type { AppData, ConteoTextoArea, HorarioSemana, PermisoStaff, Profile, StaffAssignment } from "../lib/types";
+import type { AppData, ConteoTextoArea, HorarioSemana, PermisoStaff, ReglasArea, Profile, StaffAssignment } from "../lib/types";
 import { HorariosPanel } from "../components/panels/HorariosPanel";
 import { ConteoDiarioPanel } from "../components/panels/ConteoDiarioPanel";
 import { useRegistrarVista } from "../lib/bitacora";
@@ -52,6 +52,7 @@ export default function StaffAccessShell({
   profile,
   data,
   onSaveHorarioSemana,
+  onSaveReglasHorario,
   onSaveConteoTexto,
   onSavePedidoDiario,
   onSaveInventarioNotas,
@@ -67,6 +68,7 @@ export default function StaffAccessShell({
   profile: Profile;
   data: AppData;
   onSaveHorarioSemana: (monthKey: string, weekIndex: number, semana: HorarioSemana) => void;
+  onSaveReglasHorario: (cambios: Record<string, ReglasArea>) => void;
   onSaveConteoTexto: (area: ConteoTextoArea, fecha: string, texto: string) => void;
   onSavePedidoDiario: (area: ConteoTextoArea, fecha: string, pedido: Record<string, number>) => void;
   onSaveInventarioNotas: (fecha: string, texto: string) => void;
@@ -277,6 +279,9 @@ export default function StaffAccessShell({
           soloAreaId={horarioAreaId}
           readOnly={!(puesto && puedeEditarHorarios(puesto.nombre))}
           verPronostico={!!(puesto && puedeEditarHorarios(puesto.nombre))}
+          puestos={data.puestos}
+          reglas={data.reglasHorario}
+          onSaveReglas={onSaveReglasHorario}
         />
       </div>
     );
