@@ -290,6 +290,14 @@ export const NOVEDADES: Novedad[] = [
     texto: "Arriba ves el **siguiente paso** con su botón, y abajo las pestañas **Turno 1 · Apertura**, **Turno 2 · Cierre** y **Todo el día**. El **efectivo a entregar** siempre queda a la vista.",
     visual: "guardarCorte",
   },
+  {
+    id: "fondo-en-turno-1",
+    fecha: "2026-10-25T06:37:00Z",
+    seccion: "corte",
+    titulo: "El fondo se maneja en la apertura",
+    texto: "Lo que se dejó ayer se **recibe al abrir**. Si pagas algo con él, en el gasto elige **\\"Con el fondo\\"**. Lo que quede se **entrega con la apertura**, aparte de las ventas.",
+    visual: "guardarCorte",
+  },
 ];
 
 interface EstadoNovedades {
