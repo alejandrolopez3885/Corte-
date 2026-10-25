@@ -20,8 +20,9 @@ import { MonthModal } from "../components/modals/MonthModal";
 import { type MeseroFormValues } from "../components/modals/MeseroModal";
 import { CorteMeseroAsistente } from "../components/modals/CorteMeseroAsistente";
 import { AperturaModal, type AperturaValues } from "../components/modals/AperturaModal";
-import { GastoModal, type GastoFormValues } from "../components/modals/GastoModal";
-import { TransferModal, type TransferFormValues } from "../components/modals/TransferModal";
+import { type GastoFormValues } from "../components/modals/GastoModal";
+import { GastoAsistente, type GastoAsistenteValores } from "../components/modals/GastoAsistente";
+import { TransferAsistente, type TransferAsistenteValores } from "../components/modals/TransferAsistente";
 import { CreditoProveedoresModal } from "../components/modals/CreditoProveedoresModal";
 import { CatalogModal } from "../components/modals/CatalogModal";
 import { ProveedoresModal } from "../components/modals/ProveedoresModal";
@@ -901,7 +902,10 @@ export default function CortesApp({ profile }: { profile: Profile }) {
     setModal(null);
   }
 
-  function saveGasto(form: GastoFormValues, editingId?: string) {
+  // meseroCutId: de qué corte se rebaja ("" = gasto general); al cambiarlo
+  // o cambiar el monto, los cortes involucrados se ajustan. otro: "Guardar
+  // otro gasto" — guarda sin cerrar el asistente.
+  function saveGasto(form: GastoAsistenteValores, editingId?: string, otro = false) {
     if (bloqueadoMedioTurno(editingId)) return;
     updateDay((d) => {
       // empleadoId/meseroId solo aplican a las categorías que representan
@@ -919,14 +923,17 @@ export default function CortesApp({ profile }: { profile: Profile }) {
         empleadoId: ligableAEmpleado ? form.empleadoId || undefined : undefined,
         meseroId: ligableAMesero ? form.meseroId || undefined : undefined,
       };
+      const cut = form.meseroCutId ? d.meseros.find((m) => m.id === form.meseroCutId) : undefined;
+      if (cut) Object.assign(entry, { origen: "mesero", meseroCutId: cut.id, meseroNombre: cut.nombre });
       if (editingId) {
         const i = d.gastos.findIndex((g) => g.id === editingId);
-        // Gasto del corte de un mesero: el cambio de monto se pasa a ese corte.
-        ajustarCorteDeGasto(d, d.gastos[i], entry.total - d.gastos[i].total);
-        d.gastos[i] = { ...d.gastos[i], ...entry, ...(d.gastos[i].meseroCutId ? { origen: d.gastos[i].origen } : {}) };
+        // Sale del corte donde estaba y entra (con su monto nuevo) al que se eligió.
+        ajustarCorteDeGasto(d, d.gastos[i], -d.gastos[i].total);
+        d.gastos[i] = { ...d.gastos[i], meseroCutId: undefined, meseroNombre: undefined, ...entry };
       } else d.gastos.push(entry);
+      ajustarCorteDeGasto(d, entry, entry.total);
     });
-    setModal(null);
+    if (!otro) setModal(null);
   }
 
   function toggleGastoEstado(id: string) {
@@ -1050,27 +1057,46 @@ export default function CortesApp({ profile }: { profile: Profile }) {
     setModal(null);
   }
 
-  function saveTransfer(form: TransferFormValues, editingId?: string) {
+  // Cambia lo que descuenta el corte del mesero al que pertenece una transferencia.
+  function ajustarCorteDeTransfer(d: DayData, t: Transferencia, delta: number) {
+    const cut = t.meseroCutId ? d.meseros.find((m) => m.id === t.meseroCutId) : undefined;
+    if (!cut || !delta) return;
+    cut.transferencia = round2(cut.transferencia + delta);
+    cut.total = round2(cut.total - delta);
+    // Los montos sueltos del corte ya no suman lo mismo.
+    delete cut.transferenciaDesglose;
+  }
+
+  // meseroCutId: de qué corte se rebaja ("" = ninguno; va a nombre de ese
+  // mesero). otro: "Guardar otra transferencia" — guarda sin cerrar.
+  function saveTransfer(form: TransferAsistenteValores, editingId?: string, otro = false) {
     if (bloqueadoMedioTurno(editingId)) return;
     updateDay((d) => {
-      const entry = {
+      const cut = form.meseroCutId ? d.meseros.find((m) => m.id === form.meseroCutId) : undefined;
+      const entry: Transferencia = {
         id: editingId || uid(),
-        persona: form.persona,
+        persona: cut ? cut.nombre : form.persona,
         total: parseFloat(form.total) || 0,
         ...(form.desglose ? { desglose: form.desglose } : {}),
+        ...(cut ? { origen: "mesero" as const, meseroCutId: cut.id } : {}),
       };
       if (editingId) {
         const i = d.transferencias.findIndex((t) => t.id === editingId);
+        ajustarCorteDeTransfer(d, d.transferencias[i], -d.transferencias[i].total);
         d.transferencias[i] = entry;
       } else d.transferencias.push(entry);
+      ajustarCorteDeTransfer(d, entry, entry.total);
     });
-    setModal(null);
+    if (!otro) setModal(null);
   }
 
   function deleteTransfer(id: string) {
     if (bloqueadoMedioTurno(id)) return;
     updateDay((d) => {
-      d.transferencias = d.transferencias.filter((t) => t.id !== id);
+      const t = d.transferencias.find((x) => x.id === id);
+      // Si era del corte de un mesero, ese corte deja de descontarla.
+      if (t) ajustarCorteDeTransfer(d, t, -t.total);
+      d.transferencias = d.transferencias.filter((x) => x.id !== id);
     });
     setModal(null);
   }
@@ -2547,22 +2573,24 @@ export default function CortesApp({ profile }: { profile: Profile }) {
         />
       )}
       {modal?.type === "gasto" && (
-        <GastoModal
+        <GastoAsistente
           onClose={() => setModal(null)}
           onSave={saveGasto}
           onDelete={modal.editing ? () => deleteGasto((modal.editing as Gasto).id) : undefined}
           editing={modal.editing}
+          cortesDelDia={day?.meseros || []}
+          catalog={data.meseros}
           empleados={data.empleados}
-          meseros={data.meseros}
           historial={historialGastos}
         />
       )}
       {modal?.type === "transfer" && (
-        <TransferModal
+        <TransferAsistente
           onClose={() => setModal(null)}
           onSave={saveTransfer}
           onDelete={modal.editing ? () => deleteTransfer((modal.editing as Transferencia).id) : undefined}
           editing={modal.editing}
+          cortesDelDia={day?.meseros || []}
           catalog={data.meseros}
         />
       )}

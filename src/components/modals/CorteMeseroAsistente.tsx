@@ -1,12 +1,14 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
-import { ArrowLeft, ArrowRight, Check, Paperclip, Trash2, X } from "lucide-react";
-import { NumInput, SumInput, Toggle } from "../ui";
-import { ConceptoInput } from "../ConceptoInput";
+import { useState, type ReactNode } from "react";
+import { ArrowLeft, ArrowRight, Check } from "lucide-react";
+import { NumInput, SumInput } from "../ui";
 import { money, round2, sumFromText, uid } from "../../lib/dataModel";
 import type { NombreHistorial } from "../../lib/gastosBusqueda";
-import { GASTO_CATEGORIAS } from "../../lib/types";
-import type { EmpleadoEntry, Gasto, GastoCategoria, GastoEstado, MeseroCatalogEntry, MeseroCut, PropinaTipo } from "../../lib/types";
+import type { EmpleadoEntry, Gasto, GastoCategoria, MeseroCatalogEntry, MeseroCut, PropinaTipo } from "../../lib/types";
 import type { MeseroFormValues } from "./MeseroModal";
+import {
+  FormularioGasto, ListaAgregados, MarcoAsistente, Opcion, etiquetaCategoria, faltaEnGasto, gastoEnBlanco, gastoSinLlenar, iniciales, ligasDeGasto,
+  type BorradorGasto,
+} from "./asistente";
 
 // Corte de mesero paso por paso (como encuesta, con barra de avance): a
 // quién, propina, venta del sistema, tarjetas, transferencias y gastos; al
@@ -18,19 +20,10 @@ import type { MeseroFormValues } from "./MeseroModal";
 // (guarda y regresa al corte del día). Al editar un corte abre directo en
 // el resultado, con "Cambiar" en cada dato.
 
-interface GastoNuevo {
+interface GastoNuevo extends BorradorGasto {
   id: string;
   categoria: GastoCategoria;
-  concepto: string;
-  monto: string;
-  estado: GastoEstado;
-  empleadoId: string;
-  meseroId: string;
 }
-
-// Igual que en el formulario de gasto (GastoModal).
-const LIGABLES_A_EMPLEADO = new Set<GastoCategoria>(["nomina", "comida_empleado"]);
-const etiquetaCategoria = (c?: GastoCategoria) => GASTO_CATEGORIAS.find((x) => x.value === c)?.label || "Sin categoría";
 
 type Paso = "mesero" | "cobro" | "propina" | "venta" | "tarjetas" | "transferencias" | "gastos";
 
@@ -40,15 +33,6 @@ const PROPINAS: { valor: PropinaTipo; texto: string }[] = [
   { valor: "manual", texto: "Sí, otra cantidad" },
   { valor: "none", texto: "No se cobra propina" },
 ];
-
-const iniciales = (n: string) =>
-  n
-    .trim()
-    .split(/\s+/)
-    .map((p) => p[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
 
 export function CorteMeseroAsistente({
   onClose,
@@ -88,39 +72,13 @@ export function CorteMeseroAsistente({
   const [transferDesglose, setTransferDesglose] = useState<number[] | undefined>(editing?.transferenciaDesglose);
   const [gastos, setGastos] = useState<GastoNuevo[]>([]);
   // El gasto que se está llenando (se agrega con "Guardar otro gasto" o "Siguiente").
-  const vacio = { categoria: "" as GastoCategoria | "", concepto: "", monto: "", estado: "pendiente" as GastoEstado, empleadoId: "", meseroId: "" };
-  const [g, setG] = useState(vacio);
+  const [g, setG] = useState<BorradorGasto>(gastoEnBlanco);
   const [avisoGasto, setAvisoGasto] = useState("");
   const [recibido, setRecibido] = useState("");
   // Al editar se empieza en el resultado; "Cambiar" lleva a un paso y regresa.
   const [paso, setPaso] = useState(0);
   const [enResultado, setEnResultado] = useState(!!editing);
   const [desdeResultado, setDesdeResultado] = useState(false);
-  // En iPad/iPhone el teclado tapa la parte de abajo sin cambiar el alto de
-  // la página: la pantalla se ajusta a lo visible para que se pueda bajar
-  // hasta el final y los botones queden arriba del teclado.
-  const raiz = useRef<HTMLDivElement>(null);
-  const cuerpo = useRef<HTMLElement>(null);
-  useEffect(() => {
-    const vv = window.visualViewport;
-    const el = raiz.current;
-    if (!vv || !el) return;
-    const ajustar = () => {
-      el.style.height = `${vv.height}px`;
-      el.style.top = `${vv.offsetTop}px`;
-    };
-    ajustar();
-    vv.addEventListener("resize", ajustar);
-    vv.addEventListener("scroll", ajustar);
-    return () => {
-      vv.removeEventListener("resize", ajustar);
-      vv.removeEventListener("scroll", ajustar);
-    };
-  }, []);
-  // Cada pregunta empieza desde arriba.
-  useEffect(() => {
-    cuerpo.current?.scrollTo(0, 0);
-  }, [paso, enResultado]);
 
   // Mismo cálculo que el corte de siempre (MeseroModal): usuarios acumulados
   // ("Para llevar" y los del corte de apertura) capturan la lectura del día.
@@ -160,14 +118,13 @@ export function CorteMeseroAsistente({
     gastos: true,
   };
 
-  const gastoVacio = !g.categoria && !g.concepto.trim() && !g.monto.trim();
+  const gastoVacio = gastoSinLlenar(g);
   // Agrega el gasto que se está llenando; false si le falta algo.
   function agregarGasto(): boolean {
-    if (!g.categoria) return setAvisoGasto("Primero elige la categoría."), false;
-    if (!g.concepto.trim()) return setAvisoGasto("Escribe el concepto."), false;
-    if (!(parseFloat(g.monto) > 0)) return setAvisoGasto("Escribe el total del gasto."), false;
+    const falta = faltaEnGasto(g);
+    if (falta) return setAvisoGasto(falta), false;
     setGastos((l) => [...l, { id: uid(), ...g, categoria: g.categoria as GastoCategoria, concepto: g.concepto.trim() }]);
-    setG(vacio);
+    setG(gastoEnBlanco());
     setAvisoGasto("");
     return true;
   }
@@ -218,8 +175,7 @@ export function CorteMeseroAsistente({
           monto: x.monto,
           categoria: x.categoria,
           estado: x.estado,
-          ...(LIGABLES_A_EMPLEADO.has(x.categoria) && x.empleadoId ? { empleadoId: x.empleadoId } : {}),
-          ...(x.categoria === "cancelaciones" && x.meseroId ? { meseroId: x.meseroId } : {}),
+          ...ligasDeGasto(x),
         })),
         transferMonto: transferSum > 0 ? transferMonto : "",
         ...(esAcumulado ? { lecturaSistema: lectura, cobro: esParaLlevar ? cobro || undefined : undefined } : {}),
@@ -230,11 +186,9 @@ export function CorteMeseroAsistente({
   }
 
   const opcion = (elegida: boolean, texto: ReactNode, alTocar: () => void, extra?: ReactNode) => (
-    <button type="button" className={`ca-opcion ${elegida ? "elegida" : ""}`} onClick={alTocar}>
-      {extra}
-      <span>{texto}</span>
-      {elegida && <Check size={20} className="ca-check" />}
-    </button>
+    <Opcion elegida={elegida} onClick={alTocar} extra={extra}>
+      {texto}
+    </Opcion>
   );
 
   const yaConCorte = new Set(cortesDelDia.filter((m) => m.id !== editing?.id).map((m) => m.meseroId));
@@ -349,93 +303,19 @@ export function CorteMeseroAsistente({
       ayuda: gastos.length || existingGastos.length ? undefined : "Si no tuvo gastos, toca No tuvo gastos.",
       contenido: (
         <>
-          {(existingGastos.length > 0 || gastos.length > 0) && (
-            <div className="ca-gastos-lista">
-              {existingGastos.map((x) => (
-                <div key={x.id} className="ca-gasto-ya">
-                  <span>
-                    {x.concepto}
-                    <small>{etiquetaCategoria(x.categoria)}</small>
-                  </span>
-                  <b>{money(x.total)}</b>
-                  <i />
-                </div>
-              ))}
-              {gastos.map((x) => (
-                <div key={x.id} className="ca-gasto-ya">
-                  <span>
-                    {x.concepto}
-                    <small>
-                      {etiquetaCategoria(x.categoria)}
-                      {x.estado === "ingresado" ? " · ingresado" : ""}
-                    </small>
-                  </span>
-                  <b>{money(parseFloat(x.monto) || 0)}</b>
-                  <button type="button" className="icon-btn" aria-label="Quitar gasto" onClick={() => setGastos((l) => l.filter((y) => y.id !== x.id))}>
-                    <X size={15} />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-          <span className="ca-etiqueta">Categoría</span>
-          <div className="ca-categorias">
-            {GASTO_CATEGORIAS.map((c) => (
-              <button
-                key={c.value}
-                type="button"
-                className={g.categoria === c.value ? "elegida" : ""}
-                onClick={() => setG((x) => ({ ...x, categoria: c.value, meseroId: c.value === "cancelaciones" && !x.meseroId ? meseroId : x.meseroId }))}
-              >
-                {c.label}
-              </button>
-            ))}
-          </div>
-          <label className="ca-campo">
-            <span>Concepto</span>
-            <ConceptoInput value={g.concepto} onChange={(val) => setG((x) => ({ ...x, concepto: val }))} historial={historial} placeholder="Ej. compra de hielo" />
-          </label>
-          <label className="ca-campo">
-            <span>Total</span>
-            <NumInput value={g.monto} onChange={(e) => setG((x) => ({ ...x, monto: e.target.value }))} placeholder="$0.00" />
-          </label>
-          {g.categoria && LIGABLES_A_EMPLEADO.has(g.categoria) && (
-            <label className="ca-campo">
-              <span>¿Para quién? (opcional)</span>
-              <select className="categoria-select" value={g.empleadoId} onChange={(e) => setG((x) => ({ ...x, empleadoId: e.target.value }))}>
-                <option value="">Sin asignar</option>
-                {empleados.map((e) => (
-                  <option key={e.id} value={e.id}>
-                    {e.nombre}
-                  </option>
-                ))}
-              </select>
-            </label>
-          )}
-          {g.categoria === "cancelaciones" && (
-            <label className="ca-campo">
-              <span>¿A quién se le cancela? (opcional)</span>
-              <select className="categoria-select" value={g.meseroId} onChange={(e) => setG((x) => ({ ...x, meseroId: e.target.value }))}>
-                <option value="">Sin asignar</option>
-                {catalog.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.nombre}
-                  </option>
-                ))}
-              </select>
-            </label>
-          )}
-          {/* Comprobante del gasto: todavía no disponible. */}
-          <button type="button" className="ca-comprobante" disabled>
-            <Paperclip size={17} /> Subir comprobante <small>Próximamente</small>
-          </button>
-          <Toggle
-            checked={g.estado === "ingresado"}
-            disabled={!g.categoria}
-            onChange={(on) => setG((x) => ({ ...x, estado: on ? "ingresado" : "pendiente" }))}
-            label="Ya está ingresado"
+          <ListaAgregados
+            filas={[
+              ...existingGastos.map((x) => ({ id: x.id, titulo: x.concepto, detalle: etiquetaCategoria(x.categoria), monto: x.total })),
+              ...gastos.map((x) => ({
+                id: x.id,
+                titulo: x.concepto,
+                detalle: `${etiquetaCategoria(x.categoria)}${x.estado === "ingresado" ? " · ingresado" : ""}`,
+                monto: parseFloat(x.monto) || 0,
+                onQuitar: () => setGastos((l) => l.filter((y) => y.id !== x.id)),
+              })),
+            ]}
           />
-          {avisoGasto && <p className="aviso-faltante">{avisoGasto}</p>}
+          <FormularioGasto g={g} setG={setG} catalog={catalog} empleados={empleados} historial={historial} meseroCancelacion={meseroId} aviso={avisoGasto} />
         </>
       ),
     },
@@ -457,118 +337,100 @@ export function CorteMeseroAsistente({
   const textoPropina = tipoPropina === "p3" ? "Propina 3%" : tipoPropina === "p2" ? "Propina 2%" : tipoPropina === "manual" ? "Propina" : "Sin propina";
   const pregunta = enResultado ? null : preguntas[actual];
 
-  return (
-    <div className="ca" ref={raiz}>
-      <header className="ca-barra">
-        <button type="button" className="icon-btn" aria-label="Cerrar" onClick={onClose}>
-          <X size={20} />
+  const pie = (
+    <>
+      {desdeResultado && !enResultado ? (
+        <button type="button" className="ca-boton" disabled={!listo[actual]} onClick={siguiente}>
+          <Check size={19} /> Listo, volver al resultado
         </button>
-        <h3>{editing ? `Corte de ${editing.nombre}` : "Hacer corte a mesero"}</h3>
-        {onDelete ? (
-          <button type="button" className="icon-btn" aria-label="Eliminar corte" onClick={onDelete}>
-            <Trash2 size={18} />
+      ) : (
+        <>
+          <button type="button" className="ca-boton secundario" onClick={atras}>
+            <ArrowLeft size={19} /> Atrás
           </button>
-        ) : (
-          <span className="ca-espacio" />
-        )}
-      </header>
-      <div className="ca-progreso">
-        <div>
-          <span>{enResultado ? "Resultado" : `Pregunta ${paso + 1} de ${totalPasos}`}</span>
-          <b>{porcentaje}%</b>
-        </div>
-        <div className="ca-barra-avance">
-          <i style={{ width: `${porcentaje}%` }} />
-        </div>
-      </div>
+          {enResultado ? (
+            <>
+              {!editing && (
+                <button type="button" className="ca-boton secundario ca-medio" disabled={!meseroId || !venta.trim()} onClick={() => guardar(true)}>
+                  Hacer otro corte
+                </button>
+              )}
+              <button type="button" className="ca-boton" disabled={!meseroId || !venta.trim()} onClick={() => guardar()}>
+                <Check size={19} /> Guardar corte
+              </button>
+            </>
+          ) : (
+            <>
+              {actual === "gastos" && (
+                <button type="button" className="ca-boton secundario ca-medio" disabled={gastoVacio} onClick={agregarGasto}>
+                  Guardar otro gasto
+                </button>
+              )}
+              <button type="button" className="ca-boton" disabled={!listo[actual]} onClick={siguiente}>
+                {/* En gastos: sin nada llenado es "No tuvo gastos"; con algo, "Guardar y continuar". */}
+                {actual !== "gastos" ? "Siguiente" : !gastoVacio ? "Guardar y continuar" : gastos.length ? "Siguiente" : "No tuvo gastos"}
+                <ArrowRight size={19} />
+              </button>
+            </>
+          )}
+        </>
+      )}
+    </>
+  );
 
-      <main className="ca-cuerpo" ref={cuerpo}>
-        <div className="ca-cuerpo-interior">
-        {pregunta && (
-          <>
-            <h2 className="ca-pregunta">{pregunta.titulo}</h2>
-            {pregunta.ayuda && <p className="ca-ayuda">{pregunta.ayuda}</p>}
-            {pregunta.contenido}
-          </>
-        )}
-        {enResultado && (
-          <>
-            <h2 className="ca-pregunta">Corte de {nombre}</h2>
-            <div className="ca-resultado">
-              {filaResultado(esAcumulado ? "Venta de este corte" : "Venta en sistema", money(v), "venta")}
-              {esParaLlevar
-                ? filaResultado("Cobró", cobro || "—", "cobro")
-                : filaResultado(textoPropina, `+${money(propina)}`, "propina")}
-              {filaResultado("Tarjetas", `−${money(t)}`, "tarjetas")}
-              {filaResultado("Transferencias", `−${money(transferSum)}`, "transferencias")}
-              {filaResultado("Gastos", `−${money(gastosSum)}`, "gastos")}
-              <div className="ca-res-total">
-                <span>Efectivo a entregar</span>
-                <b>{money(total)}</b>
-              </div>
+  return (
+    <MarcoAsistente
+      titulo={editing ? `Corte de ${editing.nombre}` : "Hacer corte a mesero"}
+      avance={enResultado ? "Resultado" : `Pregunta ${paso + 1} de ${totalPasos}`}
+      porcentaje={porcentaje}
+      clavePaso={enResultado ? "resultado" : paso}
+      onClose={onClose}
+      onDelete={onDelete}
+      etiquetaEliminar="Eliminar corte"
+      pie={pie}
+    >
+      {pregunta && (
+        <>
+          <h2 className="ca-pregunta">{pregunta.titulo}</h2>
+          {pregunta.ayuda && <p className="ca-ayuda">{pregunta.ayuda}</p>}
+          {pregunta.contenido}
+        </>
+      )}
+      {enResultado && (
+        <>
+          <h2 className="ca-pregunta">Corte de {nombre}</h2>
+          <div className="ca-resultado">
+            {filaResultado(esAcumulado ? "Venta de este corte" : "Venta en sistema", money(v), "venta")}
+            {esParaLlevar
+              ? filaResultado("Cobró", cobro || "—", "cobro")
+              : filaResultado(textoPropina, `+${money(propina)}`, "propina")}
+            {filaResultado("Tarjetas", `−${money(t)}`, "tarjetas")}
+            {filaResultado("Transferencias", `−${money(transferSum)}`, "transferencias")}
+            {filaResultado("Gastos", `−${money(gastosSum)}`, "gastos")}
+            <div className="ca-res-total">
+              <span>Efectivo a entregar</span>
+              <b>{money(total)}</b>
             </div>
-            <label className="ca-campo">
-              <span>Efectivo recibido</span>
-              <NumInput className="num-input ca-grande" value={recibido} onChange={(e) => setRecibido(e.target.value)} placeholder="$0.00" />
-            </label>
-            {recibido.trim() !== "" &&
-              (diferencia > 0 ? (
-                <div className="ca-cambio bien">
-                  Dar cambio: <b>{money(diferencia)}</b>
-                </div>
-              ) : diferencia < 0 ? (
-                <div className="ca-cambio mal">
-                  Faltan: <b>{money(-diferencia)}</b>
-                </div>
-              ) : (
-                <div className="ca-cambio bien">✓ Exacto, no hay cambio</div>
-              ))}
-            <p className="hint">El efectivo recibido es solo para calcular el cambio: no se guarda ni cambia el efectivo del día ni de la semana.</p>
-          </>
-        )}
-          {/* Espacio real al final (Safari no cuenta el padding al bajar): siempre se puede subir lo último a la vista. */}
-          <div className="ca-espacio-final" aria-hidden="true" />
-        </div>
-      </main>
-
-      <footer className="ca-pie">
-        {desdeResultado && !enResultado ? (
-          <button type="button" className="ca-boton" disabled={!listo[actual]} onClick={siguiente}>
-            <Check size={19} /> Listo, volver al resultado
-          </button>
-        ) : (
-          <>
-            <button type="button" className="ca-boton secundario" onClick={atras}>
-              <ArrowLeft size={19} /> Atrás
-            </button>
-            {enResultado ? (
-              <>
-                {!editing && (
-                  <button type="button" className="ca-boton secundario ca-medio" disabled={!meseroId || !venta.trim()} onClick={() => guardar(true)}>
-                    Hacer otro corte
-                  </button>
-                )}
-                <button type="button" className="ca-boton" disabled={!meseroId || !venta.trim()} onClick={() => guardar()}>
-                  <Check size={19} /> Guardar corte
-                </button>
-              </>
+          </div>
+          <label className="ca-campo">
+            <span>Efectivo recibido</span>
+            <NumInput className="num-input ca-grande" value={recibido} onChange={(e) => setRecibido(e.target.value)} placeholder="$0.00" />
+          </label>
+          {recibido.trim() !== "" &&
+            (diferencia > 0 ? (
+              <div className="ca-cambio bien">
+                Dar cambio: <b>{money(diferencia)}</b>
+              </div>
+            ) : diferencia < 0 ? (
+              <div className="ca-cambio mal">
+                Faltan: <b>{money(-diferencia)}</b>
+              </div>
             ) : (
-              <>
-                {actual === "gastos" && (
-                  <button type="button" className="ca-boton secundario ca-medio" disabled={gastoVacio} onClick={agregarGasto}>
-                    Guardar otro gasto
-                  </button>
-                )}
-                <button type="button" className="ca-boton" disabled={!listo[actual]} onClick={siguiente}>
-                  {/* En gastos: sin nada llenado es "No tuvo gastos"; con algo, "Guardar y continuar". */}
-                  {actual !== "gastos" ? "Siguiente" : !gastoVacio ? "Guardar y continuar" : gastos.length ? "Siguiente" : "No tuvo gastos"}
-                  <ArrowRight size={19} />
-                </button>
-              </>
-            )}
-          </>
-        )}
-      </footer>
-    </div>
+              <div className="ca-cambio bien">✓ Exacto, no hay cambio</div>
+            ))}
+          <p className="hint">El efectivo recibido es solo para calcular el cambio: no se guarda ni cambia el efectivo del día ni de la semana.</p>
+        </>
+      )}
+    </MarcoAsistente>
   );
 }

@@ -1876,6 +1876,7 @@ body.solo-lectura [data-bloqueado]::after { content: "🔒"; font-size: 11px; ma
 }
 .ca-opcion > span:not(.ca-avatar) { display: flex; flex-direction: column; gap: 2px; }
 .ca-opcion small { font-size: 12.5px; font-weight: 500; color: var(--warn); }
+.ca-opcion small.ca-sub { color: var(--ink-soft); }
 .ca-opcion.elegida { border-color: var(--accent); background: var(--accent-soft); }
 .ca-check { margin-left: auto; flex-shrink: 0; color: var(--accent); }
 .ca-avatar { width: 38px; height: 38px; flex-shrink: 0; border-radius: 50%; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; font-size: 14px; font-weight: 700; }
