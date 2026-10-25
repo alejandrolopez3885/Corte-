@@ -300,9 +300,17 @@ estando en Nómina te regresa al menú de Equipo):
   mm" (en días que vienen, la probabilidad de lluvia si es de 30% o más).
 - **Valores del horario**: OFF = descanso, X = abre, Z = dobla, O = cierra
   (entra lunes a jueves 4 pm, viernes y sábado 5 pm, domingo 3 pm); una hora
-  ("5", "6:30") es una entrada especial en la tarde y se paga como un turno. Es el paso 1 hacia el creador de horarios automático
-  (luego: clima, pronóstico de venta, reglas del personal y el horario
+  ("5", "6:30") es una entrada especial en la tarde y se paga como un turno.
+  Etiquetas y clima son los pasos 1 y 2 hacia el creador de horarios
+  automático (luego: pronóstico de venta, reglas del personal y el horario
   sugerido).
+- **Horario entre varias personas**: al guardar, solo se reemplazan las
+  áreas (y los festivos) que se cambiaron en esa pantalla; lo demás se toma
+  de la versión más reciente guardada. Así el dueño (piso) y el jefe de
+  cocina pueden editar al mismo tiempo sin borrarse el trabajo; si se
+  conservó lo de alguien más, el aviso de guardado dice "Se conservó lo que
+  guardó alguien más en COCINA". Con el horario bloqueado (sin editar) se ve
+  siempre lo último guardado, y al tocar "Editar" se empieza desde ahí.
 - **Corte**: la pantalla principal — mes, semana, día, meseros, gastos,
   transferencias, ventas de apps y sus resúmenes. Debajo de "Historial de este día"
   todo va ordenado paso a paso (`src/components/CorteDelDia.tsx`):

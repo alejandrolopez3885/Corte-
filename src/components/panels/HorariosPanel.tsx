@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Check, Clock, Copy, Trash2, TriangleAlert } from "lucide-react";
 import { Empty, Field, Sheet } from "../ui";
 import { cielo, useClima } from "../../lib/clima";
@@ -206,6 +206,7 @@ export function HorariosPanel({
           monthKey={monthKey}
           weekIndex={weekIndex}
           semanaInicial={semanaInicial}
+          guardadaActual={saved}
           yaGuardada={!!saved}
           isDraftBase={isDraftBase}
           empleados={empleados}
@@ -223,6 +224,7 @@ function HorarioSemanaForm({
   monthKey,
   weekIndex,
   semanaInicial,
+  guardadaActual,
   yaGuardada,
   isDraftBase,
   empleados,
@@ -235,6 +237,9 @@ function HorarioSemanaForm({
   monthKey: string;
   weekIndex: number;
   semanaInicial: HorarioSemana;
+  // La versión guardada más reciente (se actualiza en vivo si otra persona
+  // guarda): al guardar solo se reemplazan las áreas que se cambiaron aquí.
+  guardadaActual: HorarioSemana | null;
   yaGuardada: boolean;
   isDraftBase: boolean;
   empleados: EmpleadoEntry[];
@@ -247,9 +252,48 @@ function HorarioSemanaForm({
   const [pidiendoConfirmacion, setPidiendoConfirmacion] = useState(false);
   const [addingEmpleadoToArea, setAddingEmpleadoToArea] = useState<string | null>(null);
   const [cellEditor, setCellEditor] = useState<CellTarget | null>(null);
+  // Desde dónde se empezó a editar: para saber qué áreas cambió esta persona.
+  const [referencia, setReferencia] = useState<HorarioSemana>(semanaInicial);
+  const [avisoConservado, setAvisoConservado] = useState<string | null>(null);
 
+  // Sin editar (guardado y bloqueado), se ve siempre lo último guardado,
+  // aunque lo haya guardado otra persona.
+  useEffect(() => {
+    if (locked && guardadaActual) {
+      const n = normalizeHorarioSemana(guardadaActual);
+      setSemana(n);
+      setReferencia(n);
+    }
+  }, [locked, guardadaActual]);
+
+  const igual = (a: unknown, b: unknown) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
+
+  // Se guarda sobre la versión más reciente: solo se reemplazan las áreas
+  // (y los festivos) que se cambiaron en esta pantalla; lo demás se queda como
+  // lo guardó quien lo haya guardado al último. Así el dueño (piso) y el jefe
+  // de cocina pueden editar al mismo tiempo sin borrarse el trabajo.
   function guardar() {
-    onSaveSemana(monthKey, weekIndex, semana);
+    let final = semana;
+    const conservadas: string[] = [];
+    if (guardadaActual) {
+      const base = normalizeHorarioSemana(guardadaActual);
+      const cambiadas = semana.areas.filter((a) => !igual(a, referencia.areas.find((r) => r.id === a.id)));
+      base.areas.forEach((a) => {
+        if (!cambiadas.some((c) => c.id === a.id) && !igual(a, referencia.areas.find((r) => r.id === a.id))) conservadas.push(a.nombre);
+      });
+      final = {
+        ...base,
+        areas: [
+          ...base.areas.map((a) => cambiadas.find((c) => c.id === a.id) || a),
+          ...cambiadas.filter((c) => !base.areas.some((a) => a.id === c.id)),
+        ],
+        festivos: igual(semana.festivos, referencia.festivos) ? base.festivos : semana.festivos,
+      };
+    }
+    onSaveSemana(monthKey, weekIndex, final);
+    setSemana(final);
+    setReferencia(final);
+    setAvisoConservado(conservadas.length ? conservadas.join(" y ") : null);
     setLocked(true);
   }
 
@@ -324,7 +368,10 @@ function HorarioSemanaForm({
         <p className="hint">Solo el dueño y el jefe de cocina pueden editar el horario — aquí solo se puede ver.</p>
       ) : locked ? (
         <div className="conteo-locked-banner">
-          <span>Este horario ya está guardado y los campos están bloqueados.</span>
+          <span>
+            Este horario ya está guardado y los campos están bloqueados.
+            {avisoConservado && ` Se conservó lo que guardó alguien más en ${avisoConservado}.`}
+          </span>
           <button className="link-btn" onClick={() => setPidiendoConfirmacion(true)}>
             Editar
           </button>
