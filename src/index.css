@@ -2026,6 +2026,7 @@ button.cd-it { cursor: pointer; }
 .etq-icono { font-size: 20px; }
 .etq-check { margin-left: auto; color: var(--accent); }
 .etq-quincena { margin: 0; padding: 10px 12px; border-radius: 12px; background: var(--warn-soft); color: var(--warn); font-size: 14px; font-weight: 600; }
+.etq-quincena span { font-weight: 400; opacity: 0.8; }
 .etq-fila { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 13px; }
 .etq-chip { padding: 4px 10px; border-radius: 99px; background: var(--accent-soft); color: var(--accent); font-weight: 600; }
 .etq-chip.auto { background: var(--warn-soft); color: var(--warn); }

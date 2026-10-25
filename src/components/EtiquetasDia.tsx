@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Check } from "lucide-react";
 import { Sheet } from "./ui";
-import { ETIQUETAS, esQuincena, etiquetasDelDia } from "../lib/etiquetas";
+import { ETIQUETAS, etiquetasDelDia } from "../lib/etiquetas";
 import type { DayData, EtiquetaDia } from "../lib/types";
 
 export type ValorEtiquetas = { tipos: EtiquetaDia[]; nota?: string };
@@ -26,7 +26,11 @@ export function EtiquetasDiaSheet({
 
   return (
     <Sheet title={titulo} onClose={onClose}>
-      {esQuincena(fechaIso) && <p className="etq-quincena">💰 Es día de quincena (se marca solo).</p>}
+      {etiquetasDelDia(null, fechaIso).map((e) => (
+        <p key={e.texto} className="etq-quincena">
+          {e.icono} {e.texto === "Quincena" ? "Es día de quincena" : e.texto} <span>(se marca solo)</span>
+        </p>
+      ))}
       <p className="hint">¿Qué pasó o va a pasar este día? Puedes elegir varias.</p>
       <div className="etq-opciones">
         {ETIQUETAS.map((e) => (
