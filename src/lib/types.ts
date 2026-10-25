@@ -59,7 +59,16 @@ export interface EmpleadoEntry {
 
 // Valores rápidos para una celda de horario — el resto de las celdas
 // admite cualquier texto libre (p.ej. una hora de entrada).
+// OFF = descanso · O = cierra (entra lun–jue 4 pm, vie–sáb 5 pm, dom 3 pm)
+// · X = abre · Z = dobla (abre y cierra). Una hora ("5", "6:30") es una
+// entrada especial en la tarde (pm) y se paga como un turno.
 export const HORARIO_CHIPS = ["OFF", "O", "X", "Z"] as const;
+
+// Hora de entrada del turno de cierre (O) según el día.
+export const ENTRADA_CIERRE: Record<DayName, string> = {
+  Lunes: "4:00 pm", Martes: "4:00 pm", Miércoles: "4:00 pm", Jueves: "4:00 pm",
+  Viernes: "5:00 pm", Sábado: "5:00 pm", Domingo: "3:00 pm",
+};
 
 // Áreas fijas del horario — no se pueden crear, renombrar ni borrar.
 export const HORARIO_AREAS_FIJAS = [

@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Check, Clock, Copy, Trash2, TriangleAlert } from "lucide-react";
 import { Empty, Field, Sheet } from "../ui";
-import { dateForDay, findPreviousHorarioSemana, formatDayNumber, formatWeekRange, isoWeekNumber, normalizeHorarioSemana, resolveWeekStartDate } from "../../lib/dataModel";
+import { cielo, useClima } from "../../lib/clima";
+import { addDaysIso, dateForDay, findPreviousHorarioSemana, formatDayNumber, formatWeekRange, isoWeekNumber, normalizeHorarioSemana, resolveWeekStartDate } from "../../lib/dataModel";
 import { etiquetasDelDia } from "../../lib/etiquetas";
 import { EtiquetasDiaSheet, type ValorEtiquetas } from "../EtiquetasDia";
 import { copyHorarioImage } from "../../lib/horarioImage";
@@ -48,6 +49,9 @@ export function HorariosPanel({
   const [monthKey, setMonthKey] = useState(initialMonthKey);
   const [etiquetando, setEtiquetando] = useState<DayName | null>(null);
   const [weekIndex, setWeekIndex] = useState(initialWeekIndex);
+  // Clima de la semana que se ve (hook antes de cualquier return).
+  const inicioSemana = months[monthKey] ? resolveWeekStartDate(monthKey, weekIndex, months[monthKey]) : null;
+  const climaSemana = useClima(inicioSemana, inicioSemana ? addDaysIso(inicioSemana, 6) : null);
   // Resultado del último "Copiar imagen" (por botón: id del área o
   // "todas") — se borra solo a los pocos segundos.
   const [copia, setCopia] = useState<{ clave: string; copiada: boolean } | null>(null);
@@ -64,6 +68,7 @@ export function HorariosPanel({
   }
 
   const weekStartDate = resolveWeekStartDate(monthKey, weekIndex, month);
+  const clima = climaSemana;
   const saved = horarios[monthKey]?.weeks?.[weekIndex] ?? null;
   const seeded = !saved ? findPreviousHorarioSemana(horarios, monthKeys, monthKey, weekIndex) : null;
   const semanaInicial: HorarioSemana = normalizeHorarioSemana(saved ?? seeded);
@@ -159,11 +164,18 @@ export function HorariosPanel({
           <p className="hint">Etiquetas de cada día (música, partido, festivo…): toca un día para ponerlas. 💰 = quincena.</p>
           <div className="horario-etq">
             {DAYS.map((d) => {
-              const lista = etiquetasDelDia(month.weeks[weekIndex]?.days[d], dateForDay(monthKey, weekIndex, month, d));
+              const fecha = dateForDay(monthKey, weekIndex, month, d);
+              const lista = etiquetasDelDia(month.weeks[weekIndex]?.days[d], fecha);
+              const c = clima(fecha);
               return (
                 <button key={d} type="button" className={month.weeks[weekIndex]?.days[d]?.etiquetas ? "con" : ""} onClick={() => setEtiquetando(d)}>
                   {DAY_SHORT[d]}
                   <span>{lista.map((e) => e.icono).join("") || "＋"}</span>
+                  {c && (
+                    <em title={cielo(c.codigo).texto}>
+                      {cielo(c.codigo).icono} {c.max}°
+                    </em>
+                  )}
                 </button>
               );
             })}

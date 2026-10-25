@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Check } from "lucide-react";
 import { Sheet } from "./ui";
 import { ETIQUETAS, etiquetasDelDia } from "../lib/etiquetas";
+import { UBICACION, cielo, textoClima, useClima } from "../lib/clima";
 import type { DayData, EtiquetaDia } from "../lib/types";
 
 export type ValorEtiquetas = { tipos: EtiquetaDia[]; nota?: string };
@@ -55,11 +56,17 @@ export function EtiquetasDiaSheet({
   );
 }
 
-// Fila chica con las etiquetas de un día y el botón para cambiarlas.
+// Fila chica con el clima, las etiquetas de un día y el botón para cambiarlas.
 export function EtiquetasDiaFila({ day, fechaIso, onEditar }: { day: DayData; fechaIso: string; onEditar?: () => void }) {
   const lista = etiquetasDelDia(day, fechaIso);
+  const clima = useClima(fechaIso, fechaIso)(fechaIso);
   return (
     <div className="etq-fila">
+      {clima && (
+        <span className="etq-chip clima" title={`${cielo(clima.codigo).texto}${clima.pronostico ? " (pronóstico)" : ""} · ${UBICACION.nombre}`}>
+          {textoClima(clima)}
+        </span>
+      )}
       {lista.map((e) => (
         <span key={e.texto} className={`etq-chip ${e.auto ? "auto" : ""}`}>
           {e.icono} {e.texto}
