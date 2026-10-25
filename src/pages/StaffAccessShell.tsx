@@ -276,6 +276,7 @@ export default function StaffAccessShell({
           onSaveSemana={onSaveHorarioSemana}
           soloAreaId={horarioAreaId}
           readOnly={!(puesto && puedeEditarHorarios(puesto.nombre))}
+          verPronostico={!!(puesto && puedeEditarHorarios(puesto.nombre))}
         />
       </div>
     );

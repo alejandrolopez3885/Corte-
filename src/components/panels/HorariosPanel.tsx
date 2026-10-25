@@ -1,8 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { miles, pronosticoSemana } from "../../lib/pronostico";
+import { PronosticoDetalle } from "../PronosticoDetalle";
 import { Check, Clock, Copy, Trash2, TriangleAlert } from "lucide-react";
 import { Empty, Field, Sheet } from "../ui";
 import { cielo, useClima } from "../../lib/clima";
-import { addDaysIso, dateForDay, findPreviousHorarioSemana, formatDayNumber, formatWeekRange, isoWeekNumber, normalizeHorarioSemana, resolveWeekStartDate } from "../../lib/dataModel";
+import { addDaysIso, dateForDay, findPreviousHorarioSemana, formatDayNumber, money, todayIso, formatWeekRange, isoWeekNumber, normalizeHorarioSemana, resolveWeekStartDate } from "../../lib/dataModel";
 import { etiquetasDelDia } from "../../lib/etiquetas";
 import { EtiquetasDiaSheet, type ValorEtiquetas } from "../EtiquetasDia";
 import { copyHorarioImage } from "../../lib/horarioImage";
@@ -25,6 +27,7 @@ export function HorariosPanel({
   soloAreaId,
   readOnly,
   onSaveEtiquetas,
+  verPronostico = false,
 }: {
   onBack?: () => void;
   backLabel?: string;
@@ -45,6 +48,8 @@ export function HorariosPanel({
   readOnly?: boolean;
   // Etiquetas del día (música, partido, ...): se guardan en el día del corte.
   onSaveEtiquetas?: (monthKey: string, weekIndex: number, day: DayName, v: ValorEtiquetas | undefined) => void;
+  // Venta esperada de cada día: el dueño y quien puede editar horarios.
+  verPronostico?: boolean;
 }) {
   const [monthKey, setMonthKey] = useState(initialMonthKey);
   const [etiquetando, setEtiquetando] = useState<DayName | null>(null);
@@ -52,6 +57,11 @@ export function HorariosPanel({
   // Clima de la semana que se ve (hook antes de cualquier return).
   const inicioSemana = months[monthKey] ? resolveWeekStartDate(monthKey, weekIndex, months[monthKey]) : null;
   const climaSemana = useClima(inicioSemana, inicioSemana ? addDaysIso(inicioSemana, 6) : null);
+  // Venta esperada de cada día (dueño y quien edita horarios, ej. jefe de cocina).
+  const pronosticos = useMemo(
+    () => (verPronostico && months[monthKey] ? pronosticoSemana(months, monthKey, weekIndex, todayIso()) : []),
+    [verPronostico, months, monthKey, weekIndex]
+  );
   // Resultado del último "Copiar imagen" (por botón: id del área o
   // "todas") — se borra solo a los pocos segundos.
   const [copia, setCopia] = useState<{ clave: string; copiada: boolean } | null>(null);
@@ -69,6 +79,8 @@ export function HorariosPanel({
 
   const weekStartDate = resolveWeekStartDate(monthKey, weekIndex, month);
   const clima = climaSemana;
+  const puedeEtiquetar = !!onSaveEtiquetas && !soloAreaId && !readOnly;
+  const semanaEsperada = pronosticos.reduce((t, x) => t + (x.pronostico?.esperado || 0), 0);
   const saved = horarios[monthKey]?.weeks?.[weekIndex] ?? null;
   const seeded = !saved ? findPreviousHorarioSemana(horarios, monthKeys, monthKey, weekIndex) : null;
   const semanaInicial: HorarioSemana = normalizeHorarioSemana(saved ?? seeded);
@@ -159,41 +171,68 @@ export function HorariosPanel({
         <p className="hint">Tu navegador no permite copiar imágenes — se descargó el PNG.</p>
       )}
 
-      {onSaveEtiquetas && !soloAreaId && !readOnly && (
+      {(puedeEtiquetar || verPronostico) && (
         <>
-          <p className="hint">Etiquetas de cada día (música, partido, festivo…): toca un día para ponerlas. 💰 = quincena.</p>
+          <p className="hint">
+            {puedeEtiquetar
+              ? `Toca un día para ponerle etiquetas (música, partido…)${verPronostico ? " y ver de dónde sale su venta esperada" : ""}. 💰 = quincena.`
+              : "Venta esperada de cada día: tócalo para ver de dónde sale."}
+          </p>
           <div className="horario-etq">
             {DAYS.map((d) => {
               const fecha = dateForDay(monthKey, weekIndex, month, d);
               const lista = etiquetasDelDia(month.weeks[weekIndex]?.days[d], fecha);
               const c = clima(fecha);
+              const p = pronosticos.find((x) => x.dia === d)?.pronostico;
               return (
                 <button key={d} type="button" className={month.weeks[weekIndex]?.days[d]?.etiquetas ? "con" : ""} onClick={() => setEtiquetando(d)}>
                   {DAY_SHORT[d]}
-                  <span>{lista.map((e) => e.icono).join("") || "＋"}</span>
+                  <span>{lista.map((e) => e.icono).join("") || (puedeEtiquetar ? "＋" : "")}</span>
                   {c && (
                     <em title={cielo(c.codigo).texto}>
                       {cielo(c.codigo).icono} {c.max}°
                     </em>
                   )}
+                  {verPronostico && p && <b className="pron">~{miles(p.esperado)}</b>}
                 </button>
               );
             })}
           </div>
+          {verPronostico && semanaEsperada > 0 && (
+            <p className="horario-pron-titulo">
+              Venta esperada de la semana: <b>{money(semanaEsperada)}</b>
+            </p>
+          )}
         </>
       )}
-      {etiquetando && onSaveEtiquetas && (
-        <EtiquetasDiaSheet
-          titulo={`Etiquetas · ${etiquetando} ${formatDayNumber(dateForDay(monthKey, weekIndex, month, etiquetando))}`}
-          fechaIso={dateForDay(monthKey, weekIndex, month, etiquetando)}
-          inicial={month.weeks[weekIndex]?.days[etiquetando]?.etiquetas}
-          onGuardar={(v) => {
-            onSaveEtiquetas(monthKey, weekIndex, etiquetando, v);
-            setEtiquetando(null);
-          }}
-          onClose={() => setEtiquetando(null)}
-        />
-      )}
+      {etiquetando && (() => {
+        const fecha = dateForDay(monthKey, weekIndex, month, etiquetando);
+        const fila = pronosticos.find((x) => x.dia === etiquetando);
+        const detalle = verPronostico && fila?.pronostico ? <PronosticoDetalle p={fila.pronostico} real={fila.real || undefined} /> : null;
+        const titulo = `${etiquetando} ${formatDayNumber(fecha)}`;
+        return puedeEtiquetar && onSaveEtiquetas ? (
+          <EtiquetasDiaSheet
+            titulo={`Etiquetas · ${titulo}`}
+            fechaIso={fecha}
+            inicial={month.weeks[weekIndex]?.days[etiquetando]?.etiquetas}
+            arriba={detalle}
+            onGuardar={(v) => {
+              onSaveEtiquetas(monthKey, weekIndex, etiquetando, v);
+              setEtiquetando(null);
+            }}
+            onClose={() => setEtiquetando(null)}
+          />
+        ) : (
+          <Sheet title={`Venta esperada · ${titulo}`} onClose={() => setEtiquetando(null)}>
+            {etiquetasDelDia(month.weeks[weekIndex]?.days[etiquetando], fecha).map((e) => (
+              <p key={e.texto} className="etq-quincena">
+                {e.icono} {e.texto}
+              </p>
+            ))}
+            {detalle || <p className="hint">Todavía no hay suficiente historia para este día.</p>}
+          </Sheet>
+        );
+      })()}
 
       {readOnly && !saved ? (
         <Empty icon={<Clock size={26} strokeWidth={1.3} />} text="Aún no se ha guardado el horario de esta semana." />

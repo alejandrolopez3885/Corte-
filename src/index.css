@@ -2034,12 +2034,46 @@ button.cd-it { cursor: pointer; }
 .horario-etq button em { font-style: normal; font-size: 11px; font-weight: 500; color: var(--ink-soft); white-space: nowrap; }
 .etq-nota { color: var(--ink-soft); font-style: italic; }
 .etq-editar { font-size: 13px; }
-.etq-corte { padding: 2px 20px 6px; }
+.etq-corte { padding: 2px 20px 6px; display: flex; flex-direction: column; gap: 6px; }
+.pron-corte { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; font-size: 13.5px; color: var(--ink-soft); }
+.pron-corte b { color: var(--ink); }
+.pron-corte small { font-size: 12px; }
+.pron-corte em { font-style: normal; font-weight: 700; }
+.pron-corte em.sube { color: var(--good); }
+.pron-corte em.baja { color: var(--warn); }
 @media (max-width: 560px) { .etq-corte { padding-left: 16px; padding-right: 16px; } }
 .horario-etq { display: flex; gap: 4px; margin-bottom: 4px; }
 .horario-etq button { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 2px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); font: 600 12px 'IBM Plex Sans', sans-serif; color: var(--ink-soft); cursor: pointer; }
 .horario-etq button span { font-size: 14px; line-height: 1.1; min-height: 16px; letter-spacing: -1px; }
 .horario-etq button.con { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+/* Venta esperada en Inicio */
+.ini-pron { display: flex; flex-direction: column; gap: 6px; padding: 14px 16px; border: 1px solid var(--border); border-radius: 16px; background: var(--surface); }
+.ini-pron small { color: var(--ink-soft); font-size: 12px; }
+.ini-pron-dias { display: flex; flex-direction: column; margin: 4px 0; }
+.ini-pron-dia { display: grid; grid-template-columns: 1fr auto 64px; gap: 8px; align-items: center; padding: 7px 0; border: 0; border-bottom: 1px solid var(--surface-alt); background: none; font: 400 14px 'IBM Plex Sans', sans-serif; color: var(--ink); text-align: left; cursor: pointer; }
+.ini-pron-dia.hoy { font-weight: 700; }
+.ini-pron-dia b { font-weight: 600; }
+.ini-pron-dia i { font-style: normal; font-size: 12.5px; text-align: right; color: var(--ink-soft); }
+.ini-pron-dia i.sube { color: var(--good); }
+.ini-pron-dia i.baja { color: var(--warn); }
+/* Pronóstico de venta (PronosticoDetalle) */
+.pron-detalle { display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); padding: 10px 14px; }
+.pron-cab { display: grid; grid-template-columns: 1fr auto; align-items: baseline; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+.pron-cab span { font-size: 13px; color: var(--ink-soft); }
+.pron-cab b { font-size: 24px; color: var(--accent); grid-row: span 2; }
+.pron-cab small { font-size: 12.5px; color: var(--ink-soft); }
+.pron-fila { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--surface-alt); font-size: 14px; }
+.pron-fila:last-child { border-bottom: 0; }
+.pron-fila span { display: flex; flex-direction: column; }
+.pron-fila small { font-size: 12px; color: var(--ink-soft); }
+.pron-fila b.mas { color: var(--good); }
+.pron-fila b.menos { color: var(--bad); }
+.pron-fila.sin { color: var(--ink-soft); }
+.pron-real { margin-top: 6px; padding: 8px 10px; border-radius: 10px; font-weight: 600; font-size: 14px; }
+.pron-real.arriba { background: var(--good-soft); color: var(--good); }
+.pron-real.abajo { background: var(--warn-soft); color: var(--warn); }
+.horario-etq button .pron { font-size: 12px; color: var(--accent); }
+.horario-pron-titulo { margin: 6px 0 2px; font-size: 12.5px; color: var(--ink-soft); }
 .horario-table th small { display: block; font-size: 11px; line-height: 1; letter-spacing: -1px; }
 .cd-fondo .cd-caja-fila { grid-template-columns: minmax(0, 1fr) auto auto; }
 .cd-fondo .cd-it-main { min-width: 0; }

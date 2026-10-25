@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { Check } from "lucide-react";
 import { Sheet } from "./ui";
 import { ETIQUETAS, etiquetasDelDia } from "../lib/etiquetas";
@@ -12,12 +12,15 @@ export function EtiquetasDiaSheet({
   titulo,
   fechaIso,
   inicial,
+  arriba,
   onGuardar,
   onClose,
 }: {
   titulo: string;
   fechaIso: string;
   inicial?: ValorEtiquetas;
+  // Algo que va arriba (ej. el desglose de la venta esperada).
+  arriba?: ReactNode;
   onGuardar: (v: ValorEtiquetas | undefined) => void;
   onClose: () => void;
 }) {
@@ -27,6 +30,7 @@ export function EtiquetasDiaSheet({
 
   return (
     <Sheet title={titulo} onClose={onClose}>
+      {arriba}
       {etiquetasDelDia(null, fechaIso).map((e) => (
         <p key={e.texto} className="etq-quincena">
           {e.icono} {e.texto === "Quincena" ? "Es día de quincena" : e.texto} <span>(se marca solo)</span>

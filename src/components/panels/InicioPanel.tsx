@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react";
 import { Check } from "lucide-react";
-import { addDaysIso, formatLongDayDate, money, todayIso } from "../../lib/dataModel";
+import { addDaysIso, diaPorFecha, formatLongDayDate, mondayOnOrBefore, money, todayIso } from "../../lib/dataModel";
+import { pronosticoDesdeLunes } from "../../lib/pronostico";
+import { etiquetasDelDia } from "../../lib/etiquetas";
+import { PronosticoDetalle } from "../PronosticoDetalle";
+import { Sheet } from "../ui";
 import { cargarBitacora, type RenglonBitacora } from "../../lib/bitacora";
 import { calcularInicio, type AlertaInicio, type Destino } from "../../lib/inicio";
 import { pctCambio } from "../../lib/tendencias";
@@ -66,6 +70,66 @@ export function InicioPanel({ data, ownerId, onIr }: { data: AppData; ownerId: s
     </div>
   );
 
+  // Venta esperada: esta semana (con lo real de los días que ya pasaron) y
+  // la que viene.
+  const lunes = mondayOnOrBefore(hoy);
+  const estaSemana = pronosticoDesdeLunes(data.months, lunes, hoy);
+  const siguiente = pronosticoDesdeLunes(data.months, addDaysIso(lunes, 7), hoy);
+  const esperadaSemana = estaSemana.reduce((t, d) => t + (d.pronostico?.esperado || 0), 0);
+  const esperadaSiguiente = siguiente.reduce((t, d) => t + (d.pronostico?.esperado || 0), 0);
+  const hoyP = estaSemana.find((d) => d.fecha === hoy);
+  const [verDia, setVerDia] = useState<(typeof estaSemana)[number] | null>(null);
+  const filaDia = (d: (typeof estaSemana)[number]) => {
+    const p = d.pronostico;
+    if (!p) return null;
+    const pasado = d.fecha < hoy && d.real > 0;
+    const diff = pasado ? Math.round(((d.real - p.esperado) / p.esperado) * 100) : null;
+    return (
+      <button key={d.fecha} type="button" className={`ini-pron-dia ${d.fecha === hoy ? "hoy" : ""}`} onClick={() => setVerDia(d)}>
+        <span>
+          {d.dia.slice(0, 3)} {Number(d.fecha.slice(8))}
+          {etiquetasDelDia(diaPorFecha(data.months, d.fecha), d.fecha).map((e) => e.icono).join("")}
+        </span>
+        <b>{money(p.esperado)}</b>
+        <i className={diff === null ? "" : diff >= 0 ? "sube" : "baja"}>
+          {diff === null ? (d.fecha === hoy ? "hoy" : "") : `${diff >= 0 ? "▲" : "▼"} ${Math.abs(diff)}%`}
+        </i>
+      </button>
+    );
+  };
+  const tarjetaPronostico = esperadaSemana > 0 && (
+    <div className="ini-pron">
+      <span className="hint">Venta esperada esta semana</span>
+      <strong className="ini-venta-monto">{money(esperadaSemana)}</strong>
+      {hoyP?.pronostico && (
+        <div className="ini-venta-fila">
+          <span>Hoy se esperan</span>
+          <span>
+            {money(hoyP.pronostico.esperado)} <small>({money(hoyP.pronostico.bajo)}–{money(hoyP.pronostico.alto)})</small>
+          </span>
+        </div>
+      )}
+      <div className="ini-pron-dias">{estaSemana.map(filaDia)}</div>
+      {esperadaSiguiente > 0 && (
+        <div className="ini-venta-fila">
+          <span>La semana que viene</span>
+          <strong>{money(esperadaSiguiente)}</strong>
+        </div>
+      )}
+      <p className="ini-nota">▲▼ = lo que se vendió contra lo esperado. Toca un día para ver de dónde sale.</p>
+    </div>
+  );
+  const hojaDia = verDia?.pronostico && (
+    <Sheet title={`Venta esperada · ${formatLongDayDate(verDia.fecha).replace(/ de \d{4}$/, "")}`} onClose={() => setVerDia(null)}>
+      {etiquetasDelDia(diaPorFecha(data.months, verDia.fecha), verDia.fecha).map((e) => (
+        <p key={e.texto} className="etq-quincena">
+          {e.icono} {e.texto}
+        </p>
+      ))}
+      <PronosticoDetalle p={verDia.pronostico} real={verDia.fecha < hoy && verDia.real > 0 ? verDia.real : undefined} />
+    </Sheet>
+  );
+
   const { pagos } = inicio;
   const tarjetaPagos = pagos && pagos.total > 0 && (
     <div className="ini-pagos">
@@ -103,6 +167,7 @@ export function InicioPanel({ data, ownerId, onIr }: { data: AppData; ownerId: s
 
   return (
     <div className="page-section">
+      {hojaDia}
       <div>
         <TituloPagina titulo={saludo} />
         <p className="hint ini-fecha">{formatLongDayDate(hoy).replace(/ de \d{4}$/, "")}</p>
@@ -116,6 +181,7 @@ export function InicioPanel({ data, ownerId, onIr }: { data: AppData; ownerId: s
             <span>No hay cortes, gastos ni pendientes por revisar.</span>
           </div>
           {tarjetaVenta}
+          {tarjetaPronostico}
           {tarjetaPagos}
         </>
       ) : (
@@ -135,10 +201,11 @@ export function InicioPanel({ data, ownerId, onIr }: { data: AppData; ownerId: s
             </span>
           </div>
           {grupos.map((g) =>
-            g.alertas.length === 0 && !(g.key === "negocio" && (tarjetaVenta || tarjetaPagos)) && !(g.key === "operacion" && notaEquivalencia) ? null : (
+            g.alertas.length === 0 && !(g.key === "negocio" && (tarjetaVenta || tarjetaPagos || tarjetaPronostico)) && !(g.key === "operacion" && notaEquivalencia) ? null : (
               <section key={g.key} className="ini-grupo">
                 <h3 className={`ini-grupo-titulo ${g.clase}`}>{g.titulo}</h3>
                 {g.key === "negocio" && tarjetaVenta}
+                {g.key === "negocio" && tarjetaPronostico}
                 {g.key === "negocio" && tarjetaPagos}
                 {g.alertas.map((al) => (
                   <Alerta key={al.id} alerta={al} clase={g.clase} onIr={onIr} />

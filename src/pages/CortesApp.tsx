@@ -9,7 +9,7 @@ import { useAppData } from "../lib/useAppData";
 import { historialNombres } from "../lib/gastosBusqueda";
 import {
   addDaysIso, buildMonth, dateForDay, formatAssignedDate, formatDayNumber, formatLongDayDate, formatWeekRange,
-  mondayOnOrBefore, mostRecentDayInWeek, mostRecentWeekIndex, resolveAssignmentLocation, resolveWeekStartDate,
+  mondayOnOrBefore, money, mostRecentDayInWeek, mostRecentWeekIndex, resolveAssignmentLocation, resolveWeekStartDate,
   normalizarNombre, round2, sumFromText, todayIso, uid, recalcularAcumulados, turnosActivos, quienesAbren, efectivoDelDia, FONDO_EN_APERTURA_DESDE, empleadoDelDueno,
 } from "../lib/dataModel";
 import { removeAssignmentByStaffAndDate, upsertAssignment, useStaffAssignments } from "../lib/staffAssignments";
@@ -20,6 +20,7 @@ import { MonthModal } from "../components/modals/MonthModal";
 import { type MeseroFormValues } from "../components/modals/MeseroModal";
 import { CorteMeseroAsistente } from "../components/modals/CorteMeseroAsistente";
 import { CorteDelDia } from "../components/CorteDelDia";
+import { pronosticoDia } from "../lib/pronostico";
 import { EtiquetasDiaFila, EtiquetasDiaSheet, type ValorEtiquetas } from "../components/EtiquetasDia";
 import { AperturaModal, type AperturaValues } from "../components/modals/AperturaModal";
 import { type GastoFormValues } from "../components/modals/GastoModal";
@@ -1339,6 +1340,10 @@ export default function CortesApp({ profile }: { profile: Profile }) {
   // Efectivo a entregar (desde el 21/10/2026), ver efectivoDelDia.
   const efectivoDia =
     day && totals && turnosDelDia && activeDayDate ? efectivoDelDia(data.months, activeDayDate, day, totals.efectivo) : null;
+  // Venta esperada del día que se ve (solo el dueño).
+  // (Cálculo directo, sin hooks: aquí ya pasaron los return tempranos.)
+  const pronosticoHoy =
+    isOwner && day && activeDayDate && activeTab === "corte" ? pronosticoDia(data.months, day, activeDayDate, activeDay, todayIso()) : null;
   // Fondo del día anterior manejado en el turno 1 (desde el 25/10/2026).
   const fondoActivo = !!(efectivoDia && activeDayDate && activeDayDate >= FONDO_EN_APERTURA_DESDE && efectivoDia.dejadoAyer > 0);
 
@@ -1637,6 +1642,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           horarios={data.horarios}
           onSaveSemana={saveHorarioSemana}
           onSaveEtiquetas={guardarEtiquetas}
+          verPronostico
         />
       )}
 
@@ -2170,6 +2176,34 @@ export default function CortesApp({ profile }: { profile: Profile }) {
             {activeDayDate && (
               <div className="etq-corte">
                 <EtiquetasDiaFila day={day} fechaIso={activeDayDate} onEditar={corteBloqueado ? undefined : () => setModal({ type: "etiquetas" })} />
+                {isOwner && pronosticoHoy && (() => {
+                  const p = pronosticoHoy;
+                  const venta = round2(day.meseros.reduce((s, m) => s + m.venta, 0) + (day.ventaApps || 0));
+                  const cerrado = !!day.corteGuardado || (activeDayDate < todayIso() && venta > 0);
+                  const diff = cerrado && p.esperado ? Math.round(((venta - p.esperado) / p.esperado) * 100) : null;
+                  return (
+                    <div className="pron-corte">
+                      {diff === null ? (
+                        <span>
+                          Se esperan <b>{money(p.esperado)}</b> <small>({money(p.bajo)}–{money(p.alto)})</small>
+                        </span>
+                      ) : (
+                        <span>
+                          Esperábamos <b>{money(p.esperado)}</b> · vendiste <b>{money(venta)}</b>{" "}
+                          <em className={diff >= 0 ? "sube" : "baja"}>
+                            ({diff >= 0 ? "+" : ""}
+                            {diff}%)
+                          </em>
+                        </span>
+                      )}
+                      {diff !== null && Math.abs(diff) >= 25 && !day.etiquetas && !corteBloqueado && (
+                        <button type="button" className="link-btn" onClick={() => setModal({ type: "etiquetas" })}>
+                          ¿Pasó algo? Ponle una etiqueta
+                        </button>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
             )}
             {totals && (
