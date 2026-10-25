@@ -526,6 +526,8 @@ export function CorteMeseroAsistente({
             <p className="hint">El efectivo recibido es solo para calcular el cambio: no se guarda ni cambia el efectivo del día ni de la semana.</p>
           </>
         )}
+          {/* Espacio real al final (Safari no cuenta el padding al bajar): siempre se puede subir lo último a la vista. */}
+          <div className="ca-espacio-final" aria-hidden="true" />
         </div>
       </main>
 

@@ -1865,7 +1865,8 @@ body.solo-lectura [data-bloqueado]::after { content: "🔒"; font-size: 11px; ma
 .ca-barra-avance { max-width: 560px; margin: 0 auto; height: 9px; background: var(--surface-alt); border-radius: 99px; overflow: hidden; }
 .ca-barra-avance i { display: block; height: 100%; background: var(--accent); border-radius: 99px; transition: width 0.25s; }
 .ca-cuerpo { flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
-.ca-cuerpo-interior { width: 100%; max-width: 560px; margin: 0 auto; padding: 22px 18px 28px; display: flex; flex-direction: column; gap: 12px; }
+.ca-cuerpo-interior { width: 100%; max-width: 560px; margin: 0 auto; padding: 22px 18px 0; display: flex; flex-direction: column; gap: 12px; }
+.ca-espacio-final { flex-shrink: 0; height: max(120px, 30vh); }
 .ca-pregunta { margin: 0; font-family: 'Fraunces', serif; font-size: 25px; font-weight: 600; line-height: 1.2; }
 .ca-ayuda { margin: -4px 0 4px; font-size: 14.5px; color: var(--ink-soft); }
 .ca-opciones { display: flex; flex-direction: column; gap: 10px; }
