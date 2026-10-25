@@ -306,6 +306,14 @@ export const NOVEDADES: Novedad[] = [
     texto: "Arriba del corte puedes marcar qué pasó ese día: **música en vivo**, **partido**, **festivo**, **evento privado** u otro. La **quincena** se marca sola.",
     visual: "guardarCorte",
   },
+  {
+    id: "festivos-automaticos",
+    fecha: "2026-10-25T08:48:00Z",
+    seccion: "corte",
+    titulo: "Festivos y puentes automáticos",
+    texto: "Los **festivos de México** 🇲🇽, las **fechas especiales** ✨ (Día de las Madres, Semana Santa…) y los **puentes** 🌉 ya salen solos en cada día.",
+    visual: "guardarCorte",
+  },
 ];
 
 interface EstadoNovedades {

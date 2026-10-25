@@ -282,7 +282,16 @@ estando en Nómina te regresa al menú de Equipo):
   con las etiquetas y la nota y "＋ Etiqueta del día" / "Cambiar
   etiquetas". Sirven para días pasados y para planear. 💰 **Quincena** se
   marca sola: el 15 y el último día del mes; si cae en sábado o domingo, el
-  viernes anterior. Es el paso 1 hacia el creador de horarios automático
+  viernes anterior. También salen solos: 🇲🇽 **festivos oficiales** (Año
+  Nuevo, Constitución —1er lunes de febrero—, Juárez —3er lunes de marzo—,
+  1 de mayo, 16 de septiembre, Revolución —3er lunes de noviembre—,
+  Navidad y el cambio de presidente cada 6 años), ✨ **fechas especiales**
+  que mueven la venta (Jueves y Viernes Santo según la Pascua, Reyes, San
+  Valentín, Día del Niño, Día de las Madres, Día del Padre, Noche Mexicana,
+  Halloween, Día de Muertos, Guadalupe, Nochebuena y Fin de año) y 🌉
+  **puentes** (festivo en lunes: sábado y domingo antes; en viernes:
+  sábado y domingo después; en jueves: el viernes; en martes: el lunes).
+  No tocan la nómina: el "Día festivo" del horario se sigue marcando a mano. Es el paso 1 hacia el creador de horarios automático
   (luego: clima, pronóstico de venta, reglas del personal y el horario
   sugerido).
 - **Corte**: la pantalla principal — mes, semana, día, meseros, gastos,
