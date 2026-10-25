@@ -154,6 +154,26 @@ se capturaron en ese corte; al eliminar o cambiar el monto de uno de esos
 gastos desde Gastos del día, el corte de ese mesero se ajusta solo
 (gastos y entrega).
 
+**Gasto y transferencia paso por paso**: el "+" de Gastos abre "Nuevo
+gasto" con el mismo diseño: 1) **¿Se rebaja de algún corte?** ("Sí, del
+corte de Jenny" con su entrega, uno por cada corte del día, o "No, es un
+gasto general"; si aún no hay cortes, se salta) y 2) **¿Qué gasto es?**
+con el formulario completo (categoría primero, concepto, total, a quién,
+Subir comprobante "Próximamente" e ingresado) y arriba si se rebaja de
+alguien ("Se rebaja de la entrega de Jenny ($5,000.00)"). Botones: Atrás ·
+**Guardar otro gasto** (lo guarda, limpia y sigue ahí; con el formulario
+vacío el verde dice "Listo") · **Guardar gasto**. El "+" de Transferencias
+abre "Nueva transferencia": 1) **¿Se rebaja de algún corte?** (o "No se
+rebaja de ningún corte"), 2) **¿Quién cobró la transferencia?** (solo si
+no es de un corte: los meseros o "Otra persona" con su nombre; si es de un
+corte va a nombre de ese mesero) y 3) **¿De cuánto es?** (con "+" para
+sumar varias), con Atrás · **Guardar otra transferencia** · **Guardar
+transferencia**. Si se rebaja de un corte, se descuenta de la entrega de
+ese mesero; al editar (abre directo en el gasto o el monto; con Atrás se
+cambia de qué corte se rebaja) o eliminar, los cortes se ajustan solos. El
+efectivo del día y de la semana no cambia: ya cuenta todos los gastos y
+transferencias.
+
 Al capturar un corte, "Guardar corte" no se puede tocar si falta elegir el
 mesero o la venta; y al guardar un gasto en efectivo la categoría es obligatoria ("Es importante
 seleccionar la categoría") — lo demás que es opcional no pide nada. Los
@@ -1722,6 +1742,8 @@ src/
     NovedadesAlEntrar.tsx  slider de novedades al entrar (cuentas de equipo); lista en lib/novedades.ts
     modals/       un modal por acción (mesero, gasto, transferencia, etc.)
     modals/CorteMeseroAsistente.tsx  corte de mesero paso por paso (el "+" de meseros en Corte)
+    modals/GastoAsistente.tsx, TransferAsistente.tsx  gasto y transferencia paso por paso
+    modals/asistente.tsx  piezas compartidas de los pasos (marco, formulario de gasto, "¿Se rebaja de algún corte?")
   pages/
     Login.tsx
     CortesApp.tsx vista principal del dueño y de Corte por día asignado

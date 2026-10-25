@@ -274,6 +274,14 @@ export const NOVEDADES: Novedad[] = [
     texto: "Al tocar **+** en meseros, el corte va **una pregunta a la vez**: propina, venta, tarjetas, transferencias y **gastos con su categoría**. Al final ves **cuánto entrega** y el **cambio**.",
     visual: "guardarCorte",
   },
+  {
+    id: "gasto-transferencia-paso-a-paso",
+    fecha: "2026-10-25T04:54:00Z",
+    seccion: "corte",
+    titulo: "Gastos y transferencias paso a paso",
+    texto: "Al tocar **+** en Gastos o Transferencias primero pregunta **¿Se rebaja de algún corte?**: si es de un mesero, se descuenta de **lo que entrega**.",
+    visual: "guardarCorte",
+  },
 ];
 
 interface EstadoNovedades {
