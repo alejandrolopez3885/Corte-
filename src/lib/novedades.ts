@@ -298,6 +298,14 @@ export const NOVEDADES: Novedad[] = [
     texto: "Lo que se dejó ayer se **recibe al abrir**. Si pagas algo con él, en el gasto elige **“Con el fondo”**. Lo que quede se **entrega con la apertura**, aparte de las ventas.",
     visual: "guardarCorte",
   },
+  {
+    id: "etiquetas-del-dia",
+    fecha: "2026-10-25T08:43:00Z",
+    seccion: "corte",
+    titulo: "Etiquetas del día",
+    texto: "Arriba del corte puedes marcar qué pasó ese día: **música en vivo**, **partido**, **festivo**, **evento privado** u otro. La **quincena** se marca sola.",
+    visual: "guardarCorte",
+  },
 ];
 
 interface EstadoNovedades {

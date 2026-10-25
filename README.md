@@ -271,6 +271,20 @@ estando en Nómina te regresa al menú de Equipo):
   día ✓ — No hay cortes, gastos ni pendientes por revisar" y solo la
   tarjeta de venta. Las alertas no se descartan a mano: se quitan solas al
   resolver el pendiente.
+- **Etiquetas del día** (`src/lib/etiquetas.ts`, `src/components/EtiquetasDia.tsx`):
+  qué pasó o va a pasar cada día que mueve la venta — 🎵 Música en vivo,
+  ⚽ Partido, 🎉 Festivo o puente, 🎂 Evento privado y 📌 Otro (varias a
+  la vez), con una nota opcional ("Banda de rock", "2 partidos"). Se
+  guardan en el día del corte, así que se ven igual en los dos lados: en
+  **Horarios**, una fila con los 7 días (sus íconos o "＋"; tocar uno abre
+  "Etiquetas · Viernes 23"), y los íconos también bajo el nombre del día
+  en la tabla; en **Corte**, una línea debajo de "Historial de este día"
+  con las etiquetas y la nota y "＋ Etiqueta del día" / "Cambiar
+  etiquetas". Sirven para días pasados y para planear. 💰 **Quincena** se
+  marca sola: el 15 y el último día del mes; si cae en sábado o domingo, el
+  viernes anterior. Es el paso 1 hacia el creador de horarios automático
+  (luego: clima, pronóstico de venta, reglas del personal y el horario
+  sugerido).
 - **Corte**: la pantalla principal — mes, semana, día, meseros, gastos,
   transferencias, ventas de apps y sus resúmenes. Debajo de "Historial de este día"
   todo va ordenado paso a paso (`src/components/CorteDelDia.tsx`):
