@@ -269,7 +269,37 @@ estando en Nómina te regresa al menú de Equipo):
   tarjeta de venta. Las alertas no se descartan a mano: se quitan solas al
   resolver el pendiente.
 - **Corte**: la pantalla principal — mes, semana, día, meseros, gastos,
-  transferencias, ventas de apps y sus resúmenes. Arriba de los totales del
+  transferencias, ventas de apps y sus resúmenes. Debajo de "Historial de este día"
+  todo va ordenado paso a paso (`src/components/CorteDelDia.tsx`):
+  - **Siguiente paso**: tarjeta verde con barra de avance ("Siguiente paso
+    · 3 de 4 · 50%"), qué toca hacer en una frase y su botón, y abajo los
+    pasos del día como etiquetas (✓ los hechos, resaltado el actual):
+    **Corte de apertura** ("Hoy abre …", botón Corte de apertura) →
+    **Cortes del cierre** (botón Hacer corte a mesero) → **Confirmar
+    gastos** (los que siguen en Pendiente o les falta algo, con "Ver
+    gastos", que pasa a Todo el día y baja a Gastos) → **Guardar corte**
+    ("Revisa que las apps del día ($…) y Johnster del día ($…) coincidan
+    con el sistema"). Los días sin turnos (antes del 21/10/2026) son 3
+    pasos, sin apertura. Ya guardado, la tarjeta dice "Corte guardado" por
+    quién y cuándo (el dueño con "Reabrir corte").
+  - **Pestañas** Turno 1 · Apertura (con candado y la hora si ya se
+    guardó; ahí el aviso con "Desbloquear apertura" para el dueño y sin
+    botones +) / Turno 2 · Cierre (se abre solo cuando ya hay apertura) /
+    Todo el día (resumen, con los cortes separados por turno). Los días
+    sin turnos no llevan pestañas.
+  - **Totales del turno** en tarjetas (venta, tarjetas, transferencias,
+    gastos, propinas y apps del día, que se toca para cambiarla; en Todo
+    el día: venta total, venta local, etc.).
+  - **Cortes de meseros** en tabla (venta, tarjetas, transf., gastos y
+    entrega, con el total; tocar una fila abre el corte) — en celular,
+    lista con los mismos datos; a un lado (abajo en celular) **Gastos**
+    (categoría, de qué corte o general, y Confirmar/Ingresado),
+    **Transferencias** y **Efectivo** (efectivo del cierre, lo que se dejó
+    o se deja, a entregar, la apertura ya entregada, el total del día y
+    "Johnster del día … debe coincidir con el sistema").
+  - **Barra fija abajo** con el efectivo a entregar (en la noche, si hubo
+    apertura), "Dejar efectivo" y "Guardar corte" (ya guardado: "Reabrir
+    corte" para el dueño o "Guardado"). Arriba de los totales del
   día hay una tarjeta de asignación: quién tiene asignado ese día (si
   alguien) y quién capturó su corte — ver "Asignar día" más abajo.
 - **Corte de apertura y cierre** (en los cortes desde el **21 de octubre

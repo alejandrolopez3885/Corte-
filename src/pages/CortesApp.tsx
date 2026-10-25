@@ -1,16 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  Plus, Settings2, Users, Receipt, ArrowLeftRight, CircleDot, Circle, Pencil,
-  Smartphone, BarChart3, LogOut, Truck, Trash2, Home, Store, LayoutDashboard, Contact, Clock, Wallet, ChartLine, Martini, ChefHat, BookOpen, MessageCircle, Trophy, QrCode, Award,
-  ShoppingCart, Handshake, Boxes, Package, Coins, History, Lock, FileUp,
+  Plus, Settings2, Users, Receipt, CircleDot, Circle,
+  BarChart3, LogOut, Truck, Trash2, Home, Store, LayoutDashboard, Contact, Clock, Wallet, ChartLine, Martini, ChefHat, BookOpen, MessageCircle, Trophy, QrCode, Award,
+  ShoppingCart, Handshake, Boxes, Package, Coins, History, FileUp,
 } from "lucide-react";
 import { useAuth } from "../lib/auth.tsx";
 import { useAppData } from "../lib/useAppData";
 import { historialNombres } from "../lib/gastosBusqueda";
 import {
   addDaysIso, buildMonth, dateForDay, formatAssignedDate, formatDayNumber, formatLongDayDate, formatWeekRange,
-  mondayOnOrBefore, money, mostRecentDayInWeek, mostRecentWeekIndex, resolveAssignmentLocation, resolveWeekStartDate,
-  normalizarNombre, round2, sumFromText, todayIso, uid, recalcularAcumulados, turnosActivos, acumuladosDelDia, quienesAbren, efectivoDelDia, empleadoDelDueno,
+  mondayOnOrBefore, mostRecentDayInWeek, mostRecentWeekIndex, resolveAssignmentLocation, resolveWeekStartDate,
+  normalizarNombre, round2, sumFromText, todayIso, uid, recalcularAcumulados, turnosActivos, quienesAbren, efectivoDelDia, empleadoDelDueno,
 } from "../lib/dataModel";
 import { removeAssignmentByStaffAndDate, upsertAssignment, useStaffAssignments } from "../lib/staffAssignments";
 import { DAYS, DAY_SHORT } from "../lib/types";
@@ -19,6 +19,7 @@ import { Empty, Field, NumInput, Sheet } from "../components/ui";
 import { MonthModal } from "../components/modals/MonthModal";
 import { type MeseroFormValues } from "../components/modals/MeseroModal";
 import { CorteMeseroAsistente } from "../components/modals/CorteMeseroAsistente";
+import { CorteDelDia } from "../components/CorteDelDia";
 import { AperturaModal, type AperturaValues } from "../components/modals/AperturaModal";
 import { type GastoFormValues } from "../components/modals/GastoModal";
 import { GastoAsistente, type GastoAsistenteValores } from "../components/modals/GastoAsistente";
@@ -2137,350 +2138,34 @@ export default function CortesApp({ profile }: { profile: Profile }) {
               </button>
             )}
 
-            {day?.corteGuardado && (
-              <div className={`corte-guardado ${isOwner ? "dueno" : ""}`}>
-                <Lock size={15} />
-                <span>
-                  <strong>Corte guardado</strong> por {day.corteGuardado.nombre} el {fechaHoraCorta(day.corteGuardado.fecha)}.
-                  {!isOwner && " Ya no se puede editar. Si algo está mal, avísale al dueño."}
-                </span>
-              </div>
-            )}
-
-            {turnosDelDia && day && !day.apertura && !day.corteGuardado && (
-              <div className="apertura-aviso">
-                <span>
-                  {abrenHoy.length > 0 ? (
-                    <>
-                      Hoy abre: <strong>{abrenHoy.map((x) => x.nombre).join(", ")}</strong>{" "}
-                      <small>({abrenHoy.map((x) => x.marca).join(", ")} en el horario)</small>
-                    </>
-                  ) : (
-                    "Nadie tiene X ni Z hoy en el horario."
-                  )}
-                </span>
-                <button className="btn-primary" onClick={() => setModal({ type: "apertura" })}>
-                  Corte de apertura
-                </button>
-              </div>
-            )}
-
-            {turnosDelDia && day?.apertura && (
-              <div className="medio-turno-banner">
-                <Lock size={15} />
-                <span>
-                  <strong>Corte de apertura</strong>
-                  {day.apertura.abrio ? ` (abrió ${day.apertura.abrio.nombre})` : ""} guardado por {day.apertura.nombre} el{" "}
-                  {fechaHoraCorta(day.apertura.fecha)}.
-                  {isOwner ? (
-                    <>
-                      {" "}El personal ya no lo puede cambiar.{" "}
-                      <button className="link-btn" onClick={() => setModal({ type: "quitarApertura" })}>
-                        Desbloquear apertura
-                      </button>
-                    </>
-                  ) : (
-                    " Ya no se puede editar."
-                  )}
-                </span>
-              </div>
-            )}
-
-            {turnosDelDia &&
-              day &&
-              acumuladosDelDia(day).map((a) => (
-                <div key={a.meseroId} className="acumulado-dia">
-                  <span>
-                    {a.nombre} del día <small>({a.cortes} {a.cortes === 1 ? "corte" : "cortes"})</small>
-                  </span>
-                  <span>
-                    <strong>{money(a.lectura)}</strong> <small>debe coincidir con el sistema</small>
-                  </span>
-                </div>
-              ))}
-            {turnosDelDia && day?.apertura && (
-              <div className="acumulado-dia">
-                <span>
-                  Apps del día <small>(apertura {money(day.apertura.ventaApps)})</small>
-                </span>
-                <span>
-                  <strong>{money(day.ventaApps || 0)}</strong> <small>al cierre, escribe el total del día</small>
-                </span>
-              </div>
-            )}
-
             {totals && (
-              <section className="summary">
-                <div className="summary-item highlight">
-                  <span>Venta total</span>
-                  <strong>{money(totals.ventaTotal)}</strong>
-                </div>
-                <div className="summary-item">
-                  <span>Venta local</span>
-                  <strong>{money(totals.ventaLocal)}</strong>
-                </div>
-                <div className="summary-item">
-                  <span>Venta apps</span>
-                  <strong>{money(totals.ventaApps)}</strong>
-                </div>
-                <div className="summary-item highlight">
-                  <span>Tarjetas</span>
-                  <strong>{money(totals.tarjetas)}</strong>
-                </div>
-                <div className="summary-item highlight">
-                  <span>Transferencias</span>
-                  <strong>{money(totals.transferencias)}</strong>
-                </div>
-                <div className="summary-item">
-                  <span>Propinas</span>
-                  <strong>{money(totals.propina)}</strong>
-                </div>
-                <div className="summary-item">
-                  <span>Gastos</span>
-                  <strong>{money(totals.gastos)}</strong>
-                </div>
-                {!efectivoDia && (
-                  <div className="summary-item highlight" style={{ gridColumn: "1 / -1" }}>
-                    <span>
-                      Efectivo a entregar <em>(sin propinas)</em>
-                    </span>
-                    <strong>{money(totals.efectivo)}</strong>
-                  </div>
-                )}
-              </section>
+              <CorteDelDia
+                key={activeDayDate || activeDay}
+                data={data}
+                day={day}
+                isOwner={isOwner}
+                corteBloqueado={corteBloqueado}
+                turnos={turnosDelDia}
+                abrenHoy={abrenHoy}
+                efectivoDia={efectivoDia}
+                totals={totals}
+                bloqueado={bloqueadoMedioTurno}
+                fechaHora={fechaHoraCorta}
+                onNuevoCorte={() => setModal({ type: "mesero" })}
+                onEditarCorte={(m) => setModal({ type: "mesero", editing: m })}
+                onNuevoGasto={() => setModal({ type: "gasto" })}
+                onEditarGasto={(g) => setModal({ type: "gasto", editing: g })}
+                onToggleGasto={toggleGastoEstado}
+                onNuevaTransfer={() => setModal({ type: "transfer" })}
+                onEditarTransfer={(t) => setModal({ type: "transfer", editing: t })}
+                onApps={() => setModal({ type: "apps" })}
+                onApertura={() => setModal({ type: "apertura" })}
+                onQuitarApertura={() => setModal({ type: "quitarApertura" })}
+                onDejarEfectivo={() => setModal({ type: "dejarEfectivo" })}
+                onGuardarCorte={() => setModal({ type: "guardarCorte" })}
+                onReabrir={() => setModal({ type: "reabrirCorte" })}
+              />
             )}
-
-            {efectivoDia && day && (
-              <section className="efectivo-dia">
-                <h4>Efectivo del día</h4>
-                {efectivoDia.tieneApertura && (
-                  <div className="efectivo-fila info">
-                    <span>Efectivo de la apertura (ya entregado al dueño)</span>
-                    <span>{money(efectivoDia.aperturaEf)}</span>
-                  </div>
-                )}
-                <div className="efectivo-fila">
-                  <span>{efectivoDia.tieneApertura ? "Efectivo del resto del día" : "Efectivo de las ventas"} (sin propinas)</span>
-                  <strong>{money(efectivoDia.resto)}</strong>
-                </div>
-                {efectivoDia.dejadoAyer > 0 && (
-                  <div className="efectivo-fila">
-                    <span>+ Se dejó el día anterior{efectivoDia.ayer?.nota ? ` (${efectivoDia.ayer.nota})` : ""}</span>
-                    <strong>+{money(efectivoDia.dejadoAyer)}</strong>
-                  </div>
-                )}
-                {efectivoDia.dejadoHoy > 0 && (
-                  <div className="efectivo-fila menos">
-                    <span>− Se deja en el restaurante{day.efectivoDejado?.nota ? ` (${day.efectivoDejado.nota})` : ""}</span>
-                    <strong>−{money(efectivoDia.dejadoHoy)}</strong>
-                  </div>
-                )}
-                <div className="efectivo-fila total">
-                  <span>Efectivo a entregar{efectivoDia.tieneApertura ? " en la noche" : ""}</span>
-                  <span>{money(efectivoDia.entregar)}</span>
-                </div>
-                {efectivoDia.tieneApertura && (
-                  <div className="efectivo-fila info">
-                    <span>Total de efectivo del día (apertura + noche)</span>
-                    <span>{money(efectivoDia.totalDia)}</span>
-                  </div>
-                )}
-                {!corteBloqueado && (
-                  <button className="link-btn" onClick={() => setModal({ type: "dejarEfectivo" })}>
-                    {day.efectivoDejado ? "Cambiar el efectivo que se deja" : "+ Dejar efectivo para el día siguiente"}
-                  </button>
-                )}
-              </section>
-            )}
-
-            <button className="apps-row" onClick={() => setModal({ type: "apps" })} disabled={corteBloqueado}>
-              <span className="apps-row-label">
-                <Smartphone size={15} /> Ventas de apps <em>(no suma al efectivo)</em>
-              </span>
-              <span className="apps-row-value">
-                {money(day.ventaApps || 0)} <Pencil size={13} />
-              </span>
-            </button>
-
-            <main className="content">
-              <section className="block">
-                <div className="block-head">
-                  <h2>
-                    <Users size={17} /> Meseros
-                  </h2>
-                  {!corteBloqueado && (
-                    <button className="icon-btn accent" onClick={() => setModal({ type: "mesero" })}>
-                      <Plus size={18} />
-                    </button>
-                  )}
-                </div>
-                {day.meseros.length === 0 ? (
-                  <Empty icon={<Users size={26} strokeWidth={1.3} />} text="Sin cortes capturados este día. Toca + para agregar el primero." />
-                ) : (
-                  (() => {
-                    // Número de corte de cada usuario acumulado ("Para llevar · Corte 2").
-                    const numCorte: Record<string, number> = {};
-                    const cuenta: Record<string, number> = {};
-                    day.meseros.forEach((m) => {
-                      if (m.lecturaSistema === undefined) return;
-                      cuenta[m.meseroId] = (cuenta[m.meseroId] || 0) + 1;
-                      numCorte[m.id] = cuenta[m.meseroId];
-                    });
-                    const tarjeta = (m: MeseroCut) => {
-                      const bloq = bloqueadoMedioTurno(m.id);
-                      return (
-                        <button
-                          key={m.id}
-                          className={`card mesero-card${bloq ? " bloqueado-mt" : ""}`}
-                          onClick={() => setModal({ type: "mesero", editing: m })}
-                          disabled={corteBloqueado || bloq}
-                        >
-                          <div className="card-top">
-                            <span className="card-name">
-                              {m.nombre}
-                              {numCorte[m.id] && <span className="tag-corte">Corte {numCorte[m.id]}</span>}
-                            </span>
-                            <span className="card-total">{money(m.total)}</span>
-                          </div>
-                          <div className="card-sub">
-                            {m.cobro && <span>Cobró: {m.cobro}</span>}
-                            {m.lecturaSistema !== undefined && <span>Sistema: {money(m.lecturaSistema)}</span>}
-                            <span>Venta {money(m.venta)}</span>
-                            <span>Tarjetas {money(m.tarjetas)}</span>
-                            {m.transferencia > 0 && <span>Transferencia {money(m.transferencia)}</span>}
-                            {m.gastosTotal > 0 && <span>Gastos {money(m.gastosTotal)}</span>}
-                          </div>
-                        </button>
-                      );
-                    };
-                    const ap = day.apertura;
-                    if (!turnosDelDia || !ap) return <div className="card-list">{day.meseros.map(tarjeta)}</div>;
-                    const turno1 = day.meseros.filter((m) => ap.ids.includes(m.id));
-                    const turno2 = day.meseros.filter((m) => !ap.ids.includes(m.id));
-                    const hora = new Date(ap.fecha).toLocaleTimeString("es-MX", { hour: "numeric", minute: "2-digit" });
-                    return (
-                      <>
-                        <div className="turno-titulo">
-                          <span>Apertura · hasta {hora}</span>
-                          <Lock size={13} />
-                        </div>
-                        <div className="card-list">
-                          {turno1.map(tarjeta)}
-                          <div className="card mesero-card bloqueado-mt">
-                            <div className="card-top">
-                              <span className="card-name">Apps</span>
-                              <span className="card-total">{money(ap.ventaApps)}</span>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="turno-titulo">
-                          <span>Resto del día</span>
-                        </div>
-                        {turno2.length === 0 ? (
-                          <p className="hint">Aún no hay cortes después de la apertura. Al cierre, agrega el de {turno1.map((m) => m.nombre).join(" y ")} con el total del día.</p>
-                        ) : (
-                          <div className="card-list">{turno2.map(tarjeta)}</div>
-                        )}
-                      </>
-                    );
-                  })()
-                )}
-              </section>
-
-              <section className="block">
-                <div className="block-head">
-                  <h2>
-                    <Receipt size={17} /> Gastos
-                  </h2>
-                  {!corteBloqueado && (
-                    <button className="icon-btn accent" onClick={() => setModal({ type: "gasto" })}>
-                      <Plus size={18} />
-                    </button>
-                  )}
-                </div>
-                {day.gastos.length === 0 ? (
-                  <Empty icon={<Receipt size={26} strokeWidth={1.3} />} text="No hay gastos registrados este día." />
-                ) : (
-                  <div className="card-list">
-                    {day.gastos.map((g) => (
-                      <div key={g.id} className="card gasto-card">
-                        <button className="gasto-main" onClick={() => setModal({ type: "gasto", editing: g })} disabled={corteBloqueado || bloqueadoMedioTurno(g.id)}>
-                          <div className="card-top">
-                            <span className="card-name">{g.concepto}</span>
-                            <span className="card-total">{money(g.total)}</span>
-                          </div>
-                          {g.origen === "mesero" && <span className="card-tag">Desde corte de {g.meseroNombre}</span>}
-                          {g.empleadoId && (
-                            <span className="card-tag">
-                              Descuento a {data.empleados.find((e) => e.id === g.empleadoId)?.nombre || "empleado eliminado"}
-                            </span>
-                          )}
-                          {g.meseroId && (
-                            <span className="card-tag">
-                              Cancelación a {data.meseros.find((m) => m.id === g.meseroId)?.nombre || "mesero eliminado"}
-                            </span>
-                          )}
-                        </button>
-                        <button
-                          className={`estado-chip ${g.estado}`}
-                          disabled={corteBloqueado || bloqueadoMedioTurno(g.id) || (g.estado === "pendiente" && !g.categoria)}
-                          onClick={() => toggleGastoEstado(g.id)}
-                        >
-                          {g.estado === "pendiente" ? "Confirmar" : "Ingresado"}
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </section>
-
-              <section className="block">
-                <div className="block-head">
-                  <h2>
-                    <ArrowLeftRight size={17} /> Transferencias
-                  </h2>
-                  {!corteBloqueado && (
-                    <button className="icon-btn accent" onClick={() => setModal({ type: "transfer" })}>
-                      <Plus size={18} />
-                    </button>
-                  )}
-                </div>
-                {day.transferencias.length === 0 ? (
-                  <Empty icon={<ArrowLeftRight size={26} strokeWidth={1.3} />} text="No hay transferencias registradas este día." />
-                ) : (
-                  <div className="card-list">
-                    {day.transferencias.map((t) => (
-                      <button key={t.id} className="card" onClick={() => setModal({ type: "transfer", editing: t })} disabled={corteBloqueado || bloqueadoMedioTurno(t.id)}>
-                        <div className="card-top">
-                          <span className="card-name">{t.persona}</span>
-                          <span className="card-total">{money(t.total)}</span>
-                        </div>
-                        {t.origen === "mesero" && <span className="card-tag">Desde su corte</span>}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </section>
-
-              {!day.corteGuardado ? (
-                <div className="guardar-corte">
-                  <button className="btn-primary" onClick={() => setModal({ type: "guardarCorte" })}>
-                    <Lock size={16} /> Guardar corte
-                  </button>
-                  <p className="hint">Al guardarlo ya no se podrá editar.</p>
-                </div>
-              ) : (
-                isOwner && (
-                  <p className="hint guardar-corte-dueno">
-                    Tú lo puedes seguir editando. Si quieres que la persona lo corrija, toca{" "}
-                    <button className="link-btn" onClick={() => setModal({ type: "reabrirCorte" })}>
-                      Reabrir corte
-                    </button>
-                    .
-                  </p>
-                )
-              )}
-            </main>
           </>
         )}
       </>
@@ -2489,7 +2174,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
       {!modal && (
         <button
           type="button"
-          className={`preguntas-fab ${isOwner ? "" : "sin-barra"}`}
+          className={`preguntas-fab ${isOwner ? "" : "sin-barra"} ${(!isOwner || activeTab === "corte") && month && day ? "sobre-barra" : ""}`}
           onClick={() => setPreguntasAbierto(true)}
           aria-label="Pregúntale a Cortes"
         >

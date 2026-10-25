@@ -282,6 +282,14 @@ export const NOVEDADES: Novedad[] = [
     texto: "Al tocar **+** en Gastos o Transferencias primero pregunta **¿Se rebaja de algún corte?**: si es de un mesero, se descuenta de **lo que entrega**.",
     visual: "guardarCorte",
   },
+  {
+    id: "corte-por-pasos-y-turnos",
+    fecha: "2026-10-25T05:34:00Z",
+    seccion: "corte",
+    titulo: "El corte ahora te dice qué sigue",
+    texto: "Arriba ves el **siguiente paso** con su botón, y abajo las pestañas **Turno 1 · Apertura**, **Turno 2 · Cierre** y **Todo el día**. El **efectivo a entregar** siempre queda a la vista.",
+    visual: "guardarCorte",
+  },
 ];
 
 interface EstadoNovedades {
