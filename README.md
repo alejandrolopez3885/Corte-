@@ -344,7 +344,24 @@ estando en Nómina te regresa al menú de Equipo):
   fijos", sus días fijos (X, Z, O, vacío o una hora especial), qué puede
   hacer y "Descanso preferido" (o "Días que no puede" con días fijos).
   "Guardar reglas" escribe solo las áreas que cambiaron en
-  `AppData.reglasHorario`. El horario sugerido (paso 5) usará estas reglas.
+  `AppData.reglasHorario`. El horario sugerido (paso 5) usa estas reglas.
+- **Horario sugerido** (`src/lib/horarioSugerido.ts`, paso 5): mientras el
+  horario de la semana se puede editar (dueño, o jefe de cocina solo con
+  cocina), la tarjeta "✨ Horario sugerido" con el botón "Sugerir horario de
+  esta semana". Para cada área: se necesitan el mínimo de las reglas + 1 por
+  cada "venta por persona extra" que la venta esperada pase del día típico;
+  los de días fijos van tal cual; a cada tiempo completo se le pone 1 OFF en
+  el día con más gente de sobra (de preferencia su descanso preferido; si
+  empata, el de la semana pasada; luego el de menos venta) y O los demás
+  días; cada día abre (X) uno que pueda abrir, el que menos ha abierto en la
+  semana (si empata, el que abrió ese día la semana pasada), y en días con
+  más gente de lo normal o donde falta gente ese mismo dobla (Z), respetando
+  el máximo de dobles. Se abre una hoja con las tablas, la fila "Trabajan
+  6/8" (en rojo si faltan), avisos ("Viernes: faltan 2 en piso…", "nadie que
+  pueda abrir"), leyenda y "¿Por qué así?". "Usar este horario" llena el
+  formulario sin guardar (banner "Se cargó el horario sugerido…" con
+  "Volver a como estaba"); se corrige tocando las celdas y se guarda con
+  "Guardar horario" como siempre.
 - **Horario entre varias personas**: al guardar, solo se reemplazan las
   áreas (y los festivos) que se cambiaron en esa pantalla; lo demás se toma
   de la versión más reciente guardada. Así el dueño (piso) y el jefe de
@@ -448,7 +465,11 @@ estando en Nómina te regresa al menú de Equipo):
   separada de Personal), y como páginas propias "Personal" (la lista de tu
   personal — nombre, sueldo diario y un puesto opcional (Gerente, Mesero,
   Cocinero, ...); la lista se agrupa sola por área según el puesto de cada
-  quien. Áreas y puestos son catálogos editables — arrancan con Gerencia
+  quien. Al editar a alguien hay un interruptor **Activo / Inactivo**: los
+  inactivos (ya no trabajan aquí) salen al final en "Inactivos", atenuados,
+  y se conserva todo su historial (horarios, nómina), pero ya no salen en
+  "Agregar empleado" de Horarios, no se precargan en una semana nueva y no
+  entran en Reglas del personal ni en el horario sugerido. Áreas y puestos son catálogos editables — arrancan con Gerencia
   (Gerente, Subgerente), Piso (Bar tender, Mesero, Calidad, Capitán) y
   Cocina (Jefe de cocina, Cocinero) como punto de partida (el puesto que
   antes se llamaba "Barra" se renombró solo a "Bar tender" — mismo puesto,

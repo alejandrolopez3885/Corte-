@@ -338,6 +338,14 @@ export const NOVEDADES: Novedad[] = [
     texto: "En Horarios, **Reglas del personal**: cuántos trabajan cada día, quién abre, cierra o dobla, descansos y días fijos. Ya vienen llenas con los últimos horarios; corrige lo que no esté bien.",
     visual: "categoria",
   },
+  {
+    id: "horario-sugerido",
+    fecha: "2026-10-25T10:02:00Z",
+    seccion: "horarios",
+    titulo: "Horario sugerido",
+    texto: "Toca **Sugerir horario de esta semana**: se arma solo con las reglas del personal y la venta esperada. Revísalo, corrige lo que quieras y guárdalo.",
+    visual: "autocompletar",
+  },
 ];
 
 interface EstadoNovedades {

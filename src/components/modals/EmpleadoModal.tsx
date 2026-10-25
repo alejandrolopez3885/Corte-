@@ -42,6 +42,7 @@ export function EmpleadoModal({
   const [quitarFoto, setQuitarFoto] = useState(false);
   const [sueldoDiarioText, setSueldoDiarioText] = useState(editing?.sueldoDiario ? String(editing.sueldoDiario) : "");
   const [puestoId, setPuestoId] = useState(editing?.puestoId || "");
+  const [activo, setActivo] = useState(!editing?.inactivo);
   const [nuevoPuestoNombre, setNuevoPuestoNombre] = useState("");
   const [nuevoPuestoAreaId, setNuevoPuestoAreaId] = useState("");
   const [nuevaAreaNombre, setNuevaAreaNombre] = useState("");
@@ -173,6 +174,7 @@ export function EmpleadoModal({
         sueldoDiario: sueldoDiario || undefined,
         puestoId: finalPuestoId,
         staffProfileId,
+        inactivo: activo ? undefined : true,
         ...(quitarFoto ? { foto: undefined } : {}),
       },
       nuevaAreaEntry,
@@ -212,6 +214,16 @@ export function EmpleadoModal({
           autoFocus
         />
       </Field>
+      {editing && (
+        <div className="empleado-activo">
+          <Toggle checked={activo} onChange={setActivo} label={activo ? "Activo" : "Inactivo"} />
+          <span className="hint">
+            {activo
+              ? "Si ya no trabaja aquí, márcalo como inactivo: se guarda su historial."
+              : "Ya no trabaja aquí: se guarda su historial (horarios, nómina), pero no sale para agregarlo a un horario ni en el horario sugerido."}
+          </span>
+        </div>
+      )}
       <Field label="Puesto (opcional)">
         <select className="text-input" value={puestoId} onChange={(e) => setPuestoId(e.target.value)}>
           <option value="">Sin puesto</option>

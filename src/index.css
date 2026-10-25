@@ -2131,3 +2131,33 @@ button.cd-it { cursor: pointer; }
 .rg-dsel { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
 .rg-dsel button { border: 1px solid var(--border); background: var(--surface); border-radius: 9px; padding: 8px 0; font-size: 12px; font-family: inherit; color: var(--ink); cursor: pointer; }
 .rg-dsel button.on { background: var(--ink); border-color: var(--ink); color: white; }
+.empleado-activo { display: flex; flex-direction: column; gap: 2px; background: var(--surface-alt); border-radius: 12px; padding: 8px 12px; }
+.emp-inactivos .catalog-row { opacity: 0.6; }
+
+/* Horarios › Horario sugerido */
+.sug-card { background: linear-gradient(135deg, #1F5D4C, #2b7a63); color: white; border-radius: 16px; padding: 14px; }
+.sug-card h3 { margin: 0 0 4px; font-size: 16px; }
+.sug-card p { margin: 0 0 12px; font-size: 13px; opacity: 0.9; line-height: 1.4; }
+.sug-card button { width: 100%; background: white; color: var(--accent); border: none; border-radius: 100px; padding: 11px; font-weight: 600; font-size: 14.5px; font-family: inherit; cursor: pointer; }
+.sug-banner { background: var(--accent-soft); color: var(--accent); border-radius: 12px; padding: 10px 12px; font-size: 13px; line-height: 1.4; }
+.sug-banner .link-btn { display: inline; padding: 0; font-size: 13px; text-decoration: underline; font-weight: 600; }
+.sug-sub { margin: -10px 0 0; }
+.sug-aviso { margin: 0; background: var(--warn-soft); color: #7a4a17; border-radius: 12px; padding: 10px 12px; font-size: 13px; line-height: 1.4; }
+.sug-area { margin: 4px 0 6px; font-size: 12px; font-weight: 700; letter-spacing: 0.05em; color: var(--ink-soft); text-transform: uppercase; }
+.sug-tabla { width: 100%; border-collapse: collapse; font-size: 12px; }
+.sug-tabla th { font-weight: 500; color: var(--ink-soft); font-size: 11px; padding: 2px 0 6px; }
+.sug-tabla td { text-align: center; padding: 3px 1px; border-top: 1px solid var(--border); }
+.sug-tabla td.nm { text-align: left; font-weight: 500; font-size: 12.5px; white-space: nowrap; padding-right: 6px; }
+.sug-tabla i { display: inline-block; min-width: 30px; padding: 4px 0; border-radius: 7px; background: var(--surface-alt); font-style: normal; font-weight: 600; font-size: 11.5px; }
+.sug-tabla i.off { background: transparent; color: var(--ink-soft); font-weight: 500; font-size: 10.5px; }
+.sug-tabla i.x, .sug-leyenda i.x { background: var(--accent-soft); color: var(--accent); }
+.sug-tabla i.esp, .sug-leyenda i.esp { background: var(--warn-soft); color: var(--warn); }
+.sug-tabla i.vac { background: transparent; }
+.sug-tabla .tot td { font-weight: 600; font-size: 12.5px; color: var(--good); }
+.sug-tabla .tot td small { color: var(--ink-soft); font-weight: 400; font-size: 10px; }
+.sug-tabla .tot td.falta { color: var(--bad); background: var(--bad-soft); border-radius: 6px; }
+.sug-leyenda { display: flex; flex-wrap: wrap; gap: 10px; font-size: 11.5px; color: var(--ink-soft); }
+.sug-leyenda i { display: inline-block; min-width: 26px; text-align: center; padding: 2px 0; border-radius: 6px; background: var(--surface-alt); font-style: normal; font-weight: 600; color: var(--ink); margin-right: 3px; }
+.sug-porque { margin: 0; padding-left: 18px; font-size: 13px; color: var(--ink-soft); line-height: 1.45; }
+.sug-porque li { margin-bottom: 3px; }
+.sug-cancelar { align-self: center; }

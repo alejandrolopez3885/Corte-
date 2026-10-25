@@ -43,6 +43,9 @@ export interface EmpleadoEntry {
   nombre: string;
   sueldoDiario?: number;
   puestoId?: string;
+  // Ya no trabaja aquí: se conserva su historial (horarios, nómina), pero
+  // no sale para agregarlo a un horario ni en el horario sugerido.
+  inactivo?: boolean;
   // Si tiene una cuenta de equipo con PIN dada de alta desde aquí, el id
   // de su profile — ver staffAccounts.ts. Sin esto, esta persona no tiene
   // acceso a la app (es normal, la mayoría no lo necesita).

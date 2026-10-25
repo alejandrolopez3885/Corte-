@@ -34,9 +34,9 @@ export function ReglasHorarioPanel({
 }) {
   const areas = HORARIO_AREAS_FIJAS.filter((a) => !soloAreaId || a.id === soloAreaId);
   const iniciales0 = useMemo(
-    () => Object.fromEntries(areas.map((a) => [a.id, reglasDelArea(a.id, guardadas?.[a.id], horarios, months)])),
+    () => Object.fromEntries(areas.map((a) => [a.id, reglasDelArea(a.id, guardadas?.[a.id], horarios, months, new Set(empleados.filter((e) => e.inactivo).map((e) => e.id)))])),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [guardadas, horarios, months, soloAreaId]
+    [guardadas, horarios, months, soloAreaId, empleados]
   );
   const [areaId, setAreaId] = useState<string>(areas[0].id);
   const [borrador, setBorrador] = useState<Record<string, ReglasArea>>(() =>

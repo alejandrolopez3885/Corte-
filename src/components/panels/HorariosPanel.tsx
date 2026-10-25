@@ -12,6 +12,7 @@ import { DAYS, DAY_SHORT, HORARIO_AREAS_FIJAS, HORARIO_CHIPS } from "../../lib/t
 import type { DayName, EmpleadoEntry, HorarioArea, HorarioMonthData, HorarioSemana, MonthData, PuestoEntry, ReglasArea } from "../../lib/types";
 import { TituloPagina } from "../BarraTitulo";
 import { ReglasHorarioPanel } from "./ReglasHorarioPanel";
+import { sugerirHorario, type AreaSugerida } from "../../lib/horarioSugerido";
 
 type CellTarget = { areaId: string; empleadoId: string; nombre: string; day: DayName };
 
@@ -114,6 +115,9 @@ export function HorariosPanel({
   // Un festivo es de esa semana en concreto — no se debe precargar del
   // personal de la semana anterior aunque esa sí haya tenido uno.
   if (!saved) semanaInicial.festivos = [];
+  // Los inactivos (Personal) no se precargan en una semana nueva.
+  const inactivos = new Set(empleados.filter((e) => e.inactivo).map((e) => e.id));
+  if (!saved) semanaInicial.areas = semanaInicial.areas.map((a) => ({ ...a, filas: a.filas.filter((f) => !inactivos.has(f.empleadoId)) }));
   const isDraftBase = !saved && !!seeded;
 
   // clave: id del área copiada, o "todas" para la imagen con las 2 áreas.
@@ -284,6 +288,23 @@ export function HorariosPanel({
           onSaveSemana={onSaveSemana}
           soloAreaId={soloAreaId}
           readOnly={readOnly}
+          sugerir={
+            onSaveReglas && !readOnly
+              ? () => ({
+                  rango: formatWeekRange(weekStartDate),
+                  esperado: semanaEsperada,
+                  areas: sugerirHorario({
+                    horarios,
+                    months,
+                    reglas,
+                    pronosticos,
+                    semanaAnterior: findPreviousHorarioSemana(horarios, monthKeys, monthKey, weekIndex),
+                    inactivos,
+                    areaIds: soloAreaId ? [soloAreaId] : undefined,
+                  }),
+                })
+              : undefined
+          }
         />
       )}
     </div>
@@ -302,6 +323,7 @@ function HorarioSemanaForm({
   onSaveSemana,
   soloAreaId,
   readOnly,
+  sugerir,
 }: {
   // Íconos de las etiquetas de cada día, debajo del nombre del día.
   iconosDia?: Partial<Record<DayName, string>>;
@@ -317,8 +339,13 @@ function HorarioSemanaForm({
   onSaveSemana: (monthKey: string, weekIndex: number, semana: HorarioSemana) => void;
   soloAreaId?: string;
   readOnly?: boolean;
+  // Horario sugerido (reglas del personal + venta esperada).
+  sugerir?: () => { rango: string; esperado: number; areas: AreaSugerida[] };
 }) {
   const [semana, setSemana] = useState(semanaInicial);
+  const [propuesta, setPropuesta] = useState<ReturnType<NonNullable<typeof sugerir>> | null>(null);
+  // Cómo estaba antes de usar la propuesta (para "Volver a como estaba").
+  const [antesDeSugerir, setAntesDeSugerir] = useState<HorarioSemana | null>(null);
   const [locked, setLocked] = useState(yaGuardada);
   const [pidiendoConfirmacion, setPidiendoConfirmacion] = useState(false);
   const [addingEmpleadoToArea, setAddingEmpleadoToArea] = useState<string | null>(null);
@@ -365,6 +392,7 @@ function HorarioSemanaForm({
     setSemana(final);
     setReferencia(final);
     setAvisoConservado(conservadas.length ? conservadas.join(" y ") : null);
+    setAntesDeSugerir(null);
     setLocked(true);
   }
 
@@ -426,7 +454,7 @@ function HorarioSemanaForm({
     ? semana.areas.find((a) => a.id === addingEmpleadoToArea)
     : undefined;
   const empleadosDisponibles = areaAddingTarget
-    ? empleados.filter((e) => !areaAddingTarget.filas.some((f) => f.empleadoId === e.id))
+    ? empleados.filter((e) => !e.inactivo && !areaAddingTarget.filas.some((f) => f.empleadoId === e.id))
     : [];
   const cellValueRaw = cellEditor
     ? semana.areas.find((a) => a.id === cellEditor.areaId)?.filas.find((f) => f.empleadoId === cellEditor.empleadoId)?.valores[cellEditor.day] || ""
@@ -454,6 +482,76 @@ function HorarioSemanaForm({
             horario" para dejar esta semana en el historial.
           </p>
         )
+      )}
+
+      {sugerir && !locked && !readOnly &&
+        (antesDeSugerir ? (
+          <div className="sug-banner">
+            ✨ Se cargó el horario sugerido. Cambia lo que quieras tocando las celdas y luego "Guardar horario".{" "}
+            <button
+              className="link-btn"
+              onClick={() => {
+                setSemana(antesDeSugerir);
+                setAntesDeSugerir(null);
+              }}
+            >
+              Volver a como estaba
+            </button>
+          </div>
+        ) : (
+          <div className="sug-card">
+            <h3>✨ Horario sugerido</h3>
+            <p>Arma la semana con las reglas del personal y la venta esperada. Lo revisas y lo corriges antes de guardar.</p>
+            <button onClick={() => setPropuesta(sugerir())}>Sugerir horario de esta semana</button>
+          </div>
+        ))}
+      {propuesta && (
+        <Sheet title="Horario sugerido" onClose={() => setPropuesta(null)}>
+          <p className="hint sug-sub">
+            {propuesta.rango}
+            {propuesta.esperado > 0 && ` · se esperan $${Math.round(propuesta.esperado).toLocaleString("es-MX")}`}
+          </p>
+          {propuesta.areas.flatMap((a) => a.avisos).map((av) => (
+            <p key={av} className="sug-aviso">
+              ⚠️ {av}
+            </p>
+          ))}
+          {propuesta.areas.map((a) => (
+            <div key={a.area.id}>
+              <p className="sug-area">{a.area.nombre}</p>
+              {a.area.filas.length === 0 ? (
+                <p className="hint">No hay personal en los últimos horarios de esta área.</p>
+              ) : (
+                <TablaSugerida a={a} />
+              )}
+            </div>
+          ))}
+          <div className="sug-leyenda">
+            <span><i className="x">X</i> abre</span>
+            <span><i className="x">Z</i> abre y dobla</span>
+            <span><i>O</i> cierre</span>
+            <span><i className="esp">6:30</i> hora especial</span>
+          </div>
+          <p className="sug-area">¿Por qué así?</p>
+          <ul className="sug-porque">
+            <li>Los <b>descansos</b> van en los días con más gente de sobra y menos venta (y en el día preferido de cada quien).</li>
+            <li><b>Abre</b> quien menos ha abierto en la semana; en días fuertes el que abre <b>dobla</b>.</li>
+            <li>Los de <b>días fijos</b> van en sus días. Todo sale de Reglas del personal.</li>
+          </ul>
+          <button
+            className="btn-primary"
+            onClick={() => {
+              setAntesDeSugerir(semana);
+              setSemana((s) => ({ ...s, areas: s.areas.map((a) => propuesta.areas.find((p) => p.area.id === a.id)?.area || a) }));
+              setPropuesta(null);
+            }}
+          >
+            Usar este horario
+          </button>
+          <button className="link-btn sug-cancelar" onClick={() => setPropuesta(null)}>
+            Cancelar
+          </button>
+        </Sheet>
       )}
 
       {!soloAreaId && (
@@ -647,5 +745,45 @@ function CeldaModal({
         </button>
       )}
     </Sheet>
+  );
+}
+
+// Tabla de solo lectura de la propuesta, con "Trabajan" contra lo que se necesita.
+function TablaSugerida({ a }: { a: AreaSugerida }) {
+  const clase = (v: string) => (!v ? "vac" : v === "OFF" ? "off" : v === "X" || v === "Z" ? "x" : v === "O" ? "" : "esp");
+  return (
+    <div className="horario-table-wrap">
+      <table className="sug-tabla">
+        <thead>
+          <tr>
+            <th />
+            {DAYS.map((d) => (
+              <th key={d}>{DAY_SHORT[d]}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {a.area.filas.map((f) => (
+            <tr key={f.empleadoId}>
+              <td className="nm">{f.nombre}</td>
+              {DAYS.map((d) => (
+                <td key={d}>
+                  <i className={clase(f.valores[d] || "")}>{f.valores[d] || ""}</i>
+                </td>
+              ))}
+            </tr>
+          ))}
+          <tr className="tot">
+            <td className="nm">Trabajan</td>
+            {DAYS.map((d) => (
+              <td key={d} className={a.dias[d].trabajan < a.dias[d].necesarios ? "falta" : ""}>
+                {a.dias[d].trabajan}
+                <small>/{a.dias[d].necesarios}</small>
+              </td>
+            ))}
+          </tr>
+        </tbody>
+      </table>
+    </div>
   );
 }

@@ -69,12 +69,14 @@ export function reglaDeHistoria(valoresPorSemana: Partial<Record<DayName, string
 }
 
 // Reglas de un área: lo guardado encima de lo deducido del historial. Las
-// personas son quienes salieron en esa área en los últimos horarios.
+// personas son quienes salieron en esa área en los últimos horarios (sin
+// los marcados como inactivos en Personal).
 export function reglasDelArea(
   areaId: string,
   guardadas: ReglasArea | undefined,
   horarios: Record<string, HorarioMonthData>,
-  months: Record<string, MonthData>
+  months: Record<string, MonthData>,
+  inactivos?: Set<string>
 ): { reglas: ReglasArea; filas: FilaReglas[] } {
   const semanas = ultimasSemanas(horarios, months);
   const personas = new Map<string, { nombre: string; valores: Partial<Record<DayName, string>>[] }>();
@@ -82,6 +84,7 @@ export function reglasDelArea(
     semana.areas
       .find((a) => a.id === areaId)
       ?.filas.forEach((f) => {
+        if (inactivos?.has(f.empleadoId)) return;
         const p = personas.get(f.empleadoId) || { nombre: f.nombre, valores: [] };
         p.valores.push(f.valores);
         personas.set(f.empleadoId, p);

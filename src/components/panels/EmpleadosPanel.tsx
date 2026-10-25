@@ -29,7 +29,8 @@ export function EmpleadosPanel({
 
   const porArea = new Map<string, EmpleadoEntry[]>();
   const sinPuesto: EmpleadoEntry[] = [];
-  empleados.forEach((e) => {
+  const inactivos = empleados.filter((e) => e.inactivo);
+  empleados.filter((e) => !e.inactivo).forEach((e) => {
     const puesto = e.puestoId ? puestoById.get(e.puestoId) : undefined;
     if (!puesto) {
       sinPuesto.push(e);
@@ -44,6 +45,8 @@ export function EmpleadosPanel({
     if (items && items.length > 0) grupos.push({ key: a.id, nombre: a.nombre, items });
   });
   if (sinPuesto.length > 0) grupos.push({ key: "sin", nombre: "Sin puesto", items: sinPuesto });
+  // Los que ya no trabajan aquí, al final (se conserva su historial).
+  if (inactivos.length > 0) grupos.push({ key: "inactivos", nombre: "Inactivos", items: inactivos });
 
   return (
     <div className="page-section">
@@ -55,14 +58,14 @@ export function EmpleadosPanel({
       </div>
       <p className="hint">
         Lista de tu personal, independiente del catálogo de meseros (ese es para el corte), agrupada por área según el
-        puesto de cada quien. Toca a alguien para editar su nombre, puesto o sueldo diario.
+        puesto de cada quien. Toca a alguien para editar su nombre, puesto, sueldo diario o marcarlo como inactivo.
       </p>
 
       {empleados.length === 0 ? (
         <Empty icon={<UsersRound size={26} strokeWidth={1.3} />} text="Aún no agregas a nadie. Toca + para agregar al primero." />
       ) : (
         grupos.map((g) => (
-          <div className="insumos-grupo" key={g.key}>
+          <div className={`insumos-grupo ${g.key === "inactivos" ? "emp-inactivos" : ""}`} key={g.key}>
             <h3 className="insumos-grupo-titulo">{g.nombre}</h3>
             <div className="catalog-list">
               {g.items.map((e) => {
@@ -77,7 +80,7 @@ export function EmpleadosPanel({
                       </strong>
                       <span>
                         {puesto ? puesto.nombre : "Sin puesto"}
-                        {e.sueldoDiario ? ` · ${money(e.sueldoDiario)} / día` : " · sin sueldo diario"}
+                        {e.inactivo ? " · Inactivo" : e.sueldoDiario ? ` · ${money(e.sueldoDiario)} / día` : " · sin sueldo diario"}
                       </span>
                     </div>
                   </button>
