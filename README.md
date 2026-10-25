@@ -291,7 +291,16 @@ estando en Nómina te regresa al menú de Equipo):
   Halloween, Día de Muertos, Guadalupe, Nochebuena y Fin de año) y 🌉
   **puentes** (festivo en lunes: sábado y domingo antes; en viernes:
   sábado y domingo después; en jueves: el viernes; en martes: el lunes).
-  No tocan la nómina: el "Día festivo" del horario se sigue marcando a mano. Es el paso 1 hacia el creador de horarios automático
+  No tocan la nómina: el "Día festivo" del horario se sigue marcando a mano.
+- **Clima** (`src/lib/clima.ts`): el de Apodaca, N.L., de Open-Meteo
+  (gratis, sin clave) — máxima, mínima, lluvia y cielo de cada día, de los
+  días pasados y del pronóstico de los próximos 16 días (se trae solo, no se
+  captura). En Horarios, cada día de la fila muestra el cielo y la máxima
+  ("☀️ 31°"); en Corte, la línea del día lleva "🌧️ 24° / 18° · lluvia 6.2
+  mm" (en días que vienen, la probabilidad de lluvia si es de 30% o más).
+- **Valores del horario**: OFF = descanso, X = abre, Z = dobla, O = cierra
+  (entra lunes a jueves 4 pm, viernes y sábado 5 pm, domingo 3 pm); una hora
+  ("5", "6:30") es una entrada especial en la tarde y se paga como un turno. Es el paso 1 hacia el creador de horarios automático
   (luego: clima, pronóstico de venta, reglas del personal y el horario
   sugerido).
 - **Corte**: la pantalla principal — mes, semana, día, meseros, gastos,

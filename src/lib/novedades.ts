@@ -314,6 +314,14 @@ export const NOVEDADES: Novedad[] = [
     texto: "Los **festivos de México** 🇲🇽, las **fechas especiales** ✨ (Día de las Madres, Semana Santa…) y los **puentes** 🌉 ya salen solos en cada día.",
     visual: "guardarCorte",
   },
+  {
+    id: "clima-del-dia",
+    fecha: "2026-10-25T08:59:00Z",
+    seccion: "corte",
+    titulo: "El clima de cada día",
+    texto: "Arriba del corte ves el **clima** del día: la temperatura y si **llovió** (o la probabilidad de lluvia en los días que vienen).",
+    visual: "guardarCorte",
+  },
 ];
 
 interface EstadoNovedades {
