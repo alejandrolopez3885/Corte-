@@ -295,7 +295,7 @@ export const NOVEDADES: Novedad[] = [
     fecha: "2026-10-25T06:37:00Z",
     seccion: "corte",
     titulo: "El fondo se maneja en la apertura",
-    texto: "Lo que se dejó ayer se **recibe al abrir**. Si pagas algo con él, en el gasto elige **\\"Con el fondo\\"**. Lo que quede se **entrega con la apertura**, aparte de las ventas.",
+    texto: "Lo que se dejó ayer se **recibe al abrir**. Si pagas algo con él, en el gasto elige **“Con el fondo”**. Lo que quede se **entrega con la apertura**, aparte de las ventas.",
     visual: "guardarCorte",
   },
 ];
