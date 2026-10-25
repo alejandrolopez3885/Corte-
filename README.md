@@ -1150,7 +1150,13 @@ de mesero (un bar tender que dobla sigue contando 1). Cada 1% de
 cancelaciones sobre su venta (gastos del corte con categoría Cancelaciones
 ligados al mesero) resta 10. Cada **encuesta contestada válida** suma +3
 sin importar la calificación, y además por las estrellas de atención: 5⭐
-+2, 4⭐ +1, 3⭐ 0, 2⭐ −2, 1⭐ −4. Nunca baja de 0. Se aparece desde el
++2, 4⭐ +1, 3⭐ 0, 2⭐ −2, 1⭐ −4; las encuestas de un día (de trabajo: lo
+de antes de las 5 am es del día anterior) suman solo cuando ya se le hizo
+el corte a ese mesero ese día — mientras, en su desglose sale "2 encuestas
+más suman en cuanto se haga tu corte" y en el ranking de encuestas, si solo
+tiene esas, "3 contestadas esperan su corte". La venta y las
+cancelaciones se actualizan en vivo en cuanto se captura el corte de cada
+mesero, sin esperar a guardar el corte del día. Nunca baja de 0. Se aparece desde el
 primer turno (con la etiqueta "1 turno"); para **ganar la semana** y sus
 monedas hacen falta 2 turnos. Empates comparten lugar. **El personal del área Piso** (por el
 área de su puesto en Personal) y quien tenga cortes como mesero en los
@@ -1190,11 +1196,14 @@ Anubis. En Pregúntale a
 Cortes: el personal de Piso pregunta "¿en qué lugar voy?" (su lugar y la
 lista, sin montos) y tú "ranking de meseros" o "¿quién va primero?" (con
 montos). Al entrar, a las cuentas de Piso les salen las novedades "Ranking
-de meseros" y "Nuevo ranking: por turno y con encuestas". Las encuestas de
-cada quien por periodo vienen de la función `ranking_encuestas` (ver
-[`supabase/migration_019_ranking_encuestas.sql`](./supabase/migration_019_ranking_encuestas.sql),
-ya aplicada: solo conteos y estrellas, del negocio de quien pregunta, sin
-las de prueba ni las sospechosas). Cálculo en `src/lib/ranking.ts`.
+de meseros", "Nuevo ranking: por turno y con encuestas" y "Tus encuestas suman
+con tu corte". Las encuestas de cada quien por día de trabajo vienen de la
+función `ranking_encuestas_dias` (ver
+[`supabase/migration_020_encuestas_por_dia.sql`](./supabase/migration_020_encuestas_por_dia.sql),
+ya aplicada, sobre
+[`supabase/migration_019_ranking_encuestas.sql`](./supabase/migration_019_ranking_encuestas.sql):
+solo conteos y estrellas, del negocio de quien pregunta, sin las de prueba
+ni las sospechosas). Cálculo en `src/lib/ranking.ts`.
 
 **Encuestas con QR**: las cuentas del área Piso tienen en su inicio
 **Encuesta para el cliente**: escriben el total de la cuenta y la mesa
@@ -1700,4 +1709,5 @@ supabase/
   migration_017_invitados.sql          acceso de invitado de solo lectura y su opinión
   migration_018_notificaciones.sql     notificaciones del dueño en su iPhone (y pg_cron)
   migration_019_ranking_encuestas.sql  encuestas por mesero para el ranking (conteos y estrellas)
+  migration_020_encuestas_por_dia.sql  lo mismo por día de trabajo (suman con el corte del mesero)
 ```

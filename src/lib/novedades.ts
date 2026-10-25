@@ -257,6 +257,15 @@ export const NOVEDADES: Novedad[] = [
     texto: "El **Ranking general** suma venta **por turno** (doblar cuenta 2), cancelaciones y **encuestas contestadas**. Y hay un **Ranking de encuestas** con su propio premio.",
     visual: "ranking",
   },
+  {
+    id: "encuestas-al-corte",
+    fecha: "2026-10-25T03:10:00Z",
+    seccion: "general",
+    soloPiso: true,
+    titulo: "Tus encuestas suman con tu corte",
+    texto: "Las encuestas de un día suman en el ranking **en cuanto se hace tu corte**. Antes salen como pendientes: no se pierden.",
+    visual: "encuesta",
+  },
 ];
 
 interface EstadoNovedades {
