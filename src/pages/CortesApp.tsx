@@ -20,6 +20,7 @@ import { MonthModal } from "../components/modals/MonthModal";
 import { type MeseroFormValues } from "../components/modals/MeseroModal";
 import { CorteMeseroAsistente } from "../components/modals/CorteMeseroAsistente";
 import { CorteDelDia } from "../components/CorteDelDia";
+import { EtiquetasDiaFila, EtiquetasDiaSheet, type ValorEtiquetas } from "../components/EtiquetasDia";
 import { AperturaModal, type AperturaValues } from "../components/modals/AperturaModal";
 import { type GastoFormValues } from "../components/modals/GastoModal";
 import { GastoAsistente, type GastoAsistenteValores } from "../components/modals/GastoAsistente";
@@ -74,6 +75,7 @@ type ModalState =
   | { type: "month" }
   | { type: "mesero"; editing?: MeseroCut; vuelta?: number }
   | { type: "gasto"; editing?: Gasto; fondo?: boolean }
+  | { type: "etiquetas" }
   | { type: "transfer"; editing?: Transferencia }
   | { type: "apps" }
   | { type: "guardarCorte" }
@@ -1340,6 +1342,18 @@ export default function CortesApp({ profile }: { profile: Profile }) {
   // Fondo del día anterior manejado en el turno 1 (desde el 25/10/2026).
   const fondoActivo = !!(efectivoDia && activeDayDate && activeDayDate >= FONDO_EN_APERTURA_DESDE && efectivoDia.dejadoAyer > 0);
 
+  // Etiquetas de un día (música, partido, ...) desde Horarios o Corte.
+  function guardarEtiquetas(monthKey: string, weekIndex: number, dayName: DayName, v: ValorEtiquetas | undefined) {
+    if (!data) return;
+    const next = structuredClone(data);
+    const dia = next.months[monthKey]?.weeks?.[weekIndex]?.days?.[dayName];
+    if (!dia) return;
+    if (v) dia.etiquetas = v;
+    else delete dia.etiquetas;
+    persist(next);
+    setModal(null);
+  }
+
   function confirmarFondo() {
     updateDay((d) => {
       d.fondoRecibido = { fecha: new Date().toISOString(), nombre: profile.display_name || (isOwner ? "Dueño" : "Alguien del equipo") };
@@ -1622,6 +1636,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           empleados={data.empleados}
           horarios={data.horarios}
           onSaveSemana={saveHorarioSemana}
+          onSaveEtiquetas={guardarEtiquetas}
         />
       )}
 
@@ -2152,6 +2167,11 @@ export default function CortesApp({ profile }: { profile: Profile }) {
               </button>
             )}
 
+            {activeDayDate && (
+              <div className="etq-corte">
+                <EtiquetasDiaFila day={day} fechaIso={activeDayDate} onEditar={corteBloqueado ? undefined : () => setModal({ type: "etiquetas" })} />
+              </div>
+            )}
             {totals && (
               <CorteDelDia
                 key={activeDayDate || activeDay}
@@ -2296,6 +2316,15 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           editing={modal.editing}
           cortesDelDia={day?.meseros || []}
           catalog={data.meseros}
+        />
+      )}
+      {modal?.type === "etiquetas" && day && activeMonth && activeDayDate && (
+        <EtiquetasDiaSheet
+          titulo={`Etiquetas · ${formatLongDayDate(activeDayDate)}`}
+          fechaIso={activeDayDate}
+          inicial={day.etiquetas}
+          onGuardar={(v) => guardarEtiquetas(activeMonth, activeWeek, activeDay, v)}
+          onClose={() => setModal(null)}
         />
       )}
       {historialDia && <HistorialDiaSheet ownerId={duenoId} fecha={historialDia} onClose={() => setHistorialDia(null)} />}

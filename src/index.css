@@ -2019,6 +2019,25 @@ button.cd-it { cursor: pointer; }
 .cd-caja .efectivo-fila.total { margin-top: 4px; }
 .cd-caja-info { margin-top: 6px; padding-top: 4px; border-top: 1px dashed var(--border); }
 .ca-avatar.fondo { background: var(--warn-soft); color: var(--warn); }
+/* Etiquetas del día (EtiquetasDia) */
+.etq-opciones { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.etq-opcion { display: flex; align-items: center; gap: 8px; min-height: 52px; padding: 8px 12px; border: 2px solid var(--border); border-radius: 13px; background: var(--surface); font: 600 15px 'IBM Plex Sans', sans-serif; color: var(--ink); text-align: left; cursor: pointer; }
+.etq-opcion.on { border-color: var(--accent); background: var(--accent-soft); }
+.etq-icono { font-size: 20px; }
+.etq-check { margin-left: auto; color: var(--accent); }
+.etq-quincena { margin: 0; padding: 10px 12px; border-radius: 12px; background: var(--warn-soft); color: var(--warn); font-size: 14px; font-weight: 600; }
+.etq-fila { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 13px; }
+.etq-chip { padding: 4px 10px; border-radius: 99px; background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.etq-chip.auto { background: var(--warn-soft); color: var(--warn); }
+.etq-nota { color: var(--ink-soft); font-style: italic; }
+.etq-editar { font-size: 13px; }
+.etq-corte { padding: 2px 20px 6px; }
+@media (max-width: 560px) { .etq-corte { padding-left: 16px; padding-right: 16px; } }
+.horario-etq { display: flex; gap: 4px; margin-bottom: 4px; }
+.horario-etq button { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 2px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); font: 600 12px 'IBM Plex Sans', sans-serif; color: var(--ink-soft); cursor: pointer; }
+.horario-etq button span { font-size: 14px; line-height: 1.1; min-height: 16px; letter-spacing: -1px; }
+.horario-etq button.con { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+.horario-table th small { display: block; font-size: 11px; line-height: 1; letter-spacing: -1px; }
 .cd-fondo .cd-caja-fila { grid-template-columns: minmax(0, 1fr) auto auto; }
 .cd-fondo .cd-it-main { min-width: 0; }
 .cd-fondo .cd-it-main b { white-space: normal; overflow-wrap: anywhere; font-weight: 600; }

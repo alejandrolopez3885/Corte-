@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { Check, Clock, Copy, Trash2, TriangleAlert } from "lucide-react";
 import { Empty, Field, Sheet } from "../ui";
-import { findPreviousHorarioSemana, formatWeekRange, isoWeekNumber, normalizeHorarioSemana, resolveWeekStartDate } from "../../lib/dataModel";
+import { dateForDay, findPreviousHorarioSemana, formatDayNumber, formatWeekRange, isoWeekNumber, normalizeHorarioSemana, resolveWeekStartDate } from "../../lib/dataModel";
+import { etiquetasDelDia } from "../../lib/etiquetas";
+import { EtiquetasDiaSheet, type ValorEtiquetas } from "../EtiquetasDia";
 import { copyHorarioImage } from "../../lib/horarioImage";
 import { DAYS, DAY_SHORT, HORARIO_AREAS_FIJAS, HORARIO_CHIPS } from "../../lib/types";
 import type { DayName, EmpleadoEntry, HorarioArea, HorarioMonthData, HorarioSemana, MonthData } from "../../lib/types";
@@ -21,6 +23,7 @@ export function HorariosPanel({
   onSaveSemana,
   soloAreaId,
   readOnly,
+  onSaveEtiquetas,
 }: {
   onBack?: () => void;
   backLabel?: string;
@@ -39,8 +42,11 @@ export function HorariosPanel({
   // la imagen — el resto de las cuentas de equipo con este permiso solo
   // pueden ver el horario ya guardado de su área.
   readOnly?: boolean;
+  // Etiquetas del día (música, partido, ...): se guardan en el día del corte.
+  onSaveEtiquetas?: (monthKey: string, weekIndex: number, day: DayName, v: ValorEtiquetas | undefined) => void;
 }) {
   const [monthKey, setMonthKey] = useState(initialMonthKey);
+  const [etiquetando, setEtiquetando] = useState<DayName | null>(null);
   const [weekIndex, setWeekIndex] = useState(initialWeekIndex);
   // Resultado del último "Copiar imagen" (por botón: id del área o
   // "todas") — se borra solo a los pocos segundos.
@@ -148,11 +154,43 @@ export function HorariosPanel({
         <p className="hint">Tu navegador no permite copiar imágenes — se descargó el PNG.</p>
       )}
 
+      {onSaveEtiquetas && !soloAreaId && !readOnly && (
+        <>
+          <p className="hint">Etiquetas de cada día (música, partido, festivo…): toca un día para ponerlas. 💰 = quincena.</p>
+          <div className="horario-etq">
+            {DAYS.map((d) => {
+              const lista = etiquetasDelDia(month.weeks[weekIndex]?.days[d], dateForDay(monthKey, weekIndex, month, d));
+              return (
+                <button key={d} type="button" className={month.weeks[weekIndex]?.days[d]?.etiquetas ? "con" : ""} onClick={() => setEtiquetando(d)}>
+                  {DAY_SHORT[d]}
+                  <span>{lista.map((e) => e.icono).join("") || "＋"}</span>
+                </button>
+              );
+            })}
+          </div>
+        </>
+      )}
+      {etiquetando && onSaveEtiquetas && (
+        <EtiquetasDiaSheet
+          titulo={`Etiquetas · ${etiquetando} ${formatDayNumber(dateForDay(monthKey, weekIndex, month, etiquetando))}`}
+          fechaIso={dateForDay(monthKey, weekIndex, month, etiquetando)}
+          inicial={month.weeks[weekIndex]?.days[etiquetando]?.etiquetas}
+          onGuardar={(v) => {
+            onSaveEtiquetas(monthKey, weekIndex, etiquetando, v);
+            setEtiquetando(null);
+          }}
+          onClose={() => setEtiquetando(null)}
+        />
+      )}
+
       {readOnly && !saved ? (
         <Empty icon={<Clock size={26} strokeWidth={1.3} />} text="Aún no se ha guardado el horario de esta semana." />
       ) : (
         <HorarioSemanaForm
           key={`${monthKey}-${weekIndex}`}
+          iconosDia={Object.fromEntries(
+            DAYS.map((d) => [d, etiquetasDelDia(month.weeks[weekIndex]?.days[d], dateForDay(monthKey, weekIndex, month, d)).map((e) => e.icono).join("")])
+          )}
           monthKey={monthKey}
           weekIndex={weekIndex}
           semanaInicial={semanaInicial}
@@ -169,6 +207,7 @@ export function HorariosPanel({
 }
 
 function HorarioSemanaForm({
+  iconosDia,
   monthKey,
   weekIndex,
   semanaInicial,
@@ -179,6 +218,8 @@ function HorarioSemanaForm({
   soloAreaId,
   readOnly,
 }: {
+  // Íconos de las etiquetas de cada día, debajo del nombre del día.
+  iconosDia?: Partial<Record<DayName, string>>;
   monthKey: string;
   weekIndex: number;
   semanaInicial: HorarioSemana;
@@ -323,6 +364,7 @@ function HorarioSemanaForm({
                     {DAYS.map((d) => (
                       <th key={d} className={(semana.festivos || []).includes(d) ? "festivo" : ""}>
                         {DAY_SHORT[d]}
+                        {iconosDia?.[d] && <small>{iconosDia[d]}</small>}
                       </th>
                     ))}
                     {!readOnly && <th></th>}

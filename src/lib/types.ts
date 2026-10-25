@@ -466,7 +466,11 @@ export interface DayData {
   efectivoDejado?: { monto: number; nota?: string };
   // Quien abrió confirmó que recibió el fondo del día anterior.
   fondoRecibido?: { fecha: string; nombre: string };
+  // Qué pasó ese día que mueve la venta (ver lib/etiquetas.ts).
+  etiquetas?: { tipos: EtiquetaDia[]; nota?: string };
 }
+
+export type EtiquetaDia = "musica" | "partido" | "festivo" | "evento" | "otro";
 
 // Control de gastos que los proveedores dan a crédito, pagados después por
 // transferencia — solo informativo: no afecta el efectivo a entregar ni
