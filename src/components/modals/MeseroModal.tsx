@@ -4,7 +4,7 @@ import { Sheet, Field, NumInput, SumInput } from "../ui";
 import { ConceptoInput } from "../ConceptoInput";
 import { money, round2, sumFromText, uid } from "../../lib/dataModel";
 import type { NombreHistorial } from "../../lib/gastosBusqueda";
-import type { Gasto, MeseroCatalogEntry, MeseroCut, PropinaTipo } from "../../lib/types";
+import type { Gasto, GastoCategoria, GastoEstado, MeseroCatalogEntry, MeseroCut, PropinaTipo } from "../../lib/types";
 
 export interface MeseroFormValues {
   meseroId: string;
@@ -15,7 +15,9 @@ export interface MeseroFormValues {
   tarjetas: string;
   tarjetasDesglose?: number[];
   transferDesglose?: number[];
-  gastos: { concepto: string; monto: string }[];
+  // Desde el corte paso por paso cada gasto lleva el formulario completo
+  // (categoría, ingresado y a quién); desde la hoja de siempre solo concepto y monto.
+  gastos: { concepto: string; monto: string; categoria?: GastoCategoria; estado?: GastoEstado; empleadoId?: string; meseroId?: string }[];
   transferMonto: string;
   // Usuario acumulado ("Para llevar"): lo que marca el sistema y quién cobró.
   lecturaSistema?: number;

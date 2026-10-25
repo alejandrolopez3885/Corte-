@@ -1885,8 +1885,18 @@ body.solo-lectura [data-bloqueado]::after { content: "🔒"; font-size: 11px; ma
   color: var(--ink-soft); cursor: pointer;
 }
 .ca-agregar { border-style: solid; color: var(--accent); }
-.ca-gasto { display: grid; grid-template-columns: 1fr 110px auto; gap: 8px; align-items: center; }
-.ca-gasto-ya { display: flex; justify-content: space-between; padding: 10px 14px; border-radius: 12px; background: var(--surface-alt); font-size: 14.5px; }
+.ca-gastos-lista { display: flex; flex-direction: column; gap: 6px; }
+.ca-gasto-ya { display: grid; grid-template-columns: 1fr auto 32px; gap: 8px; align-items: center; padding: 8px 8px 8px 14px; border-radius: 12px; background: var(--surface-alt); font-size: 14.5px; }
+.ca-gasto-ya span { display: flex; flex-direction: column; }
+.ca-gasto-ya small { font-size: 12px; color: var(--ink-soft); }
+.ca-etiqueta { font-size: 14px; font-weight: 600; margin-bottom: -4px; }
+.ca-categorias { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.ca-categorias button {
+  min-height: 46px; padding: 8px 10px; border: 2px solid var(--border); border-radius: 12px; background: var(--surface);
+  font-family: inherit; font-size: 15px; font-weight: 600; color: var(--ink); cursor: pointer;
+}
+.ca-categorias button.elegida { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+.ca .categoria-select { width: 100%; }
 .ca-resultado { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 6px 16px; }
 .ca-res-fila { display: grid; grid-template-columns: 1fr auto 70px; gap: 8px; align-items: center; padding: 11px 0; border-bottom: 1px solid var(--surface-alt); font-size: 15.5px; }
 .ca-res-fila b { font-weight: 600; }
@@ -1907,4 +1917,7 @@ body.solo-lectura [data-bloqueado]::after { content: "🔒"; font-size: 11px; ma
   background: var(--accent); color: #fff; font-family: inherit; font-size: 17px; font-weight: 700; cursor: pointer;
 }
 .ca-boton.secundario { flex: 0 0 120px; background: var(--surface); color: var(--ink); border: 2px solid var(--border); }
+.ca-pie:has(.ca-medio) .ca-boton { font-size: 15px; }
+.ca-pie:has(.ca-medio) .ca-boton.secundario:first-child { flex: 0 0 auto; padding: 0 12px; }
+.ca-boton.ca-medio { flex: 1; color: var(--accent); }
 .ca-boton:disabled { opacity: 0.45; cursor: default; }

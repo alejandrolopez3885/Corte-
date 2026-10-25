@@ -1,24 +1,36 @@
 import { useState, type ReactNode } from "react";
 import { ArrowLeft, ArrowRight, Check, Trash2, X } from "lucide-react";
-import { NumInput, SumInput } from "../ui";
+import { NumInput, SumInput, Toggle } from "../ui";
 import { ConceptoInput } from "../ConceptoInput";
 import { money, round2, sumFromText, uid } from "../../lib/dataModel";
 import type { NombreHistorial } from "../../lib/gastosBusqueda";
-import type { Gasto, MeseroCatalogEntry, MeseroCut, PropinaTipo } from "../../lib/types";
+import { GASTO_CATEGORIAS } from "../../lib/types";
+import type { EmpleadoEntry, Gasto, GastoCategoria, GastoEstado, MeseroCatalogEntry, MeseroCut, PropinaTipo } from "../../lib/types";
 import type { MeseroFormValues } from "./MeseroModal";
 
 // Corte de mesero paso por paso (como encuesta, con barra de avance): a
 // quién, propina, venta del sistema, tarjetas, transferencias y gastos; al
 // final el desglose con lo que tiene que entregar en efectivo y un cuadro
 // para el efectivo recibido que solo calcula el cambio (no se guarda ni
-// cambia el efectivo del día o de la semana). Al editar un corte abre
-// directo en el resultado, con "Cambiar" en cada dato.
+// cambia el efectivo del día o de la semana). Cada gasto lleva el
+// formulario completo (primero la categoría) con "Guardar otro gasto". Al
+// final: "Hacer otro corte" (guarda y empieza otro) o "Guardar corte"
+// (guarda y regresa al corte del día). Al editar un corte abre directo en
+// el resultado, con "Cambiar" en cada dato.
 
-interface GastoRow {
+interface GastoNuevo {
   id: string;
+  categoria: GastoCategoria;
   concepto: string;
   monto: string;
+  estado: GastoEstado;
+  empleadoId: string;
+  meseroId: string;
 }
+
+// Igual que en el formulario de gasto (GastoModal).
+const LIGABLES_A_EMPLEADO = new Set<GastoCategoria>(["nomina", "comida_empleado"]);
+const etiquetaCategoria = (c?: GastoCategoria) => GASTO_CATEGORIAS.find((x) => x.value === c)?.label || "Sin categoría";
 
 type Paso = "mesero" | "cobro" | "propina" | "venta" | "tarjetas" | "transferencias" | "gastos";
 
@@ -44,16 +56,19 @@ export function CorteMeseroAsistente({
   onDelete,
   editing,
   catalog,
+  empleados,
   existingGastos,
   historial,
   cortesDelDia = [],
   turnos = false,
 }: {
   onClose: () => void;
-  onSave: (form: MeseroFormValues, editingId?: string) => void;
+  // otro: guardar y empezar otro corte en vez de regresar al corte del día.
+  onSave: (form: MeseroFormValues, editingId?: string, otro?: boolean) => void;
   onDelete?: () => void;
   editing?: MeseroCut;
   catalog: MeseroCatalogEntry[];
+  empleados: EmpleadoEntry[];
   existingGastos: Gasto[];
   historial: NombreHistorial[];
   cortesDelDia?: MeseroCut[];
@@ -71,8 +86,11 @@ export function CorteMeseroAsistente({
   const [tarjetasDesglose, setTarjetasDesglose] = useState<number[] | undefined>(editing?.tarjetasDesglose);
   const [transferMonto, setTransferMonto] = useState(editing ? String(editing.transferencia || 0) : "");
   const [transferDesglose, setTransferDesglose] = useState<number[] | undefined>(editing?.transferenciaDesglose);
-  const [gastos, setGastos] = useState<GastoRow[]>([]);
-  const [sinGastos, setSinGastos] = useState(!!editing);
+  const [gastos, setGastos] = useState<GastoNuevo[]>([]);
+  // El gasto que se está llenando (se agrega con "Guardar otro gasto" o "Siguiente").
+  const vacio = { categoria: "" as GastoCategoria | "", concepto: "", monto: "", estado: "pendiente" as GastoEstado, empleadoId: "", meseroId: "" };
+  const [g, setG] = useState(vacio);
+  const [avisoGasto, setAvisoGasto] = useState("");
   const [recibido, setRecibido] = useState("");
   // Al editar se empieza en el resultado; "Cambiar" lleva a un paso y regresa.
   const [paso, setPaso] = useState(0);
@@ -93,8 +111,7 @@ export function CorteMeseroAsistente({
   const t = sumFromText(tarjetas);
   const transferSum = sumFromText(transferMonto);
   const existingGastosSum = existingGastos.reduce((s, g) => s + g.total, 0);
-  const gastosValidos = gastos.filter((g) => g.concepto.trim() && parseFloat(g.monto) > 0);
-  const gastosSum = round2(existingGastosSum + gastosValidos.reduce((s, g) => s + (parseFloat(g.monto) || 0), 0));
+  const gastosSum = round2(existingGastosSum + gastos.reduce((s, x) => s + (parseFloat(x.monto) || 0), 0));
   const tipoPropina: PropinaTipo = esParaLlevar ? "none" : propinaTipo || "none";
   const propina =
     tipoPropina === "p3" ? round2(v * 0.03) : tipoPropina === "p2" ? round2(v * 0.02) : tipoPropina === "manual" ? parseFloat(manualPropina) || 0 : 0;
@@ -115,10 +132,24 @@ export function CorteMeseroAsistente({
     // El campo de montos se suma al salir de él; vacío cuenta como $0.
     tarjetas: true,
     transferencias: true,
-    gastos: sinGastos || gastosValidos.length > 0 || existingGastos.length > 0,
+    gastos: true,
   };
 
+  const gastoVacio = !g.categoria && !g.concepto.trim() && !g.monto.trim();
+  // Agrega el gasto que se está llenando; false si le falta algo.
+  function agregarGasto(): boolean {
+    if (!g.categoria) return setAvisoGasto("Primero elige la categoría."), false;
+    if (!g.concepto.trim()) return setAvisoGasto("Escribe el concepto."), false;
+    if (!(parseFloat(g.monto) > 0)) return setAvisoGasto("Escribe el total del gasto."), false;
+    setGastos((l) => [...l, { id: uid(), ...g, categoria: g.categoria as GastoCategoria, concepto: g.concepto.trim() }]);
+    setG(vacio);
+    setAvisoGasto("");
+    return true;
+  }
+
   function siguiente() {
+    // En gastos: lo que se dejó llenado se agrega solo; a medias no deja seguir.
+    if (!enResultado && actual === "gastos" && !gastoVacio && !agregarGasto()) return;
     if (desdeResultado || paso >= totalPasos - 1) {
       setDesdeResultado(false);
       setEnResultado(true);
@@ -146,7 +177,7 @@ export function CorteMeseroAsistente({
     setTimeout(siguiente, 0);
   }
 
-  function guardar() {
+  function guardar(otro = false) {
     onSave(
       {
         meseroId,
@@ -157,11 +188,19 @@ export function CorteMeseroAsistente({
         tarjetas,
         tarjetasDesglose,
         transferDesglose: transferSum > 0 ? transferDesglose : undefined,
-        gastos: gastosValidos.map((g) => ({ concepto: g.concepto, monto: g.monto })),
+        gastos: gastos.map((x) => ({
+          concepto: x.concepto,
+          monto: x.monto,
+          categoria: x.categoria,
+          estado: x.estado,
+          ...(LIGABLES_A_EMPLEADO.has(x.categoria) && x.empleadoId ? { empleadoId: x.empleadoId } : {}),
+          ...(x.categoria === "cancelaciones" && x.meseroId ? { meseroId: x.meseroId } : {}),
+        })),
         transferMonto: transferSum > 0 ? transferMonto : "",
         ...(esAcumulado ? { lecturaSistema: lectura, cobro: esParaLlevar ? cobro || undefined : undefined } : {}),
       },
-      editing?.id
+      editing?.id,
+      otro
     );
   }
 
@@ -281,57 +320,93 @@ export function CorteMeseroAsistente({
       ),
     },
     gastos: {
-      titulo: "¿Pagó algún gasto de su corte?",
-      ayuda: "Cada uno se agrega a Gastos como pendiente.",
+      titulo: gastos.length ? "¿Otro gasto?" : "¿Pagó algún gasto de su corte?",
+      ayuda: gastos.length || existingGastos.length ? undefined : "Si no tuvo gastos, toca Siguiente.",
       contenido: (
         <>
-          {existingGastos.map((g) => (
-            <div key={g.id} className="ca-gasto-ya">
-              <span>{g.concepto}</span>
-              <b>{money(g.total)}</b>
+          {(existingGastos.length > 0 || gastos.length > 0) && (
+            <div className="ca-gastos-lista">
+              {existingGastos.map((x) => (
+                <div key={x.id} className="ca-gasto-ya">
+                  <span>
+                    {x.concepto}
+                    <small>{etiquetaCategoria(x.categoria)}</small>
+                  </span>
+                  <b>{money(x.total)}</b>
+                  <i />
+                </div>
+              ))}
+              {gastos.map((x) => (
+                <div key={x.id} className="ca-gasto-ya">
+                  <span>
+                    {x.concepto}
+                    <small>
+                      {etiquetaCategoria(x.categoria)}
+                      {x.estado === "ingresado" ? " · ingresado" : ""}
+                    </small>
+                  </span>
+                  <b>{money(parseFloat(x.monto) || 0)}</b>
+                  <button type="button" className="icon-btn" aria-label="Quitar gasto" onClick={() => setGastos((l) => l.filter((y) => y.id !== x.id))}>
+                    <X size={15} />
+                  </button>
+                </div>
+              ))}
             </div>
-          ))}
-          {gastos.map((g) => (
-            <div key={g.id} className="ca-gasto">
-              <ConceptoInput
-                value={g.concepto}
-                onChange={(val) => setGastos((l) => l.map((x) => (x.id === g.id ? { ...x, concepto: val } : x)))}
-                historial={historial}
-                placeholder="Ej. compra de hielo"
-              />
-              <NumInput
-                value={g.monto}
-                onChange={(e) => setGastos((l) => l.map((x) => (x.id === g.id ? { ...x, monto: e.target.value } : x)))}
-                placeholder="$0.00"
-              />
-              <button type="button" className="icon-btn" aria-label="Quitar gasto" onClick={() => setGastos((l) => l.filter((x) => x.id !== g.id))}>
-                <X size={16} />
-              </button>
-            </div>
-          ))}
-          <button
-            type="button"
-            className="ca-agregar"
-            onClick={() => {
-              setSinGastos(false);
-              setGastos((l) => [...l, { id: uid(), concepto: "", monto: "" }]);
-            }}
-          >
-            + Agregar gasto
-          </button>
-          {gastos.length === 0 && existingGastos.length === 0 && (
-            <button
-              type="button"
-              className="ca-ninguno"
-              onClick={() =>
-                ninguno(() => {
-                  setSinGastos(true);
-                })
-              }
-            >
-              No tuvo gastos
-            </button>
           )}
+          <span className="ca-etiqueta">Categoría</span>
+          <div className="ca-categorias">
+            {GASTO_CATEGORIAS.map((c) => (
+              <button
+                key={c.value}
+                type="button"
+                className={g.categoria === c.value ? "elegida" : ""}
+                onClick={() => setG((x) => ({ ...x, categoria: c.value, meseroId: c.value === "cancelaciones" && !x.meseroId ? meseroId : x.meseroId }))}
+              >
+                {c.label}
+              </button>
+            ))}
+          </div>
+          <label className="ca-campo">
+            <span>Concepto</span>
+            <ConceptoInput value={g.concepto} onChange={(val) => setG((x) => ({ ...x, concepto: val }))} historial={historial} placeholder="Ej. compra de hielo" />
+          </label>
+          <label className="ca-campo">
+            <span>Total</span>
+            <NumInput value={g.monto} onChange={(e) => setG((x) => ({ ...x, monto: e.target.value }))} placeholder="$0.00" />
+          </label>
+          {g.categoria && LIGABLES_A_EMPLEADO.has(g.categoria) && (
+            <label className="ca-campo">
+              <span>¿Para quién? (opcional)</span>
+              <select className="categoria-select" value={g.empleadoId} onChange={(e) => setG((x) => ({ ...x, empleadoId: e.target.value }))}>
+                <option value="">Sin asignar</option>
+                {empleados.map((e) => (
+                  <option key={e.id} value={e.id}>
+                    {e.nombre}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+          {g.categoria === "cancelaciones" && (
+            <label className="ca-campo">
+              <span>¿A quién se le cancela? (opcional)</span>
+              <select className="categoria-select" value={g.meseroId} onChange={(e) => setG((x) => ({ ...x, meseroId: e.target.value }))}>
+                <option value="">Sin asignar</option>
+                {catalog.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.nombre}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+          <Toggle
+            checked={g.estado === "ingresado"}
+            disabled={!g.categoria}
+            onChange={(on) => setG((x) => ({ ...x, estado: on ? "ingresado" : "pendiente" }))}
+            label="Ya está ingresado"
+          />
+          {avisoGasto && <p className="aviso-faltante">{avisoGasto}</p>}
         </>
       ),
     },
@@ -434,13 +509,27 @@ export function CorteMeseroAsistente({
               <ArrowLeft size={19} /> Atrás
             </button>
             {enResultado ? (
-              <button type="button" className="ca-boton" disabled={!meseroId || !venta.trim()} onClick={guardar}>
-                <Check size={19} /> Guardar corte
-              </button>
+              <>
+                {!editing && (
+                  <button type="button" className="ca-boton secundario ca-medio" disabled={!meseroId || !venta.trim()} onClick={() => guardar(true)}>
+                    Hacer otro corte
+                  </button>
+                )}
+                <button type="button" className="ca-boton" disabled={!meseroId || !venta.trim()} onClick={() => guardar()}>
+                  <Check size={19} /> Guardar corte
+                </button>
+              </>
             ) : (
-              <button type="button" className="ca-boton" disabled={!listo[actual]} onClick={siguiente}>
-                Siguiente <ArrowRight size={19} />
-              </button>
+              <>
+                {actual === "gastos" && (
+                  <button type="button" className="ca-boton secundario ca-medio" disabled={gastoVacio} onClick={agregarGasto}>
+                    Guardar otro gasto
+                  </button>
+                )}
+                <button type="button" className="ca-boton" disabled={!listo[actual]} onClick={siguiente}>
+                  Siguiente <ArrowRight size={19} />
+                </button>
+              </>
             )}
           </>
         )}

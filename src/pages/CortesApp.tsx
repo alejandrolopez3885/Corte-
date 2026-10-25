@@ -17,7 +17,8 @@ import { DAYS, DAY_SHORT } from "../lib/types";
 import type { AppData, AreaEntry, ConfigNotificaciones, ConteoTextoArea, CreditoProveedores, DayData, DayName, EmpleadoEntry, Gasto, GastoCategoria, HorarioSemana, InsumoEntry, MeseroCatalogEntry, MeseroCut, NominaDescuentosSemana, PermisoStaff, Profile, ProveedorCatalogEntry, PuestoEntry, Receta, Transferencia, WeekData } from "../lib/types";
 import { Empty, Field, NumInput, Sheet } from "../components/ui";
 import { MonthModal } from "../components/modals/MonthModal";
-import { MeseroModal, type MeseroFormValues } from "../components/modals/MeseroModal";
+import { type MeseroFormValues } from "../components/modals/MeseroModal";
+import { CorteMeseroAsistente } from "../components/modals/CorteMeseroAsistente";
 import { AperturaModal, type AperturaValues } from "../components/modals/AperturaModal";
 import { GastoModal, type GastoFormValues } from "../components/modals/GastoModal";
 import { TransferModal, type TransferFormValues } from "../components/modals/TransferModal";
@@ -69,7 +70,7 @@ import { useDatosPagoEquipo, type DatosPago } from "../lib/datosPago";
 
 type ModalState =
   | { type: "month" }
-  | { type: "mesero"; editing?: MeseroCut }
+  | { type: "mesero"; editing?: MeseroCut; vuelta?: number }
   | { type: "gasto"; editing?: Gasto }
   | { type: "transfer"; editing?: Transferencia }
   | { type: "apps" }
@@ -821,7 +822,8 @@ export default function CortesApp({ profile }: { profile: Profile }) {
     persist(next);
   }
 
-  function saveMeseroCut(form: MeseroFormValues, editingId?: string) {
+  // otro: "Hacer otro corte" — guarda y abre el asistente vacío otra vez.
+  function saveMeseroCut(form: MeseroFormValues, editingId?: string, otro = false) {
     if (bloqueadoMedioTurno(editingId)) return;
     updateDay((d) => {
       const venta = parseFloat(form.venta) || 0;
@@ -862,10 +864,13 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           id: uid(),
           concepto: g.concepto,
           total: parseFloat(g.monto) || 0,
-          estado: "pendiente",
+          estado: g.estado || "pendiente",
           origen: "mesero",
           meseroNombre: form.nombre,
           meseroCutId: entry.id,
+          ...(g.categoria ? { categoria: g.categoria } : {}),
+          ...(g.empleadoId ? { empleadoId: g.empleadoId } : {}),
+          ...(g.meseroId ? { meseroId: g.meseroId } : {}),
         });
       });
       if (transferencia > 0) {
@@ -881,7 +886,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
       // "Para llevar": la venta de cada corte es lectura − corte anterior.
       recalcularAcumulados(d);
     });
-    setModal(null);
+    setModal((m) => (otro ? { type: "mesero", vuelta: (m?.type === "mesero" ? m.vuelta || 0 : 0) + 1 } : null));
   }
 
   function deleteMeseroCut(id: string) {
@@ -2512,12 +2517,14 @@ export default function CortesApp({ profile }: { profile: Profile }) {
 
       {modal?.type === "month" && <MonthModal onClose={() => setModal(null)} onSave={addMonth} existing={monthKeys} />}
       {modal?.type === "mesero" && day && (
-        <MeseroModal
+        <CorteMeseroAsistente
+          key={`${modal.editing?.id || "nuevo"}-${modal.vuelta || 0}`}
           onClose={() => setModal(null)}
           onSave={saveMeseroCut}
           onDelete={modal.editing ? () => deleteMeseroCut((modal.editing as MeseroCut).id) : undefined}
           editing={modal.editing}
           catalog={data.meseros}
+          empleados={data.empleados}
           existingGastos={modal.editing ? day.gastos.filter((g) => g.meseroCutId === (modal.editing as MeseroCut).id) : []}
           historial={historialGastos}
           cortesDelDia={day.meseros}
