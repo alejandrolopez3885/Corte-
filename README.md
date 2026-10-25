@@ -135,8 +135,11 @@ total, "¿Para quién?" (Nómina, Comida empleado) o "¿A quién se le
 cancela?" (Cancelaciones, ya con el mesero del corte), un botón **Subir
 comprobante** desactivado ("Próximamente") y "Ya está ingresado". Abajo:
 Atrás · **Guardar otro gasto** (lo agrega, limpia el formulario y sigue
-ahí; los agregados quedan arriba con su categoría y ✕) · Siguiente (agrega
-el que quedó lleno; sin nada, sigue sin gastos; a medias avisa qué falta).
+ahí; los agregados quedan arriba con su categoría y ✕) · el botón verde, que
+dice **No tuvo gastos** mientras no se ha llenado nada, **Guardar y
+continuar** en cuanto se llena algún campo (agrega ese gasto y sigue; a
+medias avisa qué falta) y Siguiente si ya hay gastos agregados y el
+formulario está vacío.
 Al final, el **Resultado**: venta, propina, tarjetas, transferencias y
 gastos, cada uno con "Cambiar", y **Efectivo a entregar** en grande; el
 cuadro **Efectivo recibido** solo calcula "Dar cambio: $…", "Faltan: $…"

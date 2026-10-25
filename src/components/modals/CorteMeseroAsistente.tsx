@@ -321,7 +321,7 @@ export function CorteMeseroAsistente({
     },
     gastos: {
       titulo: gastos.length ? "¿Otro gasto?" : "¿Pagó algún gasto de su corte?",
-      ayuda: gastos.length || existingGastos.length ? undefined : "Si no tuvo gastos, toca Siguiente.",
+      ayuda: gastos.length || existingGastos.length ? undefined : "Si no tuvo gastos, toca No tuvo gastos.",
       contenido: (
         <>
           {(existingGastos.length > 0 || gastos.length > 0) && (
@@ -531,7 +531,9 @@ export function CorteMeseroAsistente({
                   </button>
                 )}
                 <button type="button" className="ca-boton" disabled={!listo[actual]} onClick={siguiente}>
-                  Siguiente <ArrowRight size={19} />
+                  {/* En gastos: sin nada llenado es "No tuvo gastos"; con algo, "Guardar y continuar". */}
+                  {actual !== "gastos" ? "Siguiente" : !gastoVacio ? "Guardar y continuar" : gastos.length ? "Siguiente" : "No tuvo gastos"}
+                  <ArrowRight size={19} />
                 </button>
               </>
             )}
