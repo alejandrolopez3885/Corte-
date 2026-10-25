@@ -67,31 +67,53 @@ export function sugerirHorario({
 
     // 3. Tiempo completo: un descanso donde más sobre gente (de preferencia
     // en su día de descanso preferido y, si se puede, el mismo de la semana
-    // pasada).
+    // pasada), sin dejar un día sin nadie que haga corte.
     const completos = personas.filter((p) => p.regla.modo === "completo");
     const fijosEn = (d: DayName) => personas.filter((p) => p.regla.modo === "fijos" && p.regla.fijos?.[d]).length;
     const sobra = Object.fromEntries(DAYS.map((d) => [d, fijosEn(d) + completos.length - dias[d].necesarios])) as Record<DayName, number>;
+    const hacenCorte = personas.filter((p) => p.regla.haceCorte);
+    const exigirCorte = r.alguienCorte !== false && hacenCorte.length > 0;
+    const corteEn = Object.fromEntries(
+      DAYS.map((d) => [d, hacenCorte.filter((p) => p.regla.modo === "completo" || p.regla.fijos?.[d]).length])
+    ) as Record<DayName, number>;
     if (r.descansoSemanal) {
       [...completos]
         .sort((a, b) => (a.regla.descanso?.length || 7) - (b.regla.descanso?.length || 7))
         .forEach((p) => {
           const opciones = p.regla.descanso?.length ? p.regla.descanso : DAYS;
-          const puntos = (d: DayName) => sobra[d] * 100 + (antes(p.empleadoId, d) === "OFF" ? 10 : 0) - (esperado(d)?.esperado || 0) / 10000;
+          const sinCorte = (d: DayName) => exigirCorte && p.regla.haceCorte && corteEn[d] <= 1;
+          const puntos = (d: DayName) =>
+            (sinCorte(d) ? -100000 : 0) + sobra[d] * 100 + (antes(p.empleadoId, d) === "OFF" ? 10 : 0) - (esperado(d)?.esperado || 0) / 10000;
           const off = [...opciones].sort((a, b) => puntos(b) - puntos(a))[0];
           valores.get(p.empleadoId)![off] = "OFF";
           sobra[off]--;
+          if (p.regla.haceCorte) corteEn[off]--;
         });
     }
     completos.forEach((p) => DAYS.forEach((d) => !valores.get(p.empleadoId)![d] && (valores.get(p.empleadoId)![d] = "O")));
 
     // 4. Quién abre: el que menos ha abierto en la semana (y si empata, el
     // que abrió ese día la semana pasada). En días con mucha gente o donde
-    // faltan, el que abre dobla (Z) si puede.
+    // faltan, el que abre dobla (Z) si puede: sin pasar su máximo de
+    // aperturas ni el de dobles, y sin doblar dos días seguidos.
     if (r.alguienAbre) {
+      const sinApertura: DayName[] = [];
       const aperturas = new Map<string, number>();
       const dobles = new Map<string, number>();
       const minNecesarios = Math.min(...DAYS.map((d) => dias[d].necesarios));
-      const candidatos = (d: DayName) => completos.filter((p) => p.regla.puedeAbrir && valores.get(p.empleadoId)![d] === "O");
+      const candidatos = (d: DayName) =>
+        completos.filter(
+          (p) =>
+            p.regla.puedeAbrir &&
+            valores.get(p.empleadoId)![d] === "O" &&
+            (aperturas.get(p.empleadoId) || 0) < (p.regla.maxAperturas ?? 7)
+        );
+      const puedeDoblarEn = (p: (typeof personas)[number], d: DayName) => {
+        const i = DAYS.indexOf(d);
+        const v = valores.get(p.empleadoId)!;
+        const seguido = r.noDoblarSeguido !== false && (v[DAYS[i - 1]] === "Z" || v[DAYS[i + 1]] === "Z");
+        return p.regla.puedeDoblar && (dobles.get(p.empleadoId) || 0) < r.maxDobles && !seguido;
+      };
       const yaAbre = (d: DayName) => personas.find((p) => ["X", "Z"].includes(valores.get(p.empleadoId)![d] || ""));
       [...DAYS]
         .sort((a, b) => candidatos(a).length - candidatos(b).length)
@@ -103,24 +125,36 @@ export function sugerirHorario({
               (aperturas.get(a.empleadoId) || 0) - (aperturas.get(b.empleadoId) || 0) ||
               (["X", "Z"].includes(antes(b.empleadoId, d)) ? 1 : 0) - (["X", "Z"].includes(antes(a.empleadoId, d)) ? 1 : 0)
           );
-          if (!c.length) return void avisos.push(`${d}: nadie que pueda abrir está ese día.`);
+          if (!c.length) return void sinApertura.push(d);
           const cargado = dias[d].necesarios > minNecesarios || sobra[d] < 0;
-          const quien = cargado ? c.find((p) => p.regla.puedeDoblar && (dobles.get(p.empleadoId) || 0) < r.maxDobles) || c[0] : c[0];
-          const z = cargado && quien.regla.puedeDoblar && (dobles.get(quien.empleadoId) || 0) < r.maxDobles;
+          const quien = cargado ? c.find((p) => puedeDoblarEn(p, d)) || c[0] : c[0];
+          const z = cargado && puedeDoblarEn(quien, d);
           valores.get(quien.empleadoId)![d] = z ? "Z" : "X";
           aperturas.set(quien.empleadoId, (aperturas.get(quien.empleadoId) || 0) + 1);
           if (z) dobles.set(quien.empleadoId, (dobles.get(quien.empleadoId) || 0) + 1);
           dias[d].abre = quien.nombre;
           if (z) dias[d].dobla = quien.nombre;
         });
+      if (sinApertura.length) {
+        const ds = DAYS.filter((d) => sinApertura.includes(d));
+        avisos.push(
+          `${ds.length > 1 ? `${ds.slice(0, -1).join(", ")} y ${ds[ds.length - 1]}` : ds[0]}: nadie disponible para abrir en ${fija.nombre.toLowerCase()}. Revisa en Reglas quién puede abrir y su máximo de días que abre.`
+        );
+      }
     }
 
     // 5. Cuántos quedaron y qué falta.
+    const trabajaEn = (id: string, d: DayName) => {
+      const v = valores.get(id)![d];
+      return !!v && v !== "OFF";
+    };
     DAYS.forEach((d) => {
       dias[d].trabajan = personas.filter((p) => {
         const v = valores.get(p.empleadoId)![d];
         return v && v !== "OFF";
       }).length;
+      if (exigirCorte && !hacenCorte.some((p) => trabajaEn(p.empleadoId, d)))
+        avisos.push(`${d}: nadie que haga corte en ${fija.nombre.toLowerCase()} (${hacenCorte.map((p) => p.nombre).join(" o ")}).`);
       const faltan = dias[d].necesarios - dias[d].trabajan;
       if (faltan > 0)
         avisos.push(

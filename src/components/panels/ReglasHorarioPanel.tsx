@@ -130,6 +130,21 @@ export function ReglasHorarioPanel({
           <Paso valor={String(r.maxDobles)} menos={() => cambiar({ maxDobles: Math.max(0, r.maxDobles - 1) })} mas={() => cambiar({ maxDobles: Math.min(7, r.maxDobles + 1) })} />
         </div>
         <div className="rg-fila">
+          <span>No doblar dos días seguidos</span>
+          <Toggle checked={r.noDoblarSeguido !== false} onChange={(v) => cambiar({ noDoblarSeguido: v })} label="" />
+        </div>
+        <div className="rg-fila">
+          <span>
+            Cada día alguien que haga corte
+            <small>
+              {filas.some((f) => r.personas[f.empleadoId]?.haceCorte)
+                ? filas.filter((f) => r.personas[f.empleadoId]?.haceCorte).map((f) => f.nombre).join(" o ")
+                : "Marca en su ficha quién hace corte"}
+            </small>
+          </span>
+          <Toggle checked={r.alguienCorte !== false} onChange={(v) => cambiar({ alguienCorte: v })} label="" />
+        </div>
+        <div className="rg-fila">
           <span>Descanso: 1 día por semana a tiempo completo</span>
           <Toggle checked={r.descansoSemanal} onChange={(v) => cambiar({ descansoSemanal: v })} label="" />
         </div>
@@ -153,10 +168,16 @@ export function ReglasHorarioPanel({
                 {puesto && <span className="hint"> · {puesto}</span>}
                 <span className="rg-chips">
                   {g.modo === "fijos" ? (
-                    <i className="fijo">{textoFijos(g.fijos)}</i>
+                    <>
+                      {g.haceCorte && <i className="si">Corte</i>}
+                      <i className="fijo">{textoFijos(g.fijos)}</i>
+                    </>
                   ) : (
                     <>
-                      <i className={g.puedeAbrir ? "si" : "no"}>{g.puedeAbrir ? "Abre" : "No abre"}</i>
+                      {g.haceCorte && <i className="si">Corte</i>}
+                      <i className={g.puedeAbrir ? "si" : "no"}>
+                        {g.puedeAbrir ? (g.maxAperturas ? `Abre máx. ${g.maxAperturas}` : "Abre") : "No abre"}
+                      </i>
                       <i className={g.puedeCerrar ? "si" : "no"}>{g.puedeCerrar ? "Cierra" : "No cierra"}</i>
                       <i className={g.puedeDoblar ? "si" : "no"}>{g.puedeDoblar ? "Dobla" : "No dobla"}</i>
                       <i>{textoDescanso(g.descanso)}</i>
@@ -317,6 +338,16 @@ function PersonaSheet({
           <span>Puede abrir (X)</span>
           <Toggle checked={regla.puedeAbrir} onChange={(v) => onChange({ ...regla, puedeAbrir: v })} label="" />
         </div>
+        {regla.puedeAbrir && regla.modo === "completo" && (
+          <div className="rg-fila">
+            <span>Máximo de días que abre a la semana</span>
+            <Paso
+              valor={regla.maxAperturas ? String(regla.maxAperturas) : "Sin límite"}
+              menos={() => onChange({ ...regla, maxAperturas: Math.max(1, (regla.maxAperturas ?? 7) - 1) })}
+              mas={() => onChange({ ...regla, maxAperturas: (regla.maxAperturas ?? 7) >= 6 ? undefined : (regla.maxAperturas ?? 7) + 1 })}
+            />
+          </div>
+        )}
         <div className="rg-fila">
           <span>Puede cerrar (O)</span>
           <Toggle checked={regla.puedeCerrar} onChange={(v) => onChange({ ...regla, puedeCerrar: v })} label="" />
@@ -324,6 +355,10 @@ function PersonaSheet({
         <div className="rg-fila">
           <span>Puede doblar (Z)</span>
           <Toggle checked={regla.puedeDoblar} onChange={(v) => onChange({ ...regla, puedeDoblar: v })} label="" />
+        </div>
+        <div className="rg-fila">
+          <span>Puede hacer corte</span>
+          <Toggle checked={!!regla.haceCorte} onChange={(v) => onChange({ ...regla, haceCorte: v || undefined })} label="" />
         </div>
       </div>
 

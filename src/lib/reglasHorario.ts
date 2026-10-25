@@ -25,11 +25,19 @@ export interface FilaReglas {
 }
 
 // Últimos horarios guardados (de la más reciente a la más vieja).
-function ultimasSemanas(horarios: Record<string, HorarioMonthData>, months: Record<string, MonthData>) {
+export function ultimasSemanas(
+  horarios: Record<string, HorarioMonthData>,
+  months: Record<string, MonthData>,
+  n = SEMANAS_DE_HISTORIA,
+  hastaInicio?: string
+) {
   const semanas = Object.entries(horarios).flatMap(([mk, m]) =>
     months[mk] ? m.weeks.flatMap((s, wi) => (s ? [{ inicio: resolveWeekStartDate(mk, wi, months[mk]), semana: s }] : [])) : []
   );
-  return semanas.sort((a, b) => b.inicio.localeCompare(a.inicio)).slice(0, SEMANAS_DE_HISTORIA);
+  return semanas
+    .filter((s) => !hastaInicio || s.inicio <= hastaInicio)
+    .sort((a, b) => b.inicio.localeCompare(a.inicio))
+    .slice(0, n);
 }
 
 function moda(valores: string[]): { valor: string; veces: number } | null {
@@ -61,7 +69,8 @@ export function reglaDeHistoria(valoresPorSemana: Partial<Record<DayName, string
   const conHistoria = valoresPorSemana.length > 0;
   return {
     modo: "completo",
-    puedeAbrir: !conHistoria || cuenta("X") >= 2,
+    // Z = abre y dobla, también cuenta como abrir.
+    puedeAbrir: !conHistoria || cuenta("X") + cuenta("Z") >= 2,
     puedeCerrar: !conHistoria || cuenta("O") >= 1,
     puedeDoblar: !conHistoria || cuenta("Z") >= 1,
     descanso: diasOff.length > 0 && diasOff.length <= 3 ? diasOff : [],
@@ -98,6 +107,8 @@ export function reglasDelArea(
     alguienAbre: true,
     maxDobles: 2,
     descansoSemanal: true,
+    noDoblarSeguido: true,
+    alguienCorte: true,
     ...guardadas,
     personas: { ...guardadas?.personas },
   };

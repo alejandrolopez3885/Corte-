@@ -103,6 +103,9 @@ export interface HorarioSemana {
   // que ya le tocaba (normal o Z), ver computeNominaFila. No se paga solo
   // por tener el descanso ahí si no trabajó.
   festivos?: DayName[];
+  // Cómo venía el horario sugerido cuando se usó (área → empleado → días),
+  // para comparar contra lo que se guardó (Reglas del personal › Lo que aprendí).
+  sugerido?: Record<string, Record<string, Partial<Record<DayName, string>>>>;
 }
 
 // Reglas del personal para el horario sugerido (Horarios › Reglas del
@@ -118,6 +121,10 @@ export interface ReglaPersona {
   puedeDoblar: boolean;
   // Tiempo completo: días en que prefiere descansar (vacío = flexible).
   descanso?: DayName[];
+  // Cuántos días a la semana puede abrir (X o Z); sin valor = sin límite.
+  maxAperturas?: number;
+  // Puede hacer corte (ej. gerente, encargada).
+  haceCorte?: boolean;
 }
 
 export interface ReglasArea {
@@ -128,6 +135,9 @@ export interface ReglasArea {
   alguienAbre: boolean;
   maxDobles: number;
   descansoSemanal: boolean;
+  // Sin valor = sí (lo de antes de que existieran).
+  noDoblarSeguido?: boolean;
+  alguienCorte?: boolean;
   personas: Record<string, ReglaPersona>;
 }
 
