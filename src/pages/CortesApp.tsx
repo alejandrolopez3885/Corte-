@@ -10,7 +10,7 @@ import { historialNombres } from "../lib/gastosBusqueda";
 import {
   addDaysIso, buildMonth, dateForDay, formatAssignedDate, formatDayNumber, formatLongDayDate, formatWeekRange,
   mondayOnOrBefore, mostRecentDayInWeek, mostRecentWeekIndex, resolveAssignmentLocation, resolveWeekStartDate,
-  normalizarNombre, round2, sumFromText, todayIso, uid, recalcularAcumulados, turnosActivos, quienesAbren, efectivoDelDia, empleadoDelDueno,
+  normalizarNombre, round2, sumFromText, todayIso, uid, recalcularAcumulados, turnosActivos, quienesAbren, efectivoDelDia, FONDO_EN_APERTURA_DESDE, empleadoDelDueno,
 } from "../lib/dataModel";
 import { removeAssignmentByStaffAndDate, upsertAssignment, useStaffAssignments } from "../lib/staffAssignments";
 import { DAYS, DAY_SHORT } from "../lib/types";
@@ -73,7 +73,7 @@ import { useDatosPagoEquipo, type DatosPago } from "../lib/datosPago";
 type ModalState =
   | { type: "month" }
   | { type: "mesero"; editing?: MeseroCut; vuelta?: number }
-  | { type: "gasto"; editing?: Gasto }
+  | { type: "gasto"; editing?: Gasto; fondo?: boolean }
   | { type: "transfer"; editing?: Transferencia }
   | { type: "apps" }
   | { type: "guardarCorte" }
@@ -926,11 +926,13 @@ export default function CortesApp({ profile }: { profile: Profile }) {
       };
       const cut = form.meseroCutId ? d.meseros.find((m) => m.id === form.meseroCutId) : undefined;
       if (cut) Object.assign(entry, { origen: "mesero", meseroCutId: cut.id, meseroNombre: cut.nombre });
+      // Pagado con el fondo del día anterior: se resta del fondo, no de las ventas.
+      else if (form.delFondo) entry.delFondo = true;
       if (editingId) {
         const i = d.gastos.findIndex((g) => g.id === editingId);
         // Sale del corte donde estaba y entra (con su monto nuevo) al que se eligió.
         ajustarCorteDeGasto(d, d.gastos[i], -d.gastos[i].total);
-        d.gastos[i] = { ...d.gastos[i], meseroCutId: undefined, meseroNombre: undefined, ...entry };
+        d.gastos[i] = { ...d.gastos[i], meseroCutId: undefined, meseroNombre: undefined, delFondo: undefined, ...entry };
       } else d.gastos.push(entry);
       ajustarCorteDeGasto(d, entry, entry.total);
     });
@@ -1260,6 +1262,10 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           ids.push(id);
         }
       });
+      // Los gastos del fondo son del turno 1: quedan dentro de la apertura.
+      d.gastos.forEach((g) => {
+        if (g.delFondo && !ids.includes(g.id)) ids.push(g.id);
+      });
       // Apps: el total del día empieza con lo de la apertura.
       if ((d.ventaApps || 0) < v.ventaApps) d.ventaApps = v.ventaApps;
       d.apertura = {
@@ -1331,6 +1337,14 @@ export default function CortesApp({ profile }: { profile: Profile }) {
   // Efectivo a entregar (desde el 21/10/2026), ver efectivoDelDia.
   const efectivoDia =
     day && totals && turnosDelDia && activeDayDate ? efectivoDelDia(data.months, activeDayDate, day, totals.efectivo) : null;
+  // Fondo del día anterior manejado en el turno 1 (desde el 25/10/2026).
+  const fondoActivo = !!(efectivoDia && activeDayDate && activeDayDate >= FONDO_EN_APERTURA_DESDE && efectivoDia.dejadoAyer > 0);
+
+  function confirmarFondo() {
+    updateDay((d) => {
+      d.fondoRecibido = { fecha: new Date().toISOString(), nombre: profile.display_name || (isOwner ? "Dueño" : "Alguien del equipo") };
+    });
+  }
 
   if (invitadoVencido) {
     return (
@@ -2148,6 +2162,9 @@ export default function CortesApp({ profile }: { profile: Profile }) {
                 turnos={turnosDelDia}
                 abrenHoy={abrenHoy}
                 efectivoDia={efectivoDia}
+                fondo={fondoActivo}
+                onGastoFondo={() => setModal({ type: "gasto", fondo: true })}
+                onFondoRecibido={confirmarFondo}
                 totals={totals}
                 bloqueado={bloqueadoMedioTurno}
                 fechaHora={fechaHoraCorta}
@@ -2267,6 +2284,8 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           catalog={data.meseros}
           empleados={data.empleados}
           historial={historialGastos}
+          fondo={efectivoDia && ((fondoActivo && !day?.apertura) || modal.editing?.delFondo) ? { queda: efectivoDia.fondoQueda } : undefined}
+          inicialFondo={modal.fondo}
         />
       )}
       {modal?.type === "transfer" && (
@@ -2292,6 +2311,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           abren={abrenHoy}
           historial={historialGastos}
           dejadoAyer={efectivoDia?.ayer}
+          fondo={fondoActivo && efectivoDia ? { gastos: efectivoDia.gastosFondo, queda: efectivoDia.fondoQueda } : undefined}
         />
       )}
       {modal?.type === "dejarEfectivo" && day && (

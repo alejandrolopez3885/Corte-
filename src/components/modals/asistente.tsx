@@ -251,10 +251,29 @@ export function ListaAgregados({ filas }: { filas: { id: string; titulo: string;
 }
 
 // "¿Se rebaja de algún corte?": los cortes de meseros del día o "No".
-// valor: id del corte, "" = no (general), null = sin contestar.
-export function PreguntaCorte({ cortes, valor, onElegir, textoNo }: { cortes: MeseroCut[]; valor: string | null; onElegir: (id: string) => void; textoNo: string }) {
+// valor: id del corte, "" = no (general), null = sin contestar. Con fondo
+// (turno 1), la primera opción es "Con el fondo" y cuánto queda.
+export function PreguntaCorte({
+  cortes,
+  valor,
+  onElegir,
+  textoNo,
+  fondo,
+}: {
+  cortes: MeseroCut[];
+  valor: string | null;
+  onElegir: (id: string) => void;
+  textoNo: string;
+  fondo?: { valor: string; queda: number };
+}) {
   return (
     <div className="ca-opciones">
+      {fondo && (
+        <Opcion elegida={valor === fondo.valor} onClick={() => onElegir(fondo.valor)} extra={<span className="ca-avatar fondo">$</span>}>
+          Con el fondo que se dejó ayer
+          <small className="ca-sub">Quedan {money(fondo.queda)}</small>
+        </Opcion>
+      )}
       {cortes.map((c) => (
         <Opcion key={c.id} elegida={valor === c.id} onClick={() => onElegir(c.id)} extra={<span className="ca-avatar">{iniciales(c.nombre)}</span>}>
           Sí, del corte de {c.nombre}

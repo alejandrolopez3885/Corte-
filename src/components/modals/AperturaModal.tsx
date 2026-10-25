@@ -49,6 +49,7 @@ export function AperturaModal({
   abren,
   historial,
   dejadoAyer,
+  fondo,
 }: {
   onClose: () => void;
   onGuardar: (v: AperturaValues) => void;
@@ -59,6 +60,9 @@ export function AperturaModal({
   historial: NombreHistorial[];
   // Efectivo que se dejó en el restaurante el día anterior.
   dejadoAyer?: { monto: number; nota?: string };
+  // Fondo manejado en el turno 1 (desde el 25/10/2026): lo gastado con él y
+  // lo que queda, que se entrega al dueño junto con la apertura.
+  fondo?: { gastos: number; queda: number };
 }) {
   const paraLlevar = catalog.find((c) => c.acumulado);
   const usuarioDe = (empleadoId: string) => {
@@ -147,6 +151,10 @@ export function AperturaModal({
     );
   }
 
+  const efectivoDe = (b: Bloque) =>
+    round2((parseFloat(b.venta) || 0) - sumFromText(b.tarjetas) - sumFromText(b.transfer) - b.gastos.reduce((s, g) => s + (parseFloat(g.monto) || 0), 0));
+  const efectivoVentas = round2(efectivoDe(llevar) + efectivoDe(persona));
+
   const aValores = (b: Bloque, nombre: string): BloqueApertura => ({
     meseroId: b.meseroId,
     nombre,
@@ -164,7 +172,28 @@ export function AperturaModal({
         Lo que llevan hasta este momento las apps, {paraLlevar?.nombre || "el usuario de para llevar"} y quien abrió. Al guardarlo
         queda bloqueado; al cierre se escribe el total del día y la app resta esto.
       </p>
-      {dejadoAyer && dejadoAyer.monto > 0 && (
+      {fondo && dejadoAyer && (
+        <div className="apertura-bloque">
+          <div className="apertura-bloque-titulo">
+            <strong>Fondo</strong>
+            <span>aparte de las ventas</span>
+          </div>
+          <div className="apertura-efectivo">
+            <span>Se dejó ayer{dejadoAyer.nota ? ` (${dejadoAyer.nota})` : ""}</span>
+            <span>{money(dejadoAyer.monto)}</span>
+          </div>
+          <div className="apertura-efectivo">
+            <span>− Gastos pagados con el fondo</span>
+            <span>−{money(fondo.gastos)}</span>
+          </div>
+          <div className="apertura-efectivo">
+            <span>Queda (se entrega al dueño)</span>
+            <strong>{money(fondo.queda)}</strong>
+          </div>
+          <p className="hint">Si algo se pagó con el fondo y no está, regístralo en Gastos con "Con el fondo que se dejó ayer".</p>
+        </div>
+      )}
+      {!fondo && dejadoAyer && dejadoAyer.monto > 0 && (
         <p className="aviso-dejado">
           Ayer se dejaron <strong>{money(dejadoAyer.monto)}</strong>
           {dejadoAyer.nota ? ` (${dejadoAyer.nota})` : ""}. Si un gasto se pagó con ese dinero, regístralo en Gastos del día, no
@@ -234,6 +263,22 @@ export function AperturaModal({
       </div>
       {bloqueUI(usuarioLlevar?.nombre || "Para llevar", llevar, setLlevar)}
       {bloqueUI(usuario?.nombre || nombreAbrio || "Quien abrió", persona, setPersona)}
+      {fondo && (
+        <div className="apertura-bloque">
+          <div className="apertura-efectivo">
+            <span>Efectivo de las ventas</span>
+            <span>{money(efectivoVentas)}</span>
+          </div>
+          <div className="apertura-efectivo">
+            <span>+ Fondo que queda</span>
+            <span>{money(fondo.queda)}</span>
+          </div>
+          <div className="apertura-efectivo">
+            <span>Se entrega al dueño</span>
+            <strong>{money(round2(efectivoVentas + fondo.queda))}</strong>
+          </div>
+        </div>
+      )}
 
       {intento && falta && (
         <p className="aviso-faltante">

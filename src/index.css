@@ -2018,3 +2018,8 @@ button.cd-it { cursor: pointer; }
 .cd-caja-fila.subtotal b { font-size: 16px; }
 .cd-caja .efectivo-fila.total { margin-top: 4px; }
 .cd-caja-info { margin-top: 6px; padding-top: 4px; border-top: 1px dashed var(--border); }
+.ca-avatar.fondo { background: var(--warn-soft); color: var(--warn); }
+.cd-fondo .cd-caja-fila { grid-template-columns: minmax(0, 1fr) auto auto; }
+.cd-fondo .cd-it-main { min-width: 0; }
+.cd-fondo .cd-it-main b { white-space: normal; overflow-wrap: anywhere; font-weight: 600; }
+.cd-fondo .cd-caja-fila i { display: none; }

@@ -527,8 +527,11 @@ export function responder(data: AppData, c: Consulta, hoy: string): Respuesta {
     if (turnosActivos(c.fecha)) {
       const e = efectivoDelDia(data.months, c.fecha, ud.day, r.efectivo);
       const lineas: string[] = [];
-      if (e.tieneApertura) lineas.push(`Apertura ${sinCentavos(e.aperturaEf)} (ya entregado) · Resto del día ${sinCentavos(e.resto)}`);
-      if (e.dejadoAyer) lineas.push(`+ Se dejó el día anterior ${sinCentavos(e.dejadoAyer)}`);
+      if (e.tieneApertura)
+        lineas.push(
+          `Apertura ${sinCentavos(e.aperturaEntregado)} (ya entregado${e.fondoEnApertura && e.dejadoAyer ? `, con ${sinCentavos(e.fondoQueda)} del fondo` : ""}) · Resto del día ${sinCentavos(e.resto)}`
+        );
+      if (e.dejadoAyer && !e.fondoEnApertura) lineas.push(`+ Fondo del día anterior ${sinCentavos(e.fondoQueda)}`);
       if (e.dejadoHoy) lineas.push(`− Se deja para el día siguiente ${sinCentavos(e.dejadoHoy)}`);
       lineas.push(`Efectivo total del día ${sinCentavos(e.totalDia)}`);
       return { titulo: titulos.efectivo, valor: sinCentavos(e.entregar), lineas, enlace, dias, consulta: c };

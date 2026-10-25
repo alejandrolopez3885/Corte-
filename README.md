@@ -293,10 +293,27 @@ estando en Nómina te regresa al menú de Equipo):
   - **Cortes de meseros** en tabla (venta, tarjetas, transf., gastos y
     entrega, con el total; tocar una fila abre el corte) — en celular,
     lista con los mismos datos; a un lado (abajo en celular) **Gastos**
-    (categoría, de qué corte o general, y Confirmar/Ingresado),
-    **Transferencias** y **Efectivo** (efectivo del cierre, lo que se dejó
-    o se deja, a entregar, la apertura ya entregada, el total del día y
-    "Johnster del día … debe coincidir con el sistema").
+    (categoría, de qué corte, del fondo o general, y Confirmar/Ingresado)
+    y **Transferencias**; y **Efectivo · ¿cuánto debe haber?** (debajo de
+    los cortes en iPad, al final en celular): solo dinero, como cuenta de
+    caja con lo que "lleva" cada renglón — efectivo que cobraron los
+    meseros (sin propinas, tarjetas ni transferencias), − gastos del
+    turno, = debe haber en caja, − se deja para mañana, = efectivo a
+    entregar; abajo, el turno 1 ya entregado y el total del día.
+  - **Fondo** (lo que se dejó el día anterior, desde el 25/10/2026): solo
+    vive en el turno 1. Si hay fondo, el primer paso es **Recibe el fondo
+    ($…)** con "Ya lo recibí". En la pestaña Turno 1 sale la tarjeta
+    **Fondo**: se dejó ayer, los gastos pagados con él (con +; en Nuevo
+    gasto la pregunta pasa a ser **¿Con qué dinero se pagó?** con "Con el
+    fondo que se dejó ayer · quedan $…" como primera opción) y **queda del
+    fondo**. Esos gastos se restan del fondo, no de las ventas. El **Corte
+    de apertura** muestra el bloque Fondo (se dejó, − gastos del fondo,
+    queda) y al final "Efectivo de las ventas + fondo que queda = se
+    entrega al dueño"; al guardarlo, los gastos del fondo quedan dentro de
+    la apertura. El turno 2 ya no lleva fondo: su efectivo es solo lo de su
+    turno. En Todo el día: fondo + cobrado − gastos del día − ya entregado
+    en la apertura (con el fondo). Los gastos del fondo siguen contando
+    como gastos del día en totales y Dashboard.
   - **Barra fija abajo** con el efectivo a entregar (en la noche, si hubo
     apertura), "Dejar efectivo" y "Guardar corte" (ya guardado: "Reabrir
     corte" para el dueño o "Guardado"). Arriba de los totales del

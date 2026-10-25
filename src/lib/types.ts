@@ -271,6 +271,9 @@ export interface Gasto {
   // gasto al corte específico de un día, no al mesero como tal). Se
   // limpia solo si la categoría cambia a otra cosa.
   meseroId?: string;
+  // Se pagó con el fondo (lo que se dejó el día anterior), en el turno 1:
+  // se resta del fondo y no del efectivo de las ventas.
+  delFondo?: boolean;
 }
 
 export interface Transferencia {
@@ -461,6 +464,8 @@ export interface DayData {
   // (ej. para pagar hielo): se resta del efectivo a entregar de este día y
   // se suma solo al del día siguiente (desde el 21/10/2026).
   efectivoDejado?: { monto: number; nota?: string };
+  // Quien abrió confirmó que recibió el fondo del día anterior.
+  fondoRecibido?: { fecha: string; nombre: string };
 }
 
 // Control de gastos que los proveedores dan a crédito, pagados después por

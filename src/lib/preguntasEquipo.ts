@@ -437,8 +437,8 @@ export function responderEquipo(data: AppData, c: Consulta, hoy: string, ctx: Co
     if (turnosActivos(c.fecha)) {
       const e = efectivoDelDia(data.months, c.fecha, day, r.efectivo);
       const lineas: string[] = [];
-      if (e.tieneApertura) lineas.push(`Sin lo de la apertura (${sinCentavos(e.aperturaEf)}, ya entregado)`);
-      if (e.dejadoAyer) lineas.push(`+ Lo que se dejó el día anterior ${sinCentavos(e.dejadoAyer)}`);
+      if (e.tieneApertura) lineas.push(`Sin lo de la apertura (${sinCentavos(e.aperturaEntregado)}, ya entregado)`);
+      if (e.dejadoAyer && !e.fondoEnApertura) lineas.push(`+ Lo que queda del fondo del día anterior ${sinCentavos(e.fondoQueda)}`);
       if (e.dejadoHoy) lineas.push(`− Lo que se deja para mañana ${sinCentavos(e.dejadoHoy)}`);
       return { ...base, titulo, valor: sinCentavos(e.entregar), lineas: lineas.length ? lineas : ["Venta − tarjetas, transferencias y gastos."] };
     }

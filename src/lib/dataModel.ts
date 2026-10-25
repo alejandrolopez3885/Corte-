@@ -551,18 +551,32 @@ export function diaPorFecha(months: Record<string, MonthData>, fechaIso: string)
   return null;
 }
 
-// Efectivo a entregar (desde el 21/10/2026): el de la apertura ya se lo
-// llevó el dueño; se suma lo que se dejó el día anterior y se resta lo que
-// se deja para el día siguiente. "efectivo" es el efectivo del día completo.
+// Efectivo a entregar (desde el 21/10/2026). "efectivo" es el efectivo del
+// día completo (venta − tarjetas − transferencias − todos los gastos). El
+// fondo (lo que se dejó el día anterior) va aparte, en el turno 1: sus
+// gastos ("delFondo") se le restan a él y no a las ventas, y lo que queda se
+// entrega al dueño junto con la apertura. Sin apertura, sigue en caja y se
+// entrega en la noche. Se resta lo que se deja para el día siguiente.
+// Lo del fondo con la apertura aplica desde el 25/10/2026; antes, el fondo
+// seguía en caja hasta la noche.
+export const FONDO_EN_APERTURA_DESDE = "2026-10-25";
 export function efectivoDelDia(months: Record<string, MonthData>, fechaIso: string, day: DayData, efectivo: number) {
   const aperturaEf = round2(day.meseros.filter((m) => m.apertura).reduce((s, m) => s + m.total, 0));
   const ayer = diaPorFecha(months, addDaysIso(fechaIso, -1))?.efectivoDejado;
   const dejadoAyer = ayer?.monto || 0;
   const dejadoHoy = day.efectivoDejado?.monto || 0;
   const tieneApertura = !!day.apertura;
-  const resto = round2(efectivo - (tieneApertura ? aperturaEf : 0));
-  const entregar = round2(resto + dejadoAyer - dejadoHoy);
-  return { tieneApertura, aperturaEf, resto, ayer, dejadoAyer, dejadoHoy, entregar, totalDia: round2(entregar + (tieneApertura ? aperturaEf : 0)) };
+  const gastosFondo = round2(day.gastos.filter((g) => g.delFondo).reduce((s, g) => s + g.total, 0));
+  const fondoQueda = round2(dejadoAyer - gastosFondo);
+  // Efectivo de las ventas (sin los gastos del fondo) después de la apertura.
+  const resto = round2(efectivo + gastosFondo - (tieneApertura ? aperturaEf : 0));
+  const fondoEnApertura = tieneApertura && fechaIso >= FONDO_EN_APERTURA_DESDE;
+  const aperturaEntregado = tieneApertura ? round2(aperturaEf + (fondoEnApertura ? fondoQueda : 0)) : 0;
+  const entregar = round2(resto + (fondoEnApertura ? 0 : fondoQueda) - dejadoHoy);
+  return {
+    tieneApertura, aperturaEf, resto, ayer, dejadoAyer, dejadoHoy, gastosFondo, fondoQueda, fondoEnApertura, aperturaEntregado, entregar,
+    totalDia: round2(entregar + aperturaEntregado),
+  };
 }
 
 // Quién abre ese día según el horario: X = abre, Z = dobla.
