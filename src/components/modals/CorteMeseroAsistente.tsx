@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { ArrowLeft, ArrowRight, Check, Paperclip, Trash2, X } from "lucide-react";
 import { NumInput, SumInput, Toggle } from "../ui";
 import { ConceptoInput } from "../ConceptoInput";
@@ -96,6 +96,31 @@ export function CorteMeseroAsistente({
   const [paso, setPaso] = useState(0);
   const [enResultado, setEnResultado] = useState(!!editing);
   const [desdeResultado, setDesdeResultado] = useState(false);
+  // En iPad/iPhone el teclado tapa la parte de abajo sin cambiar el alto de
+  // la página: la pantalla se ajusta a lo visible para que se pueda bajar
+  // hasta el final y los botones queden arriba del teclado.
+  const raiz = useRef<HTMLDivElement>(null);
+  const cuerpo = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const vv = window.visualViewport;
+    const el = raiz.current;
+    if (!vv || !el) return;
+    const ajustar = () => {
+      el.style.height = `${vv.height}px`;
+      el.style.top = `${vv.offsetTop}px`;
+    };
+    ajustar();
+    vv.addEventListener("resize", ajustar);
+    vv.addEventListener("scroll", ajustar);
+    return () => {
+      vv.removeEventListener("resize", ajustar);
+      vv.removeEventListener("scroll", ajustar);
+    };
+  }, []);
+  // Cada pregunta empieza desde arriba.
+  useEffect(() => {
+    cuerpo.current?.scrollTo(0, 0);
+  }, [paso, enResultado]);
 
   // Mismo cálculo que el corte de siempre (MeseroModal): usuarios acumulados
   // ("Para llevar" y los del corte de apertura) capturan la lectura del día.
@@ -433,7 +458,7 @@ export function CorteMeseroAsistente({
   const pregunta = enResultado ? null : preguntas[actual];
 
   return (
-    <div className="ca">
+    <div className="ca" ref={raiz}>
       <header className="ca-barra">
         <button type="button" className="icon-btn" aria-label="Cerrar" onClick={onClose}>
           <X size={20} />
@@ -457,7 +482,8 @@ export function CorteMeseroAsistente({
         </div>
       </div>
 
-      <main className="ca-cuerpo">
+      <main className="ca-cuerpo" ref={cuerpo}>
+        <div className="ca-cuerpo-interior">
         {pregunta && (
           <>
             <h2 className="ca-pregunta">{pregunta.titulo}</h2>
@@ -500,6 +526,7 @@ export function CorteMeseroAsistente({
             <p className="hint">El efectivo recibido es solo para calcular el cambio: no se guarda ni cambia el efectivo del día ni de la semana.</p>
           </>
         )}
+        </div>
       </main>
 
       <footer className="ca-pie">
