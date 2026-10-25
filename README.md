@@ -148,7 +148,11 @@ Botones: Atrás · **Hacer otro corte** (guarda y empieza otro) · **Guardar
 corte** (guarda y regresa al corte del día, como siempre). Tocar un corte
 ya hecho abre directo en el Resultado (sin "Hacer otro corte", con el bote
 para eliminarlo). Se guarda igual que antes: los gastos como pendientes (o
-ingresados) con su categoría, y la transferencia a nombre del mesero.
+ingresados) con su categoría, y la transferencia a nombre del mesero. Al
+**eliminar un corte** se borran con él su transferencia y los gastos que
+se capturaron en ese corte; al eliminar o cambiar el monto de uno de esos
+gastos desde Gastos del día, el corte de ese mesero se ajusta solo
+(gastos y entrega).
 
 Al capturar un corte, "Guardar corte" no se puede tocar si falta elegir el
 mesero o la venta; y al guardar un gasto en efectivo la categoría es obligatoria ("Es importante

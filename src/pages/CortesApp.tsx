@@ -893,7 +893,9 @@ export default function CortesApp({ profile }: { profile: Profile }) {
     if (bloqueadoMedioTurno(id)) return;
     updateDay((d) => {
       d.meseros = d.meseros.filter((m) => m.id !== id);
+      // Se van con el corte su transferencia y los gastos que se capturaron en él.
       d.transferencias = d.transferencias.filter((t) => t.meseroCutId !== id);
+      d.gastos = d.gastos.filter((g) => g.meseroCutId !== id);
       recalcularAcumulados(d);
     });
     setModal(null);
@@ -919,7 +921,9 @@ export default function CortesApp({ profile }: { profile: Profile }) {
       };
       if (editingId) {
         const i = d.gastos.findIndex((g) => g.id === editingId);
-        d.gastos[i] = { ...d.gastos[i], ...entry };
+        // Gasto del corte de un mesero: el cambio de monto se pasa a ese corte.
+        ajustarCorteDeGasto(d, d.gastos[i], entry.total - d.gastos[i].total);
+        d.gastos[i] = { ...d.gastos[i], ...entry, ...(d.gastos[i].meseroCutId ? { origen: d.gastos[i].origen } : {}) };
       } else d.gastos.push(entry);
     });
     setModal(null);
@@ -1027,10 +1031,21 @@ export default function CortesApp({ profile }: { profile: Profile }) {
     persist(next);
   }
 
+  // Cambia lo que descuenta el corte del mesero al que pertenece un gasto.
+  function ajustarCorteDeGasto(d: DayData, g: Gasto, delta: number) {
+    const cut = g.meseroCutId ? d.meseros.find((m) => m.id === g.meseroCutId) : undefined;
+    if (!cut || !delta) return;
+    cut.gastosTotal = round2(cut.gastosTotal + delta);
+    cut.total = round2(cut.total - delta);
+  }
+
   function deleteGasto(id: string) {
     if (bloqueadoMedioTurno(id)) return;
     updateDay((d) => {
-      d.gastos = d.gastos.filter((g) => g.id !== id);
+      const g = d.gastos.find((x) => x.id === id);
+      // Si era del corte de un mesero, ese corte deja de descontarlo.
+      if (g) ajustarCorteDeGasto(d, g, -g.total);
+      d.gastos = d.gastos.filter((x) => x.id !== id);
     });
     setModal(null);
   }
