@@ -118,9 +118,37 @@ cambia el texto solo: siempre hay que tocar la sugerencia. Si LanguageTool
 no responde, simplemente no aparece la sugerencia de ortografía; el
 autocompletado del historial funciona igual.
 
-Al capturar un corte, "Guardar corte" avisa arriba del botón si falta
-elegir el mesero (o la venta), con el selector marcado en rojo; y al
-guardar un gasto en efectivo la categoría es obligatoria ("Es importante
+**Corte de mesero paso por paso**: el "+" de meseros en Corte abre "Hacer
+corte a mesero", a pantalla completa, una pregunta a la vez con la barra
+de avance arriba ("Pregunta 2 de 6 · 17%") y abajo Atrás / Siguiente (no
+avanza sin contestar lo obligatorio): 1) **¿A quién se le hace corte?**
+(lista con sus iniciales; "Ya tiene un corte hoy" si ya tiene); 2) **¿Se
+cobra propina?** ("Sí, 3%", "Sí, 2%", "Sí, otra cantidad" —pide cuánto— o
+"No se cobra propina"; al usuario de para llevar en su lugar le pregunta
+**¿Quién cobró este turno?**); 3) **¿Cuánto vendió en el sistema?** (al
+usuario acumulado: lo que marca en todo el día, y debajo lo ya cortado y
+lo de este corte); 4) **¿Cuánto trae en tarjetas?** (con "+" para sumar
+vouchers, o "No trae tarjetas"); 5) **¿Tiene transferencias?** (igual, o
+"No tiene transferencias"); 6) **¿Pagó algún gasto de su corte?** con el
+formulario completo: primero la **categoría** en botones, luego concepto,
+total, "¿Para quién?" (Nómina, Comida empleado) o "¿A quién se le
+cancela?" (Cancelaciones, ya con el mesero del corte), un botón **Subir
+comprobante** desactivado ("Próximamente") y "Ya está ingresado". Abajo:
+Atrás · **Guardar otro gasto** (lo agrega, limpia el formulario y sigue
+ahí; los agregados quedan arriba con su categoría y ✕) · Siguiente (agrega
+el que quedó lleno; sin nada, sigue sin gastos; a medias avisa qué falta).
+Al final, el **Resultado**: venta, propina, tarjetas, transferencias y
+gastos, cada uno con "Cambiar", y **Efectivo a entregar** en grande; el
+cuadro **Efectivo recibido** solo calcula "Dar cambio: $…", "Faltan: $…"
+o "Exacto" — no se guarda ni cambia el efectivo del día ni de la semana.
+Botones: Atrás · **Hacer otro corte** (guarda y empieza otro) · **Guardar
+corte** (guarda y regresa al corte del día, como siempre). Tocar un corte
+ya hecho abre directo en el Resultado (sin "Hacer otro corte", con el bote
+para eliminarlo). Se guarda igual que antes: los gastos como pendientes (o
+ingresados) con su categoría, y la transferencia a nombre del mesero.
+
+Al capturar un corte, "Guardar corte" no se puede tocar si falta elegir el
+mesero o la venta; y al guardar un gasto en efectivo la categoría es obligatoria ("Es importante
 seleccionar la categoría") — lo demás que es opcional no pide nada. Los
 campos donde se suman varios montos (tarjetas y transferencia del mesero,
 transferencias, ventas de apps, efectivo real y el control de gastos en
@@ -1686,6 +1714,7 @@ src/
     panels/RecetarioPanel.tsx  Recetario (dueño edita y carga varias, equipo consulta); formato en lib/recetasTexto.ts
     NovedadesAlEntrar.tsx  slider de novedades al entrar (cuentas de equipo); lista en lib/novedades.ts
     modals/       un modal por acción (mesero, gasto, transferencia, etc.)
+    modals/CorteMeseroAsistente.tsx  corte de mesero paso por paso (el "+" de meseros en Corte)
   pages/
     Login.tsx
     CortesApp.tsx vista principal del dueño y de Corte por día asignado

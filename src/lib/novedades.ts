@@ -266,6 +266,14 @@ export const NOVEDADES: Novedad[] = [
     texto: "Las encuestas de un día suman en el ranking **en cuanto se hace tu corte**. Antes salen como pendientes: no se pierden.",
     visual: "encuesta",
   },
+  {
+    id: "corte-paso-a-paso",
+    fecha: "2026-10-25T03:40:00Z",
+    seccion: "corte",
+    titulo: "Corte de mesero paso a paso",
+    texto: "Al tocar **+** en meseros, el corte va **una pregunta a la vez**: propina, venta, tarjetas, transferencias y **gastos con su categoría**. Al final ves **cuánto entrega** y el **cambio**.",
+    visual: "guardarCorte",
+  },
 ];
 
 interface EstadoNovedades {

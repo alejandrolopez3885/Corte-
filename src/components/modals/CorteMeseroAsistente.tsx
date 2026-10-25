@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { ArrowLeft, ArrowRight, Check, Trash2, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Paperclip, Trash2, X } from "lucide-react";
 import { NumInput, SumInput, Toggle } from "../ui";
 import { ConceptoInput } from "../ConceptoInput";
 import { money, round2, sumFromText, uid } from "../../lib/dataModel";
@@ -400,6 +400,10 @@ export function CorteMeseroAsistente({
               </select>
             </label>
           )}
+          {/* Comprobante del gasto: todavía no disponible. */}
+          <button type="button" className="ca-comprobante" disabled>
+            <Paperclip size={17} /> Subir comprobante <small>Próximamente</small>
+          </button>
           <Toggle
             checked={g.estado === "ingresado"}
             disabled={!g.categoria}
