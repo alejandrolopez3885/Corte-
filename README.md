@@ -332,8 +332,10 @@ estando en Nómina te regresa al menú de Equipo):
   tocar un día abre −/+), **Subir gente si se espera más venta** (+1 por
   cada $6,000 arriba de lo normal en piso, $10,000 en cocina, apagado en
   cocina; el monto se cambia con −/+ de $500), **Apertura y dobles** (cada
-  día alguien abre con X o Z, máximo de dobles por persona a la semana —2—
-  y 1 descanso por semana a tiempo completo) y **Cada persona**: quienes
+  día alguien abre con X o Z, máximo de dobles por persona a la semana —2—,
+  no doblar dos días seguidos, cada día alguien que haga corte —los que
+  tienen "Puede hacer corte" en su ficha— y 1 descanso por semana a tiempo
+  completo) y **Cada persona**: quienes
   salieron en esa área en los últimos 6 horarios, con chips Abre/Cierra/
   Dobla y su descanso, o sus días fijos. Lo que no se ha guardado se deduce
   de esos horarios: sin ningún OFF y con días vacíos = "Solo días fijos"
@@ -342,7 +344,27 @@ estando en Nómina te regresa al menú de Equipo):
   menos una O; descanso preferido = los días con OFF si fueron 3 o menos
   (si no, "flexible"). Al tocar a alguien: "Tiempo completo" o "Solo días
   fijos", sus días fijos (X, Z, O, vacío o una hora especial), qué puede
-  hacer y "Descanso preferido" (o "Días que no puede" con días fijos).
+  hacer —abrir (con "Cuando abre, siempre dobla (Z)", ej. Aldair que abre
+  de mesero y cierra de barra, y "Máximo de días que abre a la semana", ej.
+  Alejandro 1 y Jennifer 2), cerrar, doblar y "Puede hacer corte"— y
+  "Descanso preferido" (o "Días que no puede" con días fijos). Chips
+  "Corte", "Abre máx. 1", "Abre con Z".
+  Arriba, **🧠 Lo que aprendí** (`src/lib/aprender.ts`, paso 6): compara
+  las reglas guardadas con los horarios de las últimas 4 semanas (hasta la
+  actual) y propone cambios con **Aplicar** (cambia y guarda esa regla) o
+  **Ignorar** (no vuelve a salir; `AppData.reglasIgnoradas`): subir/bajar el
+  mínimo de un día cuando 3 de 4 semanas (o más) se puso otro número,
+  descanso preferido cuando descansó el mismo día 3 de 4 semanas, "sí puede
+  abrir / doblar" cuando lo hizo 2 veces o más y su regla dice que no, y
+  subir el máximo de dobles. Debajo: **Venta por persona en piso** (venta
+  real ÷ personas trabajando, mediana por día; en naranja los días con menos
+  de ¾ del promedio), el **error promedio de la venta esperada** en los
+  últimos 28 días (lo que se esperaba cada día con lo que se sabía antes de
+  él) y qué porcentaje del **horario sugerido** quedó igual al guardarlo
+  (al guardar una semana hecha con "Usar este horario" se guarda cómo venía
+  la propuesta en `HorarioSemana.sugerido`). El enlace de Horarios muestra
+  cuántas sugerencias hay ("Reglas del personal 3 ›"). El jefe de cocina ve
+  solo las de cocina.
   "Guardar reglas" escribe solo las áreas que cambiaron en
   `AppData.reglasHorario`. El horario sugerido (paso 5) usa estas reglas.
 - **Horario sugerido** (`src/lib/horarioSugerido.ts`, paso 5): mientras el
@@ -356,7 +378,11 @@ estando en Nómina te regresa al menú de Equipo):
   días; cada día abre (X) uno que pueda abrir, el que menos ha abierto en la
   semana (si empata, el que abrió ese día la semana pasada), y en días con
   más gente de lo normal o donde falta gente ese mismo dobla (Z), respetando
-  el máximo de dobles. Se abre una hoja con las tablas, la fila "Trabajan
+  el máximo de dobles, sin doblar dos días seguidos y sin pasar el máximo de
+  días que abre cada quien; quien "siempre dobla al abrir" solo abre con Z.
+  Los descansos de los que hacen corte no caen el mismo día (aviso "nadie
+  que haga corte" si no se puede); los días sin nadie disponible para abrir
+  salen juntos en un aviso. Se abre una hoja con las tablas, la fila "Trabajan
   6/8" (en rojo si faltan), avisos ("Viernes: faltan 2 en piso…", "nadie que
   pueda abrir"), leyenda y "¿Por qué así?". "Usar este horario" llena el
   formulario sin guardar (banner "Se cargó el horario sugerido…" con

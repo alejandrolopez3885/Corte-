@@ -346,6 +346,14 @@ export const NOVEDADES: Novedad[] = [
     texto: "Toca **Sugerir horario de esta semana**: se arma solo con las reglas del personal y la venta esperada. Revísalo, corrige lo que quieras y guárdalo.",
     visual: "autocompletar",
   },
+  {
+    id: "reglas-corte-aperturas",
+    fecha: "2026-10-26T01:08:00Z",
+    seccion: "horarios",
+    titulo: "Más reglas y Lo que aprendí",
+    texto: "En Reglas del personal: quién hace corte, máximo de días que abre cada quien, quién abre siempre doblando y no doblar dos días seguidos. Arriba, **Lo que aprendí** propone ajustes según los horarios que se han guardado.",
+    visual: "ranking",
+  },
 ];
 
 interface EstadoNovedades {

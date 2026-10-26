@@ -123,6 +123,9 @@ export interface ReglaPersona {
   descanso?: DayName[];
   // Cuántos días a la semana puede abrir (X o Z); sin valor = sin límite.
   maxAperturas?: number;
+  // Cuando abre, siempre dobla (Z): abre de una cosa y cierra de otra
+  // (ej. Aldair abre como mesero y cierra como barra). Nunca solo X.
+  abreDoblando?: boolean;
   // Puede hacer corte (ej. gerente, encargada).
   haceCorte?: boolean;
 }
@@ -570,6 +573,8 @@ export interface AppData {
   horarios: Record<string, HorarioMonthData>;
   // Reglas del personal por área (id de HORARIO_AREAS_FIJAS).
   reglasHorario?: Record<string, ReglasArea>;
+  // Sugerencias de "Lo que aprendí" que el dueño ignoró (no vuelven a salir).
+  reglasIgnoradas?: string[];
   // Descuentos de nómina por semana (mismas semanas que Horarios).
   nominaDescuentos: Record<string, NominaDescuentosMonthData>;
   // Catálogo de insumos de Bar y Cocina (Negocio > Control de Bar/Cocina).

@@ -4,6 +4,7 @@ import { TituloPagina } from "../BarraTitulo";
 import { iniciales } from "../modals/asistente";
 import { mondayOnOrBefore, todayIso } from "../../lib/dataModel";
 import { miles, pronosticoDesdeLunes } from "../../lib/pronostico";
+import { aprender, SEMANAS_APRENDER } from "../../lib/aprender";
 import { normalizarValor, reglasDelArea, textoDescanso, textoFijos, SEMANAS_DE_HISTORIA } from "../../lib/reglasHorario";
 import { DAYS, DAY_SHORT, HORARIO_AREAS_FIJAS } from "../../lib/types";
 import type { DayName, EmpleadoEntry, HorarioMonthData, MonthData, PuestoEntry, ReglaPersona, ReglasArea } from "../../lib/types";
@@ -21,6 +22,8 @@ export function ReglasHorarioPanel({
   soloAreaId,
   verPronostico,
   onSave,
+  ignoradas,
+  onIgnorar,
 }: {
   onBack: () => void;
   months: Record<string, MonthData>;
@@ -31,6 +34,8 @@ export function ReglasHorarioPanel({
   soloAreaId?: string;
   verPronostico: boolean;
   onSave: (cambios: Record<string, ReglasArea>) => void;
+  ignoradas?: string[];
+  onIgnorar?: (id: string) => void;
 }) {
   const areas = HORARIO_AREAS_FIJAS.filter((a) => !soloAreaId || a.id === soloAreaId);
   const iniciales0 = useMemo(
@@ -51,6 +56,25 @@ export function ReglasHorarioPanel({
     () => (verPronostico ? pronosticoDesdeLunes(months, mondayOnOrBefore(hoy), hoy) : []),
     [verPronostico, months, hoy]
   );
+
+  // Lo que aprendí (paso 6): se calcula con las reglas guardadas.
+  const aprendido = useMemo(
+    () =>
+      aprender({
+        horarios,
+        months,
+        reglas: guardadas,
+        inactivos: new Set(empleados.filter((e) => e.inactivo).map((e) => e.id)),
+        ignoradas,
+        hoy,
+      }),
+    [horarios, months, guardadas, empleados, ignoradas, hoy]
+  );
+  const sugerencias = aprendido.sugerencias.filter((s) => areas.some((a) => a.id === s.areaId));
+  const verVentaPersona = (!soloAreaId || soloAreaId === "piso") && Object.keys(aprendido.ventaPorPersona).length > 0;
+  const maxVpp = Math.max(1, ...Object.values(aprendido.ventaPorPersona).map((v) => v || 0));
+  const vppValores = Object.values(aprendido.ventaPorPersona).map((v) => v || 0);
+  const vppMedia = vppValores.length ? vppValores.reduce((t, v) => t + v, 0) / vppValores.length : 0;
 
   const area = areas.find((a) => a.id === areaId)!;
   const r = borrador[areaId];
@@ -76,6 +100,85 @@ export function ReglasHorarioPanel({
         El horario sugerido va a respetar estas reglas. Ya vienen llenas con lo que se hizo en los últimos {SEMANAS_DE_HISTORIA} horarios: solo
         corrige lo que no esté bien.
       </p>
+
+      {(sugerencias.length > 0 || verVentaPersona || aprendido.errorPronostico) && (
+        <div className="rg-card apr-card">
+          <h3>🧠 Lo que aprendí</h3>
+          <p className="hint">
+            Comparé las reglas con los horarios que guardaste en las últimas {aprendido.semanas || SEMANAS_APRENDER} semanas. Nada cambia hasta que
+            toques Aplicar.
+          </p>
+          {sugerencias.length === 0 && <p className="apr-nada">✓ Tus reglas coinciden con lo que has hecho.</p>}
+          {sugerencias.map((s) => (
+            <div key={s.id} className="apr-sug">
+              {areas.length > 1 && <span className="apr-tag">{HORARIO_AREAS_FIJAS.find((a) => a.id === s.areaId)?.nombre}</span>}
+              <strong>{s.titulo}</strong>
+              <p>{s.detalle}</p>
+              <div className="apr-acc">
+                <button
+                  type="button"
+                  className="apr-aplicar"
+                  onClick={() => {
+                    const nuevo = s.aplicar(borrador[s.areaId]);
+                    setBorrador((b) => ({ ...b, [s.areaId]: nuevo }));
+                    onSave({ [s.areaId]: nuevo });
+                  }}
+                >
+                  Aplicar
+                </button>
+                {onIgnorar && (
+                  <button type="button" className="apr-ignorar" onClick={() => onIgnorar(s.id)}>
+                    Ignorar
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+          {verVentaPersona && (
+            <div className="apr-bloque">
+              <strong>Venta por persona en piso</strong>
+              <p className="hint">Venta real ÷ personas trabajando, últimas {aprendido.semanas} semanas.</p>
+              <div className="apr-barras">
+                {DAYS.map((d) => {
+                  const v = aprendido.ventaPorPersona[d];
+                  return (
+                    <div key={d}>
+                      <span>{v ? miles(v) : "–"}</span>
+                      <i className={v && v < vppMedia * 0.75 ? "bajo" : ""} style={{ height: `${v ? Math.max(6, (v / maxVpp) * 70) : 0}px` }} />
+                      <b>{DAY_SHORT[d]}</b>
+                    </div>
+                  );
+                })}
+              </div>
+              {DAYS.some((d) => (aprendido.ventaPorPersona[d] || Infinity) < vppMedia * 0.75) && (
+                <p className="hint">
+                  En naranja, los días con más gente para lo que se vende (menos de {miles(vppMedia * 0.75)} por persona).
+                </p>
+              )}
+            </div>
+          )}
+          {aprendido.errorPronostico && (
+            <div className="apr-dato">
+              <span className="apr-num">±{aprendido.errorPronostico.pct}%</span>
+              <span>
+                Lo que se equivocó en promedio la <b>venta esperada</b> en los últimos {aprendido.errorPronostico.dias} días con venta:{" "}
+                {aprendido.errorPronostico.arriba} días vendiste más y {aprendido.errorPronostico.abajo} menos. Ponle etiquetas a los días raros
+                (en Corte o en Horarios) y va a atinar mejor.
+              </span>
+            </div>
+          )}
+          <div className="apr-dato">
+            <span className="apr-num">
+              {aprendido.respetoSugerido ? `${Math.round((aprendido.respetoSugerido.iguales / aprendido.respetoSugerido.total) * 100)}%` : "—"}
+            </span>
+            <span>
+              {aprendido.respetoSugerido
+                ? `Del horario sugerido quedó igual al guardarlo (${aprendido.respetoSugerido.semanas} ${aprendido.respetoSugerido.semanas === 1 ? "semana" : "semanas"}).`
+                : "Todavía no se ha guardado un horario hecho con el horario sugerido. Cuando se use, aquí se ve qué tanto se cambió."}
+            </span>
+          </div>
+        </div>
+      )}
 
       {areas.length > 1 && (
         <div className="segmented">
@@ -176,7 +279,7 @@ export function ReglasHorarioPanel({
                     <>
                       {g.haceCorte && <i className="si">Corte</i>}
                       <i className={g.puedeAbrir ? "si" : "no"}>
-                        {g.puedeAbrir ? (g.maxAperturas ? `Abre máx. ${g.maxAperturas}` : "Abre") : "No abre"}
+                        {g.puedeAbrir ? `${g.abreDoblando ? "Abre con Z" : "Abre"}${g.maxAperturas ? ` máx. ${g.maxAperturas}` : ""}` : "No abre"}
                       </i>
                       <i className={g.puedeCerrar ? "si" : "no"}>{g.puedeCerrar ? "Cierra" : "No cierra"}</i>
                       <i className={g.puedeDoblar ? "si" : "no"}>{g.puedeDoblar ? "Dobla" : "No dobla"}</i>
@@ -338,6 +441,15 @@ function PersonaSheet({
           <span>Puede abrir (X)</span>
           <Toggle checked={regla.puedeAbrir} onChange={(v) => onChange({ ...regla, puedeAbrir: v })} label="" />
         </div>
+        {regla.puedeAbrir && regla.modo === "completo" && (
+          <div className="rg-fila">
+            <span>
+              Cuando abre, siempre dobla (Z)
+              <small>Abre de una cosa y cierra de otra; nunca solo abre</small>
+            </span>
+            <Toggle checked={!!regla.abreDoblando} onChange={(v) => onChange({ ...regla, abreDoblando: v || undefined })} label="" />
+          </div>
+        )}
         {regla.puedeAbrir && regla.modo === "completo" && (
           <div className="rg-fila">
             <span>Máximo de días que abre a la semana</span>

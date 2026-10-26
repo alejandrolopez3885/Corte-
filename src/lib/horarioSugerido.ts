@@ -106,7 +106,8 @@ export function sugerirHorario({
           (p) =>
             p.regla.puedeAbrir &&
             valores.get(p.empleadoId)![d] === "O" &&
-            (aperturas.get(p.empleadoId) || 0) < (p.regla.maxAperturas ?? 7)
+            (aperturas.get(p.empleadoId) || 0) < (p.regla.maxAperturas ?? 7) &&
+            (!p.regla.abreDoblando || puedeDoblarEn(p, d))
         );
       const puedeDoblarEn = (p: (typeof personas)[number], d: DayName) => {
         const i = DAYS.indexOf(d);
@@ -127,8 +128,11 @@ export function sugerirHorario({
           );
           if (!c.length) return void sinApertura.push(d);
           const cargado = dias[d].necesarios > minNecesarios || sobra[d] < 0;
-          const quien = cargado ? c.find((p) => puedeDoblarEn(p, d)) || c[0] : c[0];
-          const z = cargado && puedeDoblarEn(quien, d);
+          // Los que siempre abren doblando, solo donde de todos modos toca Z
+          // (si no, se prefiere a quien puede abrir con X).
+          const normales = c.filter((p) => !p.regla.abreDoblando);
+          const quien = cargado ? c.find((p) => puedeDoblarEn(p, d)) || c[0] : normales[0] || c[0];
+          const z = quien.regla.abreDoblando || (cargado && puedeDoblarEn(quien, d));
           valores.get(quien.empleadoId)![d] = z ? "Z" : "X";
           aperturas.set(quien.empleadoId, (aperturas.get(quien.empleadoId) || 0) + 1);
           if (z) dobles.set(quien.empleadoId, (dobles.get(quien.empleadoId) || 0) + 1);

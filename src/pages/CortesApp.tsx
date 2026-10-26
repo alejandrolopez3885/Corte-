@@ -314,6 +314,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           data={data}
           onSaveHorarioSemana={saveHorarioSemana}
           onSaveReglasHorario={guardarReglasHorario}
+          onIgnorarRegla={ignorarReglaAprendida}
           onSaveConteoTexto={guardarConteoTexto}
           onSavePedidoDiario={guardarPedidoDiario}
           onSaveInventarioNotas={guardarInventarioNotas}
@@ -1138,6 +1139,14 @@ export default function CortesApp({ profile }: { profile: Profile }) {
     persist(next);
   }
 
+  // "Lo que aprendí": una sugerencia ignorada ya no vuelve a salir.
+  function ignorarReglaAprendida(id: string) {
+    if (!data) return;
+    const next = structuredClone(data);
+    next.reglasIgnoradas = [...(next.reglasIgnoradas || []).filter((x) => x !== id), id];
+    persist(next);
+  }
+
   function saveHorarioSemana(monthKey: string, weekIndex: number, semana: HorarioSemana) {
     if (!data) return;
     const next = structuredClone(data);
@@ -1656,6 +1665,8 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           puestos={data.puestos}
           reglas={data.reglasHorario}
           onSaveReglas={guardarReglasHorario}
+          reglasIgnoradas={data.reglasIgnoradas}
+          onIgnorarRegla={ignorarReglaAprendida}
         />
       )}
 

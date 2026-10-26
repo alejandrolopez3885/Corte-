@@ -13,6 +13,7 @@ import type { DayName, EmpleadoEntry, HorarioArea, HorarioMonthData, HorarioSema
 import { TituloPagina } from "../BarraTitulo";
 import { ReglasHorarioPanel } from "./ReglasHorarioPanel";
 import { sugerirHorario, type AreaSugerida } from "../../lib/horarioSugerido";
+import { aprender } from "../../lib/aprender";
 
 type CellTarget = { areaId: string; empleadoId: string; nombre: string; day: DayName };
 
@@ -33,6 +34,8 @@ export function HorariosPanel({
   puestos,
   reglas,
   onSaveReglas,
+  reglasIgnoradas,
+  onIgnorarRegla,
 }: {
   onBack?: () => void;
   backLabel?: string;
@@ -60,6 +63,9 @@ export function HorariosPanel({
   puestos?: PuestoEntry[];
   reglas?: Record<string, ReglasArea>;
   onSaveReglas?: (cambios: Record<string, ReglasArea>) => void;
+  // Lo que aprendí: sugerencias ignoradas.
+  reglasIgnoradas?: string[];
+  onIgnorarRegla?: (id: string) => void;
 }) {
   const [monthKey, setMonthKey] = useState(initialMonthKey);
   const [etiquetando, setEtiquetando] = useState<DayName | null>(null);
@@ -77,6 +83,14 @@ export function HorariosPanel({
   const [copia, setCopia] = useState<{ clave: string; copiada: boolean } | null>(null);
 
   const [verReglas, setVerReglas] = useState(false);
+  // Cuántas sugerencias de "Lo que aprendí" hay (para el aviso del enlace).
+  const pendientesReglas = useMemo(() => {
+    if (!onSaveReglas || readOnly) return 0;
+    const inactivosIds = new Set(empleados.filter((e) => e.inactivo).map((e) => e.id));
+    return aprender({ horarios, months, reglas, inactivos: inactivosIds, ignoradas: reglasIgnoradas, hoy: todayIso() }).sugerencias.filter(
+      (s) => !soloAreaId || s.areaId === soloAreaId
+    ).length;
+  }, [onSaveReglas, readOnly, horarios, months, reglas, empleados, reglasIgnoradas, soloAreaId]);
 
   const month = months[monthKey];
 
@@ -92,6 +106,8 @@ export function HorariosPanel({
         soloAreaId={soloAreaId}
         verPronostico={verPronostico}
         onSave={onSaveReglas}
+        ignoradas={reglasIgnoradas}
+        onIgnorar={onIgnorarRegla}
       />
     );
   }
@@ -138,7 +154,7 @@ export function HorariosPanel({
       <p className="hint">Por área, con el nombre, el día y la hora de entrada — igual que llevabas el control antes.</p>
       {onSaveReglas && !readOnly && (
         <button className="link-btn" onClick={() => setVerReglas(true)}>
-          Reglas del personal ›
+          Reglas del personal{pendientesReglas > 0 && <span className="rg-badge">{pendientesReglas}</span>} ›
         </button>
       )}
 
@@ -346,6 +362,8 @@ function HorarioSemanaForm({
   const [propuesta, setPropuesta] = useState<ReturnType<NonNullable<typeof sugerir>> | null>(null);
   // Cómo estaba antes de usar la propuesta (para "Volver a como estaba").
   const [antesDeSugerir, setAntesDeSugerir] = useState<HorarioSemana | null>(null);
+  // Cómo venía la propuesta usada: se guarda con la semana para comparar.
+  const [sugeridoUsado, setSugeridoUsado] = useState<HorarioSemana["sugerido"] | null>(null);
   const [locked, setLocked] = useState(yaGuardada);
   const [pidiendoConfirmacion, setPidiendoConfirmacion] = useState(false);
   const [addingEmpleadoToArea, setAddingEmpleadoToArea] = useState<string | null>(null);
@@ -388,11 +406,13 @@ function HorarioSemanaForm({
         festivos: igual(semana.festivos, referencia.festivos) ? base.festivos : semana.festivos,
       };
     }
+    if (sugeridoUsado) final = { ...final, sugerido: { ...final.sugerido, ...sugeridoUsado } };
     onSaveSemana(monthKey, weekIndex, final);
     setSemana(final);
     setReferencia(final);
     setAvisoConservado(conservadas.length ? conservadas.join(" y ") : null);
     setAntesDeSugerir(null);
+    setSugeridoUsado(null);
     setLocked(true);
   }
 
@@ -493,6 +513,7 @@ function HorarioSemanaForm({
               onClick={() => {
                 setSemana(antesDeSugerir);
                 setAntesDeSugerir(null);
+                setSugeridoUsado(null);
               }}
             >
               Volver a como estaba
@@ -542,6 +563,9 @@ function HorarioSemanaForm({
             className="btn-primary"
             onClick={() => {
               setAntesDeSugerir(semana);
+              setSugeridoUsado(
+                Object.fromEntries(propuesta.areas.map((a) => [a.area.id, Object.fromEntries(a.area.filas.map((f) => [f.empleadoId, f.valores]))]))
+              );
               setSemana((s) => ({ ...s, areas: s.areas.map((a) => propuesta.areas.find((p) => p.area.id === a.id)?.area || a) }));
               setPropuesta(null);
             }}

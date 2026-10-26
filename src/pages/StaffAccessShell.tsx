@@ -53,6 +53,7 @@ export default function StaffAccessShell({
   data,
   onSaveHorarioSemana,
   onSaveReglasHorario,
+  onIgnorarRegla,
   onSaveConteoTexto,
   onSavePedidoDiario,
   onSaveInventarioNotas,
@@ -69,6 +70,7 @@ export default function StaffAccessShell({
   data: AppData;
   onSaveHorarioSemana: (monthKey: string, weekIndex: number, semana: HorarioSemana) => void;
   onSaveReglasHorario: (cambios: Record<string, ReglasArea>) => void;
+  onIgnorarRegla: (id: string) => void;
   onSaveConteoTexto: (area: ConteoTextoArea, fecha: string, texto: string) => void;
   onSavePedidoDiario: (area: ConteoTextoArea, fecha: string, pedido: Record<string, number>) => void;
   onSaveInventarioNotas: (fecha: string, texto: string) => void;
@@ -282,6 +284,8 @@ export default function StaffAccessShell({
           puestos={data.puestos}
           reglas={data.reglasHorario}
           onSaveReglas={onSaveReglasHorario}
+          reglasIgnoradas={data.reglasIgnoradas}
+          onIgnorarRegla={onIgnorarRegla}
         />
       </div>
     );
