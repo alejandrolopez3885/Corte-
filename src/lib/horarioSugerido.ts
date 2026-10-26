@@ -83,7 +83,12 @@ export function sugerirHorario({
           const opciones = p.regla.descanso?.length ? p.regla.descanso : DAYS;
           const sinCorte = (d: DayName) => exigirCorte && p.regla.haceCorte && corteEn[d] <= 1;
           const puntos = (d: DayName) =>
-            (sinCorte(d) ? -100000 : 0) + sobra[d] * 100 + (antes(p.empleadoId, d) === "OFF" ? 10 : 0) - (esperado(d)?.esperado || 0) / 10000;
+            (sinCorte(d) ? -100000 : 0) +
+            sobra[d] * 100 +
+            (antes(p.empleadoId, d) === "OFF" ? 10 : 0) -
+            // Si solo abre ciertos días, mejor no descansar en ellos.
+            (p.regla.puedeAbrir && p.regla.diasAbre?.includes(d) ? 50 : 0) -
+            (esperado(d)?.esperado || 0) / 10000;
           const off = [...opciones].sort((a, b) => puntos(b) - puntos(a))[0];
           valores.get(p.empleadoId)![off] = "OFF";
           sobra[off]--;
@@ -92,57 +97,89 @@ export function sugerirHorario({
     }
     completos.forEach((p) => DAYS.forEach((d) => !valores.get(p.empleadoId)![d] && (valores.get(p.empleadoId)![d] = "O")));
 
-    // 4. Quién abre: el que menos ha abierto en la semana (y si empata, el
-    // que abrió ese día la semana pasada). En días con mucha gente o donde
-    // faltan, el que abre dobla (Z) si puede: sin pasar su máximo de
-    // aperturas ni el de dobles, y sin doblar dos días seguidos.
+    // 4. Quién abre: se prueban todas las combinaciones de la semana y se
+    // queda la que cubre más días; si empatan, la que reparte mejor las
+    // aperturas, dobla (Z) en los días con más gente y repite lo de la semana
+    // pasada. Se respeta: quién puede abrir y qué días, su máximo de días que
+    // abre, el máximo de dobles, no doblar dos días seguidos y los que
+    // siempre abren doblando.
     if (r.alguienAbre) {
-      const sinApertura: DayName[] = [];
+      const minNecesarios = Math.min(...DAYS.map((d) => dias[d].necesarios));
+      const cargado = (d: DayName) => dias[d].necesarios > minNecesarios || sobra[d] < 0;
+      const yaAbre = (d: DayName) => personas.find((p) => ["X", "Z"].includes(valores.get(p.empleadoId)![d] || ""));
+      type Eleccion = { p: (typeof personas)[number]; z: boolean } | null;
       const aperturas = new Map<string, number>();
       const dobles = new Map<string, number>();
-      const minNecesarios = Math.min(...DAYS.map((d) => dias[d].necesarios));
-      const candidatos = (d: DayName) =>
-        completos.filter(
-          (p) =>
-            p.regla.puedeAbrir &&
-            valores.get(p.empleadoId)![d] === "O" &&
-            (aperturas.get(p.empleadoId) || 0) < (p.regla.maxAperturas ?? 7) &&
-            (!p.regla.abreDoblando || puedeDoblarEn(p, d))
-        );
-      const puedeDoblarEn = (p: (typeof personas)[number], d: DayName) => {
-        const i = DAYS.indexOf(d);
+      const elegido: Eleccion[] = DAYS.map(() => null);
+      let mejor: { cubre: number; puntos: number; elegido: Eleccion[] } | null = null;
+      const pendientes = DAYS.filter((d) => !yaAbre(d));
+      const dobleEn = (p: (typeof personas)[number], i: number) => {
         const v = valores.get(p.empleadoId)!;
-        const seguido = r.noDoblarSeguido !== false && (v[DAYS[i - 1]] === "Z" || v[DAYS[i + 1]] === "Z");
+        const antesZ = i > 0 && (v[DAYS[i - 1]] === "Z" || (elegido[i - 1]?.p === p && elegido[i - 1]!.z));
+        const despuesZ = v[DAYS[i + 1]] === "Z";
+        const seguido = r.noDoblarSeguido !== false && (antesZ || despuesZ);
         return p.regla.puedeDoblar && (dobles.get(p.empleadoId) || 0) < r.maxDobles && !seguido;
       };
-      const yaAbre = (d: DayName) => personas.find((p) => ["X", "Z"].includes(valores.get(p.empleadoId)![d] || ""));
-      [...DAYS]
-        .sort((a, b) => candidatos(a).length - candidatos(b).length)
-        .forEach((d) => {
-          const ya = yaAbre(d);
-          if (ya) return void (dias[d].abre = ya.nombre);
-          const c = candidatos(d).sort(
-            (a, b) =>
-              (aperturas.get(a.empleadoId) || 0) - (aperturas.get(b.empleadoId) || 0) ||
-              (["X", "Z"].includes(antes(b.empleadoId, d)) ? 1 : 0) - (["X", "Z"].includes(antes(a.empleadoId, d)) ? 1 : 0)
-          );
-          if (!c.length) return void sinApertura.push(d);
-          const cargado = dias[d].necesarios > minNecesarios || sobra[d] < 0;
-          // Los que siempre abren doblando, solo donde de todos modos toca Z
-          // (si no, se prefiere a quien puede abrir con X).
-          const normales = c.filter((p) => !p.regla.abreDoblando);
-          const quien = cargado ? c.find((p) => puedeDoblarEn(p, d)) || c[0] : normales[0] || c[0];
-          const z = quien.regla.abreDoblando || (cargado && puedeDoblarEn(quien, d));
-          valores.get(quien.empleadoId)![d] = z ? "Z" : "X";
-          aperturas.set(quien.empleadoId, (aperturas.get(quien.empleadoId) || 0) + 1);
-          if (z) dobles.set(quien.empleadoId, (dobles.get(quien.empleadoId) || 0) + 1);
-          dias[d].abre = quien.nombre;
-          if (z) dias[d].dobla = quien.nombre;
+      const opciones = (i: number): Eleccion[] => {
+        const d = DAYS[i];
+        const ops: Eleccion[] = [];
+        personas.forEach((p) => {
+          if (!p.regla.puedeAbrir || valores.get(p.empleadoId)![d] !== "O") return;
+          if (p.regla.diasAbre?.length && !p.regla.diasAbre.includes(d)) return;
+          if ((aperturas.get(p.empleadoId) || 0) >= (p.regla.maxAperturas ?? 7)) return;
+          const puedeZ = dobleEn(p, i);
+          if (p.regla.abreDoblando) {
+            if (puedeZ) ops.push({ p, z: true });
+          } else ops.push({ p, z: cargado(d) && puedeZ });
         });
+        return ops;
+      };
+      const puntuar = () => {
+        let pts = 0;
+        elegido.forEach((e, i) => {
+          if (!e) return;
+          const d = DAYS[i];
+          if (e.z && cargado(d)) pts += 20;
+          if (e.z && !cargado(d)) pts -= 5;
+          if (["X", "Z"].includes(antes(e.p.empleadoId, d))) pts += 2;
+        });
+        aperturas.forEach((n) => (pts -= n * n * 3));
+        return pts;
+      };
+      const probar = (k: number, cubre: number) => {
+        if (mejor && cubre + (pendientes.length - k) < mejor.cubre) return;
+        if (k === pendientes.length) {
+          const pts = puntuar();
+          if (!mejor || cubre > mejor.cubre || (cubre === mejor.cubre && pts > mejor.puntos)) mejor = { cubre, puntos: pts, elegido: [...elegido] };
+          return;
+        }
+        const i = DAYS.indexOf(pendientes[k]);
+        for (const e of opciones(i)) {
+          elegido[i] = e;
+          aperturas.set(e!.p.empleadoId, (aperturas.get(e!.p.empleadoId) || 0) + 1);
+          if (e!.z) dobles.set(e!.p.empleadoId, (dobles.get(e!.p.empleadoId) || 0) + 1);
+          probar(k + 1, cubre + 1);
+          aperturas.set(e!.p.empleadoId, aperturas.get(e!.p.empleadoId)! - 1);
+          if (e!.z) dobles.set(e!.p.empleadoId, dobles.get(e!.p.empleadoId)! - 1);
+          elegido[i] = null;
+        }
+        probar(k + 1, cubre);
+      };
+      probar(0, 0);
+      const sinApertura: DayName[] = [];
+      DAYS.forEach((d, i) => {
+        const ya = yaAbre(d);
+        if (ya) return void (dias[d].abre = ya.nombre);
+        const e = mejor?.elegido[i];
+        if (!e) return void sinApertura.push(d);
+        valores.get(e.p.empleadoId)![d] = e.z ? "Z" : "X";
+        dias[d].abre = e.p.nombre;
+        if (e.z) dias[d].dobla = e.p.nombre;
+      });
       if (sinApertura.length) {
-        const ds = DAYS.filter((d) => sinApertura.includes(d));
+        const ds = sinApertura;
         avisos.push(
-          `${ds.length > 1 ? `${ds.slice(0, -1).join(", ")} y ${ds[ds.length - 1]}` : ds[0]}: nadie disponible para abrir en ${fija.nombre.toLowerCase()}. Revisa en Reglas quién puede abrir y su máximo de días que abre.`
+          `${ds.length > 1 ? `${ds.slice(0, -1).join(", ")} y ${ds[ds.length - 1]}` : ds[0]}: nadie disponible para abrir en ${fija.nombre.toLowerCase()}. Revisa en Reglas quién puede abrir, qué días y su máximo de días que abre.`
         );
       }
     }

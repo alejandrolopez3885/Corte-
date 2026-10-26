@@ -126,6 +126,9 @@ export interface ReglaPersona {
   // Cuando abre, siempre dobla (Z): abre de una cosa y cierra de otra
   // (ej. Aldair abre como mesero y cierra como barra). Nunca solo X.
   abreDoblando?: boolean;
+  // Días en que puede abrir (vacío o sin valor = cualquier día). También
+  // sirve para los de días fijos: abre en vez de su cierre de ese día.
+  diasAbre?: DayName[];
   // Puede hacer corte (ej. gerente, encargada).
   haceCorte?: boolean;
 }

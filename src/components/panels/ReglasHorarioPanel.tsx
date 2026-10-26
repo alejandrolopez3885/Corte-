@@ -274,12 +274,13 @@ export function ReglasHorarioPanel({
                     <>
                       {g.haceCorte && <i className="si">Corte</i>}
                       <i className="fijo">{textoFijos(g.fijos)}</i>
+                      {g.puedeAbrir && <i className="si">Abre{textoDiasAbre(g)}</i>}
                     </>
                   ) : (
                     <>
                       {g.haceCorte && <i className="si">Corte</i>}
                       <i className={g.puedeAbrir ? "si" : "no"}>
-                        {g.puedeAbrir ? `${g.abreDoblando ? "Abre con Z" : "Abre"}${g.maxAperturas ? ` máx. ${g.maxAperturas}` : ""}` : "No abre"}
+                        {g.puedeAbrir ? `${g.abreDoblando ? "Abre con Z" : "Abre"}${textoDiasAbre(g)}` : "No abre"}
                       </i>
                       <i className={g.puedeCerrar ? "si" : "no"}>{g.puedeCerrar ? "Cierra" : "No cierra"}</i>
                       <i className={g.puedeDoblar ? "si" : "no"}>{g.puedeDoblar ? "Dobla" : "No dobla"}</i>
@@ -450,7 +451,33 @@ function PersonaSheet({
             <Toggle checked={!!regla.abreDoblando} onChange={(v) => onChange({ ...regla, abreDoblando: v || undefined })} label="" />
           </div>
         )}
-        {regla.puedeAbrir && regla.modo === "completo" && (
+        {regla.puedeAbrir && (
+          <div className="rg-fila rg-fila-col">
+            <span>
+              Días que puede abrir
+              <small>Sin ninguno marcado, cualquier día{regla.modo === "fijos" ? " de los que trabaja" : ""}</small>
+            </span>
+            <div className="rg-dsel">
+              {DAYS.map((d) => {
+                const on = !!regla.diasAbre?.includes(d);
+                return (
+                  <button
+                    key={d}
+                    type="button"
+                    className={on ? "on" : ""}
+                    onClick={() => {
+                      const n = on ? (regla.diasAbre || []).filter((x) => x !== d) : DAYS.filter((x) => x === d || regla.diasAbre?.includes(x));
+                      onChange({ ...regla, diasAbre: n.length ? n : undefined });
+                    }}
+                  >
+                    {DAY_SHORT[d]}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+        {regla.puedeAbrir && (
           <div className="rg-fila">
             <span>Máximo de días que abre a la semana</span>
             <Paso
@@ -510,4 +537,11 @@ function PersonaSheet({
       </button>
     </Sheet>
   );
+}
+
+// " máx. 1", " dom", " sáb o dom · máx. 1"…
+function textoDiasAbre(g: ReglaPersona) {
+  const dias = g.diasAbre?.length ? DAYS.filter((d) => g.diasAbre!.includes(d)).map((d) => DAY_SHORT[d].toLowerCase()) : [];
+  const partes = [dias.length ? dias.join(dias.length === 2 ? " o " : ", ") : "", g.maxAperturas ? `máx. ${g.maxAperturas}` : ""].filter(Boolean);
+  return partes.length ? ` ${partes.join(" · ")}` : "";
 }
