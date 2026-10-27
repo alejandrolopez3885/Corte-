@@ -99,6 +99,12 @@ bot, rojo si tiene otro monto; $5 de tolerancia, igual que Cuadrar):
 - **Comisiones de apps**: DIDI, UBER y RAPPI las escribes tú (se suben al
   bot el martes); cada una marca "No está en el bot", "✓ En el bot" o
   "Bot: $X".
+Si fijos, la bancaria o una comisión de app no están en la semana pero en
+el bot hay uno del mismo tipo hasta 3 días antes o después, la etiqueta
+dice en qué día está ("Está el Lun 26") y el aviso: "No está en esta
+semana (Lun 19 – Dom 25), pero en el bot hay uno el Lun 26 por $2,225.00:
+cámbiale la fecha en el bot". Mientras no se mueva, ese gasto también
+cuenta en la semana donde cae.
 Si Johnster no está conectado, dice que se conecte en ⚖︎ Cuadrar.
 
 **Gastos fijos** se llena solo y queda bloqueado: es el monto fijo semanal
