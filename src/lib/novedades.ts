@@ -347,6 +347,14 @@ export const NOVEDADES: Novedad[] = [
     visual: "autocompletar",
   },
   {
+    id: "apertura-aviso-repetido",
+    fecha: "2026-10-27T07:30:00Z",
+    seccion: "corte",
+    titulo: "Aviso en el corte de apertura",
+    texto: "Si en la apertura pones a alguien que ya tiene corte ese día, te avisa antes de guardar para que no quede con **dos cortes**.",
+    visual: "apertura",
+  },
+  {
     id: "comidas-gratis",
     fecha: "2026-10-27T05:48:00Z",
     seccion: "nomina",
