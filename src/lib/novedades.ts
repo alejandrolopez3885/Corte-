@@ -347,6 +347,14 @@ export const NOVEDADES: Novedad[] = [
     visual: "autocompletar",
   },
   {
+    id: "reglas-dias-abre",
+    fecha: "2026-10-27T04:00:00Z",
+    seccion: "horarios",
+    titulo: "Días que puede abrir",
+    texto: "En la ficha de cada persona de Reglas del personal ya se pueden marcar los **días que puede abrir**. El horario sugerido busca la semana que cubra todas las aperturas.",
+    visual: "categoria",
+  },
+  {
     id: "reglas-corte-aperturas",
     fecha: "2026-10-26T01:08:00Z",
     seccion: "horarios",

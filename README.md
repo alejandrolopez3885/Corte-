@@ -346,7 +346,9 @@ estando en Nómina te regresa al menú de Equipo):
   fijos", sus días fijos (X, Z, O, vacío o una hora especial), qué puede
   hacer —abrir (con "Cuando abre, siempre dobla (Z)", ej. Aldair que abre
   de mesero y cierra de barra, y "Máximo de días que abre a la semana", ej.
-  Alejandro 1 y Jennifer 2), cerrar, doblar y "Puede hacer corte"— y
+  Alejandro 1 y Jennifer 2, y "Días que puede abrir", ej. Dana sábado o
+  domingo y Kevin domingo; con días fijos, ese día abre en vez de cerrar),
+  cerrar, doblar y "Puede hacer corte"— y
   "Descanso preferido" (o "Días que no puede" con días fijos). Chips
   "Corte", "Abre máx. 1", "Abre con Z".
   Arriba, **🧠 Lo que aprendí** (`src/lib/aprender.ts`, paso 6): compara
@@ -379,7 +381,12 @@ estando en Nómina te regresa al menú de Equipo):
   semana (si empata, el que abrió ese día la semana pasada), y en días con
   más gente de lo normal o donde falta gente ese mismo dobla (Z), respetando
   el máximo de dobles, sin doblar dos días seguidos y sin pasar el máximo de
-  días que abre cada quien; quien "siempre dobla al abrir" solo abre con Z.
+  días que abre cada quien ni sus días para abrir; quien "siempre dobla al
+  abrir" solo abre con Z. Las aperturas de la semana se escogen probando
+  todas las combinaciones: gana la que cubre más días y, si empatan, la que
+  reparte mejor, dobla en los días fuertes y se parece a la semana pasada.
+  Al tiempo completo que solo abre ciertos días se le evita el descanso en
+  esos días.
   Los descansos de los que hacen corte no caen el mismo día (aviso "nadie
   que haga corte" si no se puede); los días sin nadie disponible para abrir
   salen juntos en un aviso. Se abre una hoja con las tablas, la fila "Trabajan
