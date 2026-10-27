@@ -19,7 +19,11 @@ Disponible" del bot, el efectivo de los cortes de la semana menos sus
 gastos en efectivo (de `johnster_datos`), con "✓ Igual que tu efectivo
 recibido" o cuánto más tiene cada uno ($5 de tolerancia; avisa si al bot
 le faltan días) y una tablita Tu app vs Johnster — efectivo de ventas,
-gastos en efectivo y efectivo — con lo que no cuadra en rojo. Junto a las pestañas de
+gastos en efectivo y efectivo — con lo que no cuadra en rojo. En la tabla
+de días, junto a **Efectivo** sale la columna **Johnster** (solo el
+dueño): el efectivo de cada día según el bot (efectivo del corte − gastos
+en efectivo de ese día), en verde si cuadra con tu app, en rojo si no, "—"
+si el bot no tiene ese día, y el total de la semana abajo. Junto a las pestañas de
 semana (solo el dueño) está **⚖︎ Cuadrar** (`src/components/modals/CuadrarJohnster.tsx`,
 `src/lib/cuadrar.ts`): cuadra la semana contra **Johnster Bot** (el sistema
 de tu jefe) **paso a paso**, en pantalla completa como el corte: primero
