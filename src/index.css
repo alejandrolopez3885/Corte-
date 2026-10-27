@@ -2341,3 +2341,44 @@ button.cj-seccion { cursor: pointer; }
 .week-table-row .sin-j { color: var(--ink-soft); }
 .week-table-inner.con-johnster { min-width: 1060px; }
 .week-table-row .junto-j { display: block; font-size: 10px; font-weight: 400; color: var(--ink-soft); }
+
+/* Dashboard con el estilo del avance al momento y comparación con Johnster */
+.db-hero { position: relative; overflow: hidden; background: #1E1E1E; color: #fff; border-radius: 18px; padding: 16px 16px 14px; }
+.db-hero::after { content: ""; position: absolute; right: -40px; top: -40px; width: 120px; height: 120px; border-radius: 50%; background: #E8B32E; }
+.db-hero small { position: relative; z-index: 1; color: #E8B32E; font-size: 10.5px; font-weight: 700; letter-spacing: 0.14em; }
+.db-hero h2 { position: relative; z-index: 1; margin: 4px 0 2px; font-size: 22px; font-weight: 800; font-family: inherit; }
+.db-hero p { position: relative; z-index: 1; margin: 0; color: #bbb; font-size: 12.5px; }
+.db-jbar { position: relative; z-index: 1; display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 12px; background: #2c2c2c; border-radius: 12px; padding: 8px 10px; font-size: 12.5px; }
+.db-jbar b { color: #7fd6a3; }
+.db-jbar b.mal { color: #E8B32E; }
+.db-jbar button { background: none; border: none; color: #E8B32E; font: inherit; font-weight: 600; cursor: pointer; padding: 0; white-space: nowrap; }
+.db-acciones { display: flex; gap: 8px; }
+.db-acciones button { flex: 1; display: inline-flex; justify-content: center; align-items: center; gap: 6px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 10px 6px; font: inherit; font-size: 13px; font-weight: 600; color: var(--accent); cursor: pointer; }
+.db-acciones button:disabled { opacity: 0.45; cursor: not-allowed; }
+.db-dos { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.db-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 14px; display: flex; flex-direction: column; gap: 6px; }
+.db-dona-card { align-items: center; text-align: center; }
+.db-t { font-size: 10.5px; font-weight: 700; letter-spacing: 0.14em; color: var(--ink-soft); }
+.db-dona { width: 86px; height: 86px; border-radius: 50%; display: grid; place-items: center; margin: 4px 0; }
+.db-dona i { width: 62px; height: 62px; border-radius: 50%; background: var(--surface); display: grid; place-items: center; font-style: normal; font-weight: 700; font-size: 14px; }
+.db-big { font-size: 19px; font-weight: 800; }
+.db-sub { font-size: 11px; color: var(--ink-soft); }
+.db-chip { display: inline-block; font-size: 10.5px; font-weight: 700; border-radius: 100px; padding: 3px 8px; white-space: nowrap; }
+.db-chip.ok { background: var(--good-soft); color: var(--good); }
+.db-chip.falta { background: var(--warn-soft); color: var(--warn); }
+.db-chip.otro { background: var(--bad-soft); color: var(--bad); }
+.db-utilidad { flex-direction: row; justify-content: space-between; align-items: center; }
+.db-utilidad strong { display: block; font-size: 28px; font-weight: 800; color: var(--good); }
+.db-utilidad strong.mal { color: var(--bad); }
+.db-utilidad > span { text-align: right; font-size: 13px; color: var(--ink-soft); }
+.db-utilidad small { display: block; font-size: 11px; }
+.db-lista { border: none; border-radius: 0; margin: 0 -14px; }
+.db-lista .report-row { flex-wrap: wrap; }
+.db-j { order: 10; flex-basis: 100%; display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 11.5px; color: var(--ink-soft); margin-top: -4px; }
+.db-nom-lbl { display: flex; justify-content: space-between; gap: 8px; font-size: 12.5px; }
+.db-nom-lbl .mal { color: var(--bad); }
+.db-nom-lbl .bien { color: var(--good); }
+.db-riel { display: flex; height: 12px; background: #EDE9E2; border-radius: 6px; overflow: hidden; }
+.db-riel .pagado { background: #1E1E1E; }
+.db-riel .cierre { background: #8E8E8E; }
+.db-nota { background: var(--surface); border: 1px solid var(--border); border-left: 4px solid; border-radius: 12px; padding: 10px 12px; font-size: 13px; line-height: 1.35; }

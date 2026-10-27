@@ -2082,6 +2082,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
             meseros={data.meseros}
             montosFijos={data.montosFijosSemanales}
             metaVenta={data.metaSemanal}
+            nominaDescuentos={data.nominaDescuentos}
             onGoToNomina={() => {
               setActiveTab("equipo");
               setEquipoView("nomina");
@@ -2551,6 +2552,9 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           initialWeekIndex={mostRecentWeekIdx}
           montosFijos={data.montosFijosSemanales}
           onSave={saveCreditoProveedores}
+          horarios={data.horarios}
+          empleados={data.empleados}
+          nominaDescuentos={data.nominaDescuentos}
         />
       )}
       {modal?.type === "catalog" && (

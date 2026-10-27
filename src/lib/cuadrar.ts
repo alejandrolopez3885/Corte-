@@ -27,9 +27,10 @@ export interface JohnsterGasto {
   concepto: string;
   destino: string;
   comprobante?: boolean; // ticket subido al bot
+  tipo?: "operacion" | "nomina" | "otro";
   comprobanteUrl?: string | null; // dónde está en el bot (lo usa la función)
 }
-export type TipoTransferencia = "operacion" | "fijos" | "bancaria" | "didi" | "uber" | "rappi" | "otro";
+export type TipoTransferencia = "operacion" | "fijos" | "bancaria" | "didi" | "uber" | "rappi" | "nomina" | "otro";
 export interface JohnsterTransferencia {
   id: string;
   fecha: string;

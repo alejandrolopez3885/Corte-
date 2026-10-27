@@ -802,6 +802,28 @@ export function computeNominaFila(
 // corte se refleja solo en su nómina, sin capturarlo dos veces. Estos se
 // derivan en vivo del gasto (nunca se guardan aparte), así que si el
 // gasto se edita o se borra en Corte, el descuento cambia con él.
+// Cómo se paga la nómina de la semana (igual que en Equipo › Nómina):
+// bruto + extras − descuentos = neto; el neto se paga primero con el
+// efectivo que debe haber según el corte semanal y lo que falte por
+// transferencia. En Johnster, los gastos de nómina en efectivo (adelantos,
+// comidas y el pago con efectivo) más la transferencia suman bruto + extras.
+export function nominaPagoSemana(
+  week: WeekData | null | undefined,
+  semana: HorarioSemana | null,
+  empleados: EmpleadoEntry[],
+  descuentosSemana?: NominaDescuentosSemana | null
+) {
+  const reporte = computeNominaSemana(semana, empleados, descuentosSemana, week);
+  const suma = (f: (e: NominaEmpleadoSemana) => number) => round2(reporte.reduce((s, e) => s + f(e), 0));
+  const bruto = suma((e) => e.bruto);
+  const extras = suma((e) => e.totalExtras);
+  const descuentos = suma((e) => e.totalDescuentos);
+  const neto = suma((e) => e.neto);
+  const efectivoSemana = week ? computeWeekSummary(week).efectivoRecibido : 0;
+  const efectivo = Math.max(0, Math.min(efectivoSemana, neto));
+  return { bruto, extras, descuentos, neto, efectivo, transferencia: round2(neto - efectivo), total: round2(bruto + extras) };
+}
+
 export function computeNominaSemana(
   semana: HorarioSemana | null,
   empleados: EmpleadoEntry[],

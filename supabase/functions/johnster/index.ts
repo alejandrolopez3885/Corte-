@@ -9,7 +9,8 @@
 //   actualiza y devuelve solo esos días, para revisar el corte antes de
 //   cerrarlo.
 // - Además de los gastos en efectivo trae los de transferencia, por tipo,
-//   para Negocio › Control de gastos en transferencia.
+//   para Negocio › Control de gastos en transferencia (y la nómina en
+//   transferencia, que sale de Equipo › Nómina).
 // - "Ver comprobante" (dueño o personal): { accion: "comprobante", id } (un
 //   gasto) o { accion: "comprobante", fecha } (el bancario de ese día)
 //   devuelve la foto tal como la muestra el bot.
@@ -72,6 +73,7 @@ async function traer(usuario: string, password: string) {
       transferencias: pesos(i.transferencia),
       efectivo: pesos(i.efectivo),
     }));
+  const esNomina = (e: Ingreso) => /n[oó]mina/i.test(String(e.gastoDestino || ""));
   const gastos = expenses
     .filter((e) => mismaSucursal(sucursal, e.branchName) && e.paymentMethod === "Efectivo" && fechaDe(e.date || e.createdAt) >= desde)
     .map((e) => ({
@@ -80,6 +82,8 @@ async function traer(usuario: string, password: string) {
       monto: pesos(e.amount),
       concepto: String(e.concept || ""),
       destino: String(e.gastoDestino || e.category || ""),
+      // Operación (proveedores), Nómina (adelantos, comidas, pago con efectivo) u otro.
+      tipo: e.expenseType === "Operación" ? "operacion" : esNomina(e) ? "nomina" : "otro",
       comprobante: !!e.receiptUrl,
       comprobanteUrl: e.receiptUrl ? String(e.receiptUrl) : null,
     }));
@@ -87,6 +91,7 @@ async function traer(usuario: string, password: string) {
   // se confirman (gastos fijos, comisión bancaria y comisiones de apps).
   const tipoDe = (e: Ingreso) => {
     if (e.expenseType === "Operación") return "operacion";
+    if (esNomina(e)) return "nomina";
     const destino = String(e.gastoDestino || "").toLowerCase();
     const concepto = String(e.concept || "").toLowerCase();
     if (destino.includes("gastos fijos") || destino.includes("gasto fijo")) return "fijos";

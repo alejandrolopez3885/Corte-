@@ -4,10 +4,10 @@ import { TOLERANCIA, type JohnsterDatos, type TipoTransferencia } from "../../li
 import { Pencil, RotateCcw } from "lucide-react";
 import { Sheet, Field, SumInput } from "../ui";
 import {
-  addDaysIso, computeComisionTarjetas, dateForDay, formatShortDayDate, formatWeekRange, money, resolveGastosFijos, resolveMontoFijo, resolveWeekStartDate, round2, sumFromText,
+  addDaysIso, computeComisionTarjetas, nominaPagoSemana, dateForDay, formatShortDayDate, formatWeekRange, money, resolveGastosFijos, resolveMontoFijo, resolveWeekStartDate, round2, sumFromText,
 } from "../../lib/dataModel";
 import { DAY_SHORT } from "../../lib/types";
-import type { CreditoProveedores, DayName, MonthData, MontoFijoSemanal } from "../../lib/types";
+import type { CreditoProveedores, DayName, EmpleadoEntry, HorarioMonthData, MonthData, MontoFijoSemanal, NominaDescuentosMonthData } from "../../lib/types";
 
 export function CreditoProveedoresModal({
   onClose,
@@ -17,6 +17,9 @@ export function CreditoProveedoresModal({
   initialWeekIndex,
   montosFijos,
   onSave,
+  horarios,
+  empleados = [],
+  nominaDescuentos,
 }: {
   onClose: () => void;
   months: Record<string, MonthData>;
@@ -25,6 +28,10 @@ export function CreditoProveedoresModal({
   initialWeekIndex: number;
   montosFijos?: MontoFijoSemanal[];
   onSave: (monthKey: string, weekIndex: number, values: CreditoProveedores, nuevoMontoFijo?: number) => void;
+  // Para la nómina en transferencia (la calcula Equipo › Nómina).
+  horarios?: Record<string, HorarioMonthData>;
+  empleados?: EmpleadoEntry[];
+  nominaDescuentos?: Record<string, NominaDescuentosMonthData>;
 }) {
   const [monthKey, setMonthKey] = useState(initialMonthKey);
   const [weekIndex, setWeekIndex] = useState(initialWeekIndex);
@@ -135,7 +142,12 @@ export function CreditoProveedoresModal({
     { clave: "uber" as const, nombre: "UBER", valor: comisionUber, set: setComisionUber },
     { clave: "rappi" as const, nombre: "RAPPI", valor: comisionRappi, set: setComisionRappi },
   ].map((a) => ({ ...a, c: comparar(sumFromText(a.valor), a.clave) }));
-  const todos = [cOperativos, cFijos, cBancaria, ...apps.map((a) => a.c)];
+  // Nómina en transferencia: no se edita ni suma al total (es de nómina);
+  // solo se confirma que el bot la tenga.
+  const nomina = nominaPagoSemana(week, horarios?.[monthKey]?.weeks?.[weekIndex] ?? null, empleados, nominaDescuentos?.[monthKey]?.weeks?.[weekIndex] ?? null);
+  const cNominaBase = comparar(nomina.transferencia, "nomina");
+  const cNomina = nomina.transferencia === 0 && !cNominaBase.bot ? { ...cNominaBase, estado: "ok" as const } : cNominaBase;
+  const todos = [cOperativos, cFijos, cBancaria, ...apps.map((a) => a.c), cNomina];
   const nOk = todos.filter((c) => c.estado === "ok").length;
   const nOtro = todos.filter((c) => c.estado === "otro").length;
   const nFalta = todos.filter((c) => c.estado === "falta").length;
@@ -398,6 +410,23 @@ export function CreditoProveedoresModal({
       <div className="summary-item highlight" style={{ gridColumn: "1 / -1" }}>
         <span>Total de la semana</span>
         <strong>{money(total)}</strong>
+      </div>
+
+      <div className={`tr-card ${conectado ? cNomina.estado : ""}`}>
+        <div className="tr-head">
+          <span>Nómina en transferencia</span>
+          {nomina.transferencia === 0 && !cNomina.bot ? null : chip(cNomina)}
+        </div>
+        <div className="readonly-value">{money(nomina.transferencia)}</div>
+        <p className="tr-bot">
+          Se calcula en Equipo › Nómina: neto a pagar {money(nomina.neto)} − efectivo de la semana {money(nomina.efectivo)}. No se suma al total
+          de arriba.
+        </p>
+        {nomina.transferencia === 0 && !cNomina.bot ? (
+          <p className="tr-bot">El efectivo de la semana alcanza para la nómina: no hay transferencia.</p>
+        ) : (
+          confirmar(cNomina, nomina.transferencia)
+        )}
       </div>
 
       <button className="btn-primary" onClick={save}>
