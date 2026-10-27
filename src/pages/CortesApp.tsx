@@ -2396,7 +2396,29 @@ export default function CortesApp({ profile }: { profile: Profile }) {
         <HistorialDiaSheet ownerId={duenoId} fecha={historialDia} onClose={() => setHistorialDia(null)} onVolver={isOwner ? volverDia : undefined} />
       )}
       {modal?.type === "guardarCorte" && day && totals && (
-        <GuardarCorteModal day={day} totals={totals} onGuardar={guardarCorte} onClose={() => setModal(null)} />
+        <GuardarCorteModal
+          day={day}
+          totals={totals}
+          onGuardar={guardarCorte}
+          onClose={() => setModal(null)}
+          fecha={activeDayDate || ""}
+          semana={
+            month && activeMonth
+              ? DAYS.map((d) => ({ dia: d, fecha: dateForDay(activeMonth, activeWeek, month, d), day: month.weeks[activeWeek]?.days?.[d] }))
+              : []
+          }
+          empleados={data.empleados}
+          notas={month?.weeks[activeWeek]?.cuadre?.notas || {}}
+          onNota={(clave, nota) => {
+            if (!activeMonth || !month) return;
+            const c = month.weeks[activeWeek]?.cuadre;
+            const notas = { ...c?.notas };
+            if (nota === undefined) delete notas[clave];
+            else notas[clave] = nota;
+            guardarCuadre(activeMonth, activeWeek, { ...c, notas });
+          }}
+          esDueno={isOwner}
+        />
       )}
       {modal?.type === "apertura" && (
         <AperturaModal

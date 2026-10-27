@@ -4,7 +4,10 @@
 // - pg_cron la llama cada mañana con el header x-cron.
 // - La app del dueño la llama con su sesión (botón ↻).
 // - "Conectar con Johnster" en la app: { accion: "conectar", usuario,
-//   password } prueba que entren y las guarda en Vault.
+//   password } prueba que entren y las guarda en Vault (solo el dueño).
+// - Guardar corte (dueño o personal): { accion: "semana", desde, hasta }
+//   actualiza y devuelve solo esos días, para revisar el corte antes de
+//   cerrarlo.
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
 
 const BASE = "https://johnster-bot.onrender.com";
@@ -71,21 +74,25 @@ Deno.serve(async (req) => {
   const secreto = async (nombre: string) => (await db.rpc("secreto_johnster", { p_nombre: nombre })).data as string | null;
   const body = await req.json().catch(() => ({}));
 
-  // pg_cron (todas las cuentas conectadas) o el dueño con su sesión.
+  // pg_cron (todas las cuentas conectadas), el dueño con su sesión o, solo
+  // para revisar días al guardar el corte, alguien de su equipo.
   let ownerId: string | null = null;
+  let esDueno = false;
   if (req.headers.get("x-cron")) {
     if (req.headers.get("x-cron") !== (await secreto("johnster_cron"))) return json({ error: "No autorizado" }, 401);
   } else {
     const token = (req.headers.get("Authorization") || "").replace(/^Bearer\s+/i, "");
     const { data: u } = await db.auth.getUser(token);
-    const { data: perfil } = u?.user ? await db.from("profiles").select("id, role").eq("id", u.user.id).maybeSingle() : { data: null };
-    if (!perfil || perfil.role !== "owner") return json({ error: "Solo el dueño" }, 403);
-    ownerId = perfil.id;
+    const { data: perfil } = u?.user ? await db.from("profiles").select("id, role, owner_id").eq("id", u.user.id).maybeSingle() : { data: null };
+    if (!perfil) return json({ error: "Solo el dueño" }, 403);
+    esDueno = perfil.role === "owner";
+    if (!esDueno && !(body?.accion === "semana" && perfil.role === "staff" && perfil.owner_id)) return json({ error: "Solo el dueño" }, 403);
+    ownerId = esDueno ? perfil.id : perfil.owner_id;
   }
 
   // "Conectar con Johnster" (desde la app): guarda usuario y contraseña en
   // Vault; primero se prueba que entren.
-  if (body?.accion === "conectar" && ownerId) {
+  if (body?.accion === "conectar" && ownerId && esDueno) {
     const u = String(body.usuario || "").trim();
     const p = String(body.password || "");
     if (!u || !p) return json({ error: "Escribe usuario y contraseña" }, 400);
@@ -106,8 +113,14 @@ Deno.serve(async (req) => {
   const { data: filas } = await db.from("johnster_datos").select("owner_id");
   try {
     const datos = await traer(usuario, password);
+    const actualizado_en = new Date().toISOString();
     for (const f of (filas || []) as { owner_id: string }[])
-      await db.from("johnster_datos").update({ ...datos, actualizado_en: new Date().toISOString(), error: null }).eq("owner_id", f.owner_id);
+      await db.from("johnster_datos").update({ ...datos, actualizado_en, error: null }).eq("owner_id", f.owner_id);
+    if (body?.accion === "semana") {
+      const desde = String(body.desde || ""), hasta = String(body.hasta || "");
+      const enRango = (x: { fecha: string }) => x.fecha >= desde && x.fecha <= hasta;
+      return json({ sucursal: datos.sucursal, actualizado_en, error: null, ingresos: datos.ingresos.filter(enRango), gastos: datos.gastos.filter(enRango) });
+    }
     return json({ sucursal: datos.sucursal, ingresos: datos.ingresos.length, gastos: datos.gastos.length });
   } catch (e) {
     const error = e instanceof Error ? e.message : String(e);

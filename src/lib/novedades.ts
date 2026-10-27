@@ -347,6 +347,14 @@ export const NOVEDADES: Novedad[] = [
     visual: "autocompletar",
   },
   {
+    id: "guardar-corte-johnster",
+    fecha: "2026-10-27T07:54:00Z",
+    seccion: "corte",
+    titulo: "Guardar corte revisa con Johnster",
+    texto: "Al tocar **Guardar corte**, la app revisa con Johnster que todo cuadre ese día. Si algo no cuadra, te dice qué falta: corrígelo en el corte o en el bot y toca **Revisar de nuevo**.",
+    visual: "guardarCorte",
+  },
+  {
     id: "apertura-aviso-repetido",
     fecha: "2026-10-27T06:51:00Z",
     seccion: "corte",

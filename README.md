@@ -790,8 +790,19 @@ estando en Nómina te regresa al menú de Equipo):
   con la lista de qué falta y no deja seguir: un gasto en **Pendiente**
   ("sube el comprobante al bot y toca Confirmar"), un gasto sin concepto,
   sin monto o sin categoría, un corte de mesero sin venta, o que no haya
-  ningún corte de mesero. Si está completo, sale "¿Seguro guardar el
-  corte?" con un renglón con casilla por cada total — tarjetas,
+  ningún corte de mesero. Si está completo, **se revisa con Johnster**
+  (a todos los que guardan corte): "Revisando con Johnster…" (la función
+  `johnster` con `{ accion: "semana" }`, que también acepta al personal y
+  solo devuelve los días de esa semana). Si Johnster todavía no tiene el
+  corte de ese día, "Todavía no se puede guardar" con "Revisar de nuevo ↻";
+  si algo no cuadra, "Falta cuadrar con Johnster" con cada sección que no
+  cuadra (venta, tarjetas, transferencias, efectivo de ventas y los gastos
+  en efectivo uno por uno con qué hacer, igual que en ⚖︎ Cuadrar, con los
+  adelantos juntos y las comidas gratis del domingo) y "Dejar así y anotar
+  por qué" (las mismas notas de Cuadrar). No deja guardar hasta que todo
+  cuadre o esté anotado. Solo el dueño tiene "Guardar sin revisar Johnster
+  (emergencia)". Ya revisado sale "✓ Todo cuadra con Johnster" y luego
+  "¿Seguro guardar el corte?" con un renglón con casilla por cada total — tarjetas,
   transferencias, gastos, venta (total) y apps — y uno más: "Ya subí al
   bot los comprobantes de gastos, bancarios y transferencias, y la venta".
   El botón "Sí, todo coincide — guardar corte" solo se activa con todas

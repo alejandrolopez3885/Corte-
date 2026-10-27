@@ -1,8 +1,34 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Lock } from "lucide-react";
 import { Sheet } from "../ui";
-import { money } from "../../lib/dataModel";
-import type { DayData } from "../../lib/types";
+import { addDaysIso, money } from "../../lib/dataModel";
+import { supabase } from "../../lib/supabaseClient";
+import { compararSemana, type DiaComparado, type EstadoGasto, type JohnsterDatos } from "../../lib/cuadrar";
+import type { DayData, DayName, EmpleadoEntry } from "../../lib/types";
+
+// Revisión con Johnster antes de cerrar: las mismas secciones y notas que
+// Corte › ⚖︎ Cuadrar (las notas de "Dejar así" son las mismas).
+const SECCIONES_J: { clave: "venta" | "tarjetas" | "transferencias" | "efectivo" | "gastos"; titulo: string }[] = [
+  { clave: "venta", titulo: "Venta" },
+  { clave: "tarjetas", titulo: "Tarjetas" },
+  { clave: "transferencias", titulo: "Transferencias" },
+  { clave: "efectivo", titulo: "Efectivo de ventas" },
+  { clave: "gastos", titulo: "Gastos en efectivo" },
+];
+const ETIQUETA_J: Record<Exclude<EstadoGasto, "igual">, string> = { "solo-tu": "Solo tú", "solo-johnster": "Solo Johnster", "otro-dia": "Otro día", "otro-monto": "Otro monto" };
+const nombreDiaJ = (fecha: string) => new Date(`${fecha}T12:00:00`).toLocaleDateString("es-MX", { weekday: "long" });
+const ayudaGasto = (g: DiaComparado["gastos"][number]) =>
+  g.junto
+    ? "Súbelo al bot como 1 solo gasto (junta los de la semana)"
+    : g.estado === "solo-tu"
+      ? "Súbelo al bot como gasto en efectivo"
+      : g.estado === "solo-johnster"
+        ? "¿Repetido en el bot? Si es tuyo, agrégalo a tu corte"
+        : g.estado === "otro-monto"
+          ? `Johnster tiene ${money(g.montoJohnster!)}: corrige el monto en uno de los dos`
+          : g.fechaJohnster
+            ? `En Johnster está el ${nombreDiaJ(g.fechaJohnster)}: corrige la fecha en uno de los dos`
+            : `En tu app está el ${nombreDiaJ(g.fechaTuya!)}: corrige la fecha en uno de los dos`;
 
 // Lo que no deja terminar el corte: gastos en Pendiente (falta subir su
 // comprobante al bot y tocar Confirmar), gastos incompletos y cortes de
@@ -32,13 +58,48 @@ export function GuardarCorteModal({
   totals,
   onGuardar,
   onClose,
+  fecha,
+  semana,
+  empleados,
+  notas,
+  onNota,
+  esDueno,
 }: {
   day: DayData;
   totals: { tarjetas: number; transferencias: number; gastos: number; ventaTotal: number; ventaApps: number };
   onGuardar: () => void;
   onClose: () => void;
+  // Revisión con Johnster: fecha del día, los 7 días de su semana (para
+  // emparejar gastos y juntar los del domingo), notas de Cuadrar y si es el
+  // dueño (puede guardar sin revisar en una emergencia).
+  fecha: string;
+  semana: { dia: DayName; fecha: string; day: DayData | undefined }[];
+  empleados: EmpleadoEntry[];
+  notas: Record<string, string>;
+  onNota: (clave: string, nota: string | undefined) => void;
+  esDueno: boolean;
 }) {
   const faltan = faltantesDelCorte(day);
+  const [rev, setRev] = useState<{ estado: "cargando" | "error" | "listo"; datos?: JohnsterDatos; error?: string }>({ estado: "cargando" });
+  const [sinRevisar, setSinRevisar] = useState(false);
+  const [escribiendo, setEscribiendo] = useState<{ clave: string; texto: string } | null>(null);
+  async function revisar() {
+    if (!semana.length) return setRev({ estado: "error", error: "No se encontró la semana de este día." });
+    setRev({ estado: "cargando" });
+    const { data, error } = await supabase.functions.invoke("johnster", {
+      body: { accion: "semana", desde: addDaysIso(semana[0].fecha, -1), hasta: addDaysIso(semana[semana.length - 1].fecha, 1) },
+    });
+    let msg: string | null = null;
+    if (error) {
+      const ctx = (error as { context?: Response }).context;
+      msg = (ctx && (await ctx.json().catch(() => null))?.error) || "No se pudo conectar con Johnster.";
+    } else if (data?.error) msg = data.error;
+    setRev(msg ? { estado: "error", error: msg } : { estado: "listo", datos: data as JohnsterDatos });
+  }
+  useEffect(() => {
+    if (faltan.length === 0) revisar();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const renglones = [
     { key: "tarjetas", texto: "Total de tarjetas", monto: totals.tarjetas },
     { key: "transferencias", texto: "Total de transferencias", monto: totals.transferencias },
@@ -77,8 +138,138 @@ export function GuardarCorteModal({
     );
   }
 
+  const emergencia = esDueno && (
+    <button className="link-btn gc-volver" onClick={() => setSinRevisar(true)}>
+      Guardar sin revisar Johnster (emergencia)
+    </button>
+  );
+  const datos = rev.datos;
+  const sinDia = !!datos && !datos.ingresos.some((i) => i.fecha === fecha);
+  const comp = datos && !sinDia ? compararSemana(semana, datos, empleados).find((d) => d.fecha === fecha) : undefined;
+  const pendientes = comp
+    ? SECCIONES_J.filter((s) => {
+        const dif = comp.renglones.some((r) => r.clave === s.clave) || (s.clave === "gastos" && comp.gastos.length > 0);
+        return dif && notas[`${s.clave}:${fecha}`] === undefined;
+      })
+    : [];
+  if (!sinRevisar && rev.estado !== "listo") {
+    return (
+      <Sheet title={rev.estado === "cargando" ? "Revisando con Johnster…" : "No se pudo revisar con Johnster"} onClose={onClose}>
+        {rev.estado === "cargando" ? (
+          <p className="hint">Puede tardar hasta un minuto si el bot estaba dormido.</p>
+        ) : (
+          <>
+            <p className="gc-aviso">{rev.error}</p>
+            <button className="btn-primary" onClick={revisar}>
+              Revisar de nuevo ↻
+            </button>
+          </>
+        )}
+        {emergencia}
+      </Sheet>
+    );
+  }
+  if (!sinRevisar && sinDia) {
+    return (
+      <Sheet title="Todavía no se puede guardar" onClose={onClose}>
+        <p className="gc-aviso">
+          Johnster todavía no tiene el corte del <strong>{nombreDiaJ(fecha)} {Number(fecha.slice(8))}</strong>. Súbelo al bot (corte de Toteat) y
+          luego toca <strong>Revisar de nuevo</strong>.
+        </p>
+        <button className="btn-primary" onClick={revisar}>
+          Revisar de nuevo ↻
+        </button>
+        <button className="link-btn gc-volver" onClick={onClose}>
+          Volver
+        </button>
+        {emergencia}
+      </Sheet>
+    );
+  }
+  if (!sinRevisar && comp && pendientes.length > 0) {
+    return (
+      <Sheet title="Falta cuadrar con Johnster" onClose={onClose}>
+        <p className="hint">Corrige en tu corte o en el bot y toca Revisar de nuevo. No se puede guardar hasta que cuadre o se anote por qué.</p>
+        {SECCIONES_J.map((s) => {
+          const r = comp.renglones.find((x) => x.clave === s.clave);
+          const dif = !!r || (s.clave === "gastos" && comp.gastos.length > 0);
+          const clave = `${s.clave}:${fecha}`;
+          const nota = notas[clave];
+          if (!dif) return null;
+          return (
+            <div key={s.clave} className="gc-j">
+              <h4>
+                {s.titulo} <span className={nota !== undefined ? "anotado" : ""}>{nota !== undefined ? "anotado" : "no cuadra"}</span>
+              </h4>
+              {r && (
+                <div className="gc-j-renglon">
+                  <span>
+                    Tú {money(r.tuyo)} · Johnster {money(r.johnster)}
+                  </span>
+                  <b>
+                    {r.dif > 0 ? "+" : "−"}
+                    {money(Math.abs(r.dif))}
+                  </b>
+                </div>
+              )}
+              {s.clave === "gastos" &&
+                comp.gastos.map((g, i) => (
+                  <div key={i} className="gc-j-gasto">
+                    <span>
+                      <i className={g.estado}>{ETIQUETA_J[g.estado as Exclude<EstadoGasto, "igual">]}</i>
+                      {g.concepto}
+                      <small>{ayudaGasto(g)}</small>
+                    </span>
+                    <span>{money(g.monto)}</span>
+                  </div>
+                ))}
+              {nota !== undefined ? (
+                <p className="gc-j-nota">
+                  ✎ “{nota}”{" "}
+                  <button className="link-btn" onClick={() => onNota(clave, undefined)}>
+                    Quitar nota
+                  </button>
+                </p>
+              ) : escribiendo?.clave === clave ? (
+                <div className="gc-j-escribir">
+                  <textarea className="text-input" rows={2} placeholder="¿Por qué se deja así?" value={escribiendo.texto} onChange={(e) => setEscribiendo({ clave, texto: e.target.value })} autoFocus />
+                  <button
+                    className="btn-primary"
+                    disabled={!escribiendo.texto.trim()}
+                    onClick={() => {
+                      onNota(clave, escribiendo.texto.trim());
+                      setEscribiendo(null);
+                    }}
+                  >
+                    Guardar nota
+                  </button>
+                </div>
+              ) : (
+                <button className="link-btn" onClick={() => setEscribiendo({ clave, texto: "" })}>
+                  ✎ Dejar así y anotar por qué
+                </button>
+              )}
+            </div>
+          );
+        })}
+        <button className="btn-primary" onClick={revisar}>
+          Revisar de nuevo ↻
+        </button>
+        <button className="link-btn gc-volver" onClick={onClose}>
+          Volver a corregir
+        </button>
+        {emergencia}
+      </Sheet>
+    );
+  }
+
   return (
     <Sheet title="¿Seguro guardar el corte?" onClose={onClose}>
+      {sinRevisar ? (
+        <p className="gc-aviso">Se guardará sin revisar con Johnster. Cuádralo después en ⚖︎ Cuadrar.</p>
+      ) : (
+        <p className="gc-ok">✓ Todo cuadra con Johnster (venta, tarjetas, transferencias, efectivo y gastos).</p>
+      )}
       <p className="hint">
         Revisa que cada total coincida y márcalo. Al guardar, el corte <strong>ya no se podrá editar</strong>.
       </p>
