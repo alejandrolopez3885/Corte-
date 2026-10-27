@@ -1,8 +1,8 @@
 import { useEffect } from "react";
 import { supabase } from "./supabaseClient";
-import { dateForDay, formatAssignedDate, money } from "./dataModel";
+import { dateForDay, diaPorFecha, emptyDay, formatAssignedDate, money } from "./dataModel";
 import { DAY_SHORT, GASTO_CATEGORIAS } from "./types";
-import type { AppData, DayName, MonthData, Profile } from "./types";
+import type { AppData, DayData, DayName, MonthData, Profile } from "./types";
 
 // Bitácora (Negocio > Análisis > Historial de cambios): quién cambió qué y
 // cuándo en toda la app, más los inicios y cierres de sesión. Vive en su
@@ -33,6 +33,9 @@ export interface RenglonBitacora {
   detalle: CambioBitacora[] | null;
   ref_fecha?: string | null;
   creado_en: string;
+  // Cómo estaba el día del corte justo antes de este cambio (para "Volver a
+  // antes de este cambio"); solo en el primer renglón de cada guardado.
+  dia_antes?: DayData | null;
 }
 
 interface Grupo {
@@ -336,6 +339,7 @@ function nombreDe(profile: Profile): string {
 export async function registrarCambios(profile: Profile, prev: AppData, next: AppData) {
   const grupos = describirCambios(prev, next);
   if (grupos.length === 0) return;
+  const conAntes = new Set<string>();
   const filas = grupos.map((g) => ({
     owner_id: ownerIdDe(profile),
     actor_id: profile.id,
@@ -345,11 +349,18 @@ export async function registrarCambios(profile: Profile, prev: AppData, next: Ap
     donde: g.donde,
     detalle: g.cambios,
     ...(g.fecha ? { ref_fecha: g.fecha } : {}),
+    ...(g.seccion === "Corte" && g.fecha && !conAntes.has(g.fecha) && conAntes.add(g.fecha)
+      ? { dia_antes: diaPorFecha(prev.months, g.fecha) ?? emptyDay() }
+      : {}),
   }));
   let { error } = await supabase.from("bitacora").insert(filas);
   // Sin migration_008 todavía no existe ref_fecha: se guarda sin ella.
   if (error && /ref_fecha/.test(error.message)) {
     ({ error } = await supabase.from("bitacora").insert(filas.map(({ ref_fecha: _omit, ...resto }) => resto)));
+  }
+  // Sin migration_022 todavía no existe dia_antes: se guarda sin ella.
+  if (error && /dia_antes/.test(error.message)) {
+    ({ error } = await supabase.from("bitacora").insert(filas.map(({ dia_antes: _omit, ...resto }) => resto)));
   }
   if (error) console.error("No se pudo guardar en la bitácora", error);
 }

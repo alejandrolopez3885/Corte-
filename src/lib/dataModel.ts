@@ -541,6 +541,14 @@ export function recalcularAcumulados(d: DayData) {
 }
 
 // El día (de cualquier mes/semana) que corresponde a una fecha real.
+// Dónde vive el día de una fecha (mes, semana y día), o null si no existe.
+export function ubicarDiaPorFecha(months: Record<string, MonthData>, fechaIso: string): { monthKey: string; weekIndex: number; dia: DayName } | null {
+  for (const [monthKey, month] of Object.entries(months || {}))
+    for (let w = 0; w < (month.weeks || []).length; w++)
+      for (const d of DAYS) if (month.weeks[w]?.days?.[d] && dateForDay(monthKey, w, month, d) === fechaIso) return { monthKey, weekIndex: w, dia: d };
+  return null;
+}
+
 export function diaPorFecha(months: Record<string, MonthData>, fechaIso: string): DayData | null {
   for (const [monthKey, month] of Object.entries(months || {})) {
     for (let w = 0; w < (month.weeks || []).length; w++) {

@@ -233,7 +233,15 @@ En Corte, debajo de "Asignado a…", el dueño tiene "Historial de este día
 hora y qué montos. Al agregar el corte de un mesero queda anotado completo
 (venta, tarjetas con sus montos sueltos, transferencia, propina, gastos y
 entrega); al editarlo, solo lo que cambió, antes → después. Lo mismo se ve
-en Negocio > Análisis > Actividad.
+en Negocio > Análisis > Actividad. Cada cambio guardado desde el
+27/10/2026 trae **"↶ Volver a antes de este cambio"** (solo el dueño): al
+tocarlo se ve qué se va a deshacer (ese cambio y los que vinieron después
+en ese día) y al confirmar "Sí, volver a antes de las 12:14 am" el día
+completo regresa a como estaba. Funciona porque con cada cambio en el corte
+de un día la app guarda en la bitácora cómo estaba ese día justo antes
+(`bitacora.dia_antes`, ver
+[`supabase/migration_022_bitacora_dia_antes.sql`](./supabase/migration_022_bitacora_dia_antes.sql));
+volver también queda anotado y se puede deshacer.
 
 - **Frontend**: React + Vite + TypeScript.
 - **Backend**: Supabase (Auth + Postgres).
@@ -2004,4 +2012,5 @@ supabase/
   migration_019_ranking_encuestas.sql  encuestas por mesero para el ranking (conteos y estrellas)
   migration_020_encuestas_por_dia.sql  lo mismo por día de trabajo (suman con el corte del mesero)
   migration_021_johnster.sql           datos de Johnster Bot para Cuadrar (Vault y pg_cron)
+  migration_022_bitacora_dia_antes.sql copia del día antes de cada cambio (Volver a antes de este cambio)
 ```

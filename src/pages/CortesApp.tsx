@@ -8,7 +8,7 @@ import { useAuth } from "../lib/auth.tsx";
 import { useAppData } from "../lib/useAppData";
 import { historialNombres } from "../lib/gastosBusqueda";
 import {
-  addDaysIso, buildMonth, dateForDay, formatAssignedDate, formatDayNumber, formatLongDayDate, formatWeekRange,
+  addDaysIso, buildMonth, dateForDay, ubicarDiaPorFecha, formatAssignedDate, formatDayNumber, formatLongDayDate, formatWeekRange,
   mondayOnOrBefore, money, mostRecentDayInWeek, mostRecentWeekIndex, resolveAssignmentLocation, resolveWeekStartDate,
   normalizarNombre, round2, sumFromText, todayIso, uid, recalcularAcumulados, turnosActivos, quienesAbren, efectivoDelDia, FONDO_EN_APERTURA_DESDE, empleadoDelDueno,
 } from "../lib/dataModel";
@@ -1138,6 +1138,17 @@ export default function CortesApp({ profile }: { profile: Profile }) {
     if (!data) return;
     const next = structuredClone(data);
     next.reglasHorario = { ...next.reglasHorario, ...cambios };
+    persist(next);
+  }
+
+  // Historial del día › "Volver a antes de este cambio": el día completo
+  // regresa a la copia guardada en la bitácora (y eso también queda anotado).
+  function volverDia(fecha: string, dia: DayData) {
+    if (!data) return;
+    const next = structuredClone(data);
+    const u = ubicarDiaPorFecha(next.months, fecha);
+    if (!u) return;
+    next.months[u.monthKey].weeks[u.weekIndex].days[u.dia] = structuredClone(dia);
     persist(next);
   }
 
@@ -2405,7 +2416,9 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           onClose={() => setModal(null)}
         />
       )}
-      {historialDia && <HistorialDiaSheet ownerId={duenoId} fecha={historialDia} onClose={() => setHistorialDia(null)} />}
+      {historialDia && (
+        <HistorialDiaSheet ownerId={duenoId} fecha={historialDia} onClose={() => setHistorialDia(null)} onVolver={isOwner ? volverDia : undefined} />
+      )}
       {modal?.type === "guardarCorte" && day && totals && (
         <GuardarCorteModal day={day} totals={totals} onGuardar={guardarCorte} onClose={() => setModal(null)} />
       )}

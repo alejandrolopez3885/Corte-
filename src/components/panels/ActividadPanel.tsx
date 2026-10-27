@@ -4,6 +4,7 @@ import { Empty, Sheet } from "../ui";
 import { addDaysIso, formatAssignedDate, formatWeekRange, todayIso } from "../../lib/dataModel";
 import { SECCION_PREGUNTAS, cargarBitacora, cargarBitacoraDelDia, type RenglonBitacora } from "../../lib/bitacora";
 import { TituloPagina } from "../BarraTitulo";
+import type { DayData } from "../../lib/types";
 
 // Negocio > Análisis > Actividad: la bitácora de la app ordenada para
 // revisarla y estudiar el uso, en tres pestañas — Resumen (lo importante de
@@ -521,8 +522,20 @@ export function Renglon({ r, esDueno, sinDonde }: { r: RenglonBitacora; esDueno:
 
 // "Historial de este día" dentro del Corte (solo el dueño): todo lo
 // registrado sobre esa fecha del corte, con quién, a qué hora y los montos.
-export function HistorialDiaSheet({ ownerId, fecha, onClose }: { ownerId: string; fecha: string; onClose: () => void }) {
+export function HistorialDiaSheet({
+  ownerId,
+  fecha,
+  onClose,
+  onVolver,
+}: {
+  ownerId: string;
+  fecha: string;
+  onClose: () => void;
+  // Solo el dueño: regresa el día a como estaba antes de un cambio.
+  onVolver?: (fecha: string, dia: DayData) => void;
+}) {
   const [estado, setEstado] = useState<{ cargando: boolean; error?: boolean; renglones: RenglonBitacora[] }>({ cargando: true, renglones: [] });
+  const [confirmando, setConfirmando] = useState<{ r: RenglonBitacora; dia: DayData } | null>(null);
   useEffect(() => {
     let cancelado = false;
     cargarBitacoraDelDia(ownerId, fecha).then(({ data, error }) => {
@@ -532,6 +545,48 @@ export function HistorialDiaSheet({ ownerId, fecha, onClose }: { ownerId: string
       cancelado = true;
     };
   }, [ownerId, fecha]);
+  // Copia del día antes de un cambio: la del renglón o la de otro renglón
+  // del mismo guardado (mismo momento).
+  const copiaDe = (r: RenglonBitacora) => r.dia_antes || estado.renglones.find((x) => x.creado_en === r.creado_en && x.dia_antes)?.dia_antes || null;
+  const hora = (iso: string) => new Date(iso).toLocaleTimeString("es-MX", { hour: "numeric", minute: "2-digit" });
+  const resumen = (r: RenglonBitacora) => {
+    const c = r.detalle?.[0];
+    const donde = (r.donde || "").replace(/^Corte [^·]*·?\s*/, "");
+    const que = c ? `${c.accion} ${c.texto || c.campo || ""}`.trim() : "cambio";
+    return `${donde ? `${donde}: ` : ""}${que}${(r.detalle?.length || 0) > 1 ? ` (+${r.detalle!.length - 1})` : ""}`;
+  };
+  if (confirmando) {
+    const desde = confirmando.r.creado_en;
+    const deshace = estado.renglones.filter((x) => x.tipo === "cambio" && x.creado_en >= desde).reverse();
+    return (
+      <Sheet title={`¿Volver a como estaba antes de las ${hora(desde)}?`} onClose={() => setConfirmando(null)}>
+        <p className="hint">
+          El {formatAssignedDate(fecha)} queda exactamente como estaba antes de ese cambio. Se deshacen ese cambio y los que vinieron después en
+          este día:
+        </p>
+        <ul className="volver-lista">
+          {deshace.map((x) => (
+            <li key={x.id}>
+              {hora(x.creado_en)} · {resumen(x)}
+            </li>
+          ))}
+        </ul>
+        <p className="hint">Solo cambia este día. Queda anotado en el historial y lo puedes volver a deshacer.</p>
+        <button
+          className="btn-primary volver-confirmar"
+          onClick={() => {
+            onVolver!(fecha, confirmando.dia);
+            onClose();
+          }}
+        >
+          Sí, volver a antes de las {hora(desde)}
+        </button>
+        <button className="link-btn" onClick={() => setConfirmando(null)}>
+          Cancelar
+        </button>
+      </Sheet>
+    );
+  }
   return (
     <Sheet title={`Historial · ${formatAssignedDate(fecha)}`} onClose={onClose}>
       {estado.cargando ? (
@@ -542,12 +597,20 @@ export function HistorialDiaSheet({ ownerId, fecha, onClose }: { ownerId: string
         <p className="hint">Todavía no hay cambios registrados para este día.</p>
       ) : (
         <div className="bitacora-dia">
-          {estado.renglones.map((r) => (
-            <div key={r.id} className="historial-dia-item">
-              <span className="historial-dia-donde">{(r.donde || "").replace(/^Corte [^·]*·?\s*/, "") || "Día"}</span>
-              <Renglon r={r} esDueno={r.actor_id === ownerId} sinDonde />
-            </div>
-          ))}
+          {estado.renglones.map((r) => {
+            const copia = onVolver && r.tipo === "cambio" ? copiaDe(r) : null;
+            return (
+              <div key={r.id} className="historial-dia-item">
+                <span className="historial-dia-donde">{(r.donde || "").replace(/^Corte [^·]*·?\s*/, "") || "Día"}</span>
+                <Renglon r={r} esDueno={r.actor_id === ownerId} sinDonde />
+                {copia && (
+                  <button type="button" className="volver-btn" onClick={() => setConfirmando({ r, dia: copia })}>
+                    ↶ Volver a antes de este cambio
+                  </button>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
     </Sheet>
