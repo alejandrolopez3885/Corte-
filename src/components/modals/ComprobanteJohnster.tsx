@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { ExternalLink, X } from "lucide-react";
 import { money } from "../../lib/dataModel";
 import { supabase } from "../../lib/supabaseClient";
@@ -36,7 +37,14 @@ export function VerComprobante({ pedido, titulo, monto, drive, onClose }: Compro
     if (!url) traer();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clave]);
-  return (
+  useEffect(() => {
+    const tecla = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", tecla);
+    return () => window.removeEventListener("keydown", tecla);
+  }, [onClose]);
+  // Directo en <body>: dentro de una hoja o del asistente (con scroll o
+  // animación) el visor quedaba recortado y a veces sin el botón de cerrar.
+  return createPortal(
     <div className="vc-fondo" onClick={onClose}>
       <div className="vc-head" onClick={(e) => e.stopPropagation()}>
         <span>
@@ -71,6 +79,7 @@ export function VerComprobante({ pedido, titulo, monto, drive, onClose }: Compro
           <div className="vc-msg">Trayendo el comprobante del bot…</div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
