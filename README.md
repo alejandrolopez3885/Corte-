@@ -521,8 +521,17 @@ estando en Nómina te regresa al menú de Equipo):
   2%, Nada o Manual. Las apps se cierran escribiendo el total del día en
   "Ventas de apps". Arriba se muestran "Johnster del día", "[Quien abrió]
   del día" y "Apps del día", que deben coincidir con el sistema. "Guardar
-  corte" al final bloquea todo; el dueño siempre puede editar y con
-  "Desbloquear apertura" libera esa parte. El usuario de para llevar se
+  corte" al final bloquea todo; el dueño siempre puede editar. En el
+  aviso del candado del Turno 1 el dueño tiene **"Editar apertura"**: el
+  formulario se abre con lo que ya tiene (quién abrió, su usuario, apps y
+  cada bloque con venta, tarjetas, transferencias y gastos) y al guardar
+  reemplaza lo de antes sin duplicar (se conservan los ids y el estado y la
+  categoría de los gastos que no cambiaron; los gastos generales y del fondo
+  del turno 1 se quedan) y la vuelve a bloquear. **"Desbloquear"** ya no
+  borra la apertura: sus cortes siguen en el Turno 1 y el personal los puede
+  editar ("Apertura desbloqueada… · Editar y volver a bloquear"). En una
+  apertura nueva, si el usuario ya tiene corte ese día fuera de la apertura,
+  el formulario avisa que quedaría con dos cortes. El usuario de para llevar se
   marca una vez en Equipo > Meseros ("Usuario de para llevar (sin
   propina)").
 - **Efectivo del día** (mismos días, desde el 21/10/2026): en lugar del
