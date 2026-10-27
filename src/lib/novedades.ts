@@ -347,6 +347,14 @@ export const NOVEDADES: Novedad[] = [
     visual: "autocompletar",
   },
   {
+    id: "control-gastos-acordeon",
+    fecha: "2026-10-27T11:51:00Z",
+    seccion: "corte",
+    titulo: "Control de gastos más claro",
+    texto: "En **Control de gastos en efectivo** cada gasto muestra completo su concepto, día, categoría y estado. Tócalo para elegir categoría, confirmar, moverlo o editarlo.",
+    visual: "categoria",
+  },
+  {
     id: "ver-comprobante-bot",
     fecha: "2026-10-27T11:35:00Z",
     seccion: "corte",

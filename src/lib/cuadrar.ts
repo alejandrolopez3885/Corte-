@@ -143,8 +143,9 @@ export function totalesDelDia(day: DayData | undefined) {
   };
 }
 
-// dias: los 7 días de la semana con su fecha y lo capturado en tu app.
-export function compararSemana(dias: DiaEntrada[], j: JohnsterDatos, empleados: EmpleadoEntry[] = []): DiaComparado[] {
+// Tus gastos de la semana como se suben a Johnster, emparejados con los
+// gastos de Johnster (lo usan Cuadrar y Control de gastos en efectivo).
+function emparejar(dias: DiaEntrada[], j: JohnsterDatos, empleados: EmpleadoEntry[]) {
   const desde = addDaysIso(dias[0].fecha, -1);
   const hasta = addDaysIso(dias[dias.length - 1].fecha, 1);
   // Gastos de Johnster de la semana (y un día antes y después, para
@@ -202,7 +203,19 @@ export function compararSemana(dias: DiaEntrada[], j: JohnsterDatos, empleados: 
         }
       }
     }
+  return { mios, jg };
+}
 
+// Control de gastos en efectivo: el gasto de Johnster que le corresponde a
+// cada uno de tus gastos (por id), para ver su comprobante.
+export function gastosEnJohnster(dias: DiaEntrada[], j: JohnsterDatos, empleados: EmpleadoEntry[] = []): Map<string, JohnsterGasto> {
+  const { mios } = emparejar(dias, j, empleados);
+  return new Map(mios.filter((m) => m.gastoId && m.par).map((m) => [m.gastoId!, m.par!.j]));
+}
+
+// dias: los 7 días de la semana con su fecha y lo capturado en tu app.
+export function compararSemana(dias: DiaEntrada[], j: JohnsterDatos, empleados: EmpleadoEntry[] = []): DiaComparado[] {
+  const { mios, jg } = emparejar(dias, j, empleados);
   const ticket = (g: JohnsterGasto) => (g.comprobante ? g.id : undefined);
   return dias.map(({ dia, fecha, day }) => {
     const t = totalesDelDia(day);

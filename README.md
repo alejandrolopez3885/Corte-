@@ -112,6 +112,20 @@ que tienen pendientes lo dicen ("Sem 3 · 3 pdtes"), y si hay pendientes en
 las 2 semanas anteriores sale arriba "⚠ 1 pendiente en semanas anteriores
 (5 – 11 oct)" — al tocarlo, abre la más vieja.
 
+**Cada gasto es un acordeón** (`GastosSummaryModal.tsx`): cerrado muestra
+lo principal — el concepto completo (en varias líneas si es largo), el
+monto y etiquetas con el día, la categoría, "Corte de [mesero]" si viene
+de un corte, el estado ("✓ Ingresado", "Falta confirmar" o "Falta
+categoría") y, para el dueño, cómo está en Johnster: **Ver ticket** (abre
+la foto del ticket del bot, igual que en Guardar corte), "Sin ticket en el
+bot" o "No está en el bot". El gasto del bot que le toca a cada uno se
+busca igual que en ⚖︎ Cuadrar (`gastosEnJohnster` en `lib/cuadrar.ts`,
+con los datos de `johnster_datos`). Al tocarlo se abre: cómo está en
+Johnster si es distinto ("En Johnster: 'cocas oxxo' · $115.00 · 13 oct"),
+categoría y Confirmar, "Mover a...", "Editar concepto o monto" y el aviso
+del corte del mesero. Los pendientes empiezan abiertos y los ingresados
+cerrados.
+
 Desde **Control de gastos en efectivo** también se puede mover un gasto de
 un día a otro dentro de la misma semana (botón "Mover a..." en cada gasto),
 sin perder su historial (mismo id, categoría y estado). Si el gasto estaba
