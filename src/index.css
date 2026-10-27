@@ -2382,3 +2382,5 @@ button.cj-seccion { cursor: pointer; }
 .db-riel .pagado { background: #1E1E1E; }
 .db-riel .cierre { background: #8E8E8E; }
 .db-nota { background: var(--surface); border: 1px solid var(--border); border-left: 4px solid; border-radius: 12px; padding: 10px 12px; font-size: 13px; line-height: 1.35; }
+.tr-total-j { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; font-size: 12.5px; color: var(--ink-soft); margin-top: -6px; }
+.tr-total-j small { display: block; margin-top: 2px; font-size: 11.5px; }

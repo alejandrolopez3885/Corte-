@@ -115,6 +115,14 @@ bot, rojo si tiene otro monto; $5 de tolerancia, igual que Cuadrar):
 - **Comisiones de apps**: DIDI, UBER y RAPPI las escribes tú (se suben al
   bot el martes); cada una marca "No está en el bot", "✓ En el bot" o
   "Bot: $X".
+- **Nómina en transferencia**: no se edita; la calcula Equipo › Nómina
+  (neto a pagar − efectivo de la semana, lo que deposita el dueño) y se
+  confirma contra el gasto de nómina en transferencia del bot. Sí suma al
+  total.
+Debajo del **Total de la semana** (con la nómina en transferencia) sale
+"Johnster: $X en transferencias de la semana" con "✓ Cuadra" o la
+diferencia, y si el bot tiene otros gastos en transferencia que no están
+en esta pantalla, cuáles son.
 Si fijos, la bancaria o una comisión de app no están en la semana pero en
 el bot hay uno del mismo tipo hasta 3 días antes o después, la etiqueta
 dice en qué día está ("Está el Lun 26") y el aviso: "No está en esta
@@ -1243,7 +1251,26 @@ estando en Nómina te regresa al menú de Equipo):
   su Catálogo y arriba de su ficha ("Pendiente del Excel: …"), con "Ya lo
   completé" para quitar el aviso. En el Catálogo, el precio de referencia
   es por su "Se pide por" (o por kg/pieza si no tiene).
-- **Dashboard**: reporte de resultados de la semana, solo para leer (con
+- **Dashboard**: con el estilo de la imagen del avance al momento y
+  comparado con **Johnster Bot** (`DashboardPanel.tsx`). Arriba, después de
+  Mes y Semana: encabezado negro "Resultado de la semana" (o "Avance al
+  momento" si la semana va en curso) · Sucursal Metroplex · Semana [ISO] ·
+  fechas · "completa" o "hasta hoy (día)", con la barra "✓ 8 de 9 cuadran
+  con Johnster · Revisar de nuevo ↻" (vuelve a traer los datos del bot);
+  los botones **Copiar resultado** y **Copiar avance** (las dos imágenes de
+  siempre); dos tarjetas con dona — **Venta** contra la venta
+  presupuestada y **Gasto operativo** contra el tope de 42% —, cada una con
+  su comparación con el bot; **Utilidad** en grande; **Cuenta de la
+  semana · tú vs Johnster** (el reporte de abajo, con debajo de cada
+  renglón lo que tiene el bot y ✓ o la diferencia: venta, operativos en
+  efectivo y en transferencia, fijos en transferencia, DIDI/UBER/RAPPI,
+  bancaria y **nómina**: tu nómina de la semana — bruto + extras, de
+  `nominaPagoSemana` — contra todo lo de nómina en el bot, en efectivo
+  (adelantos, comidas y el pago con efectivo) + transferencia); la tarjeta
+  de **Nómina** contra la meta de 15% (pagado al momento, estimado al
+  cierre) y las **notas** del avance más un aviso por cada renglón que no
+  cuadra con el bot. Las comparaciones usan la semana de lunes a domingo
+  y $5 de tolerancia. El reporte, solo para leer (con
   porcentajes sobre la venta total): Venta total, Gastos operativos (suma
   los de efectivo categorizados como Operación más los de transferencia),
   Gastos fijos (desplegable: lo pagado en transferencia más los gastos en

@@ -64,7 +64,7 @@ export function CreditoProveedoresModal({
   useEffect(() => {
     // Datos guardados antes de traer transferencias: se actualizan una vez.
     cargarJohnster().then((d) => {
-      if (d?.actualizado_en && !d.transferencias?.length) actualizarJohnster();
+      if (d?.actualizado_en && (!d.transferencias?.length || !d.gastos.some((g) => g.tipo))) actualizarJohnster();
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -142,12 +142,18 @@ export function CreditoProveedoresModal({
     { clave: "uber" as const, nombre: "UBER", valor: comisionUber, set: setComisionUber },
     { clave: "rappi" as const, nombre: "RAPPI", valor: comisionRappi, set: setComisionRappi },
   ].map((a) => ({ ...a, c: comparar(sumFromText(a.valor), a.clave) }));
-  // Nómina en transferencia: no se edita ni suma al total (es de nómina);
-  // solo se confirma que el bot la tenga.
+  // Nómina en transferencia: no se edita (la calcula Nómina), sí suma al
+  // total y se confirma que el bot la tenga.
   const nomina = nominaPagoSemana(week, horarios?.[monthKey]?.weeks?.[weekIndex] ?? null, empleados, nominaDescuentos?.[monthKey]?.weeks?.[weekIndex] ?? null);
   const cNominaBase = comparar(nomina.transferencia, "nomina");
   const cNomina = nomina.transferencia === 0 && !cNominaBase.bot ? { ...cNominaBase, estado: "ok" as const } : cNominaBase;
   const todos = [cOperativos, cFijos, cBancaria, ...apps.map((a) => a.c), cNomina];
+  // El total (con la nómina en transferencia) contra todas las
+  // transferencias de la semana en el bot.
+  const totalSemana = round2(total + nomina.transferencia);
+  const totalBot = round2(deLaSemana.reduce((n, t) => n + t.monto, 0));
+  const otrosBot = deLaSemana.filter((t) => t.tipo === "otro");
+  const cTotal = { estado: Math.abs(totalBot - totalSemana) <= TOLERANCIA ? ("ok" as const) : ("otro" as const) };
   const nOk = todos.filter((c) => c.estado === "ok").length;
   const nOtro = todos.filter((c) => c.estado === "otro").length;
   const nFalta = todos.filter((c) => c.estado === "falta").length;
@@ -407,11 +413,6 @@ export function CreditoProveedoresModal({
         {confirmar(cBancaria, comisionBancaria)}
       </div>
 
-      <div className="summary-item highlight" style={{ gridColumn: "1 / -1" }}>
-        <span>Total de la semana</span>
-        <strong>{money(total)}</strong>
-      </div>
-
       <div className={`tr-card ${conectado ? cNomina.estado : ""}`}>
         <div className="tr-head">
           <span>Nómina en transferencia</span>
@@ -419,8 +420,7 @@ export function CreditoProveedoresModal({
         </div>
         <div className="readonly-value">{money(nomina.transferencia)}</div>
         <p className="tr-bot">
-          Se calcula en Equipo › Nómina: neto a pagar {money(nomina.neto)} − efectivo de la semana {money(nomina.efectivo)}. No se suma al total
-          de arriba.
+          Se calcula en Equipo › Nómina: neto a pagar {money(nomina.neto)} − efectivo de la semana {money(nomina.efectivo)}.
         </p>
         {nomina.transferencia === 0 && !cNomina.bot ? (
           <p className="tr-bot">El efectivo de la semana alcanza para la nómina: no hay transferencia.</p>
@@ -428,6 +428,27 @@ export function CreditoProveedoresModal({
           confirmar(cNomina, nomina.transferencia)
         )}
       </div>
+
+      <div className="summary-item highlight" style={{ gridColumn: "1 / -1" }}>
+        <span>Total de la semana</span>
+        <strong>{money(totalSemana)}</strong>
+      </div>
+      {conectado && (
+        <div className={`tr-total-j ${cTotal.estado}`}>
+          <span>
+            Johnster: {money(totalBot)} en transferencias de la semana
+            {otrosBot.length > 0 && (
+              <small>
+                Incluye {money(round2(otrosBot.reduce((n, t) => n + t.monto, 0)))} de otros gastos que no están en esta pantalla:{" "}
+                {otrosBot.map((t) => `${t.concepto.trim()} ${money(t.monto)}`).join(", ")}.
+              </small>
+            )}
+          </span>
+          <span className={`tr-chip ${cTotal.estado}`}>
+            {cTotal.estado === "ok" ? "✓ Cuadra" : `${totalBot > totalSemana ? "Johnster +" : "Tu app +"}${money(Math.abs(totalBot - totalSemana))}`}
+          </span>
+        </div>
+      )}
 
       <button className="btn-primary" onClick={save}>
         Guardar

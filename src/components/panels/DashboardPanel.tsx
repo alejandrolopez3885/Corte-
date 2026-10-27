@@ -63,6 +63,7 @@ export function DashboardPanel({
   async function cargarJohnster() {
     const { data } = await supabase.from("johnster_datos").select("sucursal, ingresos, gastos, transferencias, actualizado_en, error").maybeSingle();
     setJohnster((data as JohnsterDatos | null) ?? null);
+    return data as JohnsterDatos | null;
   }
   async function actualizarJohnster() {
     setActualizando(true);
@@ -71,7 +72,11 @@ export function DashboardPanel({
     setActualizando(false);
   }
   useEffect(() => {
-    cargarJohnster();
+    // Datos guardados antes de separar los gastos por tipo: se actualizan una vez.
+    cargarJohnster().then((d) => {
+      if (d?.actualizado_en && d.gastos.length > 0 && !d.gastos.some((g) => g.tipo)) actualizarJohnster();
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function toggleCategoria(key: string) {
