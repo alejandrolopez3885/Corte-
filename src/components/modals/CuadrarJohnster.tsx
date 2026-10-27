@@ -2,8 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { Field } from "../ui";
 import { MarcoAsistente } from "./asistente";
 import { supabase } from "../../lib/supabaseClient";
-import { compararSemana, type DiaComparado, type EstadoGasto, type JohnsterDatos, type Renglon } from "../../lib/cuadrar";
-import type { CuadreSemana, DayData, DayName } from "../../lib/types";
+import { cierreSemana, compararSemana, type DiaComparado, type EstadoGasto, type JohnsterDatos, type Renglon } from "../../lib/cuadrar";
+import type { CuadreSemana, DayData, DayName, EmpleadoEntry } from "../../lib/types";
 
 // Corte › ⚖︎ Cuadrar: la semana contra Johnster Bot, paso a paso. Orden:
 // Ventas → Tarjetas → Transferencias → Efectivo de ventas → Gastos en
@@ -58,6 +58,7 @@ export function CuadrarJohnster({
   titulo,
   dias,
   cuadre,
+  empleados,
   onGuardarCuadre,
   onIrADia,
   onClose,
@@ -65,6 +66,7 @@ export function CuadrarJohnster({
   titulo: string;
   dias: { dia: DayName; fecha: string; day: DayData | undefined }[];
   cuadre: CuadreSemana | undefined;
+  empleados: EmpleadoEntry[];
   onGuardarCuadre: (c: CuadreSemana | undefined) => void;
   onIrADia: (dia: DayName) => void;
   onClose: () => void;
@@ -105,7 +107,10 @@ export function CuadrarJohnster({
   }
 
   const conectado = !!datos?.actualizado_en;
-  const comparados = useMemo(() => (datos && conectado ? compararSemana(dias, datos) : []), [datos, conectado, dias]);
+  const comparados = useMemo(() => (datos && conectado ? compararSemana(dias, datos, empleados) : []), [datos, conectado, dias, empleados]);
+  // Cierre de la semana (antes de los gastos): lo que se sube junto a Johnster.
+  const cierre = useMemo(() => cierreSemana(dias, empleados), [dias, empleados]);
+  const hayCierre = cierre.adelantos.length > 0 || cierre.comidas.length > 0;
   const notas = cuadre?.notas || {};
   const vistos = cuadre?.vistos || [];
 
@@ -114,6 +119,7 @@ export function CuadrarJohnster({
   const pasos = useMemo(() => {
     const lista: string[] = [];
     SECCIONES.forEach((s) => {
+      if (s.clave === "gastos" && hayCierre) lista.push("cierre");
       lista.push(s.clave);
       comparados.forEach((d) => {
         const clave = `${s.clave}:${d.fecha}`;
@@ -122,7 +128,7 @@ export function CuadrarJohnster({
     });
     lista.push("resumen");
     return lista;
-  }, [comparados, vistos, notas]);
+  }, [comparados, vistos, notas, hayCierre]);
   const resuelto = (clave: string) => {
     const [s, fecha] = clave.split(":") as [Seccion, string | undefined];
     if (!fecha) return true;
@@ -332,6 +338,78 @@ export function CuadrarJohnster({
         </button>
       </>
     );
+  } else if (paso === "cierre") {
+    avance = `Cierre de la semana · paso ${indice + 1} de ${pasos.length}`;
+    pregunta = "Antes de los gastos: cierre de la semana";
+    const dom = dias[dias.length - 1];
+    cuerpo = (
+      <>
+        <p className="ca-ayuda">No se mueve nada en tu corte ni en la nómina: solo te dice cómo subirlos a Johnster.</p>
+        {cierre.adelantos.map((a) => (
+          <div key={a.nombre} className="cj-cierre">
+            <h4>Adelantos de {a.nombre} → 1 gasto el domingo</h4>
+            {a.items.map((x, i) => (
+              <div key={i} className="cj-fila">
+                <span>
+                  {nombreDia(x.fecha)} {Number(x.fecha.slice(8))}
+                </span>
+                <span>{pesos(x.monto)}</span>
+              </div>
+            ))}
+            <div className="cj-fila total">
+              <span>{a.concepto}</span>
+              <span>{pesos(a.total)}</span>
+            </div>
+            <p className="cj-sube">
+              Súbelo al bot el <b>{DIA_CORTO[dom.dia]} {Number(dom.fecha.slice(8))}</b> como “Otro · Nómina”, en efectivo.
+            </p>
+          </div>
+        ))}
+        {cierre.comidas.map((c) => {
+          const rebajan = c.items.filter((x) => x.rebaja > 0);
+          return (
+            <div key={c.nombre} className="cj-cierre">
+              <h4>
+                Comidas de {c.nombre} · {c.porSemana} gratis de {pesos(c.valor)}
+              </h4>
+              {c.items.map((x, i) => (
+                <div key={i} className="cj-fila">
+                  <span>
+                    {nombreDia(x.fecha).slice(0, 3)} {Number(x.fecha.slice(8))} · {pesos(x.monto)}
+                  </span>
+                  {x.rebaja === 0 ? (
+                    <span className="gratis">Gratis</span>
+                  ) : x.gratis > 0 ? (
+                    <span className="rebaja">
+                      {pesos(x.gratis)} gratis · se rebaja {pesos(x.rebaja)}
+                    </span>
+                  ) : (
+                    <span className="rebaja">Se rebaja {pesos(x.rebaja)}</span>
+                  )}
+                </div>
+              ))}
+              <p className="cj-sube">
+                {c.totalGratis > 0 && (
+                  <>
+                    Sube el <b>{DIA_CORTO[dom.dia]}</b> 1 gasto “Comida empleado” de <b>{pesos(c.totalGratis)}</b> (no se rebaja)
+                  </>
+                )}
+                {c.totalGratis > 0 && rebajan.length > 0 && " y "}
+                {rebajan.length > 0 && <>{rebajan.length === 1 ? "el que se rebaja en su día" : "los que se rebajan cada uno en su día"} como “Otro · Nómina”</>}.
+              </p>
+            </div>
+          );
+        })}
+      </>
+    );
+    pie = (
+      <>
+        {btnAtras}
+        <button type="button" className="ca-boton" onClick={() => ir(pasos[indice + 1])}>
+          Entendido, seguir
+        </button>
+      </>
+    );
   } else if (!paso.includes(":")) {
     // Vistazo de una sección: los 7 días.
     const s = SECCIONES.find((x) => x.clave === paso)!;
@@ -476,6 +554,7 @@ export function CuadrarJohnster({
   function tituloPaso(clave: string) {
     const [sc, fecha] = clave.split(":");
     const s = SECCIONES.find((x) => x.clave === sc);
+    if (clave === "cierre") return "Cierre de la semana";
     return fecha ? `${s?.titulo} · ${nombreDia(fecha)} ${Number(fecha.slice(8))}` : s?.titulo || clave;
   }
 
@@ -504,8 +583,13 @@ function ListaGastos({ d }: { d: DiaComparado }) {
         <div key={i} className="cj-gasto">
           <span>
             <i className={g.estado}>{ETIQUETA[g.estado as Exclude<EstadoGasto, "igual">]}</i>
+            {g.junto && <i className="junto">Junto</i>}
             {g.concepto}
-            <small>{ayuda(g)}</small>
+            <small>
+              {g.junto
+                ? `${g.junto.map((x) => `${nombreDia(x.fecha).slice(0, 3)} ${pesos(x.monto)}`).join(" · ")} · súbelo al bot como 1 solo gasto`
+                : ayuda(g)}
+            </small>
           </span>
           <b>{pesos(g.monto)}</b>
         </div>

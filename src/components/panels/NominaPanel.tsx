@@ -366,7 +366,14 @@ export function NominaPanel({
                               {d.concepto ? ` · ${d.concepto}` : ""}
                               {d.origen === "corte" && <em> (Corte)</em>}
                             </span>
-                            <span>-{money(d.monto)}</span>
+                            {d.gratis && d.monto === 0 ? (
+                              <span className="nomina-gratis">$0 · gratis</span>
+                            ) : (
+                              <span>
+                                -{money(d.monto)}
+                                {d.gratis ? <small className="nomina-gratis"> ({money(d.gratis)} gratis)</small> : null}
+                              </span>
+                            )}
                             {!soloLectura &&
                               (d.origen === "corte" ? (
                                 <span className="icon-btn-spacer" />

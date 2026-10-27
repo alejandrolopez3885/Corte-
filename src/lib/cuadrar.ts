@@ -1,5 +1,6 @@
 import { addDaysIso, round2 } from "./dataModel";
-import type { DayData, DayName } from "./types";
+import { repartoComidas } from "./comidasGratis";
+import type { DayData, DayName, EmpleadoEntry, WeekData } from "./types";
 
 // Cuadrar con Johnster (Corte › ⚖︎ Cuadrar): compara cada día de la semana
 // contra lo que tiene Johnster Bot (lo trae la función "johnster" a la tabla
@@ -42,6 +43,45 @@ export interface GastoComparado {
   montoJohnster?: number;
   fechaJohnster?: string; // "otro-dia": en qué día está en Johnster
   fechaTuya?: string; // "otro-dia" visto desde el día de Johnster
+  junto?: { fecha: string; monto: number }[]; // gasto que junta varios de la semana
+}
+
+// Cierre de la semana: lo que se sube a Johnster junto en un solo gasto el
+// domingo (gastos de Nómina de quien tiene juntarAdelantos y las comidas
+// gratis), y las comidas que sí se rebajan, cada una en su día.
+export interface CierreSemana {
+  adelantos: { nombre: string; concepto: string; items: { fecha: string; concepto: string; monto: number }[]; total: number }[];
+  comidas: {
+    nombre: string;
+    porSemana: number;
+    valor: number;
+    items: { fecha: string; monto: number; gratis: number; rebaja: number }[];
+    totalGratis: number;
+  }[];
+}
+
+type DiaEntrada = { dia: DayName; fecha: string; day: DayData | undefined };
+
+export function cierreSemana(dias: DiaEntrada[], empleados: EmpleadoEntry[] = []): CierreSemana {
+  const fechaDe = (dia: DayName) => dias.find((d) => d.dia === dia)!.fecha;
+  const week = { days: Object.fromEntries(dias.map((d) => [d.dia, d.day || { meseros: [], gastos: [], transferencias: [], ventaApps: 0 }])) } as unknown as WeekData;
+  const adelantos = empleados
+    .filter((e) => e.juntarAdelantos)
+    .map((e) => {
+      const items = dias.flatMap((d) =>
+        (d.day?.gastos || []).filter((g) => g.categoria === "nomina" && g.empleadoId === e.id).map((g) => ({ fecha: d.fecha, concepto: g.concepto, monto: g.total }))
+      );
+      return { nombre: e.nombre, concepto: `Adelanto nómina ${e.nombre}`, items, total: round2(items.reduce((t, x) => t + x.monto, 0)) };
+    })
+    .filter((a) => a.items.length);
+  const comidas = empleados
+    .filter((e) => e.comidasGratis?.porSemana)
+    .map((e) => {
+      const items = repartoComidas(week, e).map((c) => ({ fecha: fechaDe(c.dia), monto: c.total, gratis: c.gratis, rebaja: c.rebaja }));
+      return { nombre: e.nombre, porSemana: e.comidasGratis!.porSemana, valor: e.comidasGratis!.valor, items, totalGratis: round2(items.reduce((t, x) => t + x.gratis, 0)) };
+    })
+    .filter((c) => c.items.length);
+  return { adelantos, comidas };
 }
 export interface Renglon {
   clave: "venta" | "tarjetas" | "transferencias" | "efectivo" | "gastos";
@@ -96,18 +136,47 @@ export function totalesDelDia(day: DayData | undefined) {
 }
 
 // dias: los 7 días de la semana con su fecha y lo capturado en tu app.
-export function compararSemana(dias: { dia: DayName; fecha: string; day: DayData | undefined }[], j: JohnsterDatos): DiaComparado[] {
+export function compararSemana(dias: DiaEntrada[], j: JohnsterDatos, empleados: EmpleadoEntry[] = []): DiaComparado[] {
   const desde = addDaysIso(dias[0].fecha, -1);
   const hasta = addDaysIso(dias[dias.length - 1].fecha, 1);
   // Gastos de Johnster de la semana (y un día antes y después, para
   // encontrar los que se capturaron en otro día).
   const jg = j.gastos.filter((g) => g.fecha >= desde && g.fecha <= hasta).map((g) => ({ ...g, usado: null as null | { fecha: string } }));
-  const mios = dias.flatMap((d) =>
-    (d.day?.gastos || []).map((g) => ({ fecha: d.fecha, concepto: g.concepto, monto: g.total, par: null as null | { j: (typeof jg)[number]; estado: EstadoGasto } }))
+  // Tus gastos como se suben a Johnster: los que se juntan en el domingo
+  // (adelantos de quien los junta y comidas gratis) salen de su día; de las
+  // comidas solo queda en su día lo que se rebaja.
+  const juntaAdelantos = new Set(empleados.filter((e) => e.juntarAdelantos).map((e) => e.id));
+  const conComidas = new Map(empleados.filter((e) => e.comidasGratis?.porSemana).map((e) => [e.id, e]));
+  const cierre = cierreSemana(dias, empleados);
+  const week = { days: Object.fromEntries(dias.map((d) => [d.dia, d.day || { meseros: [], gastos: [], transferencias: [], ventaApps: 0 }])) } as unknown as WeekData;
+  const rebajas = new Map([...conComidas.values()].flatMap((e) => repartoComidas(week, e).map((c) => [c.gastoId, c.rebaja] as const)));
+  type Mio = { fecha: string; concepto: string; monto: number; junto?: { fecha: string; monto: number }[]; par: null | { j: (typeof jg)[number]; estado: EstadoGasto } };
+  const mios: Mio[] = dias.flatMap((d) =>
+    (d.day?.gastos || []).flatMap((g): Mio[] => {
+      if (g.categoria === "nomina" && g.empleadoId && juntaAdelantos.has(g.empleadoId)) return [];
+      if (g.categoria === "comida_empleado" && rebajas.has(g.id)) {
+        const r = rebajas.get(g.id)!;
+        return r > 0 ? [{ fecha: d.fecha, concepto: g.concepto, monto: r, par: null }] : [];
+      }
+      return [{ fecha: d.fecha, concepto: g.concepto, monto: g.total, par: null }];
+    })
   );
+  const domingo = dias[dias.length - 1].fecha;
+  cierre.adelantos.forEach((a) => mios.push({ fecha: domingo, concepto: a.concepto, monto: a.total, junto: a.items.map((x) => ({ fecha: x.fecha, monto: x.monto })), par: null }));
+  cierre.comidas
+    .filter((c) => c.totalGratis > 0)
+    .forEach((c) =>
+      mios.push({
+        fecha: domingo,
+        concepto: `Comida empleado ${c.nombre} (gratis)`,
+        monto: c.totalGratis,
+        junto: c.items.filter((x) => x.gratis > 0).map((x) => ({ fecha: x.fecha, monto: x.gratis })),
+        par: null,
+      })
+    );
   // Emparejar en 3 pasadas: mismo día y mismo monto; mismo día, parecido y
   // monto cercano; día de al lado, mismo monto y parecido.
-  const pasadas: ((m: (typeof mios)[number], g: (typeof jg)[number]) => EstadoGasto | null)[] = [
+  const pasadas: ((m: Mio, g: (typeof jg)[number]) => EstadoGasto | null)[] = [
     (m, g) => (g.fecha === m.fecha && Math.abs(g.monto - m.monto) < 0.01 ? "igual" : null),
     (m, g) => (g.fecha === m.fecha && Math.abs(g.monto - m.monto) <= TOLERANCIA && parecidos(g.concepto, m.concepto) ? "otro-monto" : null),
     (m, g) => (diasEntre(g.fecha, m.fecha) === 1 && Math.abs(g.monto - m.monto) < 0.01 && parecidos(g.concepto, m.concepto) ? "otro-dia" : null),
@@ -149,7 +218,7 @@ export function compararSemana(dias: { dia: DayName; fecha: string; day: DayData
     mios
       .filter((m) => m.fecha === fecha)
       .forEach((m) => {
-        if (!m.par) gastos.push({ estado: "solo-tu", concepto: m.concepto, monto: m.monto });
+        if (!m.par) gastos.push({ estado: "solo-tu", concepto: m.concepto, monto: m.monto, junto: m.junto });
         else if (m.par.estado === "igual") iguales++;
         else if (m.par.estado === "otro-monto") gastos.push({ estado: "otro-monto", concepto: m.concepto, monto: m.monto, montoJohnster: m.par.j.monto });
         else gastos.push({ estado: "otro-dia", concepto: m.concepto, monto: m.monto, fechaJohnster: m.par.j.fecha });
@@ -159,8 +228,9 @@ export function compararSemana(dias: { dia: DayName; fecha: string; day: DayData
       else if (g.usado.fecha !== fecha) gastos.push({ estado: "otro-dia", concepto: g.concepto, monto: g.monto, fechaTuya: g.usado.fecha });
     });
     if (ing || jGastosDia.length) {
-      const dif = round2(gastosJ - t.gastos);
-      const r: Renglon = { clave: "gastos", titulo: "Gastos en efectivo", tuyo: t.gastos, johnster: gastosJ, dif };
+      const tuyos = sumar(mios.filter((m) => m.fecha === fecha).map((m) => m.monto));
+      const dif = round2(gastosJ - tuyos);
+      const r: Renglon = { clave: "gastos", titulo: "Gastos en efectivo", tuyo: tuyos, johnster: gastosJ, dif };
       todos.push(r);
       if (Math.abs(dif) > 0.009) renglones.push(r);
     }

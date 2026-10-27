@@ -540,7 +540,19 @@ estando en Nómina te regresa al menú de Equipo):
   inactivos (ya no trabajan aquí) salen al final en "Inactivos", atenuados,
   y se conserva todo su historial (horarios, nómina), pero ya no salen en
   "Agregar empleado" de Horarios, no se precargan en una semana nueva y no
-  entran en Reglas del personal ni en el horario sugerido. Áreas y puestos son catálogos editables — arrancan con Gerencia
+  entran en Reglas del personal ni en el horario sugerido. También
+  **Comidas gratis por semana** (−/+) y el **valor de cada comida gratis**
+  (`src/lib/comidasGratis.ts`): de sus gastos "Comida empleado" de la
+  semana, primero son gratis las de ese valor o menos (en orden de los
+  días); si le quedan comidas gratis, a las de más se les quita ese valor y
+  solo se rebaja lo demás. En su nómina cada comida sigue saliendo, pero
+  las gratis dicen "$0 · gratis" (y las parciales "($50 gratis)"); en
+  Cuadrar, el paso **Cierre de la semana** (antes de los gastos) muestra
+  cuáles son gratis y cuáles se rebajan, y la comparación con Johnster junta
+  las gratis en un solo gasto "Comida empleado … (gratis)" el domingo
+  (etiqueta "Junto", con el desglose), como se sube al bot; las que se
+  rebajan quedan en su día por lo que se rebaja. Nada se mueve de su día en
+  el corte. Áreas y puestos son catálogos editables — arrancan con Gerencia
   (Gerente, Subgerente), Piso (Bar tender, Mesero, Calidad, Capitán) y
   Cocina (Jefe de cocina, Cocinero) como punto de partida (el puesto que
   antes se llamaba "Barra" se renombró solo a "Bar tender" — mismo puesto,

@@ -347,6 +347,14 @@ export const NOVEDADES: Novedad[] = [
     visual: "autocompletar",
   },
   {
+    id: "comidas-gratis",
+    fecha: "2026-10-27T05:48:00Z",
+    seccion: "nomina",
+    titulo: "Comidas gratis",
+    texto: "Si tienes comidas gratis a la semana, en tu nómina siguen apareciendo todas tus comidas, pero las gratis salen en **$0 · gratis** y no se te rebajan.",
+    visual: "puntos",
+  },
+  {
     id: "reglas-dias-abre",
     fecha: "2026-10-27T04:00:00Z",
     seccion: "horarios",

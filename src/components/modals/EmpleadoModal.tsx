@@ -43,6 +43,8 @@ export function EmpleadoModal({
   const [sueldoDiarioText, setSueldoDiarioText] = useState(editing?.sueldoDiario ? String(editing.sueldoDiario) : "");
   const [puestoId, setPuestoId] = useState(editing?.puestoId || "");
   const [activo, setActivo] = useState(!editing?.inactivo);
+  const [comidasGratis, setComidasGratis] = useState(editing?.comidasGratis?.porSemana || 0);
+  const [valorComidaText, setValorComidaText] = useState(String(editing?.comidasGratis?.valor || 50));
   const [nuevoPuestoNombre, setNuevoPuestoNombre] = useState("");
   const [nuevoPuestoAreaId, setNuevoPuestoAreaId] = useState("");
   const [nuevaAreaNombre, setNuevaAreaNombre] = useState("");
@@ -175,6 +177,7 @@ export function EmpleadoModal({
         puestoId: finalPuestoId,
         staffProfileId,
         inactivo: activo ? undefined : true,
+        comidasGratis: comidasGratis > 0 ? { porSemana: comidasGratis, valor: sumFromText(valorComidaText) || 50 } : undefined,
         ...(quitarFoto ? { foto: undefined } : {}),
       },
       nuevaAreaEntry,
@@ -224,6 +227,32 @@ export function EmpleadoModal({
           </span>
         </div>
       )}
+      <div className="empleado-comidas">
+        <div className="empleado-comidas-fila">
+          <span>Comidas gratis por semana</span>
+          <span className="rg-paso">
+            <button type="button" onClick={() => setComidasGratis(Math.max(0, comidasGratis - 1))} aria-label="Menos">
+              −
+            </button>
+            <b>{comidasGratis}</b>
+            <button type="button" onClick={() => setComidasGratis(Math.min(7, comidasGratis + 1))} aria-label="Más">
+              +
+            </button>
+          </span>
+        </div>
+        {comidasGratis > 0 && (
+          <>
+            <div className="empleado-comidas-fila">
+              <span>Valor de cada comida gratis</span>
+              <input className="text-input empleado-comidas-valor" inputMode="decimal" value={valorComidaText} onChange={(e) => setValorComidaText(e.target.value)} />
+            </div>
+            <span className="hint">
+              De sus gastos "Comida empleado" de la semana, primero son gratis las de {money(sumFromText(valorComidaText) || 50)} o menos; si le
+              quedan comidas gratis, a las de más se les quita ese valor y solo se rebaja lo demás. En su nómina las gratis salen en $0.
+            </span>
+          </>
+        )}
+      </div>
       <Field label="Puesto (opcional)">
         <select className="text-input" value={puestoId} onChange={(e) => setPuestoId(e.target.value)}>
           <option value="">Sin puesto</option>

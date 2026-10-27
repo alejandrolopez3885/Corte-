@@ -2473,6 +2473,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           titulo={`Semana ${activeWeek + 1} · ${weekStartDate ? formatWeekRange(weekStartDate) : month.label}`}
           dias={DAYS.map((d) => ({ dia: d, fecha: dateForDay(activeMonth, activeWeek, month, d), day: month.weeks[activeWeek]?.days?.[d] }))}
           cuadre={month.weeks[activeWeek]?.cuadre}
+          empleados={data.empleados}
           onGuardarCuadre={(c) => guardarCuadre(activeMonth, activeWeek, c)}
           onIrADia={(d) => setActiveDay(d)}
           onClose={() => setModal(null)}

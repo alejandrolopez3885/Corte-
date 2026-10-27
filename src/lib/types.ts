@@ -46,6 +46,11 @@ export interface EmpleadoEntry {
   // Ya no trabaja aquí: se conserva su historial (horarios, nómina), pero
   // no sale para agregarlo a un horario ni en el horario sugerido.
   inactivo?: boolean;
+  // Comidas gratis por semana (ver lib/comidasGratis.ts).
+  comidasGratis?: { porSemana: number; valor: number };
+  // En Cuadrar, sus gastos de Nómina de la semana se comparan juntos como
+  // uno solo el domingo. Sin pantalla: se activa en la base de datos.
+  juntarAdelantos?: boolean;
   // Si tiene una cuenta de equipo con PIN dada de alta desde aquí, el id
   // de su profile — ver staffAccounts.ts. Sin esto, esta persona no tiene
   // acceso a la app (es normal, la mayoría no lo necesita).
@@ -208,6 +213,8 @@ export interface NominaDescuento {
   // se edita o elimina desde el gasto en Corte. Sin este campo (u
   // "manual") es un descuento capturado a mano en la propia Nómina.
   origen?: "manual" | "corte";
+  // Comida gratis (ver lib/comidasGratis.ts): lo que no se rebaja.
+  gratis?: number;
 }
 
 // Percepciones extra de una sola vez — finiquitos, bonos, etc. Igual que
