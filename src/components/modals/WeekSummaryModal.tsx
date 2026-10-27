@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { supabase } from "../../lib/supabaseClient";
+import { TOLERANCIA, type JohnsterDatos } from "../../lib/cuadrar";
 import { Sheet, Field, SumInput } from "../ui";
-import { computeWeekSummary, dateForDay, formatShortDayDate, formatWeekRange, money, resolveWeekStartDate, round2, sumFromText } from "../../lib/dataModel";
+import { addDaysIso, computeWeekSummary, dateForDay, formatShortDayDate, formatWeekRange, money, resolveWeekStartDate, round2, sumFromText } from "../../lib/dataModel";
 import { DAY_SHORT } from "../../lib/types";
 import type { MonthData, WeekData } from "../../lib/types";
 
@@ -48,6 +50,25 @@ export function WeekSummaryModal({
   const hasReal = textoVisible.trim() !== "";
   const realValue = sumFromText(textoVisible);
   const diff = round2(realValue - s.efectivoRecibido);
+
+  // "Efectivo Disponible" de Johnster en esta semana, como lo calcula el bot:
+  // efectivo de los cortes − gastos en efectivo (solo si está conectado).
+  const [johnster, setJohnster] = useState<JohnsterDatos | null>(null);
+  useEffect(() => {
+    supabase
+      .from("johnster_datos")
+      .select("sucursal, ingresos, gastos, actualizado_en, error")
+      .maybeSingle()
+      .then(({ data }) => setJohnster((data as JohnsterDatos | null) ?? null));
+  }, []);
+  const hasta = addDaysIso(startDate, 6);
+  const enSemana = (f: string) => f >= startDate && f <= hasta;
+  const jIngresos = johnster?.ingresos.filter((i) => enSemana(i.fecha)) || [];
+  const jVentas = round2(jIngresos.reduce((n, i) => n + i.efectivo, 0));
+  const jGastos = round2((johnster?.gastos || []).filter((g) => enSemana(g.fecha)).reduce((n, g) => n + g.monto, 0));
+  const jDisponible = round2(jVentas - jGastos);
+  const tuVentas = round2(s.efectivoRecibido + s.gastos);
+  const difJ = round2(jDisponible - s.efectivoRecibido);
 
   return (
     <Sheet title={weekLabel} onClose={onClose}>
@@ -101,6 +122,33 @@ export function WeekSummaryModal({
           <strong>{money(s.efectivoRecibido)}</strong>
         </div>
       </div>
+      {johnster?.actualizado_en && jIngresos.length > 0 && (
+        <div className={`jd-box ${Math.abs(difJ) <= TOLERANCIA ? "ok" : "mal"}`}>
+          <div className="jd-head">
+            <span>Efectivo disponible en Johnster</span>
+            <strong>{money(jDisponible)}</strong>
+          </div>
+          <span className="jd-estado">
+            {Math.abs(difJ) <= TOLERANCIA
+              ? "✓ Igual que tu efectivo recibido"
+              : `${difJ > 0 ? "Johnster tiene" : "Tu app tiene"} ${money(Math.abs(difJ))} más${jIngresos.length < 7 ? ` · el bot tiene ${jIngresos.length} de 7 días` : ""}`}
+          </span>
+          <div className="jd-tabla">
+            <span />
+            <span>Tu app</span>
+            <span>Johnster</span>
+            <span>Efectivo de ventas</span>
+            <span>{money(tuVentas)}</span>
+            <span className={Math.abs(jVentas - tuVentas) > TOLERANCIA ? "dif" : ""}>{money(jVentas)}</span>
+            <span>− Gastos en efectivo</span>
+            <span>{money(s.gastos)}</span>
+            <span className={Math.abs(jGastos - s.gastos) > TOLERANCIA ? "dif" : ""}>{money(jGastos)}</span>
+            <span>= Efectivo</span>
+            <span>{money(s.efectivoRecibido)}</span>
+            <span>{money(jDisponible)}</span>
+          </div>
+        </div>
+      )}
       <p className="hint">
         Efectivo recibido = venta de meseros − tarjetas − gastos − transferencias de la semana. Las propinas se muestran aparte y no se
         suman aquí.

@@ -2320,3 +2320,18 @@ button.cj-seccion { cursor: pointer; }
 .tr-bot.tr-mal { color: var(--bad); font-weight: 600; }
 .tr-app { display: flex; align-items: flex-end; gap: 10px; }
 .tr-app .tr-chip { margin-bottom: 12px; }
+
+/* Resumen semanal: efectivo disponible en Johnster */
+.jd-box { display: flex; flex-direction: column; gap: 6px; border-radius: 14px; padding: 12px 14px; border: 1px solid var(--border); background: var(--surface); }
+.jd-box.ok { border-left: 4px solid var(--good); }
+.jd-box.mal { border-left: 4px solid var(--bad); }
+.jd-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; }
+.jd-head strong { font-size: 17px; }
+.jd-estado { font-size: 12.5px; font-weight: 600; }
+.jd-box.ok .jd-estado { color: var(--good); }
+.jd-box.mal .jd-estado { color: var(--bad); }
+.jd-tabla { display: grid; grid-template-columns: 1fr auto auto; gap: 4px 14px; font-size: 12.5px; color: var(--ink-soft); margin-top: 4px; }
+.jd-tabla span:nth-child(3n + 2), .jd-tabla span:nth-child(3n) { text-align: right; color: var(--ink); }
+.jd-tabla span:nth-child(-n + 3) { font-size: 11px; color: var(--ink-soft) !important; }
+.jd-tabla span:nth-last-child(-n + 3) { font-weight: 600; border-top: 1px solid var(--border); padding-top: 4px; }
+.jd-tabla .dif { color: var(--bad) !important; font-weight: 600; }
