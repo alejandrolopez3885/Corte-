@@ -16,7 +16,8 @@ el efectivo calculado se ve mientras se escribe. Debajo de "Efectivo
 recibido (calculado)" sale **Efectivo disponible en Johnster** (solo el
 dueño, si Johnster está conectado): igual que la tarjeta "Efectivo
 Disponible" del bot, el efectivo de los cortes de la semana menos sus
-gastos en efectivo (de `johnster_datos`), con "✓ Igual que tu efectivo
+gastos en efectivo (de `johnster_datos`; "Revisar de nuevo en Johnster ↻"
+vuelve a traer los datos del bot), con "✓ Igual que tu efectivo
 recibido" o cuánto más tiene cada uno ($5 de tolerancia; avisa si al bot
 le faltan días) y una tablita Tu app vs Johnster — efectivo de ventas,
 gastos en efectivo y efectivo — con lo que no cuadra en rojo. En la tabla

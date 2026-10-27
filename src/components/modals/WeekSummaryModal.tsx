@@ -54,12 +54,20 @@ export function WeekSummaryModal({
   // "Efectivo Disponible" de Johnster en esta semana, como lo calcula el bot:
   // efectivo de los cortes − gastos en efectivo (solo si está conectado).
   const [johnster, setJohnster] = useState<JohnsterDatos | null>(null);
+  const [actualizando, setActualizando] = useState(false);
+  async function cargarJohnster() {
+    const { data } = await supabase.from("johnster_datos").select("sucursal, ingresos, gastos, actualizado_en, error").maybeSingle();
+    setJohnster((data as JohnsterDatos | null) ?? null);
+  }
+  // "Revisar de nuevo en Johnster": vuelve a traer los datos del bot.
+  async function actualizarJohnster() {
+    setActualizando(true);
+    await supabase.functions.invoke("johnster", { body: {} });
+    await cargarJohnster();
+    setActualizando(false);
+  }
   useEffect(() => {
-    supabase
-      .from("johnster_datos")
-      .select("sucursal, ingresos, gastos, actualizado_en, error")
-      .maybeSingle()
-      .then(({ data }) => setJohnster((data as JohnsterDatos | null) ?? null));
+    cargarJohnster();
   }, []);
   const hasta = addDaysIso(startDate, 6);
   const enSemana = (f: string) => f >= startDate && f <= hasta;
@@ -134,6 +142,12 @@ export function WeekSummaryModal({
           <div className="jd-head">
             <span>Efectivo disponible en Johnster</span>
             <strong>{money(jDisponible)}</strong>
+          </div>
+          <div className="tr-sync">
+            <span>{johnster.sucursal || "Johnster"}</span>
+            <button type="button" className="link-btn" disabled={actualizando} onClick={actualizarJohnster}>
+              {actualizando ? "Trayendo datos de Johnster…" : "Revisar de nuevo en Johnster ↻"}
+            </button>
           </div>
           <span className="jd-estado">
             {Math.abs(difJ) <= TOLERANCIA
