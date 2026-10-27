@@ -347,6 +347,14 @@ export const NOVEDADES: Novedad[] = [
     visual: "autocompletar",
   },
   {
+    id: "guardar-corte-comprobantes",
+    fecha: "2026-10-27T09:00:00Z",
+    seccion: "corte",
+    titulo: "Guardar corte revisa comprobantes",
+    texto: "Al guardar el corte, la app también revisa en el bot que estén el **comprobante bancario** de tarjetas y el de cada gasto en efectivo. Si falta alguno, súbelo y toca **Revisar de nuevo**.",
+    visual: "guardarCorte",
+  },
+  {
     id: "guardar-corte-johnster",
     fecha: "2026-10-27T07:54:00Z",
     seccion: "corte",

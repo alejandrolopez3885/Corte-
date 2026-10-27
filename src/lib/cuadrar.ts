@@ -15,6 +15,9 @@ export interface JohnsterIngreso {
   tarjetas: number;
   transferencias: number;
   efectivo: number;
+  tarjetaDebito?: number;
+  tarjetaCredito?: number;
+  comprobanteBancario?: boolean; // comprobante del banco (tarjetas) subido al bot
 }
 export interface JohnsterGasto {
   id: string;
@@ -22,6 +25,7 @@ export interface JohnsterGasto {
   monto: number;
   concepto: string;
   destino: string;
+  comprobante?: boolean; // ticket subido al bot
 }
 export interface JohnsterDatos {
   sucursal: string | null;

@@ -43,7 +43,8 @@ sale como "Solo tú" o "Solo Johnster". Solo compara: no cambia nada ni en
 la app ni en Johnster. Los datos los trae la función de Supabase
 `johnster` (`supabase/functions/johnster`, ver
 [`supabase/migration_021_johnster.sql`](./supabase/migration_021_johnster.sql))
-a la tabla `johnster_datos`: ingresos por día y gastos en efectivo de los
+a la tabla `johnster_datos`: ingresos por día (con débito, crédito y si
+tiene comprobante bancario) y gastos en efectivo (con si tienen comprobante) de los
 últimos 120 días de la sucursal del usuario (hoy Johnster Metroplex),
 cada mañana a las 7:05 con pg_cron y cuando tocas "Actualizado hace… ↻".
 La primera vez la hoja pide **Conectar con Johnster** (usuario y
@@ -801,10 +802,23 @@ estando en Nómina te regresa al menú de Equipo):
   adelantos juntos y las comidas gratis del domingo) y "Dejar así y anotar
   por qué" (las mismas notas de Cuadrar). No deja guardar hasta que todo
   cuadre o esté anotado. Solo el dueño tiene "Guardar sin revisar Johnster
-  (emergencia)". Ya revisado sale "✓ Todo cuadra con Johnster" y luego
-  "¿Seguro guardar el corte?" con un renglón con casilla por cada total — tarjetas,
-  transferencias, gastos, venta (total) y apps — y uno más: "Ya subí al
-  bot los comprobantes de gastos, bancarios y transferencias, y la venta".
+  (emergencia)". Si todo cuadra, revisa los **comprobantes en el bot**:
+  el comprobante bancario de tarjetas (si hubo tarjetas ese día) y el de
+  cada gasto en efectivo del día (las transferencias no llevan). Si falta
+  alguno sale "Faltan comprobantes en el bot" con la lista ("Falta ·
+  Comprobante bancario de tarjetas", "Sin comprobante · [gasto]"),
+  "Revisar de nuevo ↻" y "Dejar así y anotar por qué" (nota
+  `comprobantes:[fecha]`). Luego "¿Seguro guardar el corte?" muestra
+  arriba el cuadro verde **Revisado en el bot**: hay corte del día en el
+  bot, tarjetas coinciden (si el bot separa **débito y crédito**, se
+  suman — los dos juntos son el total del banco — y se muestra el
+  desglose), comprobante bancario subido, cuántos gastos en efectivo hay
+  en el bot y que todos tienen comprobante, y que venta, transferencias,
+  efectivo y gastos cuadran; lo que se dejó anotado sale en ámbar con la
+  nota. Abajo, un renglón con casilla por cada total — tarjetas,
+  transferencias, gastos, venta (total) y apps. Solo si se guarda sin
+  revisar Johnster sale además la casilla "Ya subí al bot los
+  comprobantes de gastos, bancarios y transferencias, y la venta".
   El botón "Sí, todo coincide — guardar corte" solo se activa con todas
   las casillas marcadas. Ya guardado, arriba de los totales sale "Corte
   guardado por [nombre] el [fecha] a las [hora]". Para el personal el día

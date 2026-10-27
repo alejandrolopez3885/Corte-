@@ -115,7 +115,10 @@ export function GuardarCorteModal({
       else n.add(k);
       return n;
     });
-  const todos = renglones.every((r) => marcados.has(r.key)) && marcados.has("bot");
+  // Con la revisión de Johnster, el "ya subí todo al bot" lo comprueba la
+  // app; solo se palomea a mano si se guarda sin revisar.
+  const revisadoEnBot = !sinRevisar && !!rev.datos?.ingresos.some((i) => i.fecha === fecha);
+  const todos = renglones.every((r) => marcados.has(r.key)) && (marcados.has("bot") || revisadoEnBot);
 
   if (faltan.length > 0) {
     return (
@@ -263,12 +266,98 @@ export function GuardarCorteModal({
     );
   }
 
+  // Comprobantes en el bot: el bancario de tarjetas y el de cada gasto en
+  // efectivo del día (las transferencias no llevan).
+  const ing = datos?.ingresos.find((i) => i.fecha === fecha);
+  const gastosBot = (datos?.gastos || []).filter((g) => g.fecha === fecha);
+  const sinComprobante = gastosBot.filter((g) => g.comprobante === false);
+  const faltaBancario = !!ing && ing.tarjetas > 0 && ing.comprobanteBancario === false;
+  const claveComp = `comprobantes:${fecha}`;
+  if (!sinRevisar && (faltaBancario || sinComprobante.length > 0) && notas[claveComp] === undefined) {
+    return (
+      <Sheet title="Faltan comprobantes en el bot" onClose={onClose}>
+        <p className="hint">Todo cuadra, pero falta subir esto al bot. Súbelo y toca Revisar de nuevo.</p>
+        <div className="gc-j">
+          {faltaBancario && (
+            <div className="gc-j-gasto">
+              <span>
+                <i>Falta</i>Comprobante bancario de tarjetas<small>El cierre de la terminal de este día ({money(ing!.tarjetas)})</small>
+              </span>
+            </div>
+          )}
+          {sinComprobante.map((g) => (
+            <div key={g.id} className="gc-j-gasto">
+              <span>
+                <i>Sin comprobante</i>
+                {g.concepto}
+                <small>Sube su ticket en el bot</small>
+              </span>
+              <span>{money(g.monto)}</span>
+            </div>
+          ))}
+          {escribiendo?.clave === claveComp ? (
+            <div className="gc-j-escribir">
+              <textarea className="text-input" rows={2} placeholder="¿Por qué no hay comprobante?" value={escribiendo.texto} onChange={(e) => setEscribiendo({ clave: claveComp, texto: e.target.value })} autoFocus />
+              <button
+                className="btn-primary"
+                disabled={!escribiendo.texto.trim()}
+                onClick={() => {
+                  onNota(claveComp, escribiendo.texto.trim());
+                  setEscribiendo(null);
+                }}
+              >
+                Guardar nota
+              </button>
+            </div>
+          ) : (
+            <button className="link-btn" onClick={() => setEscribiendo({ clave: claveComp, texto: "" })}>
+              ✎ Dejar así y anotar por qué
+            </button>
+          )}
+        </div>
+        <button className="btn-primary" onClick={revisar}>
+          Revisar de nuevo ↻
+        </button>
+        <button className="link-btn gc-volver" onClick={onClose}>
+          Volver
+        </button>
+        {emergencia}
+      </Sheet>
+    );
+  }
+
   return (
     <Sheet title="¿Seguro guardar el corte?" onClose={onClose}>
-      {sinRevisar ? (
+      {sinRevisar || !ing ? (
         <p className="gc-aviso">Se guardará sin revisar con Johnster. Cuádralo después en ⚖︎ Cuadrar.</p>
       ) : (
-        <p className="gc-ok">✓ Todo cuadra con Johnster (venta, tarjetas, transferencias, efectivo y gastos).</p>
+        <div className="gc-revision">
+          <span className="gc-revision-titulo">Revisado en el bot</span>
+          <div>✓ Hay corte del {nombreDiaJ(fecha)} en el bot</div>
+          <div>
+            ✓ Tarjetas coinciden: {money(totals.tarjetas)}
+            {ing.tarjetaCredito ? (
+              <small>
+                {" "}
+                (bot: débito {money(ing.tarjetaDebito || 0)} + crédito {money(ing.tarjetaCredito)})
+              </small>
+            ) : null}
+          </div>
+          {faltaBancario ? (
+            <div className="anotado">✎ Falta el comprobante bancario (anotado)</div>
+          ) : (
+            <div>{ing.tarjetas > 0 ? "✓ Comprobante bancario subido" : "✓ Sin tarjetas este día"}</div>
+          )}
+          {sinComprobante.length ? (
+            <div className="anotado">
+              ✎ {sinComprobante.length} de {gastosBot.length} {gastosBot.length === 1 ? "gasto" : "gastos"} sin comprobante (anotado)
+            </div>
+          ) : (
+            <div>✓ {gastosBot.length} {gastosBot.length === 1 ? "gasto" : "gastos"} en efectivo en el bot, todos con comprobante</div>
+          )}
+          {(faltaBancario || sinComprobante.length > 0) && <small className="anotado">Nota: “{notas[claveComp]}”</small>}
+          <div>✓ Venta, transferencias, efectivo y gastos cuadran</div>
+        </div>
       )}
       <p className="hint">
         Revisa que cada total coincida y márcalo. Al guardar, el corte <strong>ya no se podrá editar</strong>.
@@ -281,13 +370,13 @@ export function GuardarCorteModal({
             <strong>{money(r.monto)}</strong>
           </label>
         ))}
-        <label className="gc-check gc-bot">
+        {(sinRevisar || !ing) && <label className="gc-check gc-bot">
           <input type="checkbox" checked={marcados.has("bot")} onChange={() => toggle("bot")} />
           <span>
             Ya subí al bot los comprobantes de <strong>gastos</strong>, <strong>bancarios</strong> y{" "}
             <strong>transferencias</strong>, y la <strong>venta</strong>.
           </span>
-        </label>
+        </label>}
       </div>
       <button className="btn-primary" disabled={!todos} onClick={onGuardar}>
         <Lock size={16} /> Sí, todo coincide — guardar corte

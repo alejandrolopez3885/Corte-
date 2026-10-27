@@ -52,7 +52,11 @@ async function traer(usuario: string, password: string) {
       venta: pesos(i.totalVenta),
       ventaSala: pesos(i.ventaJohnster),
       apps: pesos(i.totalApps),
+      // Débito + crédito: los dos juntos son el total del banco.
       tarjetas: pesos(Number(i.tarjetaDebito || 0) + Number(i.tarjetaCredito || 0)),
+      tarjetaDebito: pesos(i.tarjetaDebito),
+      tarjetaCredito: pesos(i.tarjetaCredito),
+      comprobanteBancario: !!i.comprobante,
       transferencias: pesos(i.transferencia),
       efectivo: pesos(i.efectivo),
     }));
@@ -64,6 +68,7 @@ async function traer(usuario: string, password: string) {
       monto: pesos(e.amount),
       concepto: String(e.concept || ""),
       destino: String(e.gastoDestino || e.category || ""),
+      comprobante: !!e.receiptUrl,
     }));
   return { sucursal, ingresos, gastos };
 }
