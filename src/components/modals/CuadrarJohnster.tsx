@@ -61,6 +61,7 @@ export function CuadrarJohnster({
   empleados,
   onGuardarCuadre,
   onIrADia,
+  onMoverGasto,
   onClose,
 }: {
   titulo: string;
@@ -69,6 +70,8 @@ export function CuadrarJohnster({
   empleados: EmpleadoEntry[];
   onGuardarCuadre: (c: CuadreSemana | undefined) => void;
   onIrADia: (dia: DayName) => void;
+  // "Otro día": pasa tu gasto a la fecha en que está en Johnster.
+  onMoverGasto: (desde: string, hasta: string, gastoId: string) => void;
   onClose: () => void;
 }) {
   const [datos, setDatos] = useState<JohnsterDatos | null | undefined>(undefined);
@@ -495,7 +498,7 @@ export function CuadrarJohnster({
                 {s.nombre}. Corrige donde esté mal y luego revisa de nuevo.
               </p>
             )}
-            {sc === "gastos" && <ListaGastos d={d} />}
+            {sc === "gastos" && <ListaGastos d={d} dias={dias} onMover={onMoverGasto} />}
           </>
         )}
         {sync}
@@ -566,7 +569,26 @@ export function CuadrarJohnster({
   );
 }
 
-function ListaGastos({ d }: { d: DiaComparado }) {
+function ListaGastos({
+  d,
+  dias,
+  onMover,
+}: {
+  d: DiaComparado;
+  dias: { fecha: string; day: DayData | undefined }[];
+  onMover: (desde: string, hasta: string, gastoId: string) => void;
+}) {
+  // Solo cambia la fecha en tu corte (Johnster no se toca). Si el gasto era
+  // del corte de un mesero, sale de ese corte.
+  const mover = (g: DiaComparado["gastos"][number]) => {
+    if (g.estado !== "otro-dia" || !g.gastoId) return null;
+    const desde = g.fechaJohnster ? d.fecha : g.fechaTuya!;
+    const hasta = g.fechaJohnster || d.fecha;
+    // Solo dentro de la semana: una semana ya cerrada no se toca.
+    if (!dias.some((x) => x.fecha === desde) || !dias.some((x) => x.fecha === hasta)) return null;
+    const mesero = dias.find((x) => x.fecha === desde)?.day?.gastos.find((x) => x.id === g.gastoId)?.meseroNombre;
+    return { desde, hasta, gastoId: g.gastoId, mesero };
+  };
   const ayuda = (g: DiaComparado["gastos"][number]) =>
     g.estado === "solo-tu"
       ? "Súbelo al bot como gasto en efectivo"
@@ -592,6 +614,17 @@ function ListaGastos({ d }: { d: DiaComparado }) {
             </small>
           </span>
           <b>{pesos(g.monto)}</b>
+          {(() => {
+            const m = mover(g);
+            return (
+              m && (
+                <button type="button" className="cj-mover" onClick={() => onMover(m.desde, m.hasta, m.gastoId)}>
+                  Cambiar a {nombreDia(m.hasta)} {Number(m.hasta.slice(8))} en mi corte
+                  {m.mesero && <small>Se quita del corte de {m.mesero} del {nombreDia(m.desde)}: le sube su efectivo a entregar</small>}
+                </button>
+              )
+            );
+          })()}
         </div>
       ))}
     </div>

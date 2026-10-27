@@ -47,6 +47,7 @@ export interface GastoComparado {
   montoJohnster?: number;
   fechaJohnster?: string; // "otro-dia": en qué día está en Johnster
   fechaTuya?: string; // "otro-dia" visto desde el día de Johnster
+  gastoId?: string; // "otro-dia": tu gasto, para cambiarlo de fecha
   junto?: { fecha: string; monto: number }[]; // gasto que junta varios de la semana
 }
 
@@ -145,7 +146,7 @@ export function compararSemana(dias: DiaEntrada[], j: JohnsterDatos, empleados: 
   const hasta = addDaysIso(dias[dias.length - 1].fecha, 1);
   // Gastos de Johnster de la semana (y un día antes y después, para
   // encontrar los que se capturaron en otro día).
-  const jg = j.gastos.filter((g) => g.fecha >= desde && g.fecha <= hasta).map((g) => ({ ...g, usado: null as null | { fecha: string } }));
+  const jg = j.gastos.filter((g) => g.fecha >= desde && g.fecha <= hasta).map((g) => ({ ...g, usado: null as null | { fecha: string; gastoId?: string } }));
   // Tus gastos como se suben a Johnster: los que se juntan en el domingo
   // (adelantos de quien los junta y comidas gratis) salen de su día; de las
   // comidas solo queda en su día lo que se rebaja.
@@ -154,15 +155,15 @@ export function compararSemana(dias: DiaEntrada[], j: JohnsterDatos, empleados: 
   const cierre = cierreSemana(dias, empleados);
   const week = { days: Object.fromEntries(dias.map((d) => [d.dia, d.day || { meseros: [], gastos: [], transferencias: [], ventaApps: 0 }])) } as unknown as WeekData;
   const rebajas = new Map([...conComidas.values()].flatMap((e) => repartoComidas(week, e).map((c) => [c.gastoId, c.rebaja] as const)));
-  type Mio = { fecha: string; concepto: string; monto: number; junto?: { fecha: string; monto: number }[]; par: null | { j: (typeof jg)[number]; estado: EstadoGasto } };
+  type Mio = { fecha: string; gastoId?: string; concepto: string; monto: number; junto?: { fecha: string; monto: number }[]; par: null | { j: (typeof jg)[number]; estado: EstadoGasto } };
   const mios: Mio[] = dias.flatMap((d) =>
     (d.day?.gastos || []).flatMap((g): Mio[] => {
       if (g.categoria === "nomina" && g.empleadoId && juntaAdelantos.has(g.empleadoId)) return [];
       if (g.categoria === "comida_empleado" && rebajas.has(g.id)) {
         const r = rebajas.get(g.id)!;
-        return r > 0 ? [{ fecha: d.fecha, concepto: g.concepto, monto: r, par: null }] : [];
+        return r > 0 ? [{ fecha: d.fecha, gastoId: g.id, concepto: g.concepto, monto: r, par: null }] : [];
       }
-      return [{ fecha: d.fecha, concepto: g.concepto, monto: g.total, par: null }];
+      return [{ fecha: d.fecha, gastoId: g.id, concepto: g.concepto, monto: g.total, par: null }];
     })
   );
   const domingo = dias[dias.length - 1].fecha;
@@ -193,7 +194,7 @@ export function compararSemana(dias: DiaEntrada[], j: JohnsterDatos, empleados: 
         const estado = pasada(m, g);
         if (estado) {
           m.par = { j: g, estado };
-          g.usado = { fecha: m.fecha };
+          g.usado = { fecha: m.fecha, gastoId: m.gastoId };
           break;
         }
       }
@@ -225,11 +226,11 @@ export function compararSemana(dias: DiaEntrada[], j: JohnsterDatos, empleados: 
         if (!m.par) gastos.push({ estado: "solo-tu", concepto: m.concepto, monto: m.monto, junto: m.junto });
         else if (m.par.estado === "igual") iguales++;
         else if (m.par.estado === "otro-monto") gastos.push({ estado: "otro-monto", concepto: m.concepto, monto: m.monto, montoJohnster: m.par.j.monto });
-        else gastos.push({ estado: "otro-dia", concepto: m.concepto, monto: m.monto, fechaJohnster: m.par.j.fecha });
+        else gastos.push({ estado: "otro-dia", concepto: m.concepto, monto: m.monto, fechaJohnster: m.par.j.fecha, gastoId: m.gastoId });
       });
     jg.filter((g) => g.fecha === fecha).forEach((g) => {
       if (!g.usado) gastos.push({ estado: "solo-johnster", concepto: g.concepto, monto: g.monto });
-      else if (g.usado.fecha !== fecha) gastos.push({ estado: "otro-dia", concepto: g.concepto, monto: g.monto, fechaTuya: g.usado.fecha });
+      else if (g.usado.fecha !== fecha) gastos.push({ estado: "otro-dia", concepto: g.concepto, monto: g.monto, fechaTuya: g.usado.fecha, gastoId: g.usado.gastoId });
     });
     if (ing || jGastosDia.length) {
       const tuyos = sumar(mios.filter((m) => m.fecha === fecha).map((m) => m.monto));

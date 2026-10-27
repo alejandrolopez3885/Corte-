@@ -1174,6 +1174,35 @@ export default function CortesApp({ profile }: { profile: Profile }) {
     persist(next);
   }
 
+  // Cuadrar › gasto "Otro día": lo pasa a la fecha en que está en Johnster
+  // (solo dentro de la misma semana). Igual que mover en Control de gastos: si era
+  // del corte de un mesero, se le regresa a ese corte; y deja de contar como
+  // parte de la apertura.
+  function moverGastoPorFecha(desde: string, hasta: string, id: string) {
+    if (!data || desde === hasta) return;
+    const next = structuredClone(data);
+    const a = ubicarDiaPorFecha(next.months, desde);
+    const b = ubicarDiaPorFecha(next.months, hasta);
+    if (!a || !b) return;
+    const origenDia = next.months[a.monthKey].weeks[a.weekIndex].days[a.dia];
+    const idx = origenDia.gastos.findIndex((g) => g.id === id);
+    if (idx < 0) return;
+    const [gasto] = origenDia.gastos.splice(idx, 1);
+    if (gasto.meseroCutId) {
+      const cut = origenDia.meseros.find((m) => m.id === gasto.meseroCutId);
+      if (cut) {
+        cut.gastosTotal = round2(cut.gastosTotal - gasto.total);
+        cut.total = round2(cut.total + gasto.total);
+      }
+      gasto.meseroCutId = undefined;
+      gasto.meseroNombre = undefined;
+      gasto.origen = "manual";
+    }
+    if (origenDia.apertura) origenDia.apertura.ids = origenDia.apertura.ids.filter((x) => x !== id);
+    next.months[b.monthKey].weeks[b.weekIndex].days[b.dia].gastos.push(gasto);
+    persist(next);
+  }
+
   // Cuadrar con Johnster: avance, notas y sello de la semana.
   function guardarCuadre(monthKey: string, weekIndex: number, cuadre: CuadreSemana | undefined) {
     if (!data) return;
@@ -2491,6 +2520,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           empleados={data.empleados}
           onGuardarCuadre={(c) => guardarCuadre(activeMonth, activeWeek, c)}
           onIrADia={(d) => setActiveDay(d)}
+          onMoverGasto={moverGastoPorFecha}
           onClose={() => setModal(null)}
         />
       )}

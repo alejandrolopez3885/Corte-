@@ -2224,6 +2224,10 @@ button.cj-seccion { cursor: pointer; }
 .cj-gasto { display: flex; justify-content: space-between; gap: 10px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; font-size: 15px; }
 .cj-gasto small { display: block; color: var(--ink-soft); font-size: 12.5px; margin-top: 2px; }
 .cj-gasto b { white-space: nowrap; }
+.cj-gasto:has(.cj-mover) { flex-wrap: wrap; }
+.cj-gasto:has(.cj-mover) > span { flex: 1 1 0; min-width: 0; }
+.cj-mover { flex-basis: 100%; text-align: left; background: var(--accent-soft); color: var(--accent); border: none; border-radius: 10px; padding: 9px 12px; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+.cj-mover small { color: var(--accent); opacity: 0.8; font-weight: 400; }
 .cj-gasto i { font-style: normal; font-size: 11px; font-weight: 700; padding: 1px 7px; border-radius: 100px; margin-right: 6px; white-space: nowrap; }
 .cj-gasto i.solo-tu { background: var(--bad-soft); color: var(--bad); }
 .cj-gasto i.solo-johnster { background: #E3E8F5; color: #34508f; }

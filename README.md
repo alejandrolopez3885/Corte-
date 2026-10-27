@@ -39,8 +39,14 @@ Johnster (todos, sin categorías), emparejados en 3 pasadas: mismo día y
 mismo monto; mismo día, nombre parecido y monto con $5 o menos de
 diferencia ("Otro monto"); y día de al lado, mismo monto y nombre parecido
 ("Otro día", con el día en que está en el otro lado). Lo que no se empareja
-sale como "Solo tú" o "Solo Johnster". Solo compara: no cambia nada ni en
-la app ni en Johnster. Los datos los trae la función de Supabase
+sale como "Solo tú" o "Solo Johnster". Solo compara, con una excepción:
+cada gasto "Otro día" trae el botón **"Cambiar a [día] [número] en mi
+corte"**, que pasa tu gasto al día en que está en Johnster (sale igual
+viendo tu día o el de Johnster; Johnster no se toca). Solo aparece si los
+dos días son de la misma semana: una semana ya cerrada no se mueve. Si
+el gasto era del corte de un mesero, sale de ese corte (el botón lo
+avisa: le sube su efectivo a entregar) y si era de la apertura deja de
+contar en ella; queda en la bitácora. Los datos los trae la función de Supabase
 `johnster` (`supabase/functions/johnster`, ver
 [`supabase/migration_021_johnster.sql`](./supabase/migration_021_johnster.sql))
 a la tabla `johnster_datos`: ingresos por día (con débito, crédito y si
