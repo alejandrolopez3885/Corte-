@@ -29,10 +29,19 @@ export interface JohnsterGasto {
   comprobante?: boolean; // ticket subido al bot
   comprobanteUrl?: string | null; // dónde está en el bot (lo usa la función)
 }
+export type TipoTransferencia = "operacion" | "fijos" | "bancaria" | "didi" | "uber" | "rappi" | "otro";
+export interface JohnsterTransferencia {
+  id: string;
+  fecha: string;
+  monto: number;
+  concepto: string;
+  tipo: TipoTransferencia;
+}
 export interface JohnsterDatos {
   sucursal: string | null;
   ingresos: JohnsterIngreso[];
   gastos: JohnsterGasto[];
+  transferencias?: JohnsterTransferencia[];
   actualizado_en: string | null;
   error: string | null;
 }

@@ -8,6 +8,8 @@
 // - Guardar corte (dueño o personal): { accion: "semana", desde, hasta }
 //   actualiza y devuelve solo esos días, para revisar el corte antes de
 //   cerrarlo.
+// - Además de los gastos en efectivo trae los de transferencia, por tipo,
+//   para Negocio › Control de gastos en transferencia.
 // - "Ver comprobante" (dueño o personal): { accion: "comprobante", id } (un
 //   gasto) o { accion: "comprobante", fecha } (el bancario de ese día)
 //   devuelve la foto tal como la muestra el bot.
@@ -81,7 +83,27 @@ async function traer(usuario: string, password: string) {
       comprobante: !!e.receiptUrl,
       comprobanteUrl: e.receiptUrl ? String(e.receiptUrl) : null,
     }));
-  return { sucursal, ingresos, gastos };
+  // Transferencias: operación (proveedores) y los gastos de la semana que
+  // se confirman (gastos fijos, comisión bancaria y comisiones de apps).
+  const tipoDe = (e: Ingreso) => {
+    if (e.expenseType === "Operación") return "operacion";
+    const destino = String(e.gastoDestino || "").toLowerCase();
+    const concepto = String(e.concept || "").toLowerCase();
+    if (destino.includes("gastos fijos") || destino.includes("gasto fijo")) return "fijos";
+    if (destino.includes("bancaria")) return "bancaria";
+    if (destino.includes("aplicaciones")) return concepto.includes("didi") ? "didi" : concepto.includes("uber") ? "uber" : concepto.includes("rappi") ? "rappi" : "otro";
+    return "otro";
+  };
+  const transferencias = expenses
+    .filter((e) => mismaSucursal(sucursal, e.branchName) && e.paymentMethod === "Transferencia" && fechaDe(e.date || e.createdAt) >= desde)
+    .map((e) => ({
+      id: String(e.id),
+      fecha: fechaDe(e.date || e.createdAt),
+      monto: pesos(e.amount),
+      concepto: String(e.concept || ""),
+      tipo: tipoDe(e),
+    }));
+  return { sucursal, ingresos, gastos, transferencias };
 }
 
 Deno.serve(async (req) => {

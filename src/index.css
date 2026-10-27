@@ -2302,3 +2302,21 @@ button.cj-seccion { cursor: pointer; }
 .gasto-ticket { display: inline-flex; align-items: center; gap: 4px; background: var(--accent-soft); color: var(--accent); border: none; border-radius: 6px; padding: 3px 8px; font: inherit; font-size: 11.5px; font-weight: 600; cursor: pointer; }
 .gasto-acordeon-detalle { display: flex; flex-direction: column; gap: 8px; border-top: 1px dashed var(--border); padding-top: 8px; }
 .gasto-editar { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; }
+
+/* Control de gastos en transferencia contra Johnster */
+.tr-sync { display: flex; justify-content: space-between; align-items: center; font-size: 12.5px; color: var(--ink-soft); }
+.tr-resumen { display: flex; flex-wrap: wrap; gap: 6px; }
+.tr-card { display: flex; flex-direction: column; gap: 10px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 12px 14px; }
+.tr-card.otro { border-left: 4px solid var(--bad); }
+.tr-card.falta { border-left: 4px solid var(--warn); }
+.tr-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-weight: 600; font-size: 14.5px; }
+.tr-chip { font-size: 11px; font-weight: 700; border-radius: 100px; padding: 3px 9px; white-space: nowrap; }
+.tr-chip.ok { background: var(--good-soft); color: var(--good); }
+.tr-chip.falta { background: var(--warn-soft); color: var(--warn); }
+.tr-chip.otro { background: var(--bad-soft); color: var(--bad); }
+.tr-bot { margin: -2px 0 0; font-size: 12.5px; color: var(--ink-soft); }
+.tr-bot b { color: var(--ink); }
+.tr-bot.tr-falta { color: var(--warn); font-weight: 600; }
+.tr-bot.tr-mal { color: var(--bad); font-weight: 600; }
+.tr-app { display: flex; align-items: flex-end; gap: 10px; }
+.tr-app .tr-chip { margin-bottom: 12px; }

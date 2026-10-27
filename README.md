@@ -78,6 +78,29 @@ comisión DIDI, comisión UBER y comisión RAPPI. Esta última vive totalmente
 separada del corte diario: es solo informativa, no afecta el efectivo ni
 ningún total de caja.
 
+**Contra Johnster** (`CreditoProveedoresModal.tsx`): después del rango de
+fechas, la pantalla compara cada renglón con los gastos en transferencia
+de la sucursal en Johnster Bot **de lunes a domingo de esa semana** (los
+trae la función `johnster` a `johnster_datos.transferencias`, ver
+[`supabase/migration_023_johnster_transferencias.sql`](./supabase/migration_023_johnster_transferencias.sql),
+por tipo: operación, gastos fijos, comisión bancaria y DIDI/UBER/RAPPI).
+Arriba: "Johnster Metroplex · Revisar de nuevo en Johnster ↻" y el
+resumen ("✓ 2 en el bot · 4 no están en el bot · 1 con otro monto"). Cada
+renglón es una tarjeta con su marcador (borde naranja si no está en el
+bot, rojo si tiene otro monto; $5 de tolerancia, igual que Cuadrar):
+- **Gastos de operación (proveedores)**: "Tu total de las notas" (un solo
+  total) contra el total de gastos de operación del bot ("Johnster:
+  $47,120.00 · 32 gastos de operación"); "✓ Cuadra" o la diferencia ("−$2,716
+  vs bot") con qué revisar.
+- **Gastos fijos** y **Comisión bancaria (3% de tarjetas)**: manda la app;
+  solo se confirma que el bot tenga ese mismo gasto: "✓ En el bot", "No
+  está en el bot: súbelo como gasto en transferencia por $X" o "Johnster
+  tiene $Y: corrígelo en el bot a $X". No llevan ticket.
+- **Comisiones de apps**: DIDI, UBER y RAPPI las escribes tú (se suben al
+  bot el martes); cada una marca "No está en el bot", "✓ En el bot" o
+  "Bot: $X".
+Si Johnster no está conectado, dice que se conecte en ⚖︎ Cuadrar.
+
 **Gastos fijos** se llena solo y queda bloqueado: es el monto fijo semanal
 ($24,500 de inicio) menos los gastos en efectivo de esa semana con
 categoría **Servicio** (luz, gas, teléfono, agua, internet...). Así lo
@@ -2082,4 +2105,5 @@ supabase/
   migration_020_encuestas_por_dia.sql  lo mismo por día de trabajo (suman con el corte del mesero)
   migration_021_johnster.sql           datos de Johnster Bot para Cuadrar (Vault y pg_cron)
   migration_022_bitacora_dia_antes.sql copia del día antes de cada cambio (Volver a antes de este cambio)
+  migration_023_johnster_transferencias.sql gastos en transferencia de Johnster (Control de gastos en transferencia)
 ```

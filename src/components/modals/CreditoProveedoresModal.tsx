@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
+import { supabase } from "../../lib/supabaseClient";
+import { TOLERANCIA, type JohnsterDatos, type TipoTransferencia } from "../../lib/cuadrar";
 import { Pencil, RotateCcw } from "lucide-react";
 import { Sheet, Field, SumInput } from "../ui";
 import {
-  computeComisionTarjetas, dateForDay, formatShortDayDate, formatWeekRange, money, resolveGastosFijos, resolveMontoFijo, resolveWeekStartDate, round2, sumFromText,
+  addDaysIso, computeComisionTarjetas, dateForDay, formatShortDayDate, formatWeekRange, money, resolveGastosFijos, resolveMontoFijo, resolveWeekStartDate, round2, sumFromText,
 } from "../../lib/dataModel";
 import { DAY_SHORT } from "../../lib/types";
 import type { CreditoProveedores, DayName, MonthData, MontoFijoSemanal } from "../../lib/types";
@@ -38,6 +40,27 @@ export function CreditoProveedoresModal({
   const [comisionDidi, setComisionDidi] = useState("");
   const [comisionUber, setComisionUber] = useState("");
   const [comisionRappi, setComisionRappi] = useState("");
+  // Johnster: los gastos en transferencia de la semana para comparar.
+  const [johnster, setJohnster] = useState<JohnsterDatos | null | undefined>(undefined);
+  const [actualizando, setActualizando] = useState(false);
+  async function cargarJohnster() {
+    const { data } = await supabase.from("johnster_datos").select("sucursal, ingresos, gastos, transferencias, actualizado_en, error").maybeSingle();
+    setJohnster((data as JohnsterDatos | null) ?? null);
+    return data as JohnsterDatos | null;
+  }
+  async function actualizarJohnster() {
+    setActualizando(true);
+    await supabase.functions.invoke("johnster", { body: {} });
+    await cargarJohnster();
+    setActualizando(false);
+  }
+  useEffect(() => {
+    // Datos guardados antes de traer transferencias: se actualizan una vez.
+    cargarJohnster().then((d) => {
+      if (d?.actualizado_en && !d.transferencias?.length) actualizarJohnster();
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     const c = months[monthKey]?.weeks[weekIndex]?.creditoProveedores;
@@ -75,6 +98,51 @@ export function CreditoProveedoresModal({
       sumFromText(comisionRappi) +
       comisionBancaria
   );
+
+  // Contra Johnster, en el mismo rango (lunes a domingo). Tu app manda:
+  // ok = está en el bot con el mismo monto ($5 de tolerancia), falta = no
+  // está, otro = está con otro monto.
+  const conectado = !!johnster?.actualizado_en;
+  const hasta = weekStartDate ? addDaysIso(weekStartDate, 6) : "";
+  const deLaSemana = conectado && weekStartDate ? (johnster!.transferencias || []).filter((t) => t.fecha >= weekStartDate && t.fecha <= hasta) : [];
+  const enBot = (tipo: TipoTransferencia) => {
+    const xs = deLaSemana.filter((t) => t.tipo === tipo);
+    return xs.length ? { monto: round2(xs.reduce((n, t) => n + t.monto, 0)), cuantos: xs.length, fecha: xs[xs.length - 1].fecha } : null;
+  };
+  const comparar = (tuyo: number, tipo: TipoTransferencia) => {
+    const b = enBot(tipo);
+    return { bot: b, estado: !b ? ("falta" as const) : Math.abs(b.monto - tuyo) <= TOLERANCIA ? ("ok" as const) : ("otro" as const) };
+  };
+  const cOperativos = comparar(sumFromText(operativos), "operacion");
+  const cFijos = comparar(fijosTransferencia, "fijos");
+  const cBancaria = comparar(comisionBancaria, "bancaria");
+  const apps = [
+    { clave: "didi" as const, nombre: "DIDI", valor: comisionDidi, set: setComisionDidi },
+    { clave: "uber" as const, nombre: "UBER", valor: comisionUber, set: setComisionUber },
+    { clave: "rappi" as const, nombre: "RAPPI", valor: comisionRappi, set: setComisionRappi },
+  ].map((a) => ({ ...a, c: comparar(sumFromText(a.valor), a.clave) }));
+  const todos = [cOperativos, cFijos, cBancaria, ...apps.map((a) => a.c)];
+  const nOk = todos.filter((c) => c.estado === "ok").length;
+  const nOtro = todos.filter((c) => c.estado === "otro").length;
+  const nFalta = todos.filter((c) => c.estado === "falta").length;
+  const diaBot = (f: string) => `${DAY_SHORT[(["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"] as DayName[])[new Date(`${f}T12:00:00`).getDay()]]} ${Number(f.slice(8))}`;
+  // Fijos y bancaria: lo de tu app es lo que debe estar en el bot.
+  const confirmar = (c: ReturnType<typeof comparar>, tuyo: number) =>
+    !conectado ? null : c.estado === "ok" ? (
+      <p className="tr-bot">Johnster: {money(c.bot!.monto)} ({diaBot(c.bot!.fecha)})</p>
+    ) : c.estado === "falta" ? (
+      <p className="tr-bot tr-falta">No está en el bot: súbelo como gasto en transferencia por {money(tuyo)}.</p>
+    ) : (
+      <p className="tr-bot tr-mal">
+        Johnster tiene {money(c.bot!.monto)}: corrígelo en el bot a {money(tuyo)}.
+      </p>
+    );
+  const chip = (c: ReturnType<typeof comparar>, etiquetas?: { falta?: string }) =>
+    !conectado ? null : (
+      <span className={`tr-chip ${c.estado}`}>
+        {c.estado === "ok" ? "✓ En el bot" : c.estado === "falta" ? etiquetas?.falta || "No está en el bot" : "Otro monto en el bot"}
+      </span>
+    );
 
   function save() {
     onSave(monthKey, weekIndex, {
@@ -124,116 +192,184 @@ export function CreditoProveedoresModal({
       </div>
       {weekStartDate && <p className="hint">{formatWeekRange(weekStartDate)}</p>}
 
-      <Field label="Gastos operativos en transferencia">
-        <SumInput value={operativos} onChange={setOperativos} placeholder="0.00" sumar />
-      </Field>
-      {editandoFijos ? (
-        <div className="fijos-edit">
-          <Field label="Gastos fijos (solo esta semana)">
-            <SumInput value={fijosBorrador} onChange={setFijosBorrador} placeholder="0.00" sumar />
-          </Field>
-          <div className="gasto-row-edit-actions">
-            <button type="button" className="link-btn" onClick={() => setEditandoFijos(false)}>
-              Cancelar
-            </button>
-            <button
-              type="button"
-              className="btn-chico primario"
-              onClick={() => {
-                setFijos(fijosBorrador);
-                setFijosManual(true);
-                setEditandoFijos(false);
-              }}
-            >
-              Listo
-            </button>
-          </div>
-        </div>
-      ) : (
-        <div className="field">
-          <span>
-            Gastos fijos {fijosManual ? <span className="tag-manual">editado a mano</span> : "(automático)"}
-          </span>
-          <div className="readonly-value fijos-valor">
-            <span>{money(fijosTransferencia)}</span>
-            <button
-              type="button"
-              className="icon-btn gasto-edit-btn"
-              aria-label="Editar gastos fijos"
-              onClick={() => {
-                setFijosBorrador(String(fijosTransferencia));
-                setEditandoFijos(true);
-              }}
-            >
-              <Pencil size={14} />
-            </button>
-          </div>
-        </div>
-      )}
-      {!editandoFijos && fijosManual && (
-        <button type="button" className="link-btn fijos-volver" onClick={() => setFijosManual(false)}>
-          <RotateCcw size={13} /> Volver al automático ({money(fijosAutomatico)})
-        </button>
-      )}
-      {!editandoFijos && !fijosManual && calculoFijos && (
-        <div className="fijos-desglose">
-          <div>
-            <span>Monto fijo semanal</span>
-            <span>{money(montoFijo)}</span>
-          </div>
-          {calculoFijos.servicios.map((g, i) => (
-            <div key={i} className="fijos-menos">
-              <span>
-                − {g.concepto} · {diaCorto(g.dia)}
-              </span>
-              <span>−{money(g.total)}</span>
+      {johnster !== undefined &&
+        (conectado ? (
+          <>
+            <div className="tr-sync">
+              <span>{johnster!.sucursal || "Johnster"}</span>
+              <button type="button" className="link-btn" disabled={actualizando} onClick={actualizarJohnster}>
+                {actualizando ? "Trayendo datos de Johnster…" : "Revisar de nuevo en Johnster ↻"}
+              </button>
             </div>
-          ))}
-          <div className="fijos-total">
-            <span>Gastos fijos en transferencia</span>
-            <span>{money(fijosAutomatico)}</span>
-          </div>
-        </div>
-      )}
-      {!editandoFijos && fijosManual && calculoFijos && calculoFijos.servicios.length > 0 && (
-        <div className="fijos-desglose">
-          <div className="fijos-referencia">
-            <span>Servicio pagado en efectivo esta semana</span>
-          </div>
-          {calculoFijos.servicios.map((g, i) => (
-            <div key={i} className="fijos-menos">
-              <span>
-                {g.concepto} · {diaCorto(g.dia)}
-              </span>
-              <span>{money(g.total)}</span>
+            <div className="tr-resumen">
+              {nOk > 0 && <span className="tr-chip ok">✓ {nOk} en el bot</span>}
+              {nOtro > 0 && <span className="tr-chip otro">{nOtro} con otro monto</span>}
+              {nFalta > 0 && <span className="tr-chip falta">{nFalta} no están en el bot</span>}
             </div>
-          ))}
+          </>
+        ) : (
+          <p className="hint">Conecta Johnster en Corte › ⚖︎ Cuadrar para comparar con el bot.</p>
+        ))}
+
+      <div className={`tr-card ${conectado ? cOperativos.estado : ""}`}>
+        <div className="tr-head">
+          <span>Gastos de operación (proveedores)</span>
+          {conectado && (
+            <span className={`tr-chip ${cOperativos.estado}`}>
+              {cOperativos.estado === "ok"
+                ? "✓ Cuadra"
+                : cOperativos.estado === "falta"
+                  ? "No hay en el bot"
+                  : `${cOperativos.bot!.monto > sumFromText(operativos) ? "−" : "+"}${money(Math.abs(cOperativos.bot!.monto - sumFromText(operativos)))} vs bot`}
+            </span>
+          )}
         </div>
-      )}
-      {montoFijoNuevo === null ? (
-        <p className="hint fijos-monto">
-          Monto fijo semanal: {money(montoFijo)} ·{" "}
-          <button type="button" className="link-btn" onClick={() => setMontoFijoNuevo(String(montoFijoGuardado))}>
-            Cambiar
-          </button>
-        </p>
-      ) : (
-        <Field label="Monto fijo semanal (de esta semana en adelante)">
-          <SumInput value={montoFijoNuevo} onChange={setMontoFijoNuevo} placeholder="0.00" />
+        <Field label="Tu total de las notas">
+          <SumInput value={operativos} onChange={setOperativos} placeholder="0.00" sumar />
         </Field>
-      )}
-      <Field label="Comisión DIDI">
-        <SumInput value={comisionDidi} onChange={setComisionDidi} placeholder="0.00" sumar />
-      </Field>
-      <Field label="Comisión UBER">
-        <SumInput value={comisionUber} onChange={setComisionUber} placeholder="0.00" sumar />
-      </Field>
-      <Field label="Comisión RAPPI">
-        <SumInput value={comisionRappi} onChange={setComisionRappi} placeholder="0.00" sumar />
-      </Field>
-      <Field label="Comisión bancaria (3% de tarjetas, no editable)">
+        {conectado && cOperativos.bot && (
+          <p className="tr-bot">
+            Johnster: <b>{money(cOperativos.bot.monto)}</b> · {cOperativos.bot.cuantos} {cOperativos.bot.cuantos === 1 ? "gasto" : "gastos"} de operación
+          </p>
+        )}
+        {conectado && cOperativos.estado === "otro" && (
+          <p className="tr-bot tr-mal">
+            {cOperativos.bot!.monto > sumFromText(operativos)
+              ? `Johnster tiene ${money(cOperativos.bot!.monto - sumFromText(operativos))} más que tus notas: revisa si falta una nota o si hay un gasto repetido en el bot.`
+              : `Tus notas tienen ${money(sumFromText(operativos) - cOperativos.bot!.monto)} más que Johnster: falta subir algún gasto al bot.`}
+          </p>
+        )}
+      </div>
+
+      <div className={`tr-card ${conectado ? cFijos.estado : ""}`}>
+        <div className="tr-head">
+          <span>Gastos fijos</span>
+          {chip(cFijos)}
+        </div>
+        {editandoFijos ? (
+          <div className="fijos-edit">
+            <Field label="Gastos fijos (solo esta semana)">
+              <SumInput value={fijosBorrador} onChange={setFijosBorrador} placeholder="0.00" sumar />
+            </Field>
+            <div className="gasto-row-edit-actions">
+              <button type="button" className="link-btn" onClick={() => setEditandoFijos(false)}>
+                Cancelar
+              </button>
+              <button
+                type="button"
+                className="btn-chico primario"
+                onClick={() => {
+                  setFijos(fijosBorrador);
+                  setFijosManual(true);
+                  setEditandoFijos(false);
+                }}
+              >
+                Listo
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="field">
+            <span>
+              Gastos fijos {fijosManual ? <span className="tag-manual">editado a mano</span> : "(automático)"}
+            </span>
+            <div className="readonly-value fijos-valor">
+              <span>{money(fijosTransferencia)}</span>
+              <button
+                type="button"
+                className="icon-btn gasto-edit-btn"
+                aria-label="Editar gastos fijos"
+                onClick={() => {
+                  setFijosBorrador(String(fijosTransferencia));
+                  setEditandoFijos(true);
+                }}
+              >
+                <Pencil size={14} />
+              </button>
+            </div>
+          </div>
+        )}
+        {!editandoFijos && fijosManual && (
+          <button type="button" className="link-btn fijos-volver" onClick={() => setFijosManual(false)}>
+            <RotateCcw size={13} /> Volver al automático ({money(fijosAutomatico)})
+          </button>
+        )}
+        {!editandoFijos && !fijosManual && calculoFijos && (
+          <div className="fijos-desglose">
+            <div>
+              <span>Monto fijo semanal</span>
+              <span>{money(montoFijo)}</span>
+            </div>
+            {calculoFijos.servicios.map((g, i) => (
+              <div key={i} className="fijos-menos">
+                <span>
+                  − {g.concepto} · {diaCorto(g.dia)}
+                </span>
+                <span>−{money(g.total)}</span>
+              </div>
+            ))}
+            <div className="fijos-total">
+              <span>Gastos fijos en transferencia</span>
+              <span>{money(fijosAutomatico)}</span>
+            </div>
+          </div>
+        )}
+        {!editandoFijos && fijosManual && calculoFijos && calculoFijos.servicios.length > 0 && (
+          <div className="fijos-desglose">
+            <div className="fijos-referencia">
+              <span>Servicio pagado en efectivo esta semana</span>
+            </div>
+            {calculoFijos.servicios.map((g, i) => (
+              <div key={i} className="fijos-menos">
+                <span>
+                  {g.concepto} · {diaCorto(g.dia)}
+                </span>
+                <span>{money(g.total)}</span>
+              </div>
+            ))}
+          </div>
+        )}
+        {montoFijoNuevo === null ? (
+          <p className="hint fijos-monto">
+            Monto fijo semanal: {money(montoFijo)} ·{" "}
+            <button type="button" className="link-btn" onClick={() => setMontoFijoNuevo(String(montoFijoGuardado))}>
+              Cambiar
+            </button>
+          </p>
+        ) : (
+          <Field label="Monto fijo semanal (de esta semana en adelante)">
+            <SumInput value={montoFijoNuevo} onChange={setMontoFijoNuevo} placeholder="0.00" />
+          </Field>
+        )}
+        {confirmar(cFijos, fijosTransferencia)}
+      </div>
+
+      <div className={`tr-card ${conectado ? (apps.some((a) => a.c.estado === "otro") ? "otro" : apps.every((a) => a.c.estado === "ok") ? "ok" : "falta") : ""}`}>
+        <div className="tr-head">
+          <span>Comisiones de apps</span>
+        </div>
+        {apps.map((a) => (
+          <div key={a.clave} className="tr-app">
+            <Field label={`Comisión ${a.nombre}`}>
+              <SumInput value={a.valor} onChange={a.set} placeholder="0.00" sumar />
+            </Field>
+            {conectado && (
+              <span className={`tr-chip ${a.c.estado}`}>
+                {a.c.estado === "ok" ? "✓ En el bot" : a.c.estado === "falta" ? "No está en el bot" : `Bot: ${money(a.c.bot!.monto)}`}
+              </span>
+            )}
+          </div>
+        ))}
+      </div>
+
+      <div className={`tr-card ${conectado ? cBancaria.estado : ""}`}>
+        <div className="tr-head">
+          <span>Comisión bancaria (3% de tarjetas)</span>
+          {chip(cBancaria)}
+        </div>
         <div className="readonly-value">{money(comisionBancaria)}</div>
-      </Field>
+        {confirmar(cBancaria, comisionBancaria)}
+      </div>
 
       <div className="summary-item highlight" style={{ gridColumn: "1 / -1" }}>
         <span>Total de la semana</span>
