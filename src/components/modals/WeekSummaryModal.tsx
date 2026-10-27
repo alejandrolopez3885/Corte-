@@ -69,6 +69,13 @@ export function WeekSummaryModal({
   const jDisponible = round2(jVentas - jGastos);
   const tuVentas = round2(s.efectivoRecibido + s.gastos);
   const difJ = round2(jDisponible - s.efectivoRecibido);
+  // Columna "Johnster" de la tabla: el efectivo de cada día según el bot.
+  const conJ = !!johnster?.actualizado_en && jIngresos.length > 0;
+  const efectivoJDia = (fecha: string) => {
+    const ing = jIngresos.find((i) => i.fecha === fecha);
+    if (!ing) return null;
+    return round2(ing.efectivo - (johnster?.gastos || []).filter((g) => g.fecha === fecha).reduce((n, g) => n + g.monto, 0));
+  };
 
   return (
     <Sheet title={weekLabel} onClose={onClose}>
@@ -182,7 +189,7 @@ export function WeekSummaryModal({
       </div>
 
       <div className="week-table">
-        <div className="week-table-inner">
+        <div className={`week-table-inner ${conJ ? "con-johnster" : ""}`}>
           <div className="week-table-row week-table-head">
             <span>Día</span>
             <span>Venta total</span>
@@ -193,6 +200,7 @@ export function WeekSummaryModal({
             <span>Gastos</span>
             <span>Propinas</span>
             <span>Efectivo</span>
+            {conJ && <span>Johnster</span>}
           </div>
           {s.perDay.map((r) => (
             <div className="week-table-row" key={r.day}>
@@ -207,6 +215,15 @@ export function WeekSummaryModal({
               <span>{money(r.gastos)}</span>
               <span>{money(r.propina)}</span>
               <span>{money(r.efectivo)}</span>
+              {conJ &&
+                (() => {
+                  const j = efectivoJDia(dateForDay(monthKey, weekIndex, month, r.day));
+                  return j === null ? (
+                    <span className="sin-j">—</span>
+                  ) : (
+                    <span className={Math.abs(j - r.efectivo) > TOLERANCIA ? "dif-j" : "ok-j"}>{money(j)}</span>
+                  );
+                })()}
             </div>
           ))}
           <div className="week-table-row week-table-total">
@@ -219,6 +236,7 @@ export function WeekSummaryModal({
             <span>{money(s.gastos)}</span>
             <span>{money(s.propina)}</span>
             <span>{money(s.efectivoRecibido)}</span>
+            {conJ && <span className={Math.abs(difJ) > TOLERANCIA ? "dif-j" : "ok-j"}>{money(jDisponible)}</span>}
           </div>
         </div>
       </div>
