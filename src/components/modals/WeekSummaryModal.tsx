@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
-import { TOLERANCIA, type JohnsterDatos } from "../../lib/cuadrar";
+import { TOLERANCIA, cierreSemana, type JohnsterDatos } from "../../lib/cuadrar";
 import { Sheet, Field, SumInput } from "../ui";
 import { addDaysIso, computeWeekSummary, dateForDay, formatShortDayDate, formatWeekRange, money, resolveWeekStartDate, round2, sumFromText } from "../../lib/dataModel";
-import { DAY_SHORT } from "../../lib/types";
-import type { MonthData, WeekData } from "../../lib/types";
+import { DAYS, DAY_SHORT } from "../../lib/types";
+import type { EmpleadoEntry, MonthData, WeekData } from "../../lib/types";
 
 export function WeekSummaryModal({
   onClose,
@@ -15,6 +15,7 @@ export function WeekSummaryModal({
   weekIndex,
   onSaveEfectivoReal,
   onSaveStartDate,
+  empleados = [],
 }: {
   onClose: () => void;
   week: WeekData;
@@ -24,6 +25,8 @@ export function WeekSummaryModal({
   weekIndex: number;
   onSaveEfectivoReal: (rawValue: string) => void;
   onSaveStartDate: (dateStr: string) => void;
+  // Para comparar por día con Johnster como en Cuadrar (lo que se junta el domingo).
+  empleados?: EmpleadoEntry[];
 }) {
   const s = computeWeekSummary(week);
   const [realText, setRealText] = useState(s.efectivoReal != null ? String(s.efectivoReal) : "");
@@ -79,6 +82,19 @@ export function WeekSummaryModal({
   const difJ = round2(jDisponible - s.efectivoRecibido);
   // Columna "Johnster" de la tabla: el efectivo de cada día según el bot.
   const conJ = !!johnster?.actualizado_en && jIngresos.length > 0;
+  // Igual que Cuadrar: los adelantos que se juntan y las comidas gratis se
+  // suben al bot en un solo gasto el domingo; para comparar cada día, tu
+  // efectivo se ajusta con eso (tu columna Efectivo no cambia).
+  const diasSemana = DAYS.map((d) => ({ dia: d, fecha: dateForDay(monthKey, weekIndex, month, d), day: week.days[d] }));
+  const cierre = cierreSemana(diasSemana, empleados);
+  const domingo = diasSemana[diasSemana.length - 1].fecha;
+  const ajusteDia = (fecha: string) => {
+    let a = 0;
+    cierre.adelantos.forEach((x) => x.items.forEach((i) => i.fecha === fecha && (a += i.monto)));
+    cierre.comidas.forEach((x) => x.items.forEach((i) => i.fecha === fecha && (a += i.gratis)));
+    if (fecha === domingo) a -= cierre.adelantos.reduce((n, x) => n + x.total, 0) + cierre.comidas.reduce((n, x) => n + x.totalGratis, 0);
+    return round2(a);
+  };
   const efectivoJDia = (fecha: string) => {
     const ing = jIngresos.find((i) => i.fecha === fecha);
     if (!ing) return null;
@@ -215,6 +231,7 @@ export function WeekSummaryModal({
             <span>Propinas</span>
             <span>Efectivo</span>
             {conJ && <span>Johnster</span>}
+            {conJ && <span>Diferencia</span>}
           </div>
           {s.perDay.map((r) => (
             <div className="week-table-row" key={r.day}>
@@ -231,11 +248,32 @@ export function WeekSummaryModal({
               <span>{money(r.efectivo)}</span>
               {conJ &&
                 (() => {
-                  const j = efectivoJDia(dateForDay(monthKey, weekIndex, month, r.day));
-                  return j === null ? (
-                    <span className="sin-j">—</span>
-                  ) : (
-                    <span className={Math.abs(j - r.efectivo) > TOLERANCIA ? "dif-j" : "ok-j"}>{money(j)}</span>
+                  const fecha = dateForDay(monthKey, weekIndex, month, r.day);
+                  const j = efectivoJDia(fecha);
+                  const ajuste = ajusteDia(fecha);
+                  if (j === null)
+                    return (
+                      <>
+                        <span className="sin-j">—</span>
+                        <span className="sin-j">—</span>
+                      </>
+                    );
+                  // Diferencia real: ya contando lo que se junta el domingo.
+                  const dif = round2(j - (r.efectivo + ajuste));
+                  return (
+                    <>
+                      <span>{money(j)}</span>
+                      <span className={Math.abs(dif) > TOLERANCIA ? "dif-j" : "ok-j"}>
+                        {Math.abs(dif) <= TOLERANCIA ? "✓" : `${dif > 0 ? "+" : "−"}${money(Math.abs(dif))}`}
+                        {ajuste !== 0 && (
+                          <small className="junto-j">
+                            {fecha === domingo
+                              ? `${ajuste > 0 ? "+" : "−"}${money(Math.abs(ajuste))} se junta aquí`
+                              : `+${money(ajuste)} se junta el dom.`}
+                          </small>
+                        )}
+                      </span>
+                    </>
                   );
                 })()}
             </div>
@@ -250,7 +288,12 @@ export function WeekSummaryModal({
             <span>{money(s.gastos)}</span>
             <span>{money(s.propina)}</span>
             <span>{money(s.efectivoRecibido)}</span>
-            {conJ && <span className={Math.abs(difJ) > TOLERANCIA ? "dif-j" : "ok-j"}>{money(jDisponible)}</span>}
+            {conJ && <span>{money(jDisponible)}</span>}
+            {conJ && (
+              <span className={Math.abs(difJ) > TOLERANCIA ? "dif-j" : "ok-j"}>
+                {Math.abs(difJ) <= TOLERANCIA ? "✓" : `${difJ > 0 ? "+" : "−"}${money(Math.abs(difJ))}`}
+              </span>
+            )}
           </div>
         </div>
       </div>

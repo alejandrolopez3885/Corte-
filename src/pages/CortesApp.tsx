@@ -2510,6 +2510,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           weekIndex={activeWeek}
           onSaveEfectivoReal={saveEfectivoReal}
           onSaveStartDate={saveWeekStartDate}
+          empleados={data.empleados}
         />
       )}
       {modal?.type === "cuadrar" && month && activeMonth && (

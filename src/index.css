@@ -2335,8 +2335,9 @@ button.cj-seccion { cursor: pointer; }
 .jd-tabla span:nth-child(-n + 3) { font-size: 11px; color: var(--ink-soft) !important; }
 .jd-tabla span:nth-last-child(-n + 3) { font-weight: 600; border-top: 1px solid var(--border); padding-top: 4px; }
 .jd-tabla .dif { color: var(--bad) !important; font-weight: 600; }
-.con-johnster .week-table-row { grid-template-columns: 72px repeat(9, 1fr); }
+.con-johnster .week-table-row { grid-template-columns: 72px repeat(10, 1fr); }
 .week-table-row .dif-j { color: var(--bad); font-weight: 600; }
 .week-table-row .ok-j { color: var(--good); }
 .week-table-row .sin-j { color: var(--ink-soft); }
-.week-table-inner.con-johnster { min-width: 960px; }
+.week-table-inner.con-johnster { min-width: 1060px; }
+.week-table-row .junto-j { display: block; font-size: 10px; font-weight: 400; color: var(--ink-soft); }
