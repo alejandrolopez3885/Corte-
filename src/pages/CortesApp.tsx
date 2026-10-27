@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Plus, Settings2, Users, Receipt, CircleDot, Circle,
-  BarChart3, LogOut, Truck, Trash2, Home, Store, LayoutDashboard, Contact, Clock, Wallet, ChartLine, Martini, ChefHat, BookOpen, MessageCircle, Trophy, QrCode, Award,
+  BarChart3, Scale, LogOut, Truck, Trash2, Home, Store, LayoutDashboard, Contact, Clock, Wallet, ChartLine, Martini, ChefHat, BookOpen, MessageCircle, Trophy, QrCode, Award,
   ShoppingCart, Handshake, Boxes, Package, Coins, History, FileUp,
 } from "lucide-react";
 import { useAuth } from "../lib/auth.tsx";
@@ -34,6 +34,7 @@ import { GuardarCorteModal } from "../components/modals/GuardarCorteModal";
 import { InicioPanel } from "../components/panels/InicioPanel";
 import { ubicarFechas, type Destino } from "../lib/inicio";
 import { WeekSummaryModal } from "../components/modals/WeekSummaryModal";
+import { CuadrarJohnster } from "../components/modals/CuadrarJohnster";
 import { GastosSummaryModal } from "../components/modals/GastosSummaryModal";
 import { DeleteMonthModal } from "../components/modals/DeleteMonthModal";
 import { AsignarDiaModal } from "../components/modals/AsignarDiaModal";
@@ -85,6 +86,7 @@ type ModalState =
   | { type: "quitarApertura" }
   | { type: "reabrirCorte" }
   | { type: "weekSummary" }
+  | { type: "cuadrar" }
   | { type: "gastosSummary" }
   | { type: "creditoProveedores" }
   | { type: "catalog" }
@@ -2135,6 +2137,9 @@ export default function CortesApp({ profile }: { profile: Profile }) {
                   <button className="icon-btn" onClick={() => setModal({ type: "gastosSummary" })} aria-label="Resumen de gastos">
                     <Receipt size={18} />
                   </button>
+                  <button className="cuadrar-btn" onClick={() => setModal({ type: "cuadrar" })}>
+                    <Scale size={16} /> Cuadrar
+                  </button>
                 </div>
                 {weekStartDate && <p className="week-range-hint">{formatWeekRange(weekStartDate)}</p>}
               </>
@@ -2446,6 +2451,14 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           weekIndex={activeWeek}
           onSaveEfectivoReal={saveEfectivoReal}
           onSaveStartDate={saveWeekStartDate}
+        />
+      )}
+      {modal?.type === "cuadrar" && month && activeMonth && (
+        <CuadrarJohnster
+          titulo={`Semana ${activeWeek + 1} · ${weekStartDate ? formatWeekRange(weekStartDate) : month.label}`}
+          dias={DAYS.map((d) => ({ dia: d, fecha: dateForDay(activeMonth, activeWeek, month, d), day: month.weeks[activeWeek]?.days?.[d] }))}
+          onIrADia={(d) => setActiveDay(d)}
+          onClose={() => setModal(null)}
         />
       )}
       {modal?.type === "gastosSummary" && monthKeys.length > 0 && (

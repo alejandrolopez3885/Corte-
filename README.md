@@ -12,7 +12,30 @@ semana se asoma al mes anterior o siguiente, se muestra tal cual, con su
 fecha exacta. En el resumen semanal, **Efectivo real (lo que contaste)**
 se guarda tal como se ve escrito: al tocar "Guardar efectivo real" (que
 cambia a "✓ Guardado") o solo al salir del campo, y la diferencia contra
-el efectivo calculado se ve mientras se escribe. También tiene, dentro de "Negocio" → "Control de gastos", dos
+el efectivo calculado se ve mientras se escribe. Junto a las pestañas de
+semana (solo el dueño) está **⚖︎ Cuadrar** (`src/components/modals/CuadrarJohnster.tsx`,
+`src/lib/cuadrar.ts`): compara la semana contra **Johnster Bot** (el sistema
+de tu jefe) y muestra solo los días con diferencias, cada uno con su botón
+"Ir al corte del jueves ›" para ir a corregir. Por día compara venta total
+(meseros + apps), tarjetas, transferencias y efectivo de ventas (venta en
+sala − tarjetas − transferencias); $5 o menos cuenta como que cuadra. Y los
+**gastos en efectivo** uno por uno contra los gastos en efectivo de
+Johnster (todos, sin categorías), emparejados en 3 pasadas: mismo día y
+mismo monto; mismo día, nombre parecido y monto con $5 o menos de
+diferencia ("Otro monto"); y día de al lado, mismo monto y nombre parecido
+("Otro día", con el día en que está en el otro lado). Lo que no se empareja
+sale como "Solo tú" o "Solo Johnster". Solo compara: no cambia nada ni en
+la app ni en Johnster. Los datos los trae la función de Supabase
+`johnster` (`supabase/functions/johnster`, ver
+[`supabase/migration_021_johnster.sql`](./supabase/migration_021_johnster.sql))
+a la tabla `johnster_datos`: ingresos por día y gastos en efectivo de los
+últimos 120 días de la sucursal del usuario (hoy Johnster Metroplex),
+cada mañana a las 7:05 con pg_cron y cuando tocas "Actualizado hace… ↻".
+La primera vez la hoja pide **Conectar con Johnster** (usuario y
+contraseña de Johnster Bot): la función prueba que entren y los guarda en
+Supabase Vault (nunca en la app ni en el código); "Cambiar usuario de
+Johnster" para cambiarlos. Cuando Johnster tenga su API, solo cambia de
+dónde trae los datos la función. También tiene, dentro de "Negocio" → "Control de gastos", dos
 pantallas de solo control (cada una con su propio selector de mes/semana):
 **Control de gastos en efectivo** (los gastos ya categorizados que capturas
 en el corte diario) y **Control de gastos en transferencia** — 5 totales
@@ -1953,4 +1976,5 @@ supabase/
   migration_018_notificaciones.sql     notificaciones del dueño en su iPhone (y pg_cron)
   migration_019_ranking_encuestas.sql  encuestas por mesero para el ranking (conteos y estrellas)
   migration_020_encuestas_por_dia.sql  lo mismo por día de trabajo (suman con el corte del mesero)
+  migration_021_johnster.sql           datos de Johnster Bot para Cuadrar (Vault y pg_cron)
 ```
