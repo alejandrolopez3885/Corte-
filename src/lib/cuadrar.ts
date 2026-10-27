@@ -56,6 +56,7 @@ export interface DiaComparado {
   sinJohnster: boolean; // Johnster no tiene ese día
   sinCorte: boolean; // tu app no tiene nada ese día
   renglones: Renglon[]; // solo los que no cuadran
+  todos: Renglon[]; // los 5, cuadren o no (solo si Johnster tiene el día)
   gastos: GastoComparado[]; // solo los que no cuadran
   iguales: number; // gastos que cuadran
 }
@@ -127,9 +128,11 @@ export function compararSemana(dias: { dia: DayName; fecha: string; day: DayData
     const ing = j.ingresos.find((i) => i.fecha === fecha);
     const jGastosDia = j.gastos.filter((g) => g.fecha === fecha);
     const renglones: Renglon[] = [];
+    const todos: Renglon[] = [];
     if (ing) {
       const add = (clave: Renglon["clave"], titulo: string, tuyo: number, johnster: number) => {
         const dif = round2(johnster - tuyo);
+        todos.push({ clave, titulo, tuyo, johnster, dif });
         if (Math.abs(dif) > TOLERANCIA) renglones.push({ clave, titulo, tuyo, johnster, dif });
       };
       add("venta", "Venta total", t.venta, ing.venta);
@@ -154,9 +157,11 @@ export function compararSemana(dias: { dia: DayName; fecha: string; day: DayData
     });
     if (ing || jGastosDia.length) {
       const dif = round2(gastosJ - t.gastos);
-      if (Math.abs(dif) > 0.009) renglones.push({ clave: "gastos", titulo: "Gastos en efectivo", tuyo: t.gastos, johnster: gastosJ, dif });
+      const r: Renglon = { clave: "gastos", titulo: "Gastos en efectivo", tuyo: t.gastos, johnster: gastosJ, dif };
+      todos.push(r);
+      if (Math.abs(dif) > 0.009) renglones.push(r);
     }
     const sinCorte = !day || (!day.meseros.length && !day.gastos.length);
-    return { dia, fecha, sinJohnster: !ing, sinCorte, renglones, gastos, iguales };
+    return { dia, fecha, sinJohnster: !ing, sinCorte, renglones, todos, gastos, iguales };
   });
 }

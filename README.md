@@ -14,9 +14,23 @@ se guarda tal como se ve escrito: al tocar "Guardar efectivo real" (que
 cambia a "✓ Guardado") o solo al salir del campo, y la diferencia contra
 el efectivo calculado se ve mientras se escribe. Junto a las pestañas de
 semana (solo el dueño) está **⚖︎ Cuadrar** (`src/components/modals/CuadrarJohnster.tsx`,
-`src/lib/cuadrar.ts`): compara la semana contra **Johnster Bot** (el sistema
-de tu jefe) y muestra solo los días con diferencias, cada uno con su botón
-"Ir al corte del jueves ›" para ir a corregir. Por día compara venta total
+`src/lib/cuadrar.ts`): cuadra la semana contra **Johnster Bot** (el sistema
+de tu jefe) **paso a paso**, en pantalla completa como el corte: primero
+dónde vas (cada sección con lo que falta), luego Ventas → Tarjetas →
+Transferencias → Efectivo de ventas → Gastos en efectivo → Resumen. Cada
+sección empieza con los 7 días de un vistazo y sigue con una pantalla por
+cada día que no cuadra (tu corte, Johnster y la diferencia; en gastos, cada
+gasto con qué hacer): "Corregir en mi corte del jueves ›" (te lleva al día;
+al volver a Cuadrar sigues ahí), "Ya lo corregí en Johnster · Revisar de
+nuevo ↻" (vuelve a traer los datos del bot) y "Dejar así y anotar por qué".
+"Siguiente" se habilita hasta que ese día cuadre o tenga nota. El avance se
+guarda en la semana (`WeekData.cuadre`: paso actual, porcentaje, días que
+ya salieron y notas) y al entrar se puede "Continuar donde me quedé"; el
+botón de la semana muestra el porcentaje. El resumen muestra cada sección
+con ✓ (o lo que falta, tocable) y las notas; "Confirmar: la semana cuadra"
+deja el sello (el botón dice "✓ Cuadrada") con una firma de lo comparado:
+si después cambia algo, al entrar avisa "Algo cambió desde que la
+cuadraste" y "Volver a cuadrar". Por día compara venta total
 (meseros + apps), tarjetas, transferencias y efectivo de ventas (venta en
 sala − tarjetas − transferencias); $5 o menos cuenta como que cuadra. Y los
 **gastos en efectivo** uno por uno contra los gastos en efectivo de

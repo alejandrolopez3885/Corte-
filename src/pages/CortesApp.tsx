@@ -14,7 +14,7 @@ import {
 } from "../lib/dataModel";
 import { removeAssignmentByStaffAndDate, upsertAssignment, useStaffAssignments } from "../lib/staffAssignments";
 import { DAYS, DAY_SHORT } from "../lib/types";
-import type { AppData, AreaEntry, ConfigNotificaciones, ConteoTextoArea, CreditoProveedores, DayData, DayName, EmpleadoEntry, Gasto, GastoCategoria, HorarioSemana, InsumoEntry, MeseroCatalogEntry, MeseroCut, NominaDescuentosSemana, PermisoStaff, Profile, ProveedorCatalogEntry, PuestoEntry, Receta, ReglasArea, Transferencia, WeekData } from "../lib/types";
+import type { AppData, AreaEntry, ConfigNotificaciones, ConteoTextoArea, CreditoProveedores, DayData, DayName, EmpleadoEntry, Gasto, GastoCategoria, HorarioSemana, InsumoEntry, MeseroCatalogEntry, MeseroCut, NominaDescuentosSemana, PermisoStaff, Profile, ProveedorCatalogEntry, PuestoEntry, Receta, ReglasArea, CuadreSemana, Transferencia, WeekData } from "../lib/types";
 import { Empty, Field, NumInput, Sheet } from "../components/ui";
 import { MonthModal } from "../components/modals/MonthModal";
 import { type MeseroFormValues } from "../components/modals/MeseroModal";
@@ -1141,6 +1141,16 @@ export default function CortesApp({ profile }: { profile: Profile }) {
     persist(next);
   }
 
+  // Cuadrar con Johnster: avance, notas y sello de la semana.
+  function guardarCuadre(monthKey: string, weekIndex: number, cuadre: CuadreSemana | undefined) {
+    if (!data) return;
+    const next = structuredClone(data);
+    const semana = next.months[monthKey]?.weeks[weekIndex];
+    if (!semana) return;
+    semana.cuadre = cuadre;
+    persist(next);
+  }
+
   // "Lo que aprendí": una sugerencia ignorada ya no vuelve a salir.
   function ignorarReglaAprendida(id: string) {
     if (!data) return;
@@ -2138,7 +2148,12 @@ export default function CortesApp({ profile }: { profile: Profile }) {
                     <Receipt size={18} />
                   </button>
                   <button className="cuadrar-btn" onClick={() => setModal({ type: "cuadrar" })}>
-                    <Scale size={16} /> Cuadrar
+                    <Scale size={16} />{" "}
+                    {month.weeks[activeWeek]?.cuadre?.confirmado
+                      ? "✓ Cuadrada"
+                      : month.weeks[activeWeek]?.cuadre?.actual
+                        ? `${month.weeks[activeWeek].cuadre!.porcentaje || 0}%`
+                        : "Cuadrar"}
                   </button>
                 </div>
                 {weekStartDate && <p className="week-range-hint">{formatWeekRange(weekStartDate)}</p>}
@@ -2457,6 +2472,8 @@ export default function CortesApp({ profile }: { profile: Profile }) {
         <CuadrarJohnster
           titulo={`Semana ${activeWeek + 1} · ${weekStartDate ? formatWeekRange(weekStartDate) : month.label}`}
           dias={DAYS.map((d) => ({ dia: d, fecha: dateForDay(activeMonth, activeWeek, month, d), day: month.weeks[activeWeek]?.days?.[d] }))}
+          cuadre={month.weeks[activeWeek]?.cuadre}
+          onGuardarCuadre={(c) => guardarCuadre(activeMonth, activeWeek, c)}
           onIrADia={(d) => setActiveDay(d)}
           onClose={() => setModal(null)}
         />

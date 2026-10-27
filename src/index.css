@@ -2187,30 +2187,45 @@ button.cd-it { cursor: pointer; }
 .rg-badge { display: inline-block; background: var(--warn); color: white; border-radius: 100px; font-size: 11px; font-weight: 700; padding: 1px 7px; margin-left: 4px; }
 .rg-fila.rg-fila-col { flex-direction: column; align-items: stretch; gap: 8px; }
 
-/* Corte › ⚖︎ Cuadrar con Johnster */
-.cuadrar-btn { flex-shrink: 0; display: inline-flex; align-items: center; gap: 6px; height: 38px; padding: 0 12px; border-radius: 12px; border: none; background: var(--accent); color: white; font-family: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer; }
-.cj-sub { margin: -12px 0 0; }
-.cj-sync { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 12.5px; color: var(--ink-soft); }
-.cj-sync .link-btn { font-size: 12.5px; font-weight: 600; padding: 0; text-align: right; }
-.cj-error { margin: 0; background: var(--bad-soft); color: var(--bad); border-radius: 12px; padding: 9px 12px; font-size: 13px; }
-.cj-resumen { background: var(--warn-soft); color: #7a4a17; border-radius: 12px; padding: 10px 12px; font-size: 13.5px; line-height: 1.45; }
-.cj-resumen.todo { background: var(--good-soft); color: var(--good); }
-.cj-dia { border: 1px solid var(--border); border-radius: 14px; padding: 11px 12px; display: flex; flex-direction: column; }
-.cj-dia h4 { margin: 0 0 4px; font-size: 15px; display: flex; justify-content: space-between; align-items: baseline; }
-.cj-dia h4 span { font-size: 12px; color: var(--bad); font-weight: 600; }
-.cj-dia > .hint { margin: 0 0 4px; }
-.cj-renglon { display: flex; justify-content: space-between; gap: 8px; font-size: 13.5px; padding: 6px 0; border-top: 1px solid var(--border); }
-.cj-dia > div:first-of-type .cj-renglon, .cj-dia h4 + div .cj-renglon { border-top: none; }
-.cj-renglon > span { display: flex; flex-direction: column; }
-.cj-renglon small { color: var(--ink-soft); font-size: 11.5px; }
-.cj-renglon b { color: var(--bad); white-space: nowrap; }
-.cj-gasto { display: flex; justify-content: space-between; gap: 8px; font-size: 12.8px; padding: 3px 0 3px 8px; }
-.cj-gasto small { color: var(--ink-soft); font-size: 11.5px; }
-.cj-gasto > span:last-child { white-space: nowrap; }
-.cj-gasto i { font-style: normal; font-size: 10.5px; font-weight: 700; padding: 1px 6px; border-radius: 100px; margin-right: 6px; white-space: nowrap; }
+/* Corte › ⚖︎ Cuadrar con Johnster (paso a paso) */
+.cuadrar-btn { flex-shrink: 0; display: inline-flex; align-items: center; gap: 6px; height: 38px; padding: 0 12px; border-radius: 12px; border: none; background: var(--accent); color: white; font-family: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+.cj-sync { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-soft); }
+.cj-sync .link-btn { font-size: 13px; font-weight: 600; padding: 0; text-align: right; }
+.cj-error { margin: 0; background: var(--bad-soft); color: var(--bad); border-radius: 12px; padding: 10px 12px; font-size: 14px; }
+.cj-sello { margin: 0; background: var(--accent-soft); color: var(--accent); border-radius: 12px; padding: 11px 13px; font-size: 14px; line-height: 1.4; }
+.cj-ok { margin: 0; background: var(--good-soft); color: var(--good); border-radius: 14px; padding: 13px 14px; font-weight: 600; font-size: 15.5px; }
+.cj-nota { margin: 0; background: var(--warn-soft); color: #7a4a17; border-radius: 12px; padding: 10px 12px; font-size: 14px; line-height: 1.4; }
+.cj-nota .link-btn { display: inline; padding: 0; font-size: 13.5px; }
+.cj-secciones { display: flex; flex-direction: column; gap: 8px; }
+.cj-seccion { display: flex; align-items: center; gap: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 12px 14px; font-size: 16px; font-family: inherit; color: var(--ink); text-align: left; }
+button.cj-seccion { cursor: pointer; }
+.cj-seccion > span:last-child { display: flex; flex-direction: column; }
+.cj-seccion small { font-size: 13px; color: var(--ink-soft); }
+.cj-num { width: 30px; height: 30px; flex: none; border-radius: 50%; display: grid; place-items: center; font-size: 14px; font-weight: 700; }
+.cj-num.v { background: var(--good-soft); color: var(--good); }
+.cj-num.r { background: var(--bad-soft); color: var(--bad); }
+.cj-lista { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
+.cj-lista > div { display: flex; justify-content: space-between; gap: 8px; padding: 11px 14px; border-top: 1px solid var(--border); font-size: 15.5px; }
+.cj-lista > div:first-child { border-top: none; }
+.cj-lista b.ok { color: var(--good); }
+.cj-lista b.df { color: var(--bad); }
+.cj-lista b.sin { color: var(--ink-soft); font-weight: 500; font-size: 13.5px; }
+.cj-cmp { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; text-align: center; }
+.cj-cmp > div { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 11px 4px; }
+.cj-cmp small { display: block; font-size: 12px; color: var(--ink-soft); }
+.cj-cmp b { font-size: 19px; }
+.cj-cmp .df { background: var(--bad-soft); border-color: #e7b9b2; }
+.cj-cmp .df b { color: var(--bad); }
+.cj-cmp .ok b { color: var(--good); }
+.cj-acciones { display: flex; flex-direction: column; gap: 10px; }
+.cj-dejar { align-self: center; font-size: 14.5px; }
+.cj-escribir { display: flex; flex-direction: column; gap: 8px; }
+.cj-gastos { display: flex; flex-direction: column; gap: 8px; }
+.cj-gasto { display: flex; justify-content: space-between; gap: 10px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; font-size: 15px; }
+.cj-gasto small { display: block; color: var(--ink-soft); font-size: 12.5px; margin-top: 2px; }
+.cj-gasto b { white-space: nowrap; }
+.cj-gasto i { font-style: normal; font-size: 11px; font-weight: 700; padding: 1px 7px; border-radius: 100px; margin-right: 6px; white-space: nowrap; }
 .cj-gasto i.solo-tu { background: var(--bad-soft); color: var(--bad); }
 .cj-gasto i.solo-johnster { background: #E3E8F5; color: #34508f; }
 .cj-gasto i.otro-dia, .cj-gasto i.otro-monto { background: var(--warn-soft); color: var(--warn); }
-.cj-ir { align-self: flex-start; margin-top: 8px; background: var(--accent-soft); color: var(--accent); border: none; border-radius: 100px; padding: 8px 14px; font-family: inherit; font-weight: 600; font-size: 13px; cursor: pointer; }
 .cj-conectar { display: flex; flex-direction: column; gap: 12px; }
-.cj-conectar .hint { margin: 0; }

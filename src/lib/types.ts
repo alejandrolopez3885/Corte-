@@ -548,6 +548,17 @@ export interface WeekData {
   days: Record<DayName, DayData>;
   efectivoReal?: number | null;
   creditoProveedores?: CreditoProveedores;
+  // Cuadrar con Johnster paso a paso: dónde se quedó, los días que se
+  // revisaron, las notas de "Dejar así" y el sello al confirmar.
+  cuadre?: CuadreSemana;
+}
+
+export interface CuadreSemana {
+  actual?: string; // clave del paso donde se quedó
+  porcentaje?: number;
+  vistos?: string[]; // pasos de día que salieron alguna vez
+  notas?: Record<string, string>; // paso → por qué se dejó así
+  confirmado?: { fecha: string; firma: string };
 }
 
 export interface MonthData {
