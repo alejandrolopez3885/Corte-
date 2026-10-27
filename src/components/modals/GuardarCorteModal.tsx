@@ -3,7 +3,7 @@ import { Lock } from "lucide-react";
 import { Sheet } from "../ui";
 import { addDaysIso, money } from "../../lib/dataModel";
 import { supabase } from "../../lib/supabaseClient";
-import { LinkBancario, VerComprobante } from "./ComprobanteJohnster";
+import { VerComprobante, type Comprobante } from "./ComprobanteJohnster";
 import { compararSemana, type DiaComparado, type EstadoGasto, type JohnsterDatos } from "../../lib/cuadrar";
 import type { DayData, DayName, EmpleadoEntry } from "../../lib/types";
 
@@ -84,7 +84,7 @@ export function GuardarCorteModal({
   const [rev, setRev] = useState<{ estado: "cargando" | "error" | "listo"; datos?: JohnsterDatos; error?: string }>({ estado: "cargando" });
   const [sinRevisar, setSinRevisar] = useState(false);
   const [escribiendo, setEscribiendo] = useState<{ clave: string; texto: string } | null>(null);
-  const [viendo, setViendo] = useState<{ id: string; concepto: string; monto: number } | null>(null);
+  const [viendo, setViendo] = useState<Comprobante | null>(null);
   async function revisar() {
     if (!semana.length) return setRev({ estado: "error", error: "No se encontró la semana de este día." });
     setRev({ estado: "cargando" });
@@ -350,7 +350,14 @@ export function GuardarCorteModal({
           ) : (
             <div>
               {ing.tarjetas > 0 ? "✓ Comprobante bancario subido " : "✓ Sin tarjetas este día"}
-              {ing.tarjetas > 0 && <LinkBancario url={ing.comprobanteUrl} />}
+              {ing.tarjetas > 0 && ing.comprobanteBancario && (
+                <button
+                  className="vc-ver"
+                  onClick={() => setViendo({ pedido: { fecha }, titulo: "Comprobante bancario de tarjetas", monto: ing.tarjetas, drive: ing.comprobanteUrl })}
+                >
+                  Ver
+                </button>
+              )}
             </div>
           )}
           {sinComprobante.length ? (
@@ -368,7 +375,7 @@ export function GuardarCorteModal({
                   <span>{g.concepto}</span>
                   <span>{money(g.monto)}</span>
                   {g.comprobante ? (
-                    <button className="vc-ver" onClick={() => setViendo({ id: g.id, concepto: g.concepto, monto: g.monto })}>
+                    <button className="vc-ver" onClick={() => setViendo({ pedido: { id: g.id }, titulo: g.concepto, monto: g.monto })}>
                       Ver
                     </button>
                   ) : (

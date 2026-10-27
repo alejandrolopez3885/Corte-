@@ -27,6 +27,7 @@ export interface JohnsterGasto {
   concepto: string;
   destino: string;
   comprobante?: boolean; // ticket subido al bot
+  comprobanteUrl?: string | null; // dónde está en el bot (lo usa la función)
 }
 export interface JohnsterDatos {
   sucursal: string | null;

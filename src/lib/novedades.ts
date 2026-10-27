@@ -351,7 +351,7 @@ export const NOVEDADES: Novedad[] = [
     fecha: "2026-10-27T11:35:00Z",
     seccion: "corte",
     titulo: "Ver los comprobantes del bot",
-    texto: "Al guardar el corte, toca **Ver** junto a cada gasto para ver la foto de su ticket en el bot, y **Ver en Drive** para el comprobante bancario.",
+    texto: "Al guardar el corte, toca **Ver** junto a cada gasto para ver la foto de su ticket en el bot, y la del comprobante bancario.",
     visual: "guardarCorte",
   },
   {

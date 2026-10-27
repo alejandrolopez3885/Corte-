@@ -8,8 +8,9 @@
 // - Guardar corte (dueño o personal): { accion: "semana", desde, hasta }
 //   actualiza y devuelve solo esos días, para revisar el corte antes de
 //   cerrarlo.
-// - "Ver comprobante" (dueño o personal): { accion: "comprobante", id }
-//   devuelve la foto del ticket de un gasto de su sucursal.
+// - "Ver comprobante" (dueño o personal): { accion: "comprobante", id } (un
+//   gasto) o { accion: "comprobante", fecha } (el bancario de ese día)
+//   devuelve la foto tal como la muestra el bot.
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
 
 const BASE = "https://johnster-bot.onrender.com";
@@ -78,6 +79,7 @@ async function traer(usuario: string, password: string) {
       concepto: String(e.concept || ""),
       destino: String(e.gastoDestino || e.category || ""),
       comprobante: !!e.receiptUrl,
+      comprobanteUrl: e.receiptUrl ? String(e.receiptUrl) : null,
     }));
   return { sucursal, ingresos, gastos };
 }
@@ -125,18 +127,29 @@ Deno.serve(async (req) => {
   const password = await secreto("johnster_password");
   if (!usuario || !password) return json({ error: "Faltan las credenciales de Johnster" }, 400);
 
-  // Foto del ticket de un gasto: solo si es uno de los gastos de la
-  // sucursal ya guardados en johnster_datos.
+  // Foto de un comprobante: solo de los gastos e ingresos de la sucursal ya
+  // guardados en johnster_datos (si falta el link, se actualizan antes).
   if (body?.accion === "comprobante" && ownerId) {
-    const id = String(body.id || "");
-    const { data: fila } = await db.from("johnster_datos").select("gastos").eq("owner_id", ownerId).maybeSingle();
-    const g = ((fila?.gastos || []) as { id: string; comprobante?: boolean }[]).find((x) => x.id === id);
-    if (!g || !g.comprobante || !/^\d+$/.test(id)) return json({ error: "Ese gasto no tiene comprobante en el bot" }, 404);
+    type Fila = { gastos: { id: string; comprobanteUrl?: string | null }[]; ingresos: { fecha: string; comprobanteUrl?: string | null }[] };
+    const buscar = (f: Fila | null) =>
+      body.fecha ? f?.ingresos?.find((x) => x.fecha === String(body.fecha))?.comprobanteUrl : f?.gastos?.find((x) => x.id === String(body.id || ""))?.comprobanteUrl;
     try {
+      const { data: fila } = await db.from("johnster_datos").select("gastos, ingresos").eq("owner_id", ownerId).maybeSingle();
+      let url = buscar(fila as Fila | null);
+      if (url === undefined) {
+        const datos = await traer(usuario, password);
+        await db.from("johnster_datos").update({ ...datos, actualizado_en: new Date().toISOString(), error: null }).eq("owner_id", ownerId);
+        url = buscar(datos as Fila);
+      }
+      if (!url) return json({ error: "No tiene comprobante en el bot" }, 404);
+      // Igual que el bot: los suyos tal cual; los de Drive por su image-proxy.
+      const ruta = url.startsWith("/api/expenses/") || url.startsWith("/uploads/") ? url : /^https:\/\//.test(url) ? `/api/expenses/image-proxy?url=${encodeURIComponent(url)}` : null;
+      if (!ruta) return json({ error: "No se puede abrir ese comprobante" }, 404);
       const { cookie } = await entrar(usuario, password);
-      const r = await fetch(`${BASE}/api/expenses/${id}/receipt`, { headers: { cookie } });
-      if (!r.ok) return json({ error: `Johnster no dio el comprobante (${r.status})` }, 502);
-      return new Response(await r.arrayBuffer(), { headers: { ...cors, "Content-Type": "application/octet-stream", "X-Tipo": r.headers.get("content-type") || "image/jpeg" } });
+      const r = await fetch(BASE + ruta, { headers: { cookie } });
+      if (!r.ok || !(r.headers.get("content-type") || "").startsWith("image/"))
+        return json({ error: "El bot ya no tiene la foto de este comprobante. Vuelve a subirla en el bot." }, 404);
+      return new Response(await r.arrayBuffer(), { headers: { ...cors, "Content-Type": "application/octet-stream" } });
     } catch (e) {
       return json({ error: e instanceof Error ? e.message : String(e) }, 502);
     }

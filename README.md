@@ -49,13 +49,16 @@ avisa: le sube su efectivo a entregar) y si era de la apertura deja de
 contar en ella; queda en la bitácora. **Ver comprobante**
 (`src/components/modals/ComprobanteJohnster.tsx`): los gastos de Johnster
 que no cuadran ("Solo Johnster", "Otro día", "Otro monto") traen "Ver
-ticket", que abre en grande la foto del ticket tal como está en el bot
-(la función `johnster` con `{ accion: "comprobante", id }` la trae de
-Johnster, solo si es un gasto de la sucursal ya guardado en
-`johnster_datos`; se queda en memoria mientras la app está abierta). El
-comprobante bancario de tarjetas vive en Google Drive: en la pantalla de
-Tarjetas de un día que no cuadra sale "Ver en Drive ↗", que abre el link
-(se ve si la cuenta de Google tiene permiso para ese archivo). Los datos los trae la función de Supabase
+ticket", que abre en grande la foto del ticket tal como está en el bot.
+En la pantalla de Tarjetas de un día que no cuadra, "Comprobante bancario
+del día · Ver" abre el bancario igual (además trae "Abrir en Drive ↗",
+porque el bot lo guarda en Google Drive). La función `johnster` con
+`{ accion: "comprobante", id }` (gasto) o `{ fecha }` (bancario) trae la
+foto como la muestra el bot (sus tickets tal cual y los de Drive por su
+`image-proxy`), solo de gastos e ingresos de la sucursal guardados en
+`johnster_datos`; se queda en memoria mientras la app está abierta. Si
+el bot perdió la foto (tickets viejos en `/uploads/`) dice "El bot ya no
+tiene la foto de este comprobante". Los datos los trae la función de Supabase
 `johnster` (`supabase/functions/johnster`, ver
 [`supabase/migration_021_johnster.sql`](./supabase/migration_021_johnster.sql))
 a la tabla `johnster_datos`: ingresos por día (con débito, crédito y si
@@ -832,7 +835,7 @@ estando en Nómina te regresa al menú de Equipo):
   efectivo y gastos cuadran; lo que se dejó anotado sale en ámbar con la
   nota. Debajo de los gastos sale la lista de los gastos en efectivo del
   día en el bot (concepto, monto y **Ver**) y junto al comprobante
-  bancario **Ver en Drive ↗** (ver "Ver comprobante" en ⚖︎ Cuadrar).
+  bancario otro **Ver** (ver "Ver comprobante" en ⚖︎ Cuadrar).
   Abajo, un renglón con casilla por cada total — tarjetas,
   transferencias, gastos, venta (total) y apps. Solo si se guarda sin
   revisar Johnster sale además la casilla "Ya subí al bot los

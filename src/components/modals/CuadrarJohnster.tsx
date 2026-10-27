@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Field } from "../ui";
 import { MarcoAsistente } from "./asistente";
-import { LinkBancario, VerComprobante } from "./ComprobanteJohnster";
+import { VerComprobante, type Comprobante } from "./ComprobanteJohnster";
 import { supabase } from "../../lib/supabaseClient";
 import { cierreSemana, compararSemana, type DiaComparado, type EstadoGasto, type JohnsterDatos, type Renglon } from "../../lib/cuadrar";
 import type { CuadreSemana, DayData, DayName, EmpleadoEntry } from "../../lib/types";
@@ -83,6 +83,7 @@ export function CuadrarJohnster({
   const [password, setPassword] = useState("");
   const [paso, setPaso] = useState("inicio");
   const [escribiendoNota, setEscribiendoNota] = useState<string | null>(null);
+  const [viendoBancario, setViendoBancario] = useState<Comprobante | null>(null);
 
   async function cargar() {
     const { data } = await supabase.from("johnster_datos").select("sucursal, ingresos, gastos, actualizado_en, error").maybeSingle();
@@ -491,9 +492,16 @@ export function CuadrarJohnster({
         )}
         {sc === "tarjetas" && (() => {
           const ing = datos?.ingresos.find((x) => x.fecha === fecha);
-          return ing?.comprobanteUrl ? (
+          return ing?.comprobanteBancario ? (
             <p className="cj-bancario">
-              Comprobante bancario del día <LinkBancario url={ing.comprobanteUrl} />
+              Comprobante bancario del día{" "}
+              <button
+                type="button"
+                className="vc-ver"
+                onClick={() => setViendoBancario({ pedido: { fecha }, titulo: "Comprobante bancario de tarjetas", monto: ing.tarjetas, drive: ing.comprobanteUrl })}
+              >
+                Ver
+              </button>
             </p>
           ) : null;
         })()}
@@ -574,6 +582,7 @@ export function CuadrarJohnster({
     <MarcoAsistente titulo="Cuadrar con Johnster" avance={avance} porcentaje={porcentaje} clavePaso={paso} onClose={onClose} pie={pie}>
       {pregunta && <h2 className="ca-pregunta">{pregunta}</h2>}
       {cuerpo}
+      {viendoBancario && <VerComprobante {...viendoBancario} onClose={() => setViendoBancario(null)} />}
     </MarcoAsistente>
   );
 }
@@ -587,7 +596,7 @@ function ListaGastos({
   dias: { fecha: string; day: DayData | undefined }[];
   onMover: (desde: string, hasta: string, gastoId: string) => void;
 }) {
-  const [viendo, setViendo] = useState<{ id: string; concepto: string; monto: number } | null>(null);
+  const [viendo, setViendo] = useState<Comprobante | null>(null);
   // Solo cambia la fecha en tu corte (Johnster no se toca). Si el gasto era
   // del corte de un mesero, sale de ese corte.
   const mover = (g: DiaComparado["gastos"][number]) => {
@@ -626,7 +635,7 @@ function ListaGastos({
           <b>
             {pesos(g.monto)}
             {g.ticketId && (
-              <button type="button" className="vc-ver" onClick={() => setViendo({ id: g.ticketId!, concepto: g.concepto, monto: g.montoJohnster ?? g.monto })}>
+              <button type="button" className="vc-ver" onClick={() => setViendo({ pedido: { id: g.ticketId! }, titulo: g.concepto, monto: g.montoJohnster ?? g.monto })}>
                 Ver ticket
               </button>
             )}
