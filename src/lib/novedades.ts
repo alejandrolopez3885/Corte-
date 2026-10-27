@@ -348,7 +348,7 @@ export const NOVEDADES: Novedad[] = [
   },
   {
     id: "apertura-aviso-repetido",
-    fecha: "2026-10-27T07:30:00Z",
+    fecha: "2026-10-27T06:51:00Z",
     seccion: "corte",
     titulo: "Aviso en el corte de apertura",
     texto: "Si en la apertura pones a alguien que ya tiene corte ese día, te avisa antes de guardar para que no quede con **dos cortes**.",
