@@ -18,6 +18,7 @@ export interface JohnsterIngreso {
   tarjetaDebito?: number;
   tarjetaCredito?: number;
   comprobanteBancario?: boolean; // comprobante del banco (tarjetas) subido al bot
+  comprobanteUrl?: string | null; // link de Google Drive del bancario
 }
 export interface JohnsterGasto {
   id: string;
@@ -48,6 +49,7 @@ export interface GastoComparado {
   fechaJohnster?: string; // "otro-dia": en qué día está en Johnster
   fechaTuya?: string; // "otro-dia" visto desde el día de Johnster
   gastoId?: string; // "otro-dia": tu gasto, para cambiarlo de fecha
+  ticketId?: string; // gasto de Johnster con comprobante, para verlo
   junto?: { fecha: string; monto: number }[]; // gasto que junta varios de la semana
 }
 
@@ -200,6 +202,7 @@ export function compararSemana(dias: DiaEntrada[], j: JohnsterDatos, empleados: 
       }
     }
 
+  const ticket = (g: JohnsterGasto) => (g.comprobante ? g.id : undefined);
   return dias.map(({ dia, fecha, day }) => {
     const t = totalesDelDia(day);
     const ing = j.ingresos.find((i) => i.fecha === fecha);
@@ -225,12 +228,12 @@ export function compararSemana(dias: DiaEntrada[], j: JohnsterDatos, empleados: 
       .forEach((m) => {
         if (!m.par) gastos.push({ estado: "solo-tu", concepto: m.concepto, monto: m.monto, junto: m.junto });
         else if (m.par.estado === "igual") iguales++;
-        else if (m.par.estado === "otro-monto") gastos.push({ estado: "otro-monto", concepto: m.concepto, monto: m.monto, montoJohnster: m.par.j.monto });
-        else gastos.push({ estado: "otro-dia", concepto: m.concepto, monto: m.monto, fechaJohnster: m.par.j.fecha, gastoId: m.gastoId });
+        else if (m.par.estado === "otro-monto") gastos.push({ estado: "otro-monto", concepto: m.concepto, monto: m.monto, montoJohnster: m.par.j.monto, ticketId: ticket(m.par.j) });
+        else gastos.push({ estado: "otro-dia", concepto: m.concepto, monto: m.monto, fechaJohnster: m.par.j.fecha, gastoId: m.gastoId, ticketId: ticket(m.par.j) });
       });
     jg.filter((g) => g.fecha === fecha).forEach((g) => {
-      if (!g.usado) gastos.push({ estado: "solo-johnster", concepto: g.concepto, monto: g.monto });
-      else if (g.usado.fecha !== fecha) gastos.push({ estado: "otro-dia", concepto: g.concepto, monto: g.monto, fechaTuya: g.usado.fecha, gastoId: g.usado.gastoId });
+      if (!g.usado) gastos.push({ estado: "solo-johnster", concepto: g.concepto, monto: g.monto, ticketId: ticket(g) });
+      else if (g.usado.fecha !== fecha) gastos.push({ estado: "otro-dia", concepto: g.concepto, monto: g.monto, fechaTuya: g.usado.fecha, gastoId: g.usado.gastoId, ticketId: ticket(g) });
     });
     if (ing || jGastosDia.length) {
       const tuyos = sumar(mios.filter((m) => m.fecha === fecha).map((m) => m.monto));

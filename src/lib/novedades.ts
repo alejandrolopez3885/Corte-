@@ -347,6 +347,14 @@ export const NOVEDADES: Novedad[] = [
     visual: "autocompletar",
   },
   {
+    id: "ver-comprobante-bot",
+    fecha: "2026-10-27T11:35:00Z",
+    seccion: "corte",
+    titulo: "Ver los comprobantes del bot",
+    texto: "Al guardar el corte, toca **Ver** junto a cada gasto para ver la foto de su ticket en el bot, y **Ver en Drive** para el comprobante bancario.",
+    visual: "guardarCorte",
+  },
+  {
     id: "guardar-corte-comprobantes",
     fecha: "2026-10-27T09:00:00Z",
     seccion: "corte",

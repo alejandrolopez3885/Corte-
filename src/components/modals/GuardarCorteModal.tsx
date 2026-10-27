@@ -3,6 +3,7 @@ import { Lock } from "lucide-react";
 import { Sheet } from "../ui";
 import { addDaysIso, money } from "../../lib/dataModel";
 import { supabase } from "../../lib/supabaseClient";
+import { LinkBancario, VerComprobante } from "./ComprobanteJohnster";
 import { compararSemana, type DiaComparado, type EstadoGasto, type JohnsterDatos } from "../../lib/cuadrar";
 import type { DayData, DayName, EmpleadoEntry } from "../../lib/types";
 
@@ -83,6 +84,7 @@ export function GuardarCorteModal({
   const [rev, setRev] = useState<{ estado: "cargando" | "error" | "listo"; datos?: JohnsterDatos; error?: string }>({ estado: "cargando" });
   const [sinRevisar, setSinRevisar] = useState(false);
   const [escribiendo, setEscribiendo] = useState<{ clave: string; texto: string } | null>(null);
+  const [viendo, setViendo] = useState<{ id: string; concepto: string; monto: number } | null>(null);
   async function revisar() {
     if (!semana.length) return setRev({ estado: "error", error: "No se encontró la semana de este día." });
     setRev({ estado: "cargando" });
@@ -346,7 +348,10 @@ export function GuardarCorteModal({
           {faltaBancario ? (
             <div className="anotado">✎ Falta el comprobante bancario (anotado)</div>
           ) : (
-            <div>{ing.tarjetas > 0 ? "✓ Comprobante bancario subido" : "✓ Sin tarjetas este día"}</div>
+            <div>
+              {ing.tarjetas > 0 ? "✓ Comprobante bancario subido " : "✓ Sin tarjetas este día"}
+              {ing.tarjetas > 0 && <LinkBancario url={ing.comprobanteUrl} />}
+            </div>
           )}
           {sinComprobante.length ? (
             <div className="anotado">
@@ -356,6 +361,23 @@ export function GuardarCorteModal({
             <div>✓ {gastosBot.length} {gastosBot.length === 1 ? "gasto" : "gastos"} en efectivo en el bot, todos con comprobante</div>
           )}
           {(faltaBancario || sinComprobante.length > 0) && <small className="anotado">Nota: “{notas[claveComp]}”</small>}
+          {gastosBot.length > 0 && (
+            <div className="gc-tickets">
+              {gastosBot.map((g) => (
+                <div key={g.id}>
+                  <span>{g.concepto}</span>
+                  <span>{money(g.monto)}</span>
+                  {g.comprobante ? (
+                    <button className="vc-ver" onClick={() => setViendo({ id: g.id, concepto: g.concepto, monto: g.monto })}>
+                      Ver
+                    </button>
+                  ) : (
+                    <span className="anotado">Sin ticket</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
           <div>✓ Venta, transferencias, efectivo y gastos cuadran</div>
         </div>
       )}
@@ -384,6 +406,7 @@ export function GuardarCorteModal({
       <button className="link-btn gc-volver" onClick={onClose}>
         Volver a revisar
       </button>
+      {viendo && <VerComprobante {...viendo} onClose={() => setViendo(null)} />}
     </Sheet>
   );
 }

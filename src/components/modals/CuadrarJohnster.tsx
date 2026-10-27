@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Field } from "../ui";
 import { MarcoAsistente } from "./asistente";
+import { LinkBancario, VerComprobante } from "./ComprobanteJohnster";
 import { supabase } from "../../lib/supabaseClient";
 import { cierreSemana, compararSemana, type DiaComparado, type EstadoGasto, type JohnsterDatos, type Renglon } from "../../lib/cuadrar";
 import type { CuadreSemana, DayData, DayName, EmpleadoEntry } from "../../lib/types";
@@ -488,6 +489,14 @@ export function CuadrarJohnster({
             </div>
           </div>
         )}
+        {sc === "tarjetas" && (() => {
+          const ing = datos?.ingresos.find((x) => x.fecha === fecha);
+          return ing?.comprobanteUrl ? (
+            <p className="cj-bancario">
+              Comprobante bancario del día <LinkBancario url={ing.comprobanteUrl} />
+            </p>
+          ) : null;
+        })()}
         {cuadraYa ? (
           <p className="cj-ok">✓ Ya cuadra. Sigue con el siguiente paso.</p>
         ) : (
@@ -578,6 +587,7 @@ function ListaGastos({
   dias: { fecha: string; day: DayData | undefined }[];
   onMover: (desde: string, hasta: string, gastoId: string) => void;
 }) {
+  const [viendo, setViendo] = useState<{ id: string; concepto: string; monto: number } | null>(null);
   // Solo cambia la fecha en tu corte (Johnster no se toca). Si el gasto era
   // del corte de un mesero, sale de ese corte.
   const mover = (g: DiaComparado["gastos"][number]) => {
@@ -613,7 +623,14 @@ function ListaGastos({
                 : ayuda(g)}
             </small>
           </span>
-          <b>{pesos(g.monto)}</b>
+          <b>
+            {pesos(g.monto)}
+            {g.ticketId && (
+              <button type="button" className="vc-ver" onClick={() => setViendo({ id: g.ticketId!, concepto: g.concepto, monto: g.montoJohnster ?? g.monto })}>
+                Ver ticket
+              </button>
+            )}
+          </b>
           {(() => {
             const m = mover(g);
             return (
@@ -627,6 +644,7 @@ function ListaGastos({
           })()}
         </div>
       ))}
+      {viendo && <VerComprobante {...viendo} onClose={() => setViendo(null)} />}
     </div>
   );
 }

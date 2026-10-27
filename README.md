@@ -46,7 +46,16 @@ viendo tu día o el de Johnster; Johnster no se toca). Solo aparece si los
 dos días son de la misma semana: una semana ya cerrada no se mueve. Si
 el gasto era del corte de un mesero, sale de ese corte (el botón lo
 avisa: le sube su efectivo a entregar) y si era de la apertura deja de
-contar en ella; queda en la bitácora. Los datos los trae la función de Supabase
+contar en ella; queda en la bitácora. **Ver comprobante**
+(`src/components/modals/ComprobanteJohnster.tsx`): los gastos de Johnster
+que no cuadran ("Solo Johnster", "Otro día", "Otro monto") traen "Ver
+ticket", que abre en grande la foto del ticket tal como está en el bot
+(la función `johnster` con `{ accion: "comprobante", id }` la trae de
+Johnster, solo si es un gasto de la sucursal ya guardado en
+`johnster_datos`; se queda en memoria mientras la app está abierta). El
+comprobante bancario de tarjetas vive en Google Drive: en la pantalla de
+Tarjetas de un día que no cuadra sale "Ver en Drive ↗", que abre el link
+(se ve si la cuenta de Google tiene permiso para ese archivo). Los datos los trae la función de Supabase
 `johnster` (`supabase/functions/johnster`, ver
 [`supabase/migration_021_johnster.sql`](./supabase/migration_021_johnster.sql))
 a la tabla `johnster_datos`: ingresos por día (con débito, crédito y si
@@ -821,7 +830,10 @@ estando en Nómina te regresa al menú de Equipo):
   desglose), comprobante bancario subido, cuántos gastos en efectivo hay
   en el bot y que todos tienen comprobante, y que venta, transferencias,
   efectivo y gastos cuadran; lo que se dejó anotado sale en ámbar con la
-  nota. Abajo, un renglón con casilla por cada total — tarjetas,
+  nota. Debajo de los gastos sale la lista de los gastos en efectivo del
+  día en el bot (concepto, monto y **Ver**) y junto al comprobante
+  bancario **Ver en Drive ↗** (ver "Ver comprobante" en ⚖︎ Cuadrar).
+  Abajo, un renglón con casilla por cada total — tarjetas,
   transferencias, gastos, venta (total) y apps. Solo si se guarda sin
   revisar Johnster sale además la casilla "Ya subí al bot los
   comprobantes de gastos, bancarios y transferencias, y la venta".

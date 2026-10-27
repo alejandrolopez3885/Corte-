@@ -8,6 +8,8 @@
 // - Guardar corte (dueño o personal): { accion: "semana", desde, hasta }
 //   actualiza y devuelve solo esos días, para revisar el corte antes de
 //   cerrarlo.
+// - "Ver comprobante" (dueño o personal): { accion: "comprobante", id }
+//   devuelve la foto del ticket de un gasto de su sucursal.
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
 
 const BASE = "https://johnster-bot.onrender.com";
@@ -27,7 +29,7 @@ const mismaSucursal = (mia: string, otra: unknown) => {
   return !!a && !!b && (a.includes(b) || b.includes(a));
 };
 
-async function traer(usuario: string, password: string) {
+async function entrar(usuario: string, password: string) {
   // Render duerme el servidor: el primer intento puede tardar ~1 minuto.
   const login = await fetch(BASE + "/api/auth/login", {
     method: "POST",
@@ -37,6 +39,11 @@ async function traer(usuario: string, password: string) {
   if (!login.ok) throw new Error(login.status === 401 ? "Usuario o contraseña de Johnster incorrectos" : `Johnster no respondió (${login.status})`);
   const cookie = login.headers.getSetCookie().map((c) => c.split(";")[0]).join("; ");
   const yo = (await login.json()) as { branchName?: string };
+  return { cookie, yo };
+}
+
+async function traer(usuario: string, password: string) {
+  const { cookie, yo } = await entrar(usuario, password);
   const pedir = async (ruta: string) => {
     const r = await fetch(BASE + ruta, { headers: { cookie } });
     if (!r.ok) throw new Error(`Johnster ${ruta}: ${r.status}`);
@@ -57,6 +64,8 @@ async function traer(usuario: string, password: string) {
       tarjetaDebito: pesos(i.tarjetaDebito),
       tarjetaCredito: pesos(i.tarjetaCredito),
       comprobanteBancario: !!i.comprobante,
+      // El bancario vive en Google Drive: la app solo abre el link.
+      comprobanteUrl: typeof i.comprobante === "string" && /^https:\/\/drive\.google\.com\//.test(i.comprobante) ? i.comprobante : null,
       transferencias: pesos(i.transferencia),
       efectivo: pesos(i.efectivo),
     }));
@@ -91,7 +100,7 @@ Deno.serve(async (req) => {
     const { data: perfil } = u?.user ? await db.from("profiles").select("id, role, owner_id").eq("id", u.user.id).maybeSingle() : { data: null };
     if (!perfil) return json({ error: "Solo el dueño" }, 403);
     esDueno = perfil.role === "owner";
-    if (!esDueno && !(body?.accion === "semana" && perfil.role === "staff" && perfil.owner_id)) return json({ error: "Solo el dueño" }, 403);
+    if (!esDueno && !((body?.accion === "semana" || body?.accion === "comprobante") && perfil.role === "staff" && perfil.owner_id)) return json({ error: "Solo el dueño" }, 403);
     ownerId = esDueno ? perfil.id : perfil.owner_id;
   }
 
@@ -115,6 +124,24 @@ Deno.serve(async (req) => {
   const usuario = await secreto("johnster_usuario");
   const password = await secreto("johnster_password");
   if (!usuario || !password) return json({ error: "Faltan las credenciales de Johnster" }, 400);
+
+  // Foto del ticket de un gasto: solo si es uno de los gastos de la
+  // sucursal ya guardados en johnster_datos.
+  if (body?.accion === "comprobante" && ownerId) {
+    const id = String(body.id || "");
+    const { data: fila } = await db.from("johnster_datos").select("gastos").eq("owner_id", ownerId).maybeSingle();
+    const g = ((fila?.gastos || []) as { id: string; comprobante?: boolean }[]).find((x) => x.id === id);
+    if (!g || !g.comprobante || !/^\d+$/.test(id)) return json({ error: "Ese gasto no tiene comprobante en el bot" }, 404);
+    try {
+      const { cookie } = await entrar(usuario, password);
+      const r = await fetch(`${BASE}/api/expenses/${id}/receipt`, { headers: { cookie } });
+      if (!r.ok) return json({ error: `Johnster no dio el comprobante (${r.status})` }, 502);
+      return new Response(await r.arrayBuffer(), { headers: { ...cors, "Content-Type": "application/octet-stream", "X-Tipo": r.headers.get("content-type") || "image/jpeg" } });
+    } catch (e) {
+      return json({ error: e instanceof Error ? e.message : String(e) }, 502);
+    }
+  }
+
   const { data: filas } = await db.from("johnster_datos").select("owner_id");
   try {
     const datos = await traer(usuario, password);
