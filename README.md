@@ -31,8 +31,9 @@ con ✓ (o lo que falta, tocable) y las notas; "Confirmar: la semana cuadra"
 deja el sello (el botón dice "✓ Cuadrada") con una firma de lo comparado:
 si después cambia algo, al entrar avisa "Algo cambió desde que la
 cuadraste" y "Volver a cuadrar". Por día compara venta total
-(meseros + apps), tarjetas, transferencias y efectivo de ventas (venta en
-sala − tarjetas − transferencias); $5 o menos cuenta como que cuadra. Y los
+(meseros + apps), tarjetas, transferencias (todas las del día, igual que el
+total del día en Corte: las del corte de un mesero y las generales) y
+efectivo de ventas (venta en sala − tarjetas − transferencias); $5 o menos cuenta como que cuadra. Y los
 **gastos en efectivo** uno por uno contra los gastos en efectivo de
 Johnster (todos, sin categorías), emparejados en 3 pasadas: mismo día y
 mismo monto; mismo día, nombre parecido y monto con $5 o menos de

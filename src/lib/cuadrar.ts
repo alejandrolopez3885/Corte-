@@ -82,7 +82,10 @@ export function totalesDelDia(day: DayData | undefined) {
   const meseros = day?.meseros || [];
   const sala = sumar(meseros.map((m) => m.venta));
   const tarjetas = sumar(meseros.map((m) => m.tarjetas));
-  const transferencias = sumar(meseros.map((m) => m.transferencia));
+  // Todas las transferencias del día, igual que el total del día en Corte:
+  // las del corte de un mesero y las generales (sin corte, como las que se
+  // capturaban antes de ligarlas a un corte).
+  const transferencias = sumar((day?.transferencias || []).map((t) => t.total));
   return {
     venta: round2(sala + (day?.ventaApps || 0)),
     tarjetas,
