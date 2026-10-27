@@ -109,9 +109,23 @@ export function CreditoProveedoresModal({
     const xs = deLaSemana.filter((t) => t.tipo === tipo);
     return xs.length ? { monto: round2(xs.reduce((n, t) => n + t.monto, 0)), cuantos: xs.length, fecha: xs[xs.length - 1].fecha } : null;
   };
+  // Si no está en la semana pero hay uno igual hasta 3 días antes o
+  // después (ej. la bancaria con fecha del lunes siguiente), se avisa para
+  // cambiarle la fecha en el bot.
+  const distancia = (f: string) => Math.abs(new Date(`${f}T12:00:00`).getTime() - new Date(`${f > hasta ? hasta : weekStartDate}T12:00:00`).getTime());
+  const fueraDeSemana = (tipo: TipoTransferencia) =>
+    conectado && weekStartDate
+      ? (johnster!.transferencias || [])
+          .filter((t) => t.tipo === tipo && t.fecha >= addDaysIso(weekStartDate, -3) && t.fecha <= addDaysIso(hasta, 3) && (t.fecha < weekStartDate || t.fecha > hasta))
+          .sort((a, b) => distancia(a.fecha) - distancia(b.fecha))[0] || null
+      : null;
   const comparar = (tuyo: number, tipo: TipoTransferencia) => {
     const b = enBot(tipo);
-    return { bot: b, estado: !b ? ("falta" as const) : Math.abs(b.monto - tuyo) <= TOLERANCIA ? ("ok" as const) : ("otro" as const) };
+    return {
+      bot: b,
+      estado: !b ? ("falta" as const) : Math.abs(b.monto - tuyo) <= TOLERANCIA ? ("ok" as const) : ("otro" as const),
+      fuera: b ? null : fueraDeSemana(tipo),
+    };
   };
   const cOperativos = comparar(sumFromText(operativos), "operacion");
   const cFijos = comparar(fijosTransferencia, "fijos");
@@ -126,12 +140,14 @@ export function CreditoProveedoresModal({
   const nOtro = todos.filter((c) => c.estado === "otro").length;
   const nFalta = todos.filter((c) => c.estado === "falta").length;
   const diaBot = (f: string) => `${DAY_SHORT[(["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"] as DayName[])[new Date(`${f}T12:00:00`).getDay()]]} ${Number(f.slice(8))}`;
+  const avisoFuera = (t: { fecha: string; monto: number }) =>
+    `No está en esta semana (${diaBot(weekStartDate!)} – ${diaBot(hasta)}), pero en el bot hay uno el ${diaBot(t.fecha)} por ${money(t.monto)}: cámbiale la fecha en el bot.`;
   // Fijos y bancaria: lo de tu app es lo que debe estar en el bot.
   const confirmar = (c: ReturnType<typeof comparar>, tuyo: number) =>
     !conectado ? null : c.estado === "ok" ? (
       <p className="tr-bot">Johnster: {money(c.bot!.monto)} ({diaBot(c.bot!.fecha)})</p>
     ) : c.estado === "falta" ? (
-      <p className="tr-bot tr-falta">No está en el bot: súbelo como gasto en transferencia por {money(tuyo)}.</p>
+      <p className="tr-bot tr-falta">{c.fuera ? avisoFuera(c.fuera) : `No está en el bot: súbelo como gasto en transferencia por ${money(tuyo)}.`}</p>
     ) : (
       <p className="tr-bot tr-mal">
         Johnster tiene {money(c.bot!.monto)}: corrígelo en el bot a {money(tuyo)}.
@@ -140,7 +156,7 @@ export function CreditoProveedoresModal({
   const chip = (c: ReturnType<typeof comparar>, etiquetas?: { falta?: string }) =>
     !conectado ? null : (
       <span className={`tr-chip ${c.estado}`}>
-        {c.estado === "ok" ? "✓ En el bot" : c.estado === "falta" ? etiquetas?.falta || "No está en el bot" : "Otro monto en el bot"}
+        {c.estado === "ok" ? "✓ En el bot" : c.estado === "falta" ? (c.fuera ? `Está el ${diaBot(c.fuera.fecha)}` : etiquetas?.falta || "No está en el bot") : "Otro monto en el bot"}
       </span>
     );
 
@@ -355,11 +371,19 @@ export function CreditoProveedoresModal({
             </Field>
             {conectado && (
               <span className={`tr-chip ${a.c.estado}`}>
-                {a.c.estado === "ok" ? "✓ En el bot" : a.c.estado === "falta" ? "No está en el bot" : `Bot: ${money(a.c.bot!.monto)}`}
+                {a.c.estado === "ok" ? "✓ En el bot" : a.c.estado === "falta" ? (a.c.fuera ? `Está el ${diaBot(a.c.fuera.fecha)}` : "No está en el bot") : `Bot: ${money(a.c.bot!.monto)}`}
               </span>
             )}
           </div>
         ))}
+        {conectado && apps.some((a) => a.c.fuera) && (
+          <p className="tr-bot tr-falta">
+            {apps
+              .filter((a) => a.c.fuera)
+              .map((a) => `${a.nombre}: ${avisoFuera(a.c.fuera!)}`)
+              .join(" ")}
+          </p>
+        )}
       </div>
 
       <div className={`tr-card ${conectado ? cBancaria.estado : ""}`}>
