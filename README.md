@@ -12,7 +12,14 @@ semana se asoma al mes anterior o siguiente, se muestra tal cual, con su
 fecha exacta. En el resumen semanal, **Efectivo real (lo que contaste)**
 se guarda tal como se ve escrito: al tocar "Guardar efectivo real" (que
 cambia a "✓ Guardado") o solo al salir del campo, y la diferencia contra
-el efectivo calculado se ve mientras se escribe. Junto a las pestañas de
+el efectivo calculado se ve mientras se escribe. Debajo de "Efectivo
+recibido (calculado)" sale **Efectivo disponible en Johnster** (solo el
+dueño, si Johnster está conectado): igual que la tarjeta "Efectivo
+Disponible" del bot, el efectivo de los cortes de la semana menos sus
+gastos en efectivo (de `johnster_datos`), con "✓ Igual que tu efectivo
+recibido" o cuánto más tiene cada uno ($5 de tolerancia; avisa si al bot
+le faltan días) y una tablita Tu app vs Johnster — efectivo de ventas,
+gastos en efectivo y efectivo — con lo que no cuadra en rojo. Junto a las pestañas de
 semana (solo el dueño) está **⚖︎ Cuadrar** (`src/components/modals/CuadrarJohnster.tsx`,
 `src/lib/cuadrar.ts`): cuadra la semana contra **Johnster Bot** (el sistema
 de tu jefe) **paso a paso**, en pantalla completa como el corte: primero
