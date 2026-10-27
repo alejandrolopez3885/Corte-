@@ -64,7 +64,7 @@ export function CorteDelDia(p: CorteDelDiaProps) {
   const gastosFondo = p.fondo ? day.gastos.filter((g) => g.delFondo) : [];
   const gastos = delTurno(day.gastos).filter((g) => vista === "dia" || !(p.fondo && g.delFondo));
   const transferencias = delTurno(day.transferencias);
-  const t1Cerrado = vista === "t1" && !!ap;
+  const t1Cerrado = vista === "t1" && !!ap && !ap.desbloqueada;
   const puedeAgregar = !corteBloqueado && !t1Cerrado && !(vista === "t2" && !ap);
 
   // Número de corte de cada usuario acumulado ("Johnster · Corte 2").
@@ -614,12 +614,29 @@ export function CorteDelDia(p: CorteDelDiaProps) {
             {p.isOwner ? (
               <>
                 El personal ya no lo puede cambiar.{" "}
+                <button type="button" className="link-btn" onClick={p.onApertura}>
+                  Editar apertura
+                </button>
+                {" · "}
                 <button type="button" className="link-btn" onClick={p.onQuitarApertura}>
-                  Desbloquear apertura
+                  Desbloquear
                 </button>
               </>
             ) : (
               "Ya no se puede editar."
+            )}
+          </span>
+        </div>
+      )}
+
+      {vista === "t1" && ap?.desbloqueada && (
+        <div className="cd-aviso">
+          <span>
+            <strong>Apertura desbloqueada:</strong> el personal la puede editar.{" "}
+            {p.isOwner && (
+              <button type="button" className="link-btn" onClick={p.onApertura}>
+                Editar y volver a bloquear
+              </button>
             )}
           </span>
         </div>

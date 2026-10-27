@@ -50,6 +50,8 @@ export function AperturaModal({
   historial,
   dejadoAyer,
   fondo,
+  inicial,
+  cortesDelDia = [],
 }: {
   onClose: () => void;
   onGuardar: (v: AperturaValues) => void;
@@ -63,6 +65,12 @@ export function AperturaModal({
   // Fondo manejado en el turno 1 (desde el 25/10/2026): lo gastado con él y
   // lo que queda, que se entrega al dueño junto con la apertura.
   fondo?: { gastos: number; queda: number };
+  // Editar una apertura ya guardada: se abre con lo que tiene y al guardar
+  // reemplaza lo de antes (no se duplica).
+  inicial?: AperturaValues;
+  // Cortes del día que no son de la apertura: si un usuario ya tiene corte
+  // hoy, se avisa antes de guardar (si no, quedaría con dos cortes).
+  cortesDelDia?: { meseroId: string; nombre: string; venta: number }[];
 }) {
   const paraLlevar = catalog.find((c) => c.acumulado);
   const usuarioDe = (empleadoId: string) => {
@@ -79,11 +87,22 @@ export function AperturaModal({
     );
   };
 
-  const [abrioId, setAbrioId] = useState(abren.length === 1 ? abren[0].empleadoId : "");
-  const [usuarioId, setUsuarioId] = useState(abren.length === 1 ? usuarioDe(abren[0].empleadoId) : "");
-  const [apps, setApps] = useState("");
-  const [llevar, setLlevar] = useState<Bloque>(vacio(paraLlevar?.id || ""));
-  const [persona, setPersona] = useState<Bloque>(vacio(""));
+  const aBloque = (b: BloqueApertura): Bloque => ({
+    meseroId: b.meseroId,
+    venta: b.venta ? String(b.venta) : "",
+    tarjetas: b.tarjetas ? String(b.tarjetas) : "",
+    tarjetasDesglose: b.tarjetasDesglose,
+    transfer: b.transferencia ? String(b.transferencia) : "",
+    transferDesglose: b.transferDesglose,
+    gastos: b.gastos.map((g) => ({ id: uid(), concepto: g.concepto, monto: String(g.monto) })),
+  });
+  const bLlevar = inicial?.bloques.find((b) => catalog.find((c) => c.id === b.meseroId)?.acumulado);
+  const bPersona = inicial?.bloques.find((b) => b !== bLlevar);
+  const [abrioId, setAbrioId] = useState(inicial ? inicial.abrio?.empleadoId || "" : abren.length === 1 ? abren[0].empleadoId : "");
+  const [usuarioId, setUsuarioId] = useState(inicial ? bPersona?.meseroId || "" : abren.length === 1 ? usuarioDe(abren[0].empleadoId) : "");
+  const [apps, setApps] = useState(inicial?.ventaApps ? String(inicial.ventaApps) : "");
+  const [llevar, setLlevar] = useState<Bloque>(bLlevar ? aBloque(bLlevar) : vacio(paraLlevar?.id || ""));
+  const [persona, setPersona] = useState<Bloque>(bPersona ? aBloque(bPersona) : vacio(""));
   const [intento, setIntento] = useState(false);
 
   const nombreAbrio = empleados.find((e) => e.id === abrioId)?.nombre || abren.find((a) => a.empleadoId === abrioId)?.nombre;
@@ -167,10 +186,11 @@ export function AperturaModal({
   });
 
   return (
-    <Sheet title="Corte de apertura" onClose={onClose}>
+    <Sheet title={inicial ? "Editar apertura" : "Corte de apertura"} onClose={onClose}>
       <p className="hint">
-        Lo que llevan hasta este momento las apps, {paraLlevar?.nombre || "el usuario de para llevar"} y quien abrió. Al guardarlo
-        queda bloqueado; al cierre se escribe el total del día y la app resta esto.
+        {inicial
+          ? "Así quedó guardada la apertura. Corrige lo que haga falta: al guardar se reemplaza lo de antes (no se duplica) y vuelve a quedar bloqueada."
+          : `Lo que llevan hasta este momento las apps, ${paraLlevar?.nombre || "el usuario de para llevar"} y quien abrió. Al guardarlo queda bloqueado; al cierre se escribe el total del día y la app resta esto.`}
       </p>
       {fondo && dejadoAyer && (
         <div className="apertura-bloque">
@@ -280,6 +300,15 @@ export function AperturaModal({
         </div>
       )}
 
+      {[llevar.meseroId, usuarioId]
+        .map((id) => cortesDelDia.find((c) => c.meseroId === id))
+        .filter((c): c is NonNullable<typeof c> => !!c)
+        .map((c) => (
+          <p key={c.meseroId} className="aviso-faltante">
+            {c.nombre} ya tiene un corte hoy de {money(c.venta)} fuera de la apertura. Si guardas, quedará con dos cortes. Revisa que no sea el
+            mismo.
+          </p>
+        ))}
       {intento && falta && (
         <p className="aviso-faltante">
           {!abrioId
@@ -306,7 +335,7 @@ export function AperturaModal({
           });
         }}
       >
-        Guardar corte de apertura
+        {inicial ? "Guardar cambios de la apertura" : "Guardar corte de apertura"}
       </button>
     </Sheet>
   );

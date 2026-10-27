@@ -1,5 +1,6 @@
 import { repartoComidas } from "./comidasGratis";
-import { DAYS, GASTO_CATEGORIAS, HORARIO_AREAS_FIJAS, PLANTILLA_CONTEO_BAR, PLANTILLA_CONTEO_COCINA, type AppData, type ConteoTextoArea, type InsumoEntry, type AreaEntry, type DayData, type DayName, type EmpleadoEntry, type GastoCategoria, type HorarioFila, type HorarioMonthData, type HorarioSemana, type InsumoArea, type MeseroCatalogEntry, type MeseroCut, type MonthData, type MontoFijoSemanal, type NominaDescuento, type NominaDescuentosSemana, type NominaDia, type NominaEmpleadoSemana, type PuestoEntry, type VentaProyeccion, type WeekData, type WeekTrendPoint } from "./types";
+import type { AperturaValues } from "../components/modals/AperturaModal";
+import { DAYS, GASTO_CATEGORIAS, HORARIO_AREAS_FIJAS, PLANTILLA_CONTEO_BAR, PLANTILLA_CONTEO_COCINA, type AppData, type ConteoTextoArea, type InsumoEntry, type AreaEntry, type DayData, type DayName, type EmpleadoEntry, type Gasto, type GastoCategoria, type Transferencia, type HorarioFila, type HorarioMonthData, type HorarioSemana, type InsumoArea, type MeseroCatalogEntry, type MeseroCut, type MonthData, type MontoFijoSemanal, type NominaDescuento, type NominaDescuentosSemana, type NominaDia, type NominaEmpleadoSemana, type PuestoEntry, type VentaProyeccion, type WeekData, type WeekTrendPoint } from "./types";
 
 export const uid = (): string => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 
@@ -1201,4 +1202,93 @@ export function pluralizarUnidad(unidad: string, cantidad: number): string {
   if (!u || cantidad === 1 || /[,(]/.test(u) || u.includes(" ")) return u;
   if (ABREVIATURAS.has(u.toLowerCase().replace(/\.$/, "")) || /s$/i.test(u)) return u;
   return /[aeiouáéíóú]$/i.test(u) ? `${u}s` : `${u}es`;
+}
+
+// Guarda el corte de apertura en el día (nuevo o editado). Al editar se
+// quitan los cortes de la apertura de antes, con sus gastos y transferencias,
+// y se guardan los nuevos sin duplicar: se conservan los ids y lo ya
+// revisado (estado y categoría de los gastos) de lo que no cambió, y lo demás
+// del turno 1 (gastos generales, del fondo) se queda.
+export function aplicarApertura(d: DayData, v: AperturaValues, nombre: string) {
+  // Editar: se quitan los cortes de la apertura de antes (con sus gastos y
+  // transferencias) y se guardan los nuevos; lo demás del turno 1 se queda.
+  const ids: string[] = [];
+  // Al editar se conservan los ids y lo que ya se había revisado (estado y
+  // categoría de los gastos) de lo que no cambió.
+  const cortePrevio = new Map<string, MeseroCut>();
+  const gastosPrevios: Gasto[] = [];
+  const transferPrevia = new Map<string, Transferencia>();
+  if (d.apertura) {
+    const viejos = new Set(d.meseros.filter((m) => d.apertura!.ids.includes(m.id) && m.apertura).map((m) => m.id));
+    d.meseros.filter((m) => viejos.has(m.id)).forEach((m) => cortePrevio.set(m.meseroId, m));
+    gastosPrevios.push(...d.gastos.filter((g) => g.meseroCutId && viejos.has(g.meseroCutId)));
+    d.transferencias.forEach((t) => {
+      const c = t.meseroCutId && d.meseros.find((m) => m.id === t.meseroCutId && viejos.has(m.id));
+      if (c) transferPrevia.set(c.meseroId, t);
+    });
+    const quitados = new Set<string>(viejos);
+    d.gastos.forEach((g) => g.meseroCutId && viejos.has(g.meseroCutId) && quitados.add(g.id));
+    d.transferencias.forEach((t) => t.meseroCutId && viejos.has(t.meseroCutId) && quitados.add(t.id));
+    d.meseros = d.meseros.filter((m) => !quitados.has(m.id));
+    d.gastos = d.gastos.filter((g) => !quitados.has(g.id));
+    d.transferencias = d.transferencias.filter((t) => !quitados.has(t.id));
+    ids.push(...d.apertura.ids.filter((id) => !quitados.has(id)));
+  }
+  v.bloques.forEach((b) => {
+    const gastosTotal = round2(b.gastos.reduce((s, g) => s + g.monto, 0));
+    const cut: MeseroCut = {
+      id: cortePrevio.get(b.meseroId)?.id || uid(),
+      meseroId: b.meseroId,
+      nombre: b.nombre,
+      venta: b.venta,
+      tarjetas: b.tarjetas,
+      transferencia: b.transferencia,
+      propinaTipo: "none",
+      propina: 0,
+      gastosTotal,
+      total: round2(b.venta - b.tarjetas - b.transferencia - gastosTotal),
+      lecturaSistema: b.venta,
+      apertura: true,
+      ...(b.tarjetasDesglose ? { tarjetasDesglose: b.tarjetasDesglose } : {}),
+      ...(b.transferencia > 0 && b.transferDesglose ? { transferenciaDesglose: b.transferDesglose } : {}),
+    };
+    d.meseros.push(cut);
+    ids.push(cut.id);
+    b.gastos.forEach((g) => {
+      const iPrevio = gastosPrevios.findIndex((x) => x.concepto === g.concepto && Math.abs(x.total - g.monto) < 0.01 && x.meseroCutId === cortePrevio.get(b.meseroId)?.id);
+      const previo = iPrevio >= 0 ? gastosPrevios.splice(iPrevio, 1)[0] : undefined;
+      const id = previo?.id || uid();
+      d.gastos.push(
+        previo
+          ? { ...previo, meseroNombre: b.nombre, meseroCutId: cut.id }
+          : { id, concepto: g.concepto, total: g.monto, estado: "pendiente", origen: "mesero", meseroNombre: b.nombre, meseroCutId: cut.id }
+      );
+      ids.push(id);
+    });
+    if (b.transferencia > 0) {
+      const id = transferPrevia.get(b.meseroId)?.id || uid();
+      d.transferencias.push({
+        id, persona: b.nombre, total: b.transferencia, origen: "mesero", meseroCutId: cut.id,
+        ...(b.transferDesglose ? { desglose: b.transferDesglose } : {}),
+      });
+      ids.push(id);
+    }
+  });
+  // Al editar, los cortes de la apertura siguen arriba (turno 1 primero).
+  if (cortePrevio.size) d.meseros = [...d.meseros.filter((m) => m.apertura && ids.includes(m.id)), ...d.meseros.filter((m) => !(m.apertura && ids.includes(m.id)))];
+  // Los gastos del fondo son del turno 1: quedan dentro de la apertura.
+  d.gastos.forEach((g) => {
+    if (g.delFondo && !ids.includes(g.id)) ids.push(g.id);
+  });
+  // Apps: el total del día empieza con lo de la apertura.
+  if (d.apertura) d.ventaApps = Math.max(0, round2((d.ventaApps || 0) - d.apertura.ventaApps + v.ventaApps));
+  else if ((d.ventaApps || 0) < v.ventaApps) d.ventaApps = v.ventaApps;
+  d.apertura = {
+    fecha: new Date().toISOString(),
+    nombre,
+    ...(v.abrio ? { abrio: v.abrio } : {}),
+    ventaApps: v.ventaApps,
+    ids,
+  };
+  recalcularAcumulados(d);
 }

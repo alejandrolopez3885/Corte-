@@ -520,6 +520,9 @@ export interface DayData {
     abrio?: { empleadoId?: string; nombre: string };
     ventaApps: number;
     ids: string[];
+    // "Desbloquear apertura": el personal la puede editar; sigue siendo el
+    // turno 1. Se quita al volver a guardarla.
+    desbloqueada?: boolean;
   };
   // Efectivo que quien cerró deja en el restaurante para el día siguiente
   // (ej. para pagar hielo): se resta del efectivo a entregar de este día y

@@ -8,7 +8,7 @@ import { useAuth } from "../lib/auth.tsx";
 import { useAppData } from "../lib/useAppData";
 import { historialNombres } from "../lib/gastosBusqueda";
 import {
-  addDaysIso, buildMonth, dateForDay, ubicarDiaPorFecha, formatAssignedDate, formatDayNumber, formatLongDayDate, formatWeekRange,
+  addDaysIso, aplicarApertura, buildMonth, dateForDay, ubicarDiaPorFecha, formatAssignedDate, formatDayNumber, formatLongDayDate, formatWeekRange,
   mondayOnOrBefore, money, mostRecentDayInWeek, mostRecentWeekIndex, resolveAssignmentLocation, resolveWeekStartDate,
   normalizarNombre, round2, sumFromText, todayIso, uid, recalcularAcumulados, turnosActivos, quienesAbren, efectivoDelDia, FONDO_EN_APERTURA_DESDE, empleadoDelDueno,
 } from "../lib/dataModel";
@@ -351,8 +351,30 @@ export default function CortesApp({ profile }: { profile: Profile }) {
   const turnosDelDia = turnosActivos(activeDayDate);
   // Lo guardado con "Guardar medio turno" ya no lo puede cambiar el personal.
   function bloqueadoMedioTurno(id?: string) {
-    return !isOwner && !!id && !!day?.apertura?.ids.includes(id);
+    return !isOwner && !!id && !!day?.apertura?.ids.includes(id) && !day.apertura.desbloqueada;
   }
+  // Editar apertura: lo que ya tiene guardado, para precargar el formulario.
+  const aperturaInicial: AperturaValues | undefined = day?.apertura
+    ? {
+        abrio: day.apertura.abrio,
+        ventaApps: day.apertura.ventaApps,
+        bloques: day.meseros
+          .filter((m) => day.apertura!.ids.includes(m.id) && m.apertura)
+          .map((m) => {
+            const t = day.transferencias.find((x) => x.meseroCutId === m.id);
+            return {
+              meseroId: m.meseroId,
+              nombre: m.nombre,
+              venta: m.venta,
+              tarjetas: m.tarjetas,
+              tarjetasDesglose: m.tarjetasDesglose,
+              transferencia: m.transferencia,
+              transferDesglose: t?.desglose,
+              gastos: day.gastos.filter((g) => g.meseroCutId === m.id).map((g) => ({ concepto: g.concepto, monto: g.total })),
+            };
+          }),
+      }
+    : undefined;
   // Quién abre hoy según el horario (X = abre, Z = dobla).
   const abrenHoy =
     turnosDelDia && activeMonth ? quienesAbren(data.horarios[activeMonth]?.weeks?.[activeWeek], activeDay) : [];
@@ -1272,55 +1294,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
   // apps hasta ese momento y bloquea todo eso para el personal.
   function guardarApertura(v: AperturaValues) {
     updateDay((d, next) => {
-      const ids: string[] = [];
-      v.bloques.forEach((b) => {
-        const gastosTotal = round2(b.gastos.reduce((s, g) => s + g.monto, 0));
-        const cut: MeseroCut = {
-          id: uid(),
-          meseroId: b.meseroId,
-          nombre: b.nombre,
-          venta: b.venta,
-          tarjetas: b.tarjetas,
-          transferencia: b.transferencia,
-          propinaTipo: "none",
-          propina: 0,
-          gastosTotal,
-          total: round2(b.venta - b.tarjetas - b.transferencia - gastosTotal),
-          lecturaSistema: b.venta,
-          apertura: true,
-          ...(b.tarjetasDesglose ? { tarjetasDesglose: b.tarjetasDesglose } : {}),
-          ...(b.transferencia > 0 && b.transferDesglose ? { transferenciaDesglose: b.transferDesglose } : {}),
-        };
-        d.meseros.push(cut);
-        ids.push(cut.id);
-        b.gastos.forEach((g) => {
-          const id = uid();
-          d.gastos.push({ id, concepto: g.concepto, total: g.monto, estado: "pendiente", origen: "mesero", meseroNombre: b.nombre, meseroCutId: cut.id });
-          ids.push(id);
-        });
-        if (b.transferencia > 0) {
-          const id = uid();
-          d.transferencias.push({
-            id, persona: b.nombre, total: b.transferencia, origen: "mesero", meseroCutId: cut.id,
-            ...(b.transferDesglose ? { desglose: b.transferDesglose } : {}),
-          });
-          ids.push(id);
-        }
-      });
-      // Los gastos del fondo son del turno 1: quedan dentro de la apertura.
-      d.gastos.forEach((g) => {
-        if (g.delFondo && !ids.includes(g.id)) ids.push(g.id);
-      });
-      // Apps: el total del día empieza con lo de la apertura.
-      if ((d.ventaApps || 0) < v.ventaApps) d.ventaApps = v.ventaApps;
-      d.apertura = {
-        fecha: new Date().toISOString(),
-        nombre: profile.display_name || (isOwner ? "Dueño" : "Alguien del equipo"),
-        ...(v.abrio ? { abrio: v.abrio } : {}),
-        ventaApps: v.ventaApps,
-        ids,
-      };
-      recalcularAcumulados(d);
+      aplicarApertura(d, v, profile.display_name || (isOwner ? "Dueño" : "Alguien del equipo"));
       // Se recuerda el usuario del sistema de quien abrió.
       const emp = next.empleados.find((e) => e.id === v.abrio?.empleadoId);
       if (emp && v.usuarioSistemaId) emp.usuarioSistemaId = v.usuarioSistemaId;
@@ -1336,9 +1310,11 @@ export default function CortesApp({ profile }: { profile: Profile }) {
     setModal(null);
   }
 
+  // Desbloquear: el personal la puede editar, pero sigue siendo el turno 1
+  // (antes se borraba y la app la volvía a pedir vacía).
   function quitarApertura() {
     updateDay((d) => {
-      delete d.apertura;
+      if (d.apertura) d.apertura.desbloqueada = true;
     });
     setModal(null);
   }
@@ -2431,6 +2407,10 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           abren={abrenHoy}
           historial={historialGastos}
           dejadoAyer={efectivoDia?.ayer}
+          inicial={aperturaInicial}
+          cortesDelDia={(day?.meseros || [])
+            .filter((m) => !day?.apertura?.ids.includes(m.id))
+            .map((m) => ({ meseroId: m.meseroId, nombre: m.nombre, venta: m.venta }))}
           fondo={fondoActivo && efectivoDia ? { gastos: efectivoDia.gastosFondo, queda: efectivoDia.fondoQueda } : undefined}
         />
       )}
@@ -2444,7 +2424,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
       {modal?.type === "quitarApertura" && (
         <Sheet title="Desbloquear apertura" onClose={() => setModal(null)}>
           <p className="hint">
-            Los cortes de la apertura se quedan, pero el personal los podrá editar y la lista vuelve a verse en un solo bloque.
+            El personal podrá editar los cortes de la apertura; siguen siendo del Turno 1. Para volver a bloquearla, edítala y guárdala.
           </p>
           <button className="btn-primary" onClick={quitarApertura}>
             Sí, desbloquear
