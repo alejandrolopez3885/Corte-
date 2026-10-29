@@ -14,3 +14,6 @@
   cambio su novedad en `src/lib/novedades.ts` (fecha y hora de publicación,
   sección, título corto, una frase y su dibujito) para que se le avise al
   entrar.
+- Las novedades de cambios del corte que tienen que ver con Johnster Bot
+  (revisiones contra el bot, comprobantes, etc.) llevan `soloDueno: true`:
+  solo las ve el dueño, el personal no.

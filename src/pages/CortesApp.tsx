@@ -1321,9 +1321,12 @@ export default function CortesApp({ profile }: { profile: Profile }) {
   // "Corte de apertura": crea los cortes (sin propina) del usuario de para
   // llevar y del de quien abrió, con sus gastos y transferencias, anota las
   // apps hasta ese momento y bloquea todo eso para el personal.
-  function guardarApertura(v: AperturaValues) {
+  function guardarApertura(v: AperturaValues, nota?: { clave: string; texto: string }) {
     updateDay((d, next) => {
       aplicarApertura(d, v, profile.display_name || (isOwner ? "Dueño" : "Alguien del equipo"));
+      // "Dejar así" en la revisión de gastos con Johnster: la nota va con las de Cuadrar.
+      const semana = activeMonth ? next.months[activeMonth]?.weeks[activeWeek] : undefined;
+      if (nota && semana) semana.cuadre = { ...semana.cuadre, notas: { ...semana.cuadre?.notas, [nota.clave]: nota.texto } };
       // Se recuerda el usuario del sistema de quien abrió.
       const emp = next.empleados.find((e) => e.id === v.abrio?.empleadoId);
       if (emp && v.usuarioSistemaId) emp.usuarioSistemaId = v.usuarioSistemaId;
@@ -2470,6 +2473,9 @@ export default function CortesApp({ profile }: { profile: Profile }) {
             .filter((m) => !day?.apertura?.ids.includes(m.id))
             .map((m) => ({ meseroId: m.meseroId, nombre: m.nombre, venta: m.venta }))}
           fondo={fondoActivo && efectivoDia ? { gastos: efectivoDia.gastosFondo, queda: efectivoDia.fondoQueda } : undefined}
+          fecha={activeDayDate || undefined}
+          notas={month?.weeks[activeWeek]?.cuadre?.notas || {}}
+          esDueno={isOwner}
         />
       )}
       {modal?.type === "dejarEfectivo" && day && (

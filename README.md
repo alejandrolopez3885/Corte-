@@ -617,7 +617,17 @@ estando en Nómina te regresa al menú de Equipo):
   borra la apertura: sus cortes siguen en el Turno 1 y el personal los puede
   editar ("Apertura desbloqueada… · Editar y volver a bloquear"). En una
   apertura nueva, si el usuario ya tiene corte ese día fuera de la apertura,
-  el formulario avisa que quedaría con dos cortes. El usuario de para llevar se
+  el formulario avisa que quedaría con dos cortes. Al guardar la apertura,
+  si tiene gastos, **se revisan en Johnster** (solo los gastos; la venta del
+  turno 1 no se sube al bot): "Revisando gastos con Johnster…" busca cada
+  uno en los gastos en efectivo del bot de ese día (mismo monto, nombre
+  parecido primero). Si todos están con su ticket se guarda solo; si no,
+  "Faltan gastos de la apertura en el bot" con cada uno ("No está en el
+  bot" o "Sin comprobante"), "Dejar así y anotar por qué" (guarda la
+  apertura y la nota `apertura:[fecha]` con las de Cuadrar), "Revisar de
+  nuevo ↻", "Volver a la apertura" y, solo el dueño, "Guardar sin revisar
+  Johnster (emergencia)". Si el bot no responde también se puede anotar y
+  guardar. El usuario de para llevar se
   marca una vez en Equipo > Meseros ("Usuario de para llevar (sin
   propina)").
 - **Efectivo del día** (mismos días, desde el 21/10/2026): en lugar del

@@ -34,6 +34,8 @@ export interface Novedad {
   soloPiso?: boolean;
   // Solo cuando ya se hizo la carga inicial de Monedas Anubis.
   trasCargaMonedas?: boolean;
+  // Solo para el dueño (el personal no la ve).
+  soloDueno?: boolean;
 }
 
 export const NOVEDADES: Novedad[] = [
@@ -347,7 +349,17 @@ export const NOVEDADES: Novedad[] = [
     visual: "autocompletar",
   },
   {
+    id: "apertura-gastos-bot",
+    soloDueno: true,
+    fecha: "2026-10-29T22:20:00Z",
+    seccion: "corte",
+    titulo: "La apertura revisa sus gastos en el bot",
+    texto: "Al guardar la **apertura** se revisa que sus gastos ya estén en el bot con su ticket (la venta del turno 1 no). Si falta alguno, súbelo y toca **Revisar de nuevo**.",
+    visual: "apertura",
+  },
+  {
     id: "corte-sin-venta",
+    soloDueno: true,
     fecha: "2026-10-29T21:39:00Z",
     seccion: "corte",
     titulo: "Cortes sin venta",
@@ -356,6 +368,7 @@ export const NOVEDADES: Novedad[] = [
   },
   {
     id: "ver-comprobante-bot",
+    soloDueno: true,
     fecha: "2026-10-27T11:35:00Z",
     seccion: "corte",
     titulo: "Ver los comprobantes del bot",
@@ -364,6 +377,7 @@ export const NOVEDADES: Novedad[] = [
   },
   {
     id: "guardar-corte-comprobantes",
+    soloDueno: true,
     fecha: "2026-10-27T09:00:00Z",
     seccion: "corte",
     titulo: "Guardar corte revisa comprobantes",
@@ -372,6 +386,7 @@ export const NOVEDADES: Novedad[] = [
   },
   {
     id: "guardar-corte-johnster",
+    soloDueno: true,
     fecha: "2026-10-27T07:54:00Z",
     seccion: "corte",
     titulo: "Guardar corte revisa con Johnster",
@@ -474,6 +489,7 @@ export async function novedadesPendientes(profile: Profile, data: AppData, tiene
   return NOVEDADES.filter((n) => {
     const general = n.seccion === "general";
     if (!yaPublicada(n) || (!general && !secciones.includes(n.seccion)) || estado.vistas.includes(n.id)) return false;
+    if (n.soloDueno) return false;
     if (n.soloArea && n.soloArea !== areaConteo) return false;
     if (n.soloPiso && !esDePiso(data, profile)) return false;
     if (n.trasCargaMonedas && !data.monedasCargaInicial) return false;

@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { supabase } from "../../lib/supabaseClient";
+import type { JohnsterGasto } from "../../lib/cuadrar";
 import { Plus, X } from "lucide-react";
 import { Sheet, Field, NumInput, SumInput } from "../ui";
 import { ConceptoInput } from "../ConceptoInput";
@@ -52,9 +54,13 @@ export function AperturaModal({
   fondo,
   inicial,
   cortesDelDia = [],
+  fecha,
+  notas = {},
+  esDueno = false,
 }: {
   onClose: () => void;
-  onGuardar: (v: AperturaValues) => void;
+  // nota: si se guarda sin que estén todos los gastos en el bot ("Dejar así").
+  onGuardar: (v: AperturaValues, nota?: { clave: string; texto: string }) => void;
   catalog: MeseroCatalogEntry[];
   empleados: EmpleadoEntry[];
   // Quién tiene X (abre) o Z (dobla) ese día en el horario.
@@ -71,6 +77,12 @@ export function AperturaModal({
   // Cortes del día que no son de la apertura: si un usuario ya tiene corte
   // hoy, se avisa antes de guardar (si no, quedaría con dos cortes).
   cortesDelDia?: { meseroId: string; nombre: string; venta: number }[];
+  // Revisión de los gastos de la apertura en Johnster antes de guardar (la
+  // venta del turno 1 no se sube al bot): fecha del día, notas de Cuadrar
+  // ("apertura:fecha") y si es el dueño (puede guardar sin revisar).
+  fecha?: string;
+  notas?: Record<string, string>;
+  esDueno?: boolean;
 }) {
   const paraLlevar = catalog.find((c) => c.acumulado);
   const usuarioDe = (empleadoId: string) => {
@@ -104,6 +116,8 @@ export function AperturaModal({
   const [llevar, setLlevar] = useState<Bloque>(bLlevar ? aBloque(bLlevar) : vacio(paraLlevar?.id || ""));
   const [persona, setPersona] = useState<Bloque>(bPersona ? aBloque(bPersona) : vacio(""));
   const [intento, setIntento] = useState(false);
+  const [rev, setRev] = useState<null | { estado: "cargando" | "error" | "listo"; gastos?: JohnsterGasto[]; error?: string }>(null);
+  const [escribiendo, setEscribiendo] = useState<string | null>(null);
 
   const nombreAbrio = empleados.find((e) => e.id === abrioId)?.nombre || abren.find((a) => a.empleadoId === abrioId)?.nombre;
   const usuario = catalog.find((c) => c.id === usuarioId);
@@ -184,6 +198,120 @@ export function AperturaModal({
     transferDesglose: b.transferDesglose,
     gastos: b.gastos.filter((g) => g.concepto.trim() && g.monto).map((g) => ({ concepto: g.concepto.trim(), monto: parseFloat(g.monto) || 0 })),
   });
+
+  const valores = (): AperturaValues => ({
+    abrio: nombreAbrio ? { empleadoId: abrioId, nombre: nombreAbrio } : undefined,
+    usuarioSistemaId: usuarioId,
+    ventaApps: parseFloat(apps) || 0,
+    bloques: [aValores(llevar, usuarioLlevar?.nombre || "Para llevar"), aValores({ ...persona, meseroId: usuarioId }, usuario?.nombre || "")],
+  });
+  const guardar = () => onGuardar(valores());
+
+  // Gastos de la apertura contra los gastos en efectivo del bot de ese día:
+  // cada uno busca uno con el mismo monto (el de nombre parecido primero).
+  const gastosApertura = valores().bloques.flatMap((b) => b.gastos);
+  const claveNota = `apertura:${fecha}`;
+  async function revisarGastos() {
+    setRev({ estado: "cargando" });
+    const { data, error } = await supabase.functions.invoke("johnster", { body: { accion: "semana", desde: fecha, hasta: fecha } });
+    let msg: string | null = null;
+    if (error) {
+      const ctx = (error as { context?: Response }).context;
+      msg = (ctx && (await ctx.json().catch(() => null))?.error) || "No se pudo conectar con Johnster.";
+    } else if (data?.error) msg = data.error;
+    if (msg) return setRev({ estado: "error", error: msg });
+    const delDia = ((data?.gastos || []) as JohnsterGasto[]).filter((g) => g.fecha === fecha);
+    const usados = new Set<string>();
+    const res = gastosApertura.map((g) => {
+      const mismos = delDia.filter((x) => !usados.has(x.id) && Math.abs(x.monto - g.monto) < 0.01);
+      const palabra = (t: string) => t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").match(/[a-z]{3,}/g) || ([] as string[]);
+      const par = mismos.find((x) => palabra(x.concepto).some((w) => palabra(g.concepto).includes(w))) || mismos[0];
+      if (par) usados.add(par.id);
+      return { ...g, par };
+    });
+    if (res.every((r) => r.par && r.par.comprobante !== false)) {
+      setRev(null);
+      guardar();
+      return;
+    }
+    setRev({ estado: "listo", gastos: delDia });
+    setRevision(res);
+  }
+  const [revision, setRevision] = useState<{ concepto: string; monto: number; par?: JohnsterGasto }[]>([]);
+
+  if (rev) {
+    const faltan = revision.filter((r) => !r.par);
+    const sinComp = revision.filter((r) => r.par && r.par.comprobante === false);
+    return (
+      <Sheet
+        title={rev.estado === "cargando" ? "Revisando gastos con Johnster…" : rev.estado === "error" ? "No se pudo revisar con Johnster" : "Faltan gastos de la apertura en el bot"}
+        onClose={onClose}
+      >
+        {rev.estado === "cargando" ? (
+          <p className="hint">Solo se revisan los gastos (la venta del turno 1 no se sube al bot). Puede tardar hasta un minuto si el bot estaba dormido.</p>
+        ) : rev.estado === "error" ? (
+          <p className="gc-aviso">{rev.error}</p>
+        ) : (
+          <>
+            <p className="hint">Súbelos al bot y toca Revisar de nuevo. La venta del turno 1 no se revisa.</p>
+            <div className="gc-j">
+              {[...faltan, ...sinComp].map((r, i) => (
+                <div key={i} className="gc-j-gasto">
+                  <span>
+                    <i className={r.par ? "otro-monto" : "solo-tu"}>{r.par ? "Sin comprobante" : "No está en el bot"}</i>
+                    {r.concepto}
+                    <small>{r.par ? "Sube su ticket en el bot" : "Súbelo al bot como gasto en efectivo"}</small>
+                  </span>
+                  <span>{money(r.monto)}</span>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+        {rev.estado !== "cargando" && (
+          <>
+            {escribiendo !== null ? (
+              <div className="gc-j-escribir">
+                <textarea className="text-input" rows={2} placeholder="¿Por qué se guarda así?" value={escribiendo} onChange={(e) => setEscribiendo(e.target.value)} autoFocus />
+                <button
+                  className="btn-primary"
+                  disabled={!escribiendo.trim()}
+                  onClick={() => {
+                    onGuardar(valores(), { clave: claveNota, texto: escribiendo.trim() });
+                    setEscribiendo(null);
+                    setRev(null);
+                  }}
+                >
+                  Guardar nota y la apertura
+                </button>
+              </div>
+            ) : (
+              <button className="link-btn" onClick={() => setEscribiendo("")}>
+                ✎ Dejar así y anotar por qué
+              </button>
+            )}
+            <button className="btn-primary" onClick={revisarGastos}>
+              Revisar de nuevo ↻
+            </button>
+            <button className="link-btn gc-volver" onClick={() => setRev(null)}>
+              Volver a la apertura
+            </button>
+          </>
+        )}
+        {esDueno && (
+          <button
+            className="link-btn gc-volver"
+            onClick={() => {
+              setRev(null);
+              guardar();
+            }}
+          >
+            Guardar sin revisar Johnster (emergencia)
+          </button>
+        )}
+      </Sheet>
+    );
+  }
 
   return (
     <Sheet title={inicial ? "Editar apertura" : "Corte de apertura"} onClose={onClose}>
@@ -327,12 +455,8 @@ export function AperturaModal({
             setIntento(true);
             return;
           }
-          onGuardar({
-            abrio: nombreAbrio ? { empleadoId: abrioId, nombre: nombreAbrio } : undefined,
-            usuarioSistemaId: usuarioId,
-            ventaApps: parseFloat(apps) || 0,
-            bloques: [aValores(llevar, usuarioLlevar?.nombre || "Para llevar"), aValores({ ...persona, meseroId: usuarioId }, usuario?.nombre || "")],
-          });
+          if (gastosApertura.length && fecha && notas[claveNota] === undefined) revisarGastos();
+          else guardar();
         }}
       >
         {inicial ? "Guardar cambios de la apertura" : "Guardar corte de apertura"}
