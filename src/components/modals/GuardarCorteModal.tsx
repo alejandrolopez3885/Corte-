@@ -34,11 +34,11 @@ const ayudaGasto = (g: DiaComparado["gastos"][number]) =>
 // Lo que no deja terminar el corte: gastos en Pendiente (falta subir su
 // comprobante al bot y tocar Confirmar), gastos incompletos y cortes de
 // mesero sin venta.
-export function faltantesDelCorte(day: DayData): { titulo: string; detalle: string }[] {
-  const out: { titulo: string; detalle: string }[] = [];
+export function faltantesDelCorte(day: DayData): { titulo: string; detalle: string; sinVentaId?: string }[] {
+  const out: { titulo: string; detalle: string; sinVentaId?: string }[] = [];
   if (day.meseros.length === 0) out.push({ titulo: "Meseros", detalle: "No hay ningún corte de mesero capturado." });
   day.meseros.forEach((m) => {
-    if (!(m.venta > 0)) out.push({ titulo: `Mesero ${m.nombre}`, detalle: "No tiene venta capturada." });
+    if (!(m.venta > 0) && !m.sinVenta) out.push({ titulo: `Mesero ${m.nombre}`, detalle: "No tiene venta capturada.", sinVentaId: m.id });
   });
   day.gastos.forEach((g) => {
     const titulo = `${g.concepto.trim() || "Gasto sin concepto"} · ${money(g.total)}`;
@@ -65,6 +65,7 @@ export function GuardarCorteModal({
   notas,
   onNota,
   esDueno,
+  onSinVenta,
 }: {
   day: DayData;
   totals: { tarjetas: number; transferencias: number; gastos: number; ventaTotal: number; ventaApps: number };
@@ -79,6 +80,8 @@ export function GuardarCorteModal({
   notas: Record<string, string>;
   onNota: (clave: string, nota: string | undefined) => void;
   esDueno: boolean;
+  // "No hubo venta": deja ese corte en $0 a propósito.
+  onSinVenta?: (cutId: string) => void;
 }) {
   const faltan = faltantesDelCorte(day);
   const [rev, setRev] = useState<{ estado: "cargando" | "error" | "listo"; datos?: JohnsterDatos; error?: string }>({ estado: "cargando" });
@@ -98,10 +101,13 @@ export function GuardarCorteModal({
     } else if (data?.error) msg = data.error;
     setRev(msg ? { estado: "error", error: msg } : { estado: "listo", datos: data as JohnsterDatos });
   }
+  // Se revisa con Johnster en cuanto ya no falta nada (también si se
+  // completa aquí mismo, ej. "No hubo venta").
+  const completo = faltan.length === 0;
   useEffect(() => {
-    if (faltan.length === 0) revisar();
+    if (completo) revisar();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [completo]);
   const renglones = [
     { key: "tarjetas", texto: "Total de tarjetas", monto: totals.tarjetas },
     { key: "transferencias", texto: "Total de transferencias", monto: totals.transferencias },
@@ -133,6 +139,11 @@ export function GuardarCorteModal({
             <div key={i} className="gc-falta">
               <strong>{f.titulo}</strong>
               {f.detalle}
+              {f.sinVentaId && onSinVenta && (
+                <button type="button" className="gc-sin-venta" onClick={() => onSinVenta(f.sinVentaId!)}>
+                  No hubo venta · dejarlo en $0
+                </button>
+              )}
             </div>
           ))}
         </div>

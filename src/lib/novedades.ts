@@ -347,6 +347,14 @@ export const NOVEDADES: Novedad[] = [
     visual: "autocompletar",
   },
   {
+    id: "corte-sin-venta",
+    fecha: "2026-10-29T21:39:00Z",
+    seccion: "corte",
+    titulo: "Cortes sin venta",
+    texto: "Si un usuario de verdad no tuvo venta (ej. el de para llevar), al tocar **Guardar corte** usa **No hubo venta · dejarlo en $0** y ya te deja seguir.",
+    visual: "faltan",
+  },
+  {
     id: "ver-comprobante-bot",
     fecha: "2026-10-27T11:35:00Z",
     seccion: "corte",

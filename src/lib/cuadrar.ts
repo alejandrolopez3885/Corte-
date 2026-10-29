@@ -80,14 +80,39 @@ export interface CierreSemana {
 
 type DiaEntrada = { dia: DayName; fecha: string; day: DayData | undefined };
 
-export function cierreSemana(dias: DiaEntrada[], empleados: EmpleadoEntry[] = []): CierreSemana {
+// Adelantos de quien los junta que ya están en el bot en su mismo día (mismo
+// monto y de nómina o nombre parecido; ej. los subió quien cerró ese día):
+// esos cuentan en su día y ya no se piden en el gasto junto del domingo.
+export function adelantosEnSuDia(dias: DiaEntrada[], j: JohnsterDatos | null | undefined, empleados: EmpleadoEntry[] = []): Set<string> {
+  const ids = new Set<string>();
+  if (!j) return ids;
+  const juntan = new Set(empleados.filter((e) => e.juntarAdelantos).map((e) => e.id));
+  const usados = new Set<string>();
+  dias.forEach((d) =>
+    (d.day?.gastos || []).forEach((g) => {
+      if (g.categoria !== "nomina" || !g.empleadoId || !juntan.has(g.empleadoId)) return;
+      const par = j.gastos.find(
+        (x) => !usados.has(x.id) && x.fecha === d.fecha && Math.abs(x.monto - g.total) < 0.01 && (x.tipo === "nomina" || parecidos(x.concepto, g.concepto))
+      );
+      if (par) {
+        usados.add(par.id);
+        ids.add(g.id);
+      }
+    })
+  );
+  return ids;
+}
+
+export function cierreSemana(dias: DiaEntrada[], empleados: EmpleadoEntry[] = [], yaSubidos: Set<string> = new Set()): CierreSemana {
   const fechaDe = (dia: DayName) => dias.find((d) => d.dia === dia)!.fecha;
   const week = { days: Object.fromEntries(dias.map((d) => [d.dia, d.day || { meseros: [], gastos: [], transferencias: [], ventaApps: 0 }])) } as unknown as WeekData;
   const adelantos = empleados
     .filter((e) => e.juntarAdelantos)
     .map((e) => {
       const items = dias.flatMap((d) =>
-        (d.day?.gastos || []).filter((g) => g.categoria === "nomina" && g.empleadoId === e.id).map((g) => ({ fecha: d.fecha, concepto: g.concepto, monto: g.total }))
+        (d.day?.gastos || [])
+          .filter((g) => g.categoria === "nomina" && g.empleadoId === e.id && !yaSubidos.has(g.id))
+          .map((g) => ({ fecha: d.fecha, concepto: g.concepto, monto: g.total }))
       );
       return { nombre: e.nombre, concepto: `Adelanto nómina ${e.nombre}`, items, total: round2(items.reduce((t, x) => t + x.monto, 0)) };
     })
@@ -166,13 +191,14 @@ function emparejar(dias: DiaEntrada[], j: JohnsterDatos, empleados: EmpleadoEntr
   // comidas solo queda en su día lo que se rebaja.
   const juntaAdelantos = new Set(empleados.filter((e) => e.juntarAdelantos).map((e) => e.id));
   const conComidas = new Map(empleados.filter((e) => e.comidasGratis?.porSemana).map((e) => [e.id, e]));
-  const cierre = cierreSemana(dias, empleados);
+  const yaSubidos = adelantosEnSuDia(dias, j, empleados);
+  const cierre = cierreSemana(dias, empleados, yaSubidos);
   const week = { days: Object.fromEntries(dias.map((d) => [d.dia, d.day || { meseros: [], gastos: [], transferencias: [], ventaApps: 0 }])) } as unknown as WeekData;
   const rebajas = new Map([...conComidas.values()].flatMap((e) => repartoComidas(week, e).map((c) => [c.gastoId, c.rebaja] as const)));
   type Mio = { fecha: string; gastoId?: string; concepto: string; monto: number; junto?: { fecha: string; monto: number }[]; par: null | { j: (typeof jg)[number]; estado: EstadoGasto } };
   const mios: Mio[] = dias.flatMap((d) =>
     (d.day?.gastos || []).flatMap((g): Mio[] => {
-      if (g.categoria === "nomina" && g.empleadoId && juntaAdelantos.has(g.empleadoId)) return [];
+      if (g.categoria === "nomina" && g.empleadoId && juntaAdelantos.has(g.empleadoId) && !yaSubidos.has(g.id)) return [];
       if (g.categoria === "comida_empleado" && rebajas.has(g.id)) {
         const r = rebajas.get(g.id)!;
         return r > 0 ? [{ fecha: d.fecha, gastoId: g.id, concepto: g.concepto, monto: r, par: null }] : [];

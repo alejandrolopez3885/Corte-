@@ -3,7 +3,7 @@ import { Field } from "../ui";
 import { MarcoAsistente } from "./asistente";
 import { VerComprobante, type Comprobante } from "./ComprobanteJohnster";
 import { supabase } from "../../lib/supabaseClient";
-import { cierreSemana, compararSemana, type DiaComparado, type EstadoGasto, type JohnsterDatos, type Renglon } from "../../lib/cuadrar";
+import { adelantosEnSuDia, cierreSemana, compararSemana, type DiaComparado, type EstadoGasto, type JohnsterDatos, type Renglon } from "../../lib/cuadrar";
 import type { CuadreSemana, DayData, DayName, EmpleadoEntry } from "../../lib/types";
 
 // Corte › ⚖︎ Cuadrar: la semana contra Johnster Bot, paso a paso. Orden:
@@ -114,7 +114,7 @@ export function CuadrarJohnster({
   const conectado = !!datos?.actualizado_en;
   const comparados = useMemo(() => (datos && conectado ? compararSemana(dias, datos, empleados) : []), [datos, conectado, dias, empleados]);
   // Cierre de la semana (antes de los gastos): lo que se sube junto a Johnster.
-  const cierre = useMemo(() => cierreSemana(dias, empleados), [dias, empleados]);
+  const cierre = useMemo(() => cierreSemana(dias, empleados, adelantosEnSuDia(dias, datos, empleados)), [dias, empleados, datos]);
   const hayCierre = cierre.adelantos.length > 0 || cierre.comidas.length > 0;
   const notas = cuadre?.notas || {};
   const vistos = cuadre?.vistos || [];

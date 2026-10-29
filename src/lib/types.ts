@@ -272,6 +272,9 @@ export interface MeseroCut {
   gastosTotal: number;
   total: number;
   aplicaPropina?: boolean; // legacy field from cuts saved before propinaTipo existed
+  // "No hubo venta": el corte se queda en $0 a propósito (ej. el usuario de
+  // para llevar sin ventas ese turno) y Guardar corte ya no lo pide.
+  sinVenta?: boolean;
   // Montos sueltos que se sumaron ("300+450+750"), para revisarlos contra
   // los vouchers — solo si se capturó más de uno.
   tarjetasDesglose?: number[];

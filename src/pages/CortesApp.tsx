@@ -2431,6 +2431,12 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           totals={totals}
           onGuardar={guardarCorte}
           onClose={() => setModal(null)}
+          onSinVenta={(id) =>
+            updateDay((d) => {
+              const m = d.meseros.find((x) => x.id === id);
+              if (m) m.sinVenta = true;
+            })
+          }
           fecha={activeDayDate || ""}
           semana={
             month && activeMonth

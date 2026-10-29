@@ -875,8 +875,11 @@ estando en Nómina te regresa al menú de Equipo):
   esté completo; si falta algo, sale "Todavía no puedes terminar el corte"
   con la lista de qué falta y no deja seguir: un gasto en **Pendiente**
   ("sube el comprobante al bot y toca Confirmar"), un gasto sin concepto,
-  sin monto o sin categoría, un corte de mesero sin venta, o que no haya
-  ningún corte de mesero. Si está completo, **se revisa con Johnster**
+  sin monto o sin categoría, un corte de mesero sin venta (de cualquier
+  turno; si de verdad no hubo venta, ej. el usuario de para llevar, el
+  botón **"No hubo venta · dejarlo en $0"** marca ese corte como
+  `sinVenta` y ya no lo pide), o que no haya ningún corte de mesero. Si
+  está completo, **se revisa con Johnster**
   (a todos los que guardan corte): "Revisando con Johnster…" (la función
   `johnster` con `{ accion: "semana" }`, que también acepta al personal y
   solo devuelve los días de esa semana). Si Johnster todavía no tiene el

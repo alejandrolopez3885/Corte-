@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
-import { TOLERANCIA, cierreSemana, type JohnsterDatos } from "../../lib/cuadrar";
+import { TOLERANCIA, adelantosEnSuDia, cierreSemana, type JohnsterDatos } from "../../lib/cuadrar";
 import { Sheet, Field, SumInput } from "../ui";
 import { addDaysIso, computeWeekSummary, dateForDay, formatShortDayDate, formatWeekRange, money, resolveWeekStartDate, round2, sumFromText } from "../../lib/dataModel";
 import { DAYS, DAY_SHORT } from "../../lib/types";
@@ -86,7 +86,7 @@ export function WeekSummaryModal({
   // suben al bot en un solo gasto el domingo; para comparar cada día, tu
   // efectivo se ajusta con eso (tu columna Efectivo no cambia).
   const diasSemana = DAYS.map((d) => ({ dia: d, fecha: dateForDay(monthKey, weekIndex, month, d), day: week.days[d] }));
-  const cierre = cierreSemana(diasSemana, empleados);
+  const cierre = cierreSemana(diasSemana, empleados, adelantosEnSuDia(diasSemana, johnster, empleados));
   const domingo = diasSemana[diasSemana.length - 1].fecha;
   const ajusteDia = (fecha: string) => {
     let a = 0;
