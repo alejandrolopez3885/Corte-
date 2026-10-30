@@ -194,9 +194,8 @@ export function CuadrarJohnster({
   const sync = datos && conectado && (
     <div className="cj-sync">
       <span>{datos.sucursal || "Johnster"}</span>
-      <button className="link-btn" disabled={actualizando} onClick={() => llamar({})}>
-        {actualizando ? "Trayendo datos de Johnster…" : `Johnster actualizado ${hace(datos.actualizado_en)} ↻`}
-      </button>
+      {/* Para volver a traer el bot: jalar hacia abajo (pantalla completa). */}
+      <span>{actualizando ? "Trayendo datos de Johnster…" : `Johnster actualizado ${hace(datos.actualizado_en)}`}</span>
     </div>
   );
   const errorSync = (error || datos?.error) && <p className="cj-error">No se pudo actualizar: {error || datos?.error}</p>;
@@ -543,12 +542,9 @@ export function CuadrarJohnster({
                 Corregir en mi corte del {DIA_CORTO[d.dia]} ›<small className="ca-sub">Te lleva al día; al volver a Cuadrar sigues aquí.</small>
               </span>
             </button>
-            <button type="button" className="ca-opcion" disabled={actualizando} onClick={() => llamar({})}>
-              <span>
-                {actualizando ? "Trayendo datos de Johnster…" : "Ya lo corregí en Johnster · Revisar de nuevo ↻"}
-                <small className="ca-sub">Vuelve a traer los datos del bot.</small>
-              </span>
-            </button>
+            <p className="cj-jalar">
+              {actualizando ? "Trayendo datos de Johnster…" : "¿Ya lo corregiste en Johnster? Jala hacia abajo para revisar de nuevo."}
+            </p>
             {nota !== undefined ? (
               <p className="cj-nota">
                 ✎ Se dejó así: “{nota}”{" "}

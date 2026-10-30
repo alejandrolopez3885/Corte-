@@ -37,8 +37,10 @@ Transferencias → Efectivo de ventas → Gastos en efectivo → Resumen. Cada
 sección empieza con los 7 días de un vistazo y sigue con una pantalla por
 cada día que no cuadra (tu corte, Johnster y la diferencia; en gastos, cada
 gasto con qué hacer): "Corregir en mi corte del jueves ›" (te lleva al día;
-al volver a Cuadrar sigues ahí), "Ya lo corregí en Johnster · Revisar de
-nuevo ↻" (vuelve a traer los datos del bot) y "Dejar así y anotar por qué".
+al volver a Cuadrar sigues ahí), "¿Ya lo corregiste en Johnster? Jala hacia
+abajo para revisar de nuevo" (en pantalla completa el bot se vuelve a traer
+jalando hacia abajo, sin botón; arriba solo dice "Johnster actualizado hace
+…") y "Dejar así y anotar por qué".
 "Siguiente" se habilita hasta que ese día cuadre o tenga nota. El avance se
 guarda en la semana (`WeekData.cuadre`: paso actual, porcentaje, días que
 ya salieron y notas) y al entrar se puede "Continuar donde me quedé"; el
@@ -80,7 +82,9 @@ tiene la foto de este comprobante". Los datos los trae la función de Supabase
 a la tabla `johnster_datos`: ingresos por día (con débito, crédito y si
 tiene comprobante bancario) y gastos en efectivo (con si tienen comprobante) de los
 últimos 120 días de la sucursal del usuario (hoy Johnster Metroplex),
-cada mañana a las 7:05 con pg_cron y cuando tocas "Actualizado hace… ↻".
+cada mañana a las 7:05 con pg_cron, al jalar hacia abajo en las pantallas
+con Johnster, con los botones "Revisar de nuevo" de las hojas y, al abrir
+Control de gastos en efectivo, si la copia tiene más de 10 minutos.
 La primera vez la hoja pide **Conectar con Johnster** (usuario y
 contraseña de Johnster Bot): la función prueba que entren y los guarda en
 Supabase Vault (nunca en la app ni en el código); "Cambiar usuario de
@@ -1311,7 +1315,8 @@ estando en Nómina te regresa al menú de Equipo):
   Mes y Semana: encabezado negro "Resultado de la semana" (o "Avance al
   momento" si la semana va en curso) · Sucursal Metroplex · Semana [ISO] ·
   fechas · "completa" o "hasta hoy (día)", con la barra "✓ 8 de 9 cuadran
-  con Johnster · Revisar de nuevo ↻" (vuelve a traer los datos del bot);
+  con Johnster" (para volver a traer el bot se jala hacia abajo; mientras
+llega dice "Trayendo datos…");
   los botones **Copiar resultado** y **Copiar avance** (las dos imágenes de
   siempre); dos tarjetas con dona — **Venta** contra la venta
   presupuestada y **Gasto operativo** contra el tope de 42% —, cada una con

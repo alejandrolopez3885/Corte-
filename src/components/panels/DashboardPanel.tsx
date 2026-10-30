@@ -261,9 +261,8 @@ export function DashboardPanel({
               </b>{" "}
               cuadran con Johnster
             </span>
-            <button type="button" disabled={actualizando} onClick={actualizarJohnster}>
-              {actualizando ? "Trayendo datos…" : "Revisar de nuevo ↻"}
-            </button>
+            {/* Para volver a traer el bot: jalar hacia abajo. */}
+            {actualizando && <span className="db-jbar-cargando">Trayendo datos…</span>}
           </div>
         )}
       </div>

@@ -2406,3 +2406,5 @@ button.cj-seccion { cursor: pointer; }
 .jalar { position: fixed; top: calc(env(safe-area-inset-top) + 0px); left: 50%; z-index: 400; display: flex; align-items: center; gap: 8px; background: var(--surface); color: var(--accent); border: 1px solid var(--border); border-radius: 100px; padding: 8px 14px; font-size: 13px; font-weight: 600; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12); pointer-events: none; }
 .jalar .girando { animation: jalar-gira 0.8s linear infinite; }
 @keyframes jalar-gira { to { transform: rotate(360deg); } }
+.db-jbar-cargando { color: #E8B32E; font-weight: 600; white-space: nowrap; }
+.cj-jalar { margin: 4px 0 0; font-size: 13px; color: var(--ink-soft); text-align: center; }

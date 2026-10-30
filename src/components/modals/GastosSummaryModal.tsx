@@ -97,7 +97,18 @@ export function GastosSummaryModal({
       .maybeSingle()
       .then(({ data }) => setJohnster((data as JohnsterDatos | null) ?? null));
   useEffect(() => {
-    cargarJohnster();
+    // Si la copia del bot tiene más de 10 minutos, se trae fresca (el estado
+    // de cada gasto depende de lo que haya en el bot ahorita).
+    cargarJohnster().then(() =>
+      supabase
+        .from("johnster_datos")
+        .select("actualizado_en")
+        .maybeSingle()
+        .then(({ data }) => {
+          const t = data?.actualizado_en ? new Date(data.actualizado_en).getTime() : 0;
+          if (t && Date.now() - t > 10 * 60 * 1000) supabase.functions.invoke("johnster", { body: {} }).then(cargarJohnster);
+        })
+    );
   }, []);
   // Jalar para actualizar: trae de nuevo los datos del bot.
   useAlRecargar(() => {
