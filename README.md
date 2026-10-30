@@ -233,6 +233,15 @@ que el listado de abajo. Desde la búsqueda nunca se borra un gasto. Al
 confirmar, mover o agregar, la búsqueda se limpia sola, lista para el
 siguiente ticket.
 
+**Johnster en la búsqueda** (solo el dueño, si Johnster está conectado):
+cada resultado lleva el marcador "Johnster" — "✓ En el bot" (con su
+nombre en el bot si es distinto y "Ver ticket"), "Sin ticket" o "No está
+en el bot", emparejado igual que en ⚖︎ Cuadrar. Debajo de los resultados
+sale el bloque **Johnster**, que busca en los gastos en efectivo del bot
+de esa semana: por monto ("2 gastos de $115.00 en el bot esta semana") o
+por nombre (y día si se escribió), cada uno con "también en tu app"
+(verde) o "solo en el bot (no está en tu app)" (naranja) y su ticket.
+
 **Autocompletado del concepto**: en todos los lugares donde se escribe el
 nombre de un gasto (Nuevo gasto en Corte, gastos dentro del corte de un
 mesero, editar y agregar desde la búsqueda) se sugieren los nombres que ya

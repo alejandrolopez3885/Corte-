@@ -181,6 +181,13 @@ export function GastosSummaryModal({
       )}
 
       <BuscarGastos
+        enBot={enBot}
+        botSemana={
+          johnster
+            ? johnster.gastos.filter((g) => g.fecha >= weekStartDate && g.fecha <= addDaysIso(weekStartDate, 6))
+            : null
+        }
+        onVerTicket={(id, titulo, monto) => setViendo({ pedido: { id }, titulo, monto })}
         key={`${monthKey}-${weekIndex}`}
         monthKey={monthKey}
         weekIndex={weekIndex}

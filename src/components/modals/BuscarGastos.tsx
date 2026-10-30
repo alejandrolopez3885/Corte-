@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Check, Pencil, Plus, Search, X } from "lucide-react";
+import { Check, Pencil, Plus, Receipt, Search, X } from "lucide-react";
+import type { JohnsterGasto } from "../../lib/cuadrar";
 import { Field, NumInput } from "../ui";
 import { ConceptoInput } from "../ConceptoInput";
 import { GastoForm, type GastoFormValues } from "./GastoModal";
@@ -31,6 +32,9 @@ export function BuscarGastos({
   empleados,
   meseros,
   historial,
+  enBot,
+  botSemana,
+  onVerTicket,
 }: {
   monthKey: string;
   weekIndex: number;
@@ -44,6 +48,11 @@ export function BuscarGastos({
   empleados: EmpleadoEntry[];
   meseros: MeseroCatalogEntry[];
   historial: NombreHistorial[];
+  // Johnster (solo el dueño): el gasto del bot de cada uno, los gastos en
+  // efectivo del bot de la semana y abrir su ticket.
+  enBot?: Map<string, JohnsterGasto> | null;
+  botSemana?: JohnsterGasto[] | null;
+  onVerTicket?: (id: string, titulo: string, monto: number) => void;
 }) {
   const [texto, setTexto] = useState("");
   const [monto, setMonto] = useState("");
@@ -139,6 +148,7 @@ export function BuscarGastos({
             <Pencil size={14} />
           </button>
         </div>
+        {enBot && <MarcaBot g={g} bot={enBot.get(g.id)} onVerTicket={onVerTicket} />}
         {atenuado ? (
           <p className="hint gasto-row-hint">Ya ingresado: su ticket ya se subió, no es este.</p>
         ) : (
@@ -250,10 +260,48 @@ export function BuscarGastos({
     );
   }
 
+  // Lo que hay en Johnster con ese monto o nombre esta semana: cada uno dice
+  // si también está en tu app (emparejado) o solo en el bot.
+  const emparejados = new Set([...(enBot?.values() || [])].map((g) => g.id));
+  const diaBot = (f: string) => {
+    const d = DAYS.find((dn) => dateForDay(monthKey, weekIndex, month, dn) === f);
+    return d ? fecha(d) : f;
+  };
+  function enJohnster(lista: JohnsterGasto[], titulo: string) {
+    if (!botSemana) return null;
+    return (
+      <div className="buscar-bot">
+        <p className="buscar-bot-head">
+          <span className="buscar-bot-tag">Johnster</span> {lista.length ? titulo : "No hay ninguno en el bot esta semana"}
+        </p>
+        {lista.map((j) => (
+          <div key={j.id} className={`buscar-bot-fila ${emparejados.has(j.id) ? "ok" : "solo"}`}>
+            <span>
+              {j.concepto || "Sin concepto"}
+              <small>
+                {diaBot(j.fecha)} · {emparejados.has(j.id) ? "también en tu app" : "solo en el bot (no está en tu app)"}
+              </small>
+            </span>
+            <span className="buscar-bot-der">
+              <b>{money(j.monto)}</b>
+              {j.comprobante && onVerTicket && (
+                <button type="button" className="gasto-ticket" onClick={() => onVerTicket(j.id, j.concepto, j.monto)}>
+                  <Receipt size={12} /> Ticket
+                </button>
+              )}
+            </span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   function resultadosMonto() {
     const m = parseFloat(monto);
     if (isNaN(m)) return null;
     const iguales = todos.filter((x) => Math.abs(x.gasto.total - m) < 0.005);
+    const botIguales = (botSemana || []).filter((j) => Math.abs(j.monto - m) < 0.005);
+    const bloqueBot = enJohnster(botIguales, `${botIguales.length} ${botIguales.length === 1 ? "gasto" : "gastos"} de ${money(m)} en el bot esta semana`);
     if (iguales.length) {
       return (
         <>
@@ -261,6 +309,7 @@ export function BuscarGastos({
             {iguales.length} {iguales.length === 1 ? "gasto" : "gastos"} de {money(m)} esta semana
           </p>
           {iguales.map((x) => tarjeta(x, null, false))}
+          {bloqueBot}
         </>
       );
     }
@@ -281,11 +330,26 @@ export function BuscarGastos({
             ))}
           </span>
         )}
+        {bloqueBot}
       </div>
     );
   }
 
   function resultadosTexto() {
+    const r = resultadosTextoApp();
+    const leida = leerBusqueda(texto, monthKey, weekIndex, month);
+    if (!leida.nombre || !botSemana) return r;
+    const fechaDia = leida.dia ? dateForDay(monthKey, weekIndex, month, leida.dia) : null;
+    const botNombre = botSemana.filter((j) => puntaje(leida.nombre!, j.concepto) >= PUNTAJE_ENCONTRADO && (!fechaDia || j.fecha === fechaDia));
+    return (
+      <>
+        {r}
+        {enJohnster(botNombre, `${botNombre.length} ${botNombre.length === 1 ? "gasto parecido" : "gastos parecidos"} en el bot${fechaDia ? ` el ${fecha(leida.dia!)}` : " esta semana"}`)}
+      </>
+    );
+  }
+
+  function resultadosTextoApp() {
     const leida = leerBusqueda(texto, monthKey, weekIndex, month);
     const { nombre, dia } = leida;
     const fueraDeSemana = leida.diaFuera !== null && (
@@ -446,6 +510,34 @@ export function BuscarGastos({
         )}
       </div>
       {hayMonto ? resultadosMonto() : hayTexto ? resultadosTexto() : null}
+    </div>
+  );
+}
+
+// Marcador de Johnster en cada resultado: si su gasto está en el bot.
+function MarcaBot({ g, bot, onVerTicket }: { g: Gasto; bot?: JohnsterGasto; onVerTicket?: (id: string, titulo: string, monto: number) => void }) {
+  return (
+    <div className="resultado-bot">
+      <span className="buscar-bot-tag">Johnster</span>
+      {bot ? (
+        <>
+          <span className="ok">
+            ✓ En el bot{Math.abs(bot.monto - g.total) > 0.009 ? ` con ${money(bot.monto)}` : ""}
+            {bot.concepto && bot.concepto.trim().toLowerCase() !== g.concepto.trim().toLowerCase() ? ` · "${bot.concepto}"` : ""}
+          </span>
+          {bot.comprobante ? (
+            onVerTicket && (
+              <button type="button" className="gasto-ticket" onClick={() => onVerTicket(bot.id, g.concepto, bot.monto)}>
+                <Receipt size={12} /> Ver ticket
+              </button>
+            )
+          ) : (
+            <span className="sin">Sin ticket</span>
+          )}
+        </>
+      ) : (
+        <span className="no">No está en el bot</span>
+      )}
     </div>
   );
 }
