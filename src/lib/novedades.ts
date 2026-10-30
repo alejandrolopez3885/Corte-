@@ -349,6 +349,15 @@ export const NOVEDADES: Novedad[] = [
     visual: "autocompletar",
   },
   {
+    id: "gastos-estado-bot",
+    soloDueno: true,
+    fecha: "2026-10-30T01:30:00Z",
+    seccion: "corte",
+    titulo: "Pendiente / Ingresado lo decide el bot",
+    texto: "Desde esta semana un gasto pasa a **Ingresado** solo cuando está en el bot con su ticket. Ya no hay botón Confirmar.",
+    visual: "guardarCorte",
+  },
+  {
     id: "apertura-gastos-bot",
     soloDueno: true,
     fecha: "2026-10-29T22:20:00Z",

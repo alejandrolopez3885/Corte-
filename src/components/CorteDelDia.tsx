@@ -36,6 +36,9 @@ export interface CorteDelDiaProps {
   onNuevoGasto: () => void;
   onEditarGasto: (g: Gasto) => void;
   onToggleGasto: (id: string) => void;
+  // Desde la semana del 26/10/2026 el estado de los gastos lo decide Johnster:
+  // el chip solo se muestra (sin Confirmar).
+  estadoAuto?: boolean;
   onNuevaTransfer: () => void;
   onEditarTransfer: (t: Transferencia) => void;
   onApps: () => void;
@@ -86,7 +89,7 @@ export function CorteDelDia(p: CorteDelDiaProps) {
 
   // --- Siguiente paso ---
   const cortesCierre = day.meseros.filter((m) => !enApertura(m.id));
-  const faltan = faltantesDelCorte(day).filter((f) => f.titulo !== "Meseros");
+  const faltan = faltantesDelCorte(day, !!p.estadoAuto).filter((f) => f.titulo !== "Meseros");
   const gastosPendientes = day.gastos.filter((g) => g.estado === "pendiente");
   const acumulados = turnos ? acumuladosDelDia(day) : [];
   const revisar = [
@@ -130,14 +133,14 @@ export function CorteDelDia(p: CorteDelDiaProps) {
     },
     {
       clave: "pendientes",
-      corto: faltan.length ? "Confirmar gastos" : "Gastos confirmados",
+      corto: p.estadoAuto ? (faltan.length ? "Completar gastos" : "Gastos completos") : faltan.length ? "Confirmar gastos" : "Gastos confirmados",
       hecho: faltan.length === 0,
       titulo:
-        faltan.length && faltan.length === gastosPendientes.length
+        !p.estadoAuto && faltan.length && faltan.length === gastosPendientes.length
           ? `Confirma ${faltan.length === 1 ? "el gasto pendiente" : `los ${faltan.length} gastos pendientes`}`
           : `Completa ${faltan.length === 1 ? "1 pendiente" : `${faltan.length} pendientes`}`,
       texto:
-        faltan.length && faltan.length === gastosPendientes.length
+        !p.estadoAuto && faltan.length && faltan.length === gastosPendientes.length
           ? `${gastosPendientes.map((g) => `${g.concepto} (${money(g.total)})`).join(", ")}: sube su comprobante al bot y toca Confirmar.`
           : faltan
               .slice(0, 3)
@@ -326,14 +329,18 @@ export function CorteDelDia(p: CorteDelDiaProps) {
             </button>
             <span className="cd-it-der">
               {money(g.total)}
-              <button
-                type="button"
-                className={`estado-chip ${g.estado}`}
-                disabled={off || (g.estado === "pendiente" && !g.categoria)}
-                onClick={() => p.onToggleGasto(g.id)}
-              >
-                {g.estado === "pendiente" ? "Confirmar" : "Ingresado"}
-              </button>
+              {p.estadoAuto ? (
+                <ChipEstado g={g} />
+              ) : (
+                <button
+                  type="button"
+                  className={`estado-chip ${g.estado}`}
+                  disabled={off || (g.estado === "pendiente" && !g.categoria)}
+                  onClick={() => p.onToggleGasto(g.id)}
+                >
+                  {g.estado === "pendiente" ? "Confirmar" : "Ingresado"}
+                </button>
+              )}
             </span>
           </div>
         );
@@ -510,14 +517,18 @@ export function CorteDelDia(p: CorteDelDiaProps) {
               <small>{etiquetaCategoria(g.categoria)}</small>
             </button>
             <b className="menos">−{money(g.total)}</b>
-            <button
-              type="button"
-              className={`estado-chip ${g.estado}`}
-              disabled={off || (g.estado === "pendiente" && !g.categoria)}
-              onClick={() => p.onToggleGasto(g.id)}
-            >
-              {g.estado === "pendiente" ? "Confirmar" : "Ingresado"}
-            </button>
+            {p.estadoAuto ? (
+              <ChipEstado g={g} />
+            ) : (
+              <button
+                type="button"
+                className={`estado-chip ${g.estado}`}
+                disabled={off || (g.estado === "pendiente" && !g.categoria)}
+                onClick={() => p.onToggleGasto(g.id)}
+              >
+                {g.estado === "pendiente" ? "Confirmar" : "Ingresado"}
+              </button>
+            )}
           </div>
         );
       })}
@@ -704,4 +715,21 @@ export function CorteDelDia(p: CorteDelDiaProps) {
       </div>
     </div>
   );
+}
+
+// Estado del gasto según Johnster (solo se muestra).
+function ChipEstado({ g }: { g: Gasto }) {
+  const texto =
+    g.estado === "ingresado"
+      ? "Ingresado"
+      : g.estadoBot === "no-esta"
+        ? "No está en el bot"
+        : g.estadoBot === "sin-ticket"
+          ? "Falta ticket"
+          : g.estadoBot === "domingo"
+            ? "Se sube el domingo"
+            : g.estadoBot === "diferente"
+              ? "Otro monto en el bot"
+              : "Pendiente";
+  return <span className={`estado-chip ${g.estado} ${g.estadoBot === "no-esta" || g.estadoBot === "diferente" ? "mal" : ""}`}>{texto}</span>;
 }

@@ -35,6 +35,7 @@ export function BuscarGastos({
   enBot,
   botSemana,
   onVerTicket,
+  auto = false,
 }: {
   monthKey: string;
   weekIndex: number;
@@ -53,6 +54,8 @@ export function BuscarGastos({
   enBot?: Map<string, JohnsterGasto> | null;
   botSemana?: JohnsterGasto[] | null;
   onVerTicket?: (id: string, titulo: string, monto: number) => void;
+  // Estado automático desde Johnster (sin botón Confirmar).
+  auto?: boolean;
 }) {
   const [texto, setTexto] = useState("");
   const [monto, setMonto] = useState("");
@@ -118,24 +121,36 @@ export function BuscarGastos({
         </div>
         <div className="resultado-meta">
           <span className="resultado-dia">{fecha(dia)}</span>
-          <button
-            type="button"
-            className={`estado-chip ${g.estado}`}
-            disabled={g.estado === "pendiente" && !g.categoria}
-            onClick={() => {
-              onToggleEstado(monthKey, weekIndex, dia, g.id);
-              // Ya quedó revisado: lista para el siguiente ticket.
-              if (g.estado === "pendiente") limpiar();
-            }}
-          >
-            {g.estado === "pendiente" ? (
-              "Confirmar"
-            ) : (
-              <>
-                <Check size={13} /> Ingresado
-              </>
-            )}
-          </button>
+          {auto ? (
+            <span className={`estado-chip ${g.estado}`}>
+              {g.estado === "ingresado" ? (
+                <>
+                  <Check size={13} /> Ingresado
+                </>
+              ) : (
+                "Pendiente"
+              )}
+            </span>
+          ) : (
+            <button
+              type="button"
+              className={`estado-chip ${g.estado}`}
+              disabled={g.estado === "pendiente" && !g.categoria}
+              onClick={() => {
+                onToggleEstado(monthKey, weekIndex, dia, g.id);
+                // Ya quedó revisado: lista para el siguiente ticket.
+                if (g.estado === "pendiente") limpiar();
+              }}
+            >
+              {g.estado === "pendiente" ? (
+                "Confirmar"
+              ) : (
+                <>
+                  <Check size={13} /> Ingresado
+                </>
+              )}
+            </button>
+          )}
           {g.estado === "ingresado" && g.categoria && (
             <span className="categoria-badge">{GASTO_CATEGORIAS.find((c) => c.value === g.categoria)?.label}</span>
           )}
@@ -153,7 +168,7 @@ export function BuscarGastos({
           <p className="hint gasto-row-hint">Ya ingresado: su ticket ya se subió, no es este.</p>
         ) : (
           <div className="gasto-row-controls">
-            {g.estado === "pendiente" && (
+            {(g.estado === "pendiente" || (auto && !g.categoria)) && (
               <select
                 className="categoria-select"
                 value={g.categoria || ""}
@@ -201,7 +216,7 @@ export function BuscarGastos({
           </div>
         )}
         {sugerirMover && <p className="hint gasto-row-hint">Pendiente: puede ser el mismo ticket capturado en otro día.</p>}
-        {!atenuado && g.estado === "pendiente" && !g.categoria && (
+        {!atenuado && g.estado === "pendiente" && !g.categoria && !auto && (
           <p className="hint gasto-row-hint">Elige una categoría para poder confirmarlo.</p>
         )}
         {!atenuado && g.meseroCutId && (

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, ChevronDown, Pencil, Receipt, TriangleAlert } from "lucide-react";
 import { supabase } from "../../lib/supabaseClient";
-import { gastosEnJohnster, type JohnsterDatos } from "../../lib/cuadrar";
+import { estadoAutomatico, gastosEnJohnster, type JohnsterDatos } from "../../lib/cuadrar";
 import { VerComprobante, type Comprobante } from "./ComprobanteJohnster";
 import { Sheet, Field, NumInput } from "../ui";
 import { addDaysIso, computeWeekGastos, dateForDay, formatShortDayDate, formatWeekRange, money, resolveWeekStartDate } from "../../lib/dataModel";
@@ -10,8 +10,21 @@ import type { DayName, EmpleadoEntry, Gasto, GastoCategoria, MeseroCatalogEntry,
 
 type Filtro = "todos" | "pendientes" | "sinCategoria" | "ingresados";
 
-const pasaFiltro = (g: Gasto, f: Filtro) =>
-  f === "todos" || (f === "pendientes" && g.estado === "pendiente") || (f === "ingresados" && g.estado === "ingresado") || (f === "sinCategoria" && g.estado === "pendiente" && !g.categoria);
+// En semanas con estado automático (Johnster), "Sin categoría" es cualquier
+// gasto sin categoría, esté o no en el bot.
+const pasaFiltro = (g: Gasto, f: Filtro, auto = false) =>
+  f === "todos" ||
+  (f === "pendientes" && g.estado === "pendiente") ||
+  (f === "ingresados" && g.estado === "ingresado") ||
+  (f === "sinCategoria" && (auto || g.estado === "pendiente") && !g.categoria);
+
+// Por qué sigue pendiente un gasto (estado automático desde Johnster).
+const RAZON: Record<NonNullable<Gasto["estadoBot"]>, string> = {
+  "no-esta": "No está en el bot",
+  "sin-ticket": "Falta ticket en el bot",
+  domingo: "Se sube junto el domingo",
+  diferente: "En el bot con otro monto o día",
+};
 
 const pendientesDe = (w: WeekData | null | undefined) => (w ? DAYS.reduce((n, d) => n + w.days[d].gastos.filter((g) => g.estado === "pendiente").length, 0) : 0);
 
@@ -41,6 +54,8 @@ export function GastosSummaryModal({
   empleados,
   meseros,
   historial,
+  onSincronizar,
+  onSinTicket,
 }: {
   onClose: () => void;
   months: Record<string, MonthData>;
@@ -55,6 +70,10 @@ export function GastosSummaryModal({
   empleados: EmpleadoEntry[];
   meseros: MeseroCatalogEntry[];
   historial: NombreHistorial[];
+  // Estado automático (desde la semana del 26/10/2026): actualizar con los
+  // datos del bot, y la justificación "sin ticket" del dueño.
+  onSincronizar?: (monthKey: string, weekIndex: number, j: JohnsterDatos) => void;
+  onSinTicket?: (monthKey: string, weekIndex: number, dia: DayName, id: string, texto: string | undefined) => void;
 }) {
   const [monthKey, setMonthKey] = useState(initialMonthKey);
   const [weekIndex, setWeekIndex] = useState(initialWeekIndex);
@@ -69,6 +88,7 @@ export function GastosSummaryModal({
   // Johnster: el gasto del bot que le corresponde a cada uno (Ver ticket).
   const [johnster, setJohnster] = useState<JohnsterDatos | null>(null);
   const [viendo, setViendo] = useState<Comprobante | null>(null);
+  const [justificando, setJustificando] = useState<{ id: string; texto: string } | null>(null);
   useEffect(() => {
     supabase
       .from("johnster_datos")
@@ -79,6 +99,10 @@ export function GastosSummaryModal({
 
   const month = months[monthKey];
   const week = month?.weeks[weekIndex];
+  useEffect(() => {
+    if (johnster) onSincronizar?.(monthKey, weekIndex, johnster);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [johnster, monthKey, weekIndex]);
 
   const enBot = useMemo(
     () =>
@@ -96,7 +120,8 @@ export function GastosSummaryModal({
 
   const weekStartDate = resolveWeekStartDate(monthKey, weekIndex, month);
   const g = computeWeekGastos(week);
-  const sinCategoria = g.perDay.reduce((n, d) => n + d.items.filter((x) => pasaFiltro(x, "sinCategoria")).length, 0);
+  const auto = estadoAutomatico(weekStartDate);
+  const sinCategoria = g.perDay.reduce((n, d) => n + d.items.filter((x) => pasaFiltro(x, "sinCategoria", auto)).length, 0);
   const filtro: Filtro = filtroElegido ?? (g.countPendiente > 0 ? "pendientes" : "todos");
   const filtros: { key: Filtro; label: string; n: number }[] = [
     { key: "todos", label: "Todos", n: g.countTotal },
@@ -104,7 +129,7 @@ export function GastosSummaryModal({
     { key: "sinCategoria", label: "Sin categoría", n: sinCategoria },
     { key: "ingresados", label: "Ingresados", n: g.countIngresado },
   ];
-  const dias = g.perDay.map((d) => ({ ...d, visibles: d.items.filter((x) => pasaFiltro(x, filtro)) }));
+  const dias = g.perDay.map((d) => ({ ...d, visibles: d.items.filter((x) => pasaFiltro(x, filtro, auto)) }));
   const montoVisible = dias.reduce((s, d) => s + d.visibles.reduce((x, i) => x + i.total, 0), 0);
   const cuantosVisibles = dias.reduce((n, d) => n + d.visibles.length, 0);
 
@@ -181,6 +206,7 @@ export function GastosSummaryModal({
       )}
 
       <BuscarGastos
+        auto={auto}
         enBot={enBot}
         botSemana={
           johnster
@@ -217,10 +243,17 @@ export function GastosSummaryModal({
           <strong>{money(g.totalPendiente)}</strong>
         </div>
       </div>
-      <p className="hint">
-        Elige la categoría de cada gasto antes de confirmarlo. Una vez ingresado, la categoría queda bloqueada — para cambiarla,
-        vuelve a marcarlo como pendiente.
-      </p>
+      {auto ? (
+        <p className="hint">
+          El estado sale de Johnster: <strong>Ingresado</strong> = está en el bot con su ticket (o con tu justificación "sin ticket"); los de
+          nómina y comida de empleado no piden ticket. La categoría se elige aquí.
+        </p>
+      ) : (
+        <p className="hint">
+          Elige la categoría de cada gasto antes de confirmarlo. Una vez ingresado, la categoría queda bloqueada — para cambiarla,
+          vuelve a marcarlo como pendiente.
+        </p>
+      )}
 
       <div className="gastos-filtros">
         {filtros.map((f) => (
@@ -240,7 +273,7 @@ export function GastosSummaryModal({
             ? filtro === "ingresados"
               ? "Ningún gasto ingresado esta semana."
               : "✓ Sin pendientes esta semana."
-            : `${cuantosVisibles} ${filtro === "ingresados" ? (cuantosVisibles === 1 ? "ingresado" : "ingresados") : cuantosVisibles === 1 ? "pendiente" : "pendientes"} · ${money(montoVisible)}${filtro !== "ingresados" ? " — al confirmar cada uno, se quita de esta lista." : ""}`}
+            : `${cuantosVisibles} ${filtro === "ingresados" ? (cuantosVisibles === 1 ? "ingresado" : "ingresados") : cuantosVisibles === 1 ? "pendiente" : "pendientes"} · ${money(montoVisible)}${filtro !== "ingresados" && !auto ? " — al confirmar cada uno, se quita de esta lista." : ""}`}
         </p>
       )}
       {aviso && (
@@ -328,7 +361,29 @@ export function GastosSummaryModal({
                             <span>{etiquetaFecha}</span>
                             <span>{categoria ? categoria.label : "Sin categoría"}</span>
                             {item.meseroNombre && <span>Corte de {item.meseroNombre}</span>}
-                            {item.estado === "ingresado" ? (
+                            {auto ? (
+                              <>
+                                {item.estado === "ingresado" ? (
+                                  <span className="ok">
+                                    <Check size={11} /> Ingresado{item.sinTicket ? " · sin ticket" : ""}
+                                  </span>
+                                ) : (
+                                  <span className={`gasto-razon ${item.estadoBot === "no-esta" || item.estadoBot === "diferente" ? "categoria" : "confirmar"}`}>
+                                    {item.estadoBot ? RAZON[item.estadoBot] : "Pendiente"}
+                                  </span>
+                                )}
+                                {!item.categoria && <span className="gasto-razon categoria">Falta categoría</span>}
+                                {bot?.comprobante && (
+                                  <button
+                                    type="button"
+                                    className="gasto-ticket"
+                                    onClick={() => setViendo({ pedido: { id: bot.id }, titulo: item.concepto, monto: bot.monto })}
+                                  >
+                                    <Receipt size={12} /> Ver ticket
+                                  </button>
+                                )}
+                              </>
+                            ) : item.estado === "ingresado" ? (
                               <span className="ok">
                                 <Check size={11} /> Ingresado
                               </span>
@@ -337,7 +392,7 @@ export function GastosSummaryModal({
                                 {item.categoria ? "Falta confirmar" : "Falta categoría"}
                               </span>
                             )}
-                            {enBot &&
+                            {enBot && !auto &&
                               (bot?.comprobante ? (
                                 <button
                                   type="button"
@@ -358,14 +413,50 @@ export function GastosSummaryModal({
                                   {bot.fecha !== fecha ? ` · ${formatShortDayDate(bot.fecha)}` : ""}
                                 </p>
                               )}
-                              {item.estado === "pendiente" && item.categoria && (
+                              {!auto && item.estado === "pendiente" && item.categoria && (
                                 <p className="hint gasto-row-hint">Sube el comprobante al bot y toca Confirmar.</p>
                               )}
+                              {auto && item.sinTicket && (
+                                <p className="hint gasto-row-hint gasto-sin-ticket">
+                                  ✎ Sin ticket: “{item.sinTicket}”{" "}
+                                  <button type="button" className="link-btn" onClick={() => onSinTicket?.(monthKey, weekIndex, d.day, item.id, undefined)}>
+                                    Quitar
+                                  </button>
+                                </p>
+                              )}
+                              {auto && item.estadoBot === "sin-ticket" && !item.sinTicket && onSinTicket &&
+                                (justificando?.id === item.id ? (
+                                  <div className="gc-j-escribir">
+                                    <textarea
+                                      className="text-input"
+                                      rows={2}
+                                      placeholder="¿Por qué no tiene ticket? Ej. la central no da ticket"
+                                      value={justificando.texto}
+                                      onChange={(e) => setJustificando({ id: item.id, texto: e.target.value })}
+                                      autoFocus
+                                    />
+                                    <button
+                                      type="button"
+                                      className="btn-primary"
+                                      disabled={!justificando.texto.trim()}
+                                      onClick={() => {
+                                        onSinTicket(monthKey, weekIndex, d.day, item.id, justificando.texto.trim());
+                                        setJustificando(null);
+                                      }}
+                                    >
+                                      Aceptar sin ticket
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <button type="button" className="gasto-sin-ticket-btn" onClick={() => setJustificando({ id: item.id, texto: "" })}>
+                                    ✎ Subir sin ticket · anotar por qué
+                                  </button>
+                                ))}
                               <div className="gasto-row-controls">
                                 <select
                                   className="categoria-select"
                                   value={item.categoria || ""}
-                                  disabled={item.estado === "ingresado"}
+                                  disabled={!auto && item.estado === "ingresado"}
                                   onChange={(e) => onSetCategoria(monthKey, weekIndex, d.day, item.id, e.target.value as GastoCategoria | "")}
                                 >
                                   <option value="">Sin categoría</option>
@@ -375,20 +466,22 @@ export function GastosSummaryModal({
                                     </option>
                                   ))}
                                 </select>
-                                <button
-                                  type="button"
-                                  className={`estado-chip ${item.estado}`}
-                                  disabled={item.estado === "pendiente" && !item.categoria}
-                                  onClick={() => cambiarEstado(d.day, item)}
-                                >
-                                  {item.estado === "pendiente" ? (
-                                    "Confirmar"
-                                  ) : (
-                                    <>
-                                      <Check size={13} /> Ingresado
-                                    </>
-                                  )}
-                                </button>
+                                {!auto && (
+                                  <button
+                                    type="button"
+                                    className={`estado-chip ${item.estado}`}
+                                    disabled={item.estado === "pendiente" && !item.categoria}
+                                    onClick={() => cambiarEstado(d.day, item)}
+                                  >
+                                    {item.estado === "pendiente" ? (
+                                      "Confirmar"
+                                    ) : (
+                                      <>
+                                        <Check size={13} /> Ingresado
+                                      </>
+                                    )}
+                                  </button>
+                                )}
                                 <select
                                   className="categoria-select mover-gasto-select"
                                   value=""

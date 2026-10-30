@@ -149,6 +149,27 @@ Gastos fijos guardado antes de este cambio se quedan con su número, como
 "editado a mano", para no mover resultados pasados; las semanas sin nada
 guardado en Control de gastos en transferencia toman el automático.
 
+**Estado automático desde Johnster** (desde la semana del **26 de octubre
+de 2026**, `ESTADO_AUTO_DESDE` en `lib/cuadrar.ts`; las semanas anteriores
+se quedan como se marcaron a mano): Pendiente / Ingresado ya no se toca,
+lo decide el bot (`estadosDesdeBot`, emparejando igual que ⚖︎ Cuadrar).
+**Ingresado** = el gasto está en el bot con su ticket, o sin ticket pero
+con la justificación del dueño ("✎ Subir sin ticket · anotar por qué",
+solo en Control de gastos; se ve "Ingresado · sin ticket" y la nota con
+"Quitar"); los de Nómina y Comida empleado no piden ticket. Si no,
+**Pendiente** con su razón (`estadoBot`): "No está en el bot", "Falta
+ticket en el bot", "En el bot con otro monto o día" o, para los
+adelantos que se juntan y las comidas gratis, "Se sube junto el domingo"
+(pasan a Ingresado cuando el gasto junto del domingo está en el bot, o si
+se subieron en su día). El estado se guarda cada vez que la app consulta el
+bot: al abrir Control de gastos o ⚖︎ Cuadrar y en Guardar corte (el
+personal solo actualiza el día que guarda). En esas semanas no hay botón
+"Confirmar" (Control de gastos, Buscar ticket y el corte del día solo
+muestran el estado), al capturar un gasto ya no sale "Ya está ingresado",
+Guardar corte deja de pedir "toca Confirmar" (ya revisa en el bot) y la
+categoría se elige siempre a mano ("Sin categoría" cuenta todos los que no
+tienen).
+
 **Pendientes en Control de gastos en efectivo**: arriba de la lista de
 gastos hay filtros con cuántos hay de cada uno — **Todos**, **Pendientes**,
 **Sin categoría** (pendientes sin categoría) e **Ingresados**. Si la semana

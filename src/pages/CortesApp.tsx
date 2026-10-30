@@ -35,6 +35,7 @@ import { InicioPanel } from "../components/panels/InicioPanel";
 import { ubicarFechas, type Destino } from "../lib/inicio";
 import { WeekSummaryModal } from "../components/modals/WeekSummaryModal";
 import { CuadrarJohnster } from "../components/modals/CuadrarJohnster";
+import { estadoAutomatico, estadosDesdeBot, type JohnsterDatos, type RazonPendiente } from "../lib/cuadrar";
 import { GastosSummaryModal } from "../components/modals/GastosSummaryModal";
 import { DeleteMonthModal } from "../components/modals/DeleteMonthModal";
 import { AsignarDiaModal } from "../components/modals/AsignarDiaModal";
@@ -1203,6 +1204,57 @@ export default function CortesApp({ profile }: { profile: Profile }) {
     persist(next);
   }
 
+  // Estado de los gastos desde Johnster (desde la semana del 26/10/2026):
+  // cada vez que la app consulta el bot se actualiza Pendiente / Ingresado
+  // y por qué. El personal solo actualiza el día que está guardando.
+  function sincronizarEstados(monthKey: string, weekIndex: number, j: JohnsterDatos | null | undefined, soloDia?: DayName) {
+    if (!data || !j) return;
+    const mes = data.months[monthKey];
+    const semana = mes?.weeks[weekIndex];
+    if (!mes || !semana || !estadoAutomatico(resolveWeekStartDate(monthKey, weekIndex, mes))) return;
+    const dias = DAYS.map((d) => ({ dia: d, fecha: dateForDay(monthKey, weekIndex, mes, d), day: semana.days[d] }));
+    const estados = estadosDesdeBot(dias, j, data.empleados);
+    const cambios: { dia: DayName; id: string; estado: "pendiente" | "ingresado"; razon?: RazonPendiente }[] = [];
+    DAYS.forEach((d) => {
+      if (soloDia && d !== soloDia) return;
+      if (!isOwner && semana.days[d].corteGuardado) return;
+      semana.days[d].gastos.forEach((g) => {
+        const e = estados.get(g.id);
+        if (e && (g.estado !== e.estado || g.estadoBot !== e.razon)) cambios.push({ dia: d, id: g.id, estado: e.estado, razon: e.razon });
+      });
+    });
+    if (!cambios.length) return;
+    const next = structuredClone(data);
+    cambios.forEach((c) => {
+      const g = next.months[monthKey].weeks[weekIndex].days[c.dia].gastos.find((x) => x.id === c.id);
+      if (!g) return;
+      g.estado = c.estado;
+      if (c.razon) g.estadoBot = c.razon;
+      else delete g.estadoBot;
+    });
+    persist(next);
+  }
+
+  // "Subir sin ticket · anotar por qué" (solo el dueño): con la
+  // justificación, un gasto que está en el bot sin foto cuenta como Ingresado.
+  function justificarSinTicket(monthKey: string, weekIndex: number, dia: DayName, id: string, texto: string | undefined) {
+    if (!data) return;
+    const next = structuredClone(data);
+    const g = next.months[monthKey]?.weeks[weekIndex]?.days[dia].gastos.find((x) => x.id === id);
+    if (!g) return;
+    if (texto) {
+      g.sinTicket = texto;
+      if (g.estadoBot === "sin-ticket") {
+        g.estado = "ingresado";
+        delete g.estadoBot;
+      }
+    } else {
+      // Se vuelve a calcular la próxima vez que se consulte el bot.
+      delete g.sinTicket;
+    }
+    persist(next);
+  }
+
   // Cuadrar con Johnster: avance, notas y sello de la semana.
   function guardarCuadre(monthKey: string, weekIndex: number, cuadre: CuadreSemana | undefined) {
     if (!data) return;
@@ -2291,6 +2343,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
                 onNuevoGasto={() => setModal({ type: "gasto" })}
                 onEditarGasto={(g) => setModal({ type: "gasto", editing: g })}
                 onToggleGasto={toggleGastoEstado}
+                estadoAuto={estadoAutomatico(activeDayDate)}
                 onNuevaTransfer={() => setModal({ type: "transfer" })}
                 onEditarTransfer={(t) => setModal({ type: "transfer", editing: t })}
                 onApps={() => setModal({ type: "apps" })}
@@ -2390,6 +2443,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           historial={historialGastos}
           cortesDelDia={day.meseros}
           turnos={turnosDelDia}
+          estadoAuto={estadoAutomatico(activeDayDate)}
         />
       )}
       {modal?.type === "gasto" && (
@@ -2404,6 +2458,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           historial={historialGastos}
           fondo={efectivoDia && ((fondoActivo && !day?.apertura) || modal.editing?.delFondo) ? { queda: efectivoDia.fondoQueda } : undefined}
           inicialFondo={modal.fondo}
+          estadoAuto={estadoAutomatico(activeDayDate)}
         />
       )}
       {modal?.type === "transfer" && (
@@ -2434,6 +2489,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           totals={totals}
           onGuardar={guardarCorte}
           onClose={() => setModal(null)}
+          onSincronizar={(j) => activeMonth && sincronizarEstados(activeMonth, activeWeek, j, isOwner ? undefined : activeDay)}
           onSinVenta={(id) =>
             updateDay((d) => {
               const m = d.meseros.find((x) => x.id === id);
@@ -2533,6 +2589,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           cuadre={month.weeks[activeWeek]?.cuadre}
           empleados={data.empleados}
           onGuardarCuadre={(c) => guardarCuadre(activeMonth, activeWeek, c)}
+          onSincronizar={(j) => sincronizarEstados(activeMonth, activeWeek, j)}
           onIrADia={(d) => setActiveDay(d)}
           onMoverGasto={moverGastoPorFecha}
           onClose={() => setModal(null)}
@@ -2546,6 +2603,8 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           initialMonthKey={mostRecentMonthKey as string}
           initialWeekIndex={mostRecentWeekIdx}
           onToggleEstado={toggleGastoEstadoInWeek}
+          onSincronizar={sincronizarEstados}
+          onSinTicket={justificarSinTicket}
           onSetCategoria={setGastoCategoriaInWeek}
           onMoverGasto={moverGastoEnSemana}
           onEditarGasto={editarGastoEnSemana}

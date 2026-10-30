@@ -36,6 +36,7 @@ export function GastoAsistente({
   historial,
   fondo,
   inicialFondo = false,
+  estadoAuto = false,
 }: {
   onClose: () => void;
   // otro: guardar y seguir capturando otro gasto.
@@ -50,6 +51,7 @@ export function GastoAsistente({
   fondo?: { queda: number };
   // Abierto desde la tarjeta del fondo: ya viene elegido "Con el fondo".
   inicialFondo?: boolean;
+  estadoAuto?: boolean;
 }) {
   const conPregunta = cortesDelDia.length > 0 || !!fondo;
   const [corteId, setCorteId] = useState<string | null>(
@@ -169,7 +171,7 @@ export function GastoAsistente({
               monto: x.monto,
             }))}
           />
-          <FormularioGasto g={g} setG={setG} catalog={catalog} empleados={empleados} historial={historial} meseroCancelacion={corte?.meseroId} aviso={aviso} />
+          <FormularioGasto g={g} setG={setG} catalog={catalog} empleados={empleados} historial={historial} meseroCancelacion={corte?.meseroId} estadoAuto={estadoAuto} aviso={aviso} />
         </>
       )}
     </MarcoAsistente>

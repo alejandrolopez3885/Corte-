@@ -1,3 +1,4 @@
+import { estadoAutomatico } from "./cuadrar";
 import { DAYS, DAY_SHORT, HORARIO_AREAS_FIJAS } from "./types";
 import type { AppData, ConteoTextoArea, DayName, HorarioSemana, PermisoStaff, Profile, Receta, StaffAssignment } from "./types";
 import {
@@ -424,7 +425,7 @@ export function responderEquipo(data: AppData, c: Consulta, hoy: string, ctx: Co
     }
     if (c.sub === "falta") {
       if (day.corteGuardado) return { ...base, titulo, valor: "Ya está guardado", lineas: [`Lo guardó ${day.corteGuardado.nombre}.`] };
-      const faltan = faltantesDelCorte(day);
+      const faltan = faltantesDelCorte(day, estadoAutomatico(c.fecha));
       return {
         ...base,
         titulo,

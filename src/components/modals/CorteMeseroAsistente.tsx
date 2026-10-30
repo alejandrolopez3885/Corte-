@@ -45,6 +45,7 @@ export function CorteMeseroAsistente({
   historial,
   cortesDelDia = [],
   turnos = false,
+  estadoAuto = false,
 }: {
   onClose: () => void;
   // otro: guardar y empezar otro corte en vez de regresar al corte del día.
@@ -57,6 +58,7 @@ export function CorteMeseroAsistente({
   historial: NombreHistorial[];
   cortesDelDia?: MeseroCut[];
   turnos?: boolean;
+  estadoAuto?: boolean;
 }) {
   const [meseroId, setMeseroId] = useState(editing?.meseroId || "");
   const [nombre, setNombre] = useState(editing?.nombre || "");
@@ -315,7 +317,7 @@ export function CorteMeseroAsistente({
               })),
             ]}
           />
-          <FormularioGasto g={g} setG={setG} catalog={catalog} empleados={empleados} historial={historial} meseroCancelacion={meseroId} aviso={avisoGasto} />
+          <FormularioGasto g={g} setG={setG} catalog={catalog} empleados={empleados} historial={historial} meseroCancelacion={meseroId} estadoAuto={estadoAuto} aviso={avisoGasto} />
         </>
       ),
     },

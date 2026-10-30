@@ -63,6 +63,7 @@ export function CuadrarJohnster({
   onGuardarCuadre,
   onIrADia,
   onMoverGasto,
+  onSincronizar,
   onClose,
 }: {
   titulo: string;
@@ -73,6 +74,8 @@ export function CuadrarJohnster({
   onIrADia: (dia: DayName) => void;
   // "Otro día": pasa tu gasto a la fecha en que está en Johnster.
   onMoverGasto: (desde: string, hasta: string, gastoId: string) => void;
+  // Con los datos del bot se actualiza el estado de los gastos de la semana.
+  onSincronizar?: (j: JohnsterDatos) => void;
   onClose: () => void;
 }) {
   const [datos, setDatos] = useState<JohnsterDatos | null | undefined>(undefined);
@@ -112,6 +115,10 @@ export function CuadrarJohnster({
   }
 
   const conectado = !!datos?.actualizado_en;
+  useEffect(() => {
+    if (datos?.actualizado_en) onSincronizar?.(datos);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [datos]);
   const comparados = useMemo(() => (datos && conectado ? compararSemana(dias, datos, empleados) : []), [datos, conectado, dias, empleados]);
   // Cierre de la semana (antes de los gastos): lo que se sube junto a Johnster.
   const cierre = useMemo(() => cierreSemana(dias, empleados, adelantosEnSuDia(dias, datos, empleados)), [dias, empleados, datos]);

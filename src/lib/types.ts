@@ -338,6 +338,11 @@ export interface Gasto {
   // Se pagó con el fondo (lo que se dejó el día anterior), en el turno 1:
   // se resta del fondo y no del efectivo de las ventas.
   delFondo?: boolean;
+  // Desde la semana del 26/10/2026 el estado lo decide Johnster (ver
+  // estadosDesdeBot): por qué sigue pendiente, y la justificación del
+  // dueño para aceptarlo sin ticket.
+  estadoBot?: "no-esta" | "sin-ticket" | "domingo" | "diferente";
+  sinTicket?: string;
 }
 
 export interface Transferencia {

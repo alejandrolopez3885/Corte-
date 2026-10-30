@@ -152,6 +152,7 @@ export function FormularioGasto({
   historial,
   meseroCancelacion,
   aviso,
+  estadoAuto = false,
 }: {
   g: BorradorGasto;
   setG: (f: (g: BorradorGasto) => BorradorGasto) => void;
@@ -160,6 +161,8 @@ export function FormularioGasto({
   historial: NombreHistorial[];
   meseroCancelacion?: string;
   aviso?: string;
+  // Desde la semana del 26/10/2026 el estado lo decide Johnster: sin "Ya está ingresado".
+  estadoAuto?: boolean;
 }) {
   return (
     <>
@@ -214,12 +217,14 @@ export function FormularioGasto({
       <button type="button" className="ca-comprobante" disabled>
         <Paperclip size={17} /> Subir comprobante <small>Próximamente</small>
       </button>
-      <Toggle
-        checked={g.estado === "ingresado"}
-        disabled={!g.categoria}
-        onChange={(on) => setG((x) => ({ ...x, estado: on ? "ingresado" : "pendiente" }))}
-        label="Ya está ingresado"
-      />
+      {!estadoAuto && (
+        <Toggle
+          checked={g.estado === "ingresado"}
+          disabled={!g.categoria}
+          onChange={(on) => setG((x) => ({ ...x, estado: on ? "ingresado" : "pendiente" }))}
+          label="Ya está ingresado"
+        />
+      )}
       {aviso && <p className="aviso-faltante">{aviso}</p>}
     </>
   );

@@ -4,7 +4,7 @@ import { Sheet } from "../ui";
 import { addDaysIso, money } from "../../lib/dataModel";
 import { supabase } from "../../lib/supabaseClient";
 import { VerComprobante, type Comprobante } from "./ComprobanteJohnster";
-import { compararSemana, type DiaComparado, type EstadoGasto, type JohnsterDatos } from "../../lib/cuadrar";
+import { estadoAutomatico, compararSemana, type DiaComparado, type EstadoGasto, type JohnsterDatos } from "../../lib/cuadrar";
 import type { DayData, DayName, EmpleadoEntry } from "../../lib/types";
 
 // Revisión con Johnster antes de cerrar: las mismas secciones y notas que
@@ -34,7 +34,9 @@ const ayudaGasto = (g: DiaComparado["gastos"][number]) =>
 // Lo que no deja terminar el corte: gastos en Pendiente (falta subir su
 // comprobante al bot y tocar Confirmar), gastos incompletos y cortes de
 // mesero sin venta.
-export function faltantesDelCorte(day: DayData): { titulo: string; detalle: string; sinVentaId?: string }[] {
+// auto: desde la semana del 26/10/2026 el estado lo decide Johnster y ya no
+// se pide "Confirmar" (Guardar corte revisa en el bot que estén los gastos).
+export function faltantesDelCorte(day: DayData, auto = false): { titulo: string; detalle: string; sinVentaId?: string }[] {
   const out: { titulo: string; detalle: string; sinVentaId?: string }[] = [];
   if (day.meseros.length === 0) out.push({ titulo: "Meseros", detalle: "No hay ningún corte de mesero capturado." });
   day.meseros.forEach((m) => {
@@ -46,7 +48,7 @@ export function faltantesDelCorte(day: DayData): { titulo: string; detalle: stri
       Boolean
     ) as string[];
     if (falta.length > 0) out.push({ titulo, detalle: `Le falta ${falta.join(" y ")}.` });
-    else if (g.estado === "pendiente") out.push({ titulo, detalle: "Sigue en Pendiente: sube el comprobante al bot y toca Confirmar." });
+    else if (g.estado === "pendiente" && !auto) out.push({ titulo, detalle: "Sigue en Pendiente: sube el comprobante al bot y toca Confirmar." });
   });
   return out;
 }
@@ -66,6 +68,7 @@ export function GuardarCorteModal({
   onNota,
   esDueno,
   onSinVenta,
+  onSincronizar,
 }: {
   day: DayData;
   totals: { tarjetas: number; transferencias: number; gastos: number; ventaTotal: number; ventaApps: number };
@@ -82,8 +85,10 @@ export function GuardarCorteModal({
   esDueno: boolean;
   // "No hubo venta": deja ese corte en $0 a propósito.
   onSinVenta?: (cutId: string) => void;
+  // Con lo que trajo del bot se actualiza el estado de los gastos del día.
+  onSincronizar?: (j: JohnsterDatos) => void;
 }) {
-  const faltan = faltantesDelCorte(day);
+  const faltan = faltantesDelCorte(day, estadoAutomatico(fecha));
   const [rev, setRev] = useState<{ estado: "cargando" | "error" | "listo"; datos?: JohnsterDatos; error?: string }>({ estado: "cargando" });
   const [sinRevisar, setSinRevisar] = useState(false);
   const [escribiendo, setEscribiendo] = useState<{ clave: string; texto: string } | null>(null);
@@ -101,6 +106,10 @@ export function GuardarCorteModal({
     } else if (data?.error) msg = data.error;
     setRev(msg ? { estado: "error", error: msg } : { estado: "listo", datos: data as JohnsterDatos });
   }
+  useEffect(() => {
+    if (rev.estado === "listo" && rev.datos) onSincronizar?.(rev.datos);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rev]);
   // Se revisa con Johnster en cuanto ya no falta nada (también si se
   // completa aquí mismo, ej. "No hubo venta").
   const completo = faltan.length === 0;
