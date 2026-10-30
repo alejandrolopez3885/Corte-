@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { supabase } from "../lib/supabaseClient";
 import {
   Plus, Settings2, Users, Receipt, CircleDot, Circle,
   BarChart3, Scale, LogOut, Truck, Trash2, Home, Store, LayoutDashboard, Contact, Clock, Wallet, ChartLine, Martini, ChefHat, BookOpen, MessageCircle, Trophy, QrCode, Award,
@@ -36,7 +37,7 @@ import { ubicarFechas, type Destino } from "../lib/inicio";
 import { WeekSummaryModal } from "../components/modals/WeekSummaryModal";
 import { CuadrarJohnster } from "../components/modals/CuadrarJohnster";
 import { JalarParaActualizar } from "../components/JalarParaActualizar";
-import { EVENTO_JOHNSTER, estadoAutomatico, estadosDesdeBot, type JohnsterDatos, type RazonPendiente } from "../lib/cuadrar";
+import { EVENTO_JOHNSTER, avisarDatosJohnster, estadoAutomatico, estadosDesdeBot, type JohnsterDatos, type RazonPendiente } from "../lib/cuadrar";
 import { GastosSummaryModal } from "../components/modals/GastosSummaryModal";
 import { DeleteMonthModal } from "../components/modals/DeleteMonthModal";
 import { AsignarDiaModal } from "../components/modals/AsignarDiaModal";
@@ -129,6 +130,24 @@ export default function CortesApp({ profile }: { profile: Profile }) {
     window.addEventListener(EVENTO_JOHNSTER, h);
     return () => window.removeEventListener(EVENTO_JOHNSTER, h);
   }, []);
+  // El dueño: al abrir la app y al jalar hacia abajo se lee la copia del bot
+  // (y se pide una fresca) para que el estado de los gastos quede al día
+  // aunque no se abra ninguna pantalla del bot.
+  const leerBot = useCallback(() => {
+    const leer = () =>
+      supabase
+        .from("johnster_datos")
+        .select("sucursal, ingresos, gastos, actualizado_en, error")
+        .maybeSingle()
+        .then(({ data: j }) => avisarDatosJohnster(j as JohnsterDatos | null));
+    leer().then(() => supabase.functions.invoke("johnster", { body: {} }).then(leer));
+  }, []);
+  const botLeido = useRef(false);
+  useEffect(() => {
+    if (!data || !isOwner || soloLectura || botLeido.current) return;
+    botLeido.current = true;
+    leerBot();
+  }, [data, isOwner, soloLectura, leerBot]);
   // Nombres de todos los gastos capturados, para autocompletar el concepto.
   const historialGastos = useMemo(() => (data ? historialNombres(data) : []), [data]);
 
@@ -1601,7 +1620,12 @@ export default function CortesApp({ profile }: { profile: Profile }) {
 
   return (
     <div className={`app-shell ${isOwner ? "with-bottom-nav" : ""}`}>
-      <JalarParaActualizar onRecargar={recargar} />
+      <JalarParaActualizar
+        onRecargar={async () => {
+          await recargar();
+          if (isOwner && !soloLectura) leerBot();
+        }}
+      />
       {isOwner && !soloLectura && <NovedadesAlEntrar profile={profile} data={data} tieneCorte={false} />}
       {soloLectura && <SoloLecturaGuard />}
       {soloLectura && recorrido === "bienvenida" && (

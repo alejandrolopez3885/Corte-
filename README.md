@@ -167,7 +167,9 @@ adelantos que se juntan y las comidas gratis, "Se sube junto el domingo"
 (pasan a Ingresado cuando el gasto junto del domingo está en el bot, o si
 se subieron en su día). El estado se guarda cada vez que la app consulta el
 bot: al abrir Control de gastos o ⚖︎ Cuadrar y en Guardar corte (el
-personal solo actualiza el día que guarda). En esas semanas no hay botón
+personal solo actualiza el día que guarda); para el dueño también al abrir
+la app y al jalar hacia abajo en la pantalla principal (lee la copia del bot
+y pide una fresca), así el corte del día no se queda con un estado viejo. En esas semanas no hay botón
 "Confirmar" (Control de gastos, Buscar ticket y el corte del día solo
 muestran el estado), al capturar un gasto ya no sale "Ya está ingresado",
 Guardar corte deja de pedir "toca Confirmar" (ya revisa en el bot) y la
