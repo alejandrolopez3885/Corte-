@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTickRecargar } from "./JalarParaActualizar";
 import {
   LOGROS,
   TOTAL_LOGROS,
@@ -22,6 +23,7 @@ export function MisPuntos({ meseroId }: { meseroId: string }) {
   const [datos, setDatos] = useState<{ movimientos: Movimiento[]; logros: LogroGanado[]; semanas: SemanaCerrada[] } | null | "error">(null);
   const [todo, setTodo] = useState(false);
 
+  const tick = useTickRecargar();
   useEffect(() => {
     let vivo = true;
     Promise.all([cargarMovimientos(meseroId), cargarLogros(), cargarSemanas(20)]).then(([movimientos, logros, semanas]) => {
@@ -32,7 +34,7 @@ export function MisPuntos({ meseroId }: { meseroId: string }) {
     return () => {
       vivo = false;
     };
-  }, [meseroId]);
+  }, [meseroId, tick]);
 
   if (datos === null) return <p className="hint">Cargando tus monedas…</p>;
   if (datos === "error") return <p className="aviso-faltante">No se pudieron leer tus monedas. Revisa tu conexión.</p>;

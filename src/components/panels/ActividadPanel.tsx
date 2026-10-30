@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useTickRecargar } from "../JalarParaActualizar";
 import { ChevronLeft, ChevronRight, History, LogIn, LogOut, Search, X } from "lucide-react";
 import { Empty, Sheet } from "../ui";
 import { addDaysIso, formatAssignedDate, formatWeekRange, todayIso } from "../../lib/dataModel";
@@ -52,6 +53,7 @@ export function ActividadPanel({ onBack, ownerId }: { onBack: () => void; ownerI
   const [especial, setEspecial] = useState<FiltroEspecial>(null);
 
   // Se carga la semana elegida y la anterior (para comparar).
+  const tick = useTickRecargar();
   useEffect(() => {
     let cancelado = false;
     const desde = new Date(`${addDaysIso(lunes, -7)}T00:00:00`).toISOString();
@@ -74,7 +76,7 @@ export function ActividadPanel({ onBack, ownerId }: { onBack: () => void; ownerI
     return () => {
       cancelado = true;
     };
-  }, [ownerId, lunes]);
+  }, [ownerId, lunes, tick]);
 
   const { semana, anterior } = useMemo(() => {
     const semana: RenglonBitacora[] = [];
@@ -536,6 +538,7 @@ export function HistorialDiaSheet({
 }) {
   const [estado, setEstado] = useState<{ cargando: boolean; error?: boolean; renglones: RenglonBitacora[] }>({ cargando: true, renglones: [] });
   const [confirmando, setConfirmando] = useState<{ r: RenglonBitacora; dia: DayData } | null>(null);
+  const tick = useTickRecargar();
   useEffect(() => {
     let cancelado = false;
     cargarBitacoraDelDia(ownerId, fecha).then(({ data, error }) => {
@@ -544,7 +547,7 @@ export function HistorialDiaSheet({
     return () => {
       cancelado = true;
     };
-  }, [ownerId, fecha]);
+  }, [ownerId, fecha, tick]);
   // Copia del día antes de un cambio: la del renglón o la de otro renglón
   // del mismo guardado (mismo momento).
   const copiaDe = (r: RenglonBitacora) => r.dia_antes || estado.renglones.find((x) => x.creado_en === r.creado_en && x.dia_antes)?.dia_antes || null;

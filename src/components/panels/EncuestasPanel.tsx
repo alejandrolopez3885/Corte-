@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTickRecargar } from "../JalarParaActualizar";
 import { MessageSquareText, QrCode } from "lucide-react";
 import { Empty } from "../ui";
 import { TituloPagina } from "../BarraTitulo";
@@ -59,6 +60,7 @@ export function EncuestasPanel({ data, perfilId, nombreDueno, onBack }: { data: 
     return true;
   }
 
+  const tick = useTickRecargar();
   useEffect(() => {
     const { desde, hasta } = rangoRanking(periodo);
     let vivo = true;
@@ -97,7 +99,7 @@ export function EncuestasPanel({ data, perfilId, nombreDueno, onBack }: { data: 
     return () => {
       vivo = false;
     };
-  }, [periodo, data]);
+  }, [periodo, data, tick]);
 
   async function revisar(r: RespuestaEncuesta, revision: "aprobada" | "descartada") {
     if (!(await revisarRespuesta(r.encuesta_id, revision))) return;

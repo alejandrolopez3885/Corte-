@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTickRecargar } from "../JalarParaActualizar";
 import { Check } from "lucide-react";
 import { addDaysIso, diaPorFecha, formatLongDayDate, mondayOnOrBefore, money, todayIso } from "../../lib/dataModel";
 import { pronosticoDesdeLunes } from "../../lib/pronostico";
@@ -18,6 +19,7 @@ export function InicioPanel({ data, ownerId, onIr }: { data: AppData; ownerId: s
   const hoy = todayIso();
   // Últimos 7 días de Actividad (si la bitácora no existe, ese grupo no sale).
   const [bitacora, setBitacora] = useState<RenglonBitacora[] | null>(null);
+  const tick = useTickRecargar();
   useEffect(() => {
     let cancelado = false;
     const desde = new Date(`${addDaysIso(hoy, -6)}T00:00:00`).toISOString();
@@ -28,7 +30,7 @@ export function InicioPanel({ data, ownerId, onIr }: { data: AppData; ownerId: s
     return () => {
       cancelado = true;
     };
-  }, [ownerId, hoy]);
+  }, [ownerId, hoy, tick]);
 
   const inicio = calcularInicio(data, hoy, bitacora, ownerId);
   const grupos = [

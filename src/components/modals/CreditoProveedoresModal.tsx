@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useAlRecargar } from "../JalarParaActualizar";
 import { supabase } from "../../lib/supabaseClient";
-import { TOLERANCIA, type JohnsterDatos, type TipoTransferencia } from "../../lib/cuadrar";
+import { TOLERANCIA, type JohnsterDatos, type TipoTransferencia, avisarDatosJohnster } from "../../lib/cuadrar";
 import { Pencil, RotateCcw } from "lucide-react";
 import { Sheet, Field, SumInput } from "../ui";
 import {
@@ -54,6 +54,7 @@ export function CreditoProveedoresModal({
   async function cargarJohnster() {
     const { data } = await supabase.from("johnster_datos").select("sucursal, ingresos, gastos, transferencias, actualizado_en, error").maybeSingle();
     setJohnster((data as JohnsterDatos | null) ?? null);
+    avisarDatosJohnster(data as JohnsterDatos | null);
     return data as JohnsterDatos | null;
   }
   async function actualizarJohnster() {

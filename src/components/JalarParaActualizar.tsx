@@ -102,3 +102,15 @@ export function useAlRecargar(fn: () => void) {
     return () => window.removeEventListener(EVENTO_RECARGAR, h);
   }, []);
 }
+
+// Para las secciones que cargan datos aparte: un número que cambia cada vez
+// que se jala para actualizar; ponerlo en las dependencias de su carga.
+export function useTickRecargar() {
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    const h = () => setTick((t) => t + 1);
+    window.addEventListener(EVENTO_RECARGAR, h);
+    return () => window.removeEventListener(EVENTO_RECARGAR, h);
+  }, []);
+  return tick;
+}

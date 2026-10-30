@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { useAlRecargar } from "./JalarParaActualizar";
 import { Play } from "lucide-react";
 import { Field } from "./ui";
 import { supabase } from "../lib/supabaseClient";
@@ -65,6 +66,7 @@ export function AccesoInvitados({ ownerId, onProbar }: { ownerId: string; onProb
   useEffect(() => {
     cargar();
   }, [cargar]);
+  useAlRecargar(cargar);
 
   async function crear() {
     setAviso(null);

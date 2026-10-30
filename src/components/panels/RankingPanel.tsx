@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTickRecargar } from "../JalarParaActualizar";
 import { ChevronRight, Trophy } from "lucide-react";
 import { Avatar } from "../Avatar";
 import { Empty, Sheet } from "../ui";
@@ -51,13 +52,14 @@ export function RankingPanel({
   const [periodo, setPeriodo] = useState<PeriodoRanking>("semana");
   const { desde, hasta } = rangoRanking(periodo);
   const [encuestas, setEncuestas] = useState<Map<string, EncuestasMesero>>(new Map());
+  const tick = useTickRecargar();
   useEffect(() => {
     let vivo = true;
     encuestasParaRanking(desde, hasta).then((m) => vivo && setEncuestas(m));
     return () => {
       vivo = false;
     };
-  }, [desde, hasta]);
+  }, [desde, hasta, tick]);
   const ranking = calcularRanking(data, desde, hasta, encuestas);
   const deEncuestas = rankingEncuestas(ranking.filas);
   // Ganador de la última semana cerrada y los logros de cada quien.
@@ -77,7 +79,7 @@ export function RankingPanel({
     return () => {
       vivo = false;
     };
-  }, []);
+  }, [tick]);
   const yo = ranking.filas.find((f) => f.meseroId === miMeseroId);
   const periodos: [PeriodoRanking, string][] = [
     ["semana", "Esta semana"],
@@ -337,13 +339,14 @@ export function RankingPanel({
 export function RankingTarjeta({ data, miMeseroId, onVer }: { data: AppData; miMeseroId?: string; onVer: () => void }) {
   const { desde, hasta } = rangoRanking("semana");
   const [encuestas, setEncuestas] = useState<Map<string, EncuestasMesero>>(new Map());
+  const tick = useTickRecargar();
   useEffect(() => {
     let vivo = true;
     encuestasParaRanking(desde, hasta).then((m) => vivo && setEncuestas(m));
     return () => {
       vivo = false;
     };
-  }, [desde, hasta]);
+  }, [desde, hasta, tick]);
   const ranking = calcularRanking(data, desde, hasta, encuestas);
   const yo = ranking.filas.find((f) => f.meseroId === miMeseroId);
   const arriba = yo ? ranking.filas.filter((f) => f.puntos > yo.puntos).pop() : undefined;

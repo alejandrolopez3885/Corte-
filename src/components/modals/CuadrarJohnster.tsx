@@ -4,7 +4,7 @@ import { Field } from "../ui";
 import { MarcoAsistente } from "./asistente";
 import { VerComprobante, type Comprobante } from "./ComprobanteJohnster";
 import { supabase } from "../../lib/supabaseClient";
-import { adelantosEnSuDia, cierreSemana, compararSemana, type DiaComparado, type EstadoGasto, type JohnsterDatos, type Renglon } from "../../lib/cuadrar";
+import { adelantosEnSuDia, cierreSemana, compararSemana, type DiaComparado, type EstadoGasto, type JohnsterDatos, type Renglon, avisarDatosJohnster } from "../../lib/cuadrar";
 import type { CuadreSemana, DayData, DayName, EmpleadoEntry } from "../../lib/types";
 
 // Corte › ⚖︎ Cuadrar: la semana contra Johnster Bot, paso a paso. Orden:
@@ -92,6 +92,7 @@ export function CuadrarJohnster({
   async function cargar() {
     const { data } = await supabase.from("johnster_datos").select("sucursal, ingresos, gastos, actualizado_en, error").maybeSingle();
     setDatos((data as JohnsterDatos | null) ?? null);
+    avisarDatosJohnster(data as JohnsterDatos | null);
   }
   useEffect(() => {
     cargar();

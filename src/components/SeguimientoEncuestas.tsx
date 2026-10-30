@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTickRecargar } from "./JalarParaActualizar";
 import { MessageSquareText } from "lucide-react";
 import { Empty } from "./ui";
 import { BorrarPrueba } from "./BorrarPrueba";
@@ -39,6 +40,7 @@ export function SeguimientoEncuestas({
   const [mesero, setMesero] = useState<string | null>(null);
   const [mostrar, setMostrar] = useState(POR_VISTA);
 
+  const tick = useTickRecargar();
   useEffect(() => {
     let vivo = true;
     setDatos(null);
@@ -50,7 +52,7 @@ export function SeguimientoEncuestas({
     return () => {
       vivo = false;
     };
-  }, [desde, hasta]);
+  }, [desde, hasta, tick]);
 
   if (datos === null) return <p className="hint">Cargando…</p>;
   if (datos === "error") return <p className="aviso-faltante">No se pudo leer el seguimiento. Revisa tu conexión.</p>;

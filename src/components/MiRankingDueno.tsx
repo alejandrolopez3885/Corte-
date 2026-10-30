@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTickRecargar } from "./JalarParaActualizar";
 import { normalizarNombre, todayIso, empleadoDelDueno } from "../lib/dataModel";
 import { calcularRanking, meseroDeEmpleado, rangoRanking, type EncuestasMesero } from "../lib/ranking";
 import { MINIMO_ENCUESTAS, calificaciones, encuestasParaRanking } from "../lib/encuestas";
@@ -20,13 +21,14 @@ export function meseroDelDueno(data: AppData, nombre: string): string | undefine
 export function MiRankingDueno({ data, meseroId, onVerRanking }: { data: AppData; meseroId: string; onVerRanking: () => void }) {
   const { desde, hasta } = rangoRanking("semana");
   const [encSemana, setEncSemana] = useState<Map<string, EncuestasMesero>>(new Map());
+  const tick = useTickRecargar();
   useEffect(() => {
     let vivo = true;
     encuestasParaRanking(desde, hasta).then((m) => vivo && setEncSemana(m));
     return () => {
       vivo = false;
     };
-  }, [desde, hasta]);
+  }, [desde, hasta, tick]);
   const ranking = calcularRanking(data, desde, hasta, encSemana);
   const yo = ranking.filas.find((f) => f.meseroId === meseroId);
   const [estrellas, setEstrellas] = useState<{ promedio: number; cantidad: number } | null>(null);
@@ -38,7 +40,7 @@ export function MiRankingDueno({ data, meseroId, onVerRanking }: { data: AppData
     return () => {
       vivo = false;
     };
-  }, [meseroId]);
+  }, [meseroId, tick]);
   const conEstrellas = !!estrellas && estrellas.cantidad >= MINIMO_ENCUESTAS;
   const ancho = conEstrellas ? (Math.round(estrellas!.promedio * 2) / 2 / 5) * 100 : 0;
 

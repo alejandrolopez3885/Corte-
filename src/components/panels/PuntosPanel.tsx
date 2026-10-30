@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { useAlRecargar } from "../JalarParaActualizar";
 import { Trophy } from "lucide-react";
 import { Empty, Field } from "../ui";
 import { TituloPagina } from "../BarraTitulo";
@@ -37,6 +38,7 @@ export function PuntosPanel({ data, ownerId, onBack }: { data: AppData; ownerId:
   useEffect(() => {
     cargar();
   }, [cargar]);
+  useAlRecargar(cargar);
 
   async function cerrar(lunes: string) {
     setOcupado(lunes);

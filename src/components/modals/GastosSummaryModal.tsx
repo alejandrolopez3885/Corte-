@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useAlRecargar } from "../JalarParaActualizar";
 import { Check, ChevronDown, Pencil, Receipt, TriangleAlert } from "lucide-react";
 import { supabase } from "../../lib/supabaseClient";
-import { estadoAutomatico, gastosEnJohnster, type JohnsterDatos } from "../../lib/cuadrar";
+import { estadoAutomatico, gastosEnJohnster, type JohnsterDatos, avisarDatosJohnster } from "../../lib/cuadrar";
 import { VerComprobante, type Comprobante } from "./ComprobanteJohnster";
 import { Sheet, Field, NumInput } from "../ui";
 import { addDaysIso, computeWeekGastos, dateForDay, formatShortDayDate, formatWeekRange, money, resolveWeekStartDate } from "../../lib/dataModel";
@@ -95,7 +95,10 @@ export function GastosSummaryModal({
       .from("johnster_datos")
       .select("sucursal, ingresos, gastos, actualizado_en, error")
       .maybeSingle()
-      .then(({ data }) => setJohnster((data as JohnsterDatos | null) ?? null));
+      .then(({ data }) => {
+        setJohnster((data as JohnsterDatos | null) ?? null);
+        avisarDatosJohnster(data as JohnsterDatos | null);
+      });
   useEffect(() => {
     // Si la copia del bot tiene más de 10 minutos, se trae fresca (el estado
     // de cada gasto depende de lo que haya en el bot ahorita).

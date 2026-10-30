@@ -36,7 +36,7 @@ import { ubicarFechas, type Destino } from "../lib/inicio";
 import { WeekSummaryModal } from "../components/modals/WeekSummaryModal";
 import { CuadrarJohnster } from "../components/modals/CuadrarJohnster";
 import { JalarParaActualizar } from "../components/JalarParaActualizar";
-import { estadoAutomatico, estadosDesdeBot, type JohnsterDatos, type RazonPendiente } from "../lib/cuadrar";
+import { EVENTO_JOHNSTER, estadoAutomatico, estadosDesdeBot, type JohnsterDatos, type RazonPendiente } from "../lib/cuadrar";
 import { GastosSummaryModal } from "../components/modals/GastosSummaryModal";
 import { DeleteMonthModal } from "../components/modals/DeleteMonthModal";
 import { AsignarDiaModal } from "../components/modals/AsignarDiaModal";
@@ -121,6 +121,14 @@ export default function CortesApp({ profile }: { profile: Profile }) {
   const duenoId = esInvitado ? (profile.owner_id as string) : profile.id;
   const [recorrido, setRecorrido] = useState<"bienvenida" | "pasos" | "opinion" | null>(esInvitado ? "bienvenida" : null);
   const { data, status, saveState, persist, recargar } = useAppData(profile, soloLectura);
+  // Datos del bot desde cualquier pantalla → recalcular el estado de los
+  // gastos (ver sincronizarTodoRef más abajo).
+  const sincronizarTodoRef = useRef<(j: JohnsterDatos) => void>(() => {});
+  useEffect(() => {
+    const h = (e: Event) => sincronizarTodoRef.current((e as CustomEvent<JohnsterDatos>).detail);
+    window.addEventListener(EVENTO_JOHNSTER, h);
+    return () => window.removeEventListener(EVENTO_JOHNSTER, h);
+  }, []);
   // Nombres de todos los gastos capturados, para autocompletar el concepto.
   const historialGastos = useMemo(() => (data ? historialNombres(data) : []), [data]);
 
@@ -1208,26 +1216,29 @@ export default function CortesApp({ profile }: { profile: Profile }) {
   // Estado de los gastos desde Johnster (desde la semana del 26/10/2026):
   // cada vez que la app consulta el bot se actualiza Pendiente / Ingresado
   // y por qué. El personal solo actualiza el día que está guardando.
-  function sincronizarEstados(monthKey: string, weekIndex: number, j: JohnsterDatos | null | undefined, soloDia?: DayName) {
-    if (!data || !j) return;
-    const mes = data.months[monthKey];
+  type CambioEstado = { mk: string; wi: number; dia: DayName; id: string; estado: "pendiente" | "ingresado"; razon?: RazonPendiente };
+  function cambiosEstado(base: AppData, monthKey: string, weekIndex: number, j: JohnsterDatos, soloDia?: DayName): CambioEstado[] {
+    const mes = base.months[monthKey];
     const semana = mes?.weeks[weekIndex];
-    if (!mes || !semana || !estadoAutomatico(resolveWeekStartDate(monthKey, weekIndex, mes))) return;
+    if (!mes || !semana || !estadoAutomatico(resolveWeekStartDate(monthKey, weekIndex, mes))) return [];
     const dias = DAYS.map((d) => ({ dia: d, fecha: dateForDay(monthKey, weekIndex, mes, d), day: semana.days[d] }));
-    const estados = estadosDesdeBot(dias, j, data.empleados);
-    const cambios: { dia: DayName; id: string; estado: "pendiente" | "ingresado"; razon?: RazonPendiente }[] = [];
+    const estados = estadosDesdeBot(dias, j, base.empleados);
+    const cambios: CambioEstado[] = [];
     DAYS.forEach((d) => {
       if (soloDia && d !== soloDia) return;
       if (!isOwner && semana.days[d].corteGuardado) return;
       semana.days[d].gastos.forEach((g) => {
         const e = estados.get(g.id);
-        if (e && (g.estado !== e.estado || g.estadoBot !== e.razon)) cambios.push({ dia: d, id: g.id, estado: e.estado, razon: e.razon });
+        if (e && (g.estado !== e.estado || g.estadoBot !== e.razon)) cambios.push({ mk: monthKey, wi: weekIndex, dia: d, id: g.id, estado: e.estado, razon: e.razon });
       });
     });
-    if (!cambios.length) return;
+    return cambios;
+  }
+  function aplicarCambiosEstado(cambios: CambioEstado[]) {
+    if (!data || !cambios.length) return;
     const next = structuredClone(data);
     cambios.forEach((c) => {
-      const g = next.months[monthKey].weeks[weekIndex].days[c.dia].gastos.find((x) => x.id === c.id);
+      const g = next.months[c.mk].weeks[c.wi].days[c.dia].gastos.find((x) => x.id === c.id);
       if (!g) return;
       g.estado = c.estado;
       if (c.razon) g.estadoBot = c.razon;
@@ -1235,7 +1246,19 @@ export default function CortesApp({ profile }: { profile: Profile }) {
     });
     persist(next);
   }
-
+  function sincronizarEstados(monthKey: string, weekIndex: number, j: JohnsterDatos | null | undefined, soloDia?: DayName) {
+    if (!data || !j) return;
+    aplicarCambiosEstado(cambiosEstado(data, monthKey, weekIndex, j, soloDia));
+  }
+  // Cualquier pantalla del dueño que traiga datos del bot (Dashboard, Resumen,
+  // transferencias…) avisa con avisarDatosJohnster: se recalculan todas las
+  // semanas con estado automático, en un solo guardado.
+  sincronizarTodoRef.current = (j: JohnsterDatos) => {
+    if (!data || !isOwner || soloLectura) return;
+    const cambios: CambioEstado[] = [];
+    Object.keys(data.months).forEach((mk) => data.months[mk].weeks.forEach((_, wi) => cambios.push(...cambiosEstado(data, mk, wi, j))));
+    aplicarCambiosEstado(cambios);
+  };
   // "Subir sin ticket · anotar por qué" (solo el dueño): con la
   // justificación, un gasto que está en el bot sin foto cuenta como Ingresado.
   function justificarSinTicket(monthKey: string, weekIndex: number, dia: DayName, id: string, texto: string | undefined) {

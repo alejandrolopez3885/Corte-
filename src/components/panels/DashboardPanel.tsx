@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useAlRecargar } from "../JalarParaActualizar";
 import { Check, ChevronDown, ChevronUp, Copy } from "lucide-react";
 import { supabase } from "../../lib/supabaseClient";
-import { TOLERANCIA, type JohnsterDatos } from "../../lib/cuadrar";
+import { TOLERANCIA, type JohnsterDatos, avisarDatosJohnster } from "../../lib/cuadrar";
 import { avanceSemana } from "../../lib/avanceImage";
 import { Field } from "../ui";
 import {
@@ -64,6 +64,7 @@ export function DashboardPanel({
   async function cargarJohnster() {
     const { data } = await supabase.from("johnster_datos").select("sucursal, ingresos, gastos, transferencias, actualizado_en, error").maybeSingle();
     setJohnster((data as JohnsterDatos | null) ?? null);
+    avisarDatosJohnster(data as JohnsterDatos | null);
     return data as JohnsterDatos | null;
   }
   async function actualizarJohnster() {

@@ -377,7 +377,12 @@ No se activa empezando sobre un campo de texto ni al deslizar de lado. Las
 pantallas con datos de Johnster (Control de gastos en efectivo y en
 transferencia, Dashboard, Resumen semanal, ⚖︎ Cuadrar y Guardar corte)
 escuchan el evento `recargar-datos` (`useAlRecargar`) y vuelven a traer
-los datos del bot.
+los datos del bot; las secciones que cargan datos aparte (Inicio y
+Actividad con la bitácora, Encuestas y su seguimiento, Monedas/Puntos,
+Ranking, Mis puntos y Acceso de invitados) también vuelven a cargar lo
+suyo (`useTickRecargar`). Cada vez que una pantalla trae datos del bot
+avisa (`avisarDatosJohnster`) y se recalcula el estado automático de los
+gastos de todas las semanas desde el 26/10/2026 en un solo guardado.
 
 La vista del dueño se organiza en 5 secciones, accesibles desde la barra de
 navegación de abajo (Inicio · Corte · Equipo · Negocio · Dashboard) — tocar una pestaña siempre regresa al inicio de esa

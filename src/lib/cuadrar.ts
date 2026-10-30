@@ -255,6 +255,12 @@ export function gastosEnJohnster(dias: DiaEntrada[], j: JohnsterDatos, empleados
 // Desde esta semana el estado de cada gasto (Pendiente / Ingresado) lo
 // decide Johnster; las semanas anteriores se quedan como se marcaron a mano.
 export const ESTADO_AUTO_DESDE = "2026-10-26";
+// Aviso de que llegaron datos del bot (cualquier pantalla): CortesApp
+// recalcula el estado de los gastos con ellos.
+export const EVENTO_JOHNSTER = "johnster-datos";
+export function avisarDatosJohnster(d: JohnsterDatos | null | undefined) {
+  if (d?.actualizado_en) window.dispatchEvent(new CustomEvent(EVENTO_JOHNSTER, { detail: d }));
+}
 export const estadoAutomatico = (fecha: string | null | undefined) => !!fecha && fecha >= ESTADO_AUTO_DESDE;
 export type RazonPendiente = NonNullable<Gasto["estadoBot"]>;
 

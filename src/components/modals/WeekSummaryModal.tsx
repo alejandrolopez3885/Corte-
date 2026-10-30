@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useAlRecargar } from "../JalarParaActualizar";
 import { supabase } from "../../lib/supabaseClient";
-import { TOLERANCIA, adelantosEnSuDia, cierreSemana, type JohnsterDatos } from "../../lib/cuadrar";
+import { TOLERANCIA, adelantosEnSuDia, cierreSemana, type JohnsterDatos, avisarDatosJohnster } from "../../lib/cuadrar";
 import { Sheet, Field, SumInput } from "../ui";
 import { addDaysIso, computeWeekSummary, dateForDay, formatShortDayDate, formatWeekRange, money, resolveWeekStartDate, round2, sumFromText } from "../../lib/dataModel";
 import { DAYS, DAY_SHORT } from "../../lib/types";
@@ -62,6 +62,7 @@ export function WeekSummaryModal({
   async function cargarJohnster() {
     const { data } = await supabase.from("johnster_datos").select("sucursal, ingresos, gastos, actualizado_en, error").maybeSingle();
     setJohnster((data as JohnsterDatos | null) ?? null);
+    avisarDatosJohnster(data as JohnsterDatos | null);
   }
   // "Revisar de nuevo en Johnster": vuelve a traer los datos del bot.
   async function actualizarJohnster() {
