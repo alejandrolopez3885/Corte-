@@ -106,8 +106,8 @@ export function DashboardPanel({
   const domingo = addDaysIso(weekStartDate, 6);
   const enCurso = hoy >= weekStartDate && hoy <= domingo;
   const diaHoy = new Date(`${hoy}T00:00:00`).toLocaleDateString("es-MX", { weekday: "long" });
-  const nominaCierre = round2(computeNominaSemana(semana, empleados).reduce((s, e) => s + e.bruto, 0));
-  const nominaPago = nominaPagoSemana(week, semana, empleados, nominaDescuentos?.[monthKey]?.weeks?.[weekIndex] ?? null);
+  const nominaCierre = round2(computeNominaSemana(semana, empleados, null, null, weekStartDate).reduce((s, e) => s + e.bruto, 0));
+  const nominaPago = nominaPagoSemana(week, semana, empleados, nominaDescuentos?.[monthKey]?.weeks?.[weekIndex] ?? null, weekStartDate);
   const avance = metaVenta
     ? avanceSemana({ semana: "", venta: report.ventaTotal, ventaPresupuesto: metaVenta, gasto: report.gastosOperativos, nominaHastaHoy: nominaCalculada, nominaCierre })
     : null;

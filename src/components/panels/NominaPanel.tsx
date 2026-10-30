@@ -86,7 +86,7 @@ export function NominaPanel({
   const week = month.weeks[weekIndex];
   const semana = horarios[monthKey]?.weeks?.[weekIndex] ?? null;
   const descuentosSemana = nominaDescuentos[monthKey]?.weeks?.[weekIndex] ?? null;
-  const reporteCompleto = computeNominaSemana(semana, empleados, descuentosSemana, week);
+  const reporteCompleto = computeNominaSemana(semana, empleados, descuentosSemana, week, weekStartDate);
   const reporte = soloEmpleadoId ? reporteCompleto.filter((e) => e.empleadoId === soloEmpleadoId) : reporteCompleto;
 
   const totalBruto = reporte.reduce((s, e) => s + e.bruto, 0);

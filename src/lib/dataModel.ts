@@ -1,6 +1,6 @@
 import { repartoComidas } from "./comidasGratis";
 import type { AperturaValues } from "../components/modals/AperturaModal";
-import { DAYS, GASTO_CATEGORIAS, HORARIO_AREAS_FIJAS, PLANTILLA_CONTEO_BAR, PLANTILLA_CONTEO_COCINA, type AppData, type ConteoTextoArea, type InsumoEntry, type AreaEntry, type DayData, type DayName, type EmpleadoEntry, type Gasto, type GastoCategoria, type Transferencia, type HorarioFila, type HorarioMonthData, type HorarioSemana, type InsumoArea, type MeseroCatalogEntry, type MeseroCut, type MonthData, type MontoFijoSemanal, type NominaDescuento, type NominaDescuentosSemana, type NominaDia, type NominaEmpleadoSemana, type PuestoEntry, type VentaProyeccion, type WeekData, type WeekTrendPoint } from "./types";
+import { DAYS, GASTO_CATEGORIAS, HORARIO_AREAS_FIJAS, PLANTILLA_CONTEO_BAR, PLANTILLA_CONTEO_COCINA, type AppData, type ConteoTextoArea, type InsumoEntry, type AreaEntry, type CambioSueldo, type DayData, type DayName, type EmpleadoEntry, type Gasto, type GastoCategoria, type Transferencia, type HorarioFila, type HorarioMonthData, type HorarioSemana, type InsumoArea, type MeseroCatalogEntry, type MeseroCut, type MonthData, type MontoFijoSemanal, type NominaDescuento, type NominaDescuentosSemana, type NominaDia, type NominaEmpleadoSemana, type PuestoEntry, type VentaProyeccion, type WeekData, type WeekTrendPoint } from "./types";
 
 export const uid = (): string => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 
@@ -763,6 +763,24 @@ export function findPreviousHorarioSemana(
 // trabajó, se suma 1 turno extra al multiplicador que le tocaba (normal o
 // Z) — el descanso pagado en un día festivo no cuenta como "trabajado",
 // así que no recibe el extra.
+// Sueldo diario de un empleado en una semana (su lunes): el último cambio
+// del historial cuya semana ya empezó; antes del primero, el primero. Sin
+// historial, su sueldoDiario.
+export function historialOrdenado(e: Pick<EmpleadoEntry, "historialSueldo">): CambioSueldo[] {
+  return [...(e.historialSueldo || [])].sort((a, b) => a.desde.localeCompare(b.desde));
+}
+export function sueldoEnFecha(e: EmpleadoEntry | undefined, fecha: string = todayIso()): number {
+  if (!e) return 0;
+  const h = historialOrdenado(e);
+  if (!h.length) return e.sueldoDiario || 0;
+  const lunes = mondayOnOrBefore(fecha);
+  let s = h[0].sueldoDiario;
+  h.forEach((c) => {
+    if (mondayOnOrBefore(c.desde) <= lunes) s = c.sueldoDiario;
+  });
+  return s;
+}
+
 export function computeNominaFila(
   fila: HorarioFila,
   sueldoDiario: number,
@@ -811,9 +829,10 @@ export function nominaPagoSemana(
   week: WeekData | null | undefined,
   semana: HorarioSemana | null,
   empleados: EmpleadoEntry[],
-  descuentosSemana?: NominaDescuentosSemana | null
+  descuentosSemana?: NominaDescuentosSemana | null,
+  lunes?: string
 ) {
-  const reporte = computeNominaSemana(semana, empleados, descuentosSemana, week);
+  const reporte = computeNominaSemana(semana, empleados, descuentosSemana, week, lunes);
   const suma = (f: (e: NominaEmpleadoSemana) => number) => round2(reporte.reduce((s, e) => s + f(e), 0));
   const bruto = suma((e) => e.bruto);
   const extras = suma((e) => e.totalExtras);
@@ -828,13 +847,14 @@ export function computeNominaSemana(
   semana: HorarioSemana | null,
   empleados: EmpleadoEntry[],
   descuentosSemana?: NominaDescuentosSemana | null,
-  week?: WeekData | null
+  week?: WeekData | null,
+  lunes?: string // la semana, para el sueldo vigente (sin ella, el de hoy)
 ): NominaEmpleadoSemana[] {
   if (!semana) return [];
   const result: NominaEmpleadoSemana[] = [];
   semana.areas.forEach((area) => {
     area.filas.forEach((fila) => {
-      const sueldoDiario = empleados.find((e) => e.id === fila.empleadoId)?.sueldoDiario || 0;
+      const sueldoDiario = sueldoEnFecha(empleados.find((e) => e.id === fila.empleadoId), lunes);
       const { dias, diasTrabajados, offPagado, total: bruto } = computeNominaFila(fila, sueldoDiario, semana.festivos || []);
 
       const delCorte: NominaDescuento[] = [];
@@ -888,7 +908,7 @@ export function computeNominaHastaHoyPorEmpleado(
 ): Record<string, number> {
   const today = todayIso();
   const result: Record<string, number> = {};
-  computeNominaSemana(semana, empleados).forEach((e) => {
+  computeNominaSemana(semana, empleados, null, null, resolveWeekStartDate(monthKey, weekIndex, month)).forEach((e) => {
     result[e.empleadoId] = round2(
       e.dias.filter((d) => dateForDay(monthKey, weekIndex, month, d.day) <= today).reduce((s, d) => s + d.monto, 0)
     );

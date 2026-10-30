@@ -147,7 +147,7 @@ export function CreditoProveedoresModal({
   ].map((a) => ({ ...a, c: comparar(sumFromText(a.valor), a.clave) }));
   // Nómina en transferencia: no se edita (la calcula Nómina), sí suma al
   // total y se confirma que el bot la tenga.
-  const nomina = nominaPagoSemana(week, horarios?.[monthKey]?.weeks?.[weekIndex] ?? null, empleados, nominaDescuentos?.[monthKey]?.weeks?.[weekIndex] ?? null);
+  const nomina = nominaPagoSemana(week, horarios?.[monthKey]?.weeks?.[weekIndex] ?? null, empleados, nominaDescuentos?.[monthKey]?.weeks?.[weekIndex] ?? null, months[monthKey] ? resolveWeekStartDate(monthKey, weekIndex, months[monthKey]) : undefined);
   const cNominaBase = comparar(nomina.transferencia, "nomina");
   const cNomina = nomina.transferencia === 0 && !cNominaBase.bot ? { ...cNominaBase, estado: "ok" as const } : cNominaBase;
   const todos = [cOperativos, cFijos, cBancaria, ...apps.map((a) => a.c), cNomina];

@@ -304,7 +304,8 @@ export function calcularInicio(data: AppData, hoy: string, bitacora: RenglonBita
       data.horarios[sn.mk]?.weeks?.[sn.wi] ?? null,
       data.empleados,
       data.nominaDescuentos[sn.mk]?.weeks?.[sn.wi] ?? null,
-      data.months[sn.mk].weeks[sn.wi]
+      data.months[sn.mk].weeks[sn.wi],
+      lunesNomina
     ).filter((e) => e.neto > 0);
     const sinPagar = filas.filter((e) => !e.confirmado);
     if (sinPagar.length > 0) {
@@ -431,7 +432,7 @@ export function calcularInicio(data: AppData, hoy: string, bitacora: RenglonBita
   if (sa) {
     const week = data.months[sa.mk].weeks[sa.wi];
     const neto = round2(
-      computeNominaSemana(data.horarios[sa.mk]?.weeks?.[sa.wi] ?? null, data.empleados, data.nominaDescuentos[sa.mk]?.weeks?.[sa.wi] ?? null, week)
+      computeNominaSemana(data.horarios[sa.mk]?.weeks?.[sa.wi] ?? null, data.empleados, data.nominaDescuentos[sa.mk]?.weeks?.[sa.wi] ?? null, week, lunes)
         .reduce((x, e) => x + e.neto, 0)
     );
     const efectivo = computeWeekSummary(week).efectivoRecibido;

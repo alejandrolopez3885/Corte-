@@ -38,10 +38,23 @@ export interface PuestoEntry {
 // Horarios — el sueldo semanal completo (6 días trabajados + 1 de
 // descanso pagado) siempre es sueldoDiario × 7. puestoId es opcional
 // (Gerente, Mesero, Cocinero, ...) y determina el área a la que pertenece.
+export interface CambioSueldo {
+  id: string;
+  desde: string; // YYYY-MM-DD (cuenta desde el lunes de esa semana)
+  sueldoDiario: number;
+  nota?: string;
+}
+
 export interface EmpleadoEntry {
   id: string;
   nombre: string;
-  sueldoDiario?: number;
+  sueldoDiario?: number; // el sueldo vigente hoy (lo mantiene el historial)
+  // Cambios de sueldo (aumentos o reducciones): cada uno cuenta desde la
+  // semana de su fecha "desde" — ver sueldoEnFecha. Sin historial, todas
+  // las semanas usan sueldoDiario.
+  historialSueldo?: CambioSueldo[];
+  fechaIngreso?: string; // YYYY-MM-DD
+  fechaSalida?: string; // YYYY-MM-DD, solo si está inactivo
   puestoId?: string;
   // Ya no trabaja aquí: se conserva su historial (horarios, nómina), pero
   // no sale para agregarlo a un horario ni en el horario sugerido.

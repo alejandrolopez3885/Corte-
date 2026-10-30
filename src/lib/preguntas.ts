@@ -664,7 +664,7 @@ export function responder(data: AppData, c: Consulta, hoy: string): Respuesta {
 
   // Nómina.
   const descuentos = data.nominaDescuentos[u.mk]?.weeks?.[u.wi] ?? null;
-  const personas = computeNominaSemana(semanaHorario, data.empleados, descuentos, week);
+  const personas = computeNominaSemana(semanaHorario, data.empleados, descuentos, week, lunes);
   const enlaceNomina = { texto: "Ver nómina", destino: { tipo: "nomina" as const, fecha: lunes } };
   if (personas.length === 0) return { ...sinDatos(titulosSemana.nomina, "Esa semana no tiene horario capturado."), enlace: enlaceNomina };
   // A recibir hasta hoy: lo generado hasta hoy más extras menos descuentos,

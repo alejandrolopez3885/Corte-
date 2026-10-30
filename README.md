@@ -702,7 +702,31 @@ estando en Nómina te regresa al menú de Equipo):
   separada de Personal), y como páginas propias "Personal" (la lista de tu
   personal — nombre, sueldo diario y un puesto opcional (Gerente, Mesero,
   Cocinero, ...); la lista se agrupa sola por área según el puesto de cada
-  quien. Al editar a alguien hay un interruptor **Activo / Inactivo**: los
+  quien. La lista arranca con un resumen (cuántos activos, la suma de sus
+  sueldos por semana completa y el de más antigüedad) y cada persona es una
+  tarjeta con su foto, puesto y sueldo por día, y chips con su antigüedad
+  ("9 meses · desde ene 2026"), su último aumento o reducción ("+$50 hace 1
+  semana") o el próximo programado, si tiene acceso a la app y, si ya no
+  trabaja aquí, "Salió el … · trabajó …". Al tocar a alguien se abre su
+  ficha: arriba su foto, puesto, Activo/Inactivo, antigüedad y sueldo, y
+  tres pestañas — **Datos** (nombre, Activo/Inactivo, **Fechas**: fecha de
+  ingreso siempre y fecha de salida solo cuando está inactivo, con "Lleva …
+  trabajando aquí" o "Trabajó …"; datos de pago, comidas gratis y puesto),
+  **Sueldo** y **Acceso** (PIN y permisos). En **Sueldo** el sueldo por día
+  y por semana se ve bloqueado (candado) y solo cambia con **Cambiar sueldo
+  · aumento o reducción**: el nuevo sueldo por día o por semana (÷ 7), desde
+  qué fecha (cuenta desde el lunes de esa semana; un cambio por semana) y
+  un motivo opcional; muestra si es aumento o reducción y de cuánto. Cada
+  cambio queda en el **Historial de sueldo** (línea de tiempo con fecha, de
+  cuánto a cuánto, la diferencia en verde o rojo, el motivo, "Vigente",
+  "Programado" si es a futuro y "Quitar" con confirmación), con cuánto ha
+  subido desde que entró, el último cambio y cuántos lleva. El historial
+  (`historialSueldo`, `sueldoEnFecha` en `dataModel.ts` y `lib/sueldo.ts`)
+  lo usa la nómina: cada semana se paga con el sueldo vigente esa semana,
+  así un aumento no cambia las nóminas pasadas. A quien no tenía historial,
+  su sueldo de antes queda como "Sueldo de entrada" al primer cambio. Un
+  empleado nuevo captura su sueldo diario directo (queda como su sueldo de
+  entrada). Al editar a alguien hay un interruptor **Activo / Inactivo**: los
   inactivos (ya no trabajan aquí) salen al final en "Inactivos", atenuados,
   y se conserva todo su historial (horarios, nómina), pero ya no salen en
   "Agregar empleado" de Horarios, no se precargan en una semana nueva y no

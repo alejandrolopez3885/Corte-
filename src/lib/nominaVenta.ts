@@ -1,4 +1,4 @@
-import { addDaysIso, computeNominaSemana, META_NOMINA_PCT, META_NOMINA_VERDE_PCT, resolveWeekStartDate, round2 } from "./dataModel";
+import { addDaysIso, computeNominaSemana, META_NOMINA_PCT, META_NOMINA_VERDE_PCT, defaultWeekStartDate, resolveWeekStartDate, round2 } from "./dataModel";
 import type { TendenciasSemana } from "./tendencias";
 import { DAYS } from "./types";
 import type { DayName, EmpleadoEntry, HorarioMonthData, MonthData, WeekTrendPoint } from "./types";
@@ -34,7 +34,7 @@ function diasDeSemana(
 ): Record<DayName, DiaNomina> {
   const week = months[monthKey]?.weeks?.[weekIndex];
   const semana = horarios[monthKey]?.weeks?.[weekIndex] ?? null;
-  const nomina = computeNominaSemana(semana, empleados);
+  const nomina = computeNominaSemana(semana, empleados, null, null, months[monthKey] ? resolveWeekStartDate(monthKey, weekIndex, months[monthKey]) : defaultWeekStartDate(monthKey, weekIndex));
   return Object.fromEntries(
     DAYS.map((d) => {
       const day = week?.days?.[d];

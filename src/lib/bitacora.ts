@@ -108,7 +108,8 @@ const CAMPOS: Record<string, string> = {
   tipo: "Tipo", empleadoId: "Empleado", meseroId: "Mesero", label: "Nombre del mes",
   medioTurno: "Medio turno guardado", lecturaSistema: "Lo que marca el sistema", cobro: "Cobró", acumulado: "Se acumula en el día",
   fijosManual: "Gastos fijos editado a mano", foto: "Foto de perfil", descripcion: "Descripción", perfilDueno: "Perfil del dueño",
-  usuarioSistemaId: "Usuario en el sistema",
+  usuarioSistemaId: "Usuario en el sistema", fechaIngreso: "Fecha de ingreso", fechaSalida: "Fecha de salida",
+  historialSueldo: "Historial de sueldo", desde: "Desde", nota: "Nota",
 };
 const CAMPOS_DINERO = new Set([
   "venta", "tarjetas", "transferencia", "propina", "gastosTotal", "total", "precio", "efectivoReal", "ventaApps",

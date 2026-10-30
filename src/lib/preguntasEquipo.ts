@@ -16,6 +16,7 @@ import {
   pluralizarUnidad,
   quienesAbren,
   repartoPropinas,
+  resolveWeekStartDate,
   round2,
   turnosActivos,
 } from "./dataModel";
@@ -473,7 +474,7 @@ export function responderEquipo(data: AppData, c: Consulta, hoy: string, ctx: Co
       };
     }
     const month = data.months[u.mk];
-    const yo = computeNominaSemana(semana, data.empleados, data.nominaDescuentos[u.mk]?.weeks?.[u.wi] ?? null, month.weeks[u.wi]).find(
+    const yo = computeNominaSemana(semana, data.empleados, data.nominaDescuentos[u.mk]?.weeks?.[u.wi] ?? null, month.weeks[u.wi], resolveWeekStartDate(u.mk, u.wi, month)).find(
       (p) => p.empleadoId === ctx.empleadoId
     );
     if (!yo) return { titulo, valor: "—", lineas: ["No estás en el horario de esa semana."], enlace, consulta: c };
