@@ -267,7 +267,7 @@ export function GastosSummaryModal({
       {auto ? (
         <p className="hint">
           El estado sale de Johnster: <strong>Ingresado</strong> = está en el bot con su ticket (o con tu justificación "sin ticket"); los de
-          nómina y comida de empleado no piden ticket. La categoría se elige aquí.
+          nómina, comida de empleado y retiros no piden ticket. La categoría se elige aquí.
         </p>
       ) : (
         <p className="hint">

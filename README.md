@@ -160,7 +160,7 @@ lo decide el bot (`estadosDesdeBot`, emparejando igual que ⚖︎ Cuadrar).
 **Ingresado** = el gasto está en el bot con su ticket, o sin ticket pero
 con la justificación del dueño ("✎ Subir sin ticket · anotar por qué",
 solo en Control de gastos; se ve "Ingresado · sin ticket" y la nota con
-"Quitar"); los de Nómina y Comida empleado no piden ticket. Si no,
+"Quitar"); los de Nómina, Comida empleado y Retiro no piden ticket. Si no,
 **Pendiente** con su razón (`estadoBot`): "No está en el bot", "Falta
 ticket en el bot", "En el bot con otro monto o día" o, para los
 adelantos que se juntan y las comidas gratis, "Se sube junto el domingo"

@@ -277,7 +277,7 @@ export function estadosDesdeBot(dias: DiaEntrada[], j: JohnsterDatos, empleados:
     const antes = res.get(id);
     if (!antes || (antes.estado === "ingresado" && r.estado === "pendiente")) res.set(id, r);
   };
-  const sinTicketOk = (g: Gasto | undefined) => !!g && (!!g.sinTicket || g.categoria === "nomina" || g.categoria === "comida_empleado");
+  const sinTicketOk = (g: Gasto | undefined) => !!g && (!!g.sinTicket || g.categoria === "nomina" || g.categoria === "comida_empleado" || g.categoria === "retiro");
   mios.forEach((m) => {
     if (m.junto) {
       m.juntoIds?.forEach((id) => peor(id, m.par ? { estado: "ingresado" } : { estado: "pendiente", razon: "domingo" }));
