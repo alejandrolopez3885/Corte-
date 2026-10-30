@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useAlRecargar } from "../JalarParaActualizar";
 import { Lock } from "lucide-react";
 import { Sheet } from "../ui";
 import { addDaysIso, money } from "../../lib/dataModel";
@@ -110,6 +111,7 @@ export function GuardarCorteModal({
     if (rev.estado === "listo" && rev.datos) onSincronizar?.(rev.datos);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rev]);
+  useAlRecargar(() => completo && revisar());
   // Se revisa con Johnster en cuanto ya no falta nada (también si se
   // completa aquí mismo, ej. "No hubo venta").
   const completo = faltan.length === 0;

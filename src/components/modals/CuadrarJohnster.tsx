@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useAlRecargar } from "../JalarParaActualizar";
 import { Field } from "../ui";
 import { MarcoAsistente } from "./asistente";
 import { VerComprobante, type Comprobante } from "./ComprobanteJohnster";
@@ -115,6 +116,7 @@ export function CuadrarJohnster({
   }
 
   const conectado = !!datos?.actualizado_en;
+  useAlRecargar(() => conectado && llamar({}));
   useEffect(() => {
     if (datos?.actualizado_en) onSincronizar?.(datos);
     // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useAlRecargar } from "../JalarParaActualizar";
 import { supabase } from "../../lib/supabaseClient";
 import { TOLERANCIA, type JohnsterDatos, type TipoTransferencia } from "../../lib/cuadrar";
 import { Pencil, RotateCcw } from "lucide-react";
@@ -61,6 +62,7 @@ export function CreditoProveedoresModal({
     await cargarJohnster();
     setActualizando(false);
   }
+  useAlRecargar(actualizarJohnster);
   useEffect(() => {
     // Datos guardados antes de traer transferencias: se actualizan una vez.
     cargarJohnster().then((d) => {

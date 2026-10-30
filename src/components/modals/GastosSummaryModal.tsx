@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useAlRecargar } from "../JalarParaActualizar";
 import { Check, ChevronDown, Pencil, Receipt, TriangleAlert } from "lucide-react";
 import { supabase } from "../../lib/supabaseClient";
 import { estadoAutomatico, gastosEnJohnster, type JohnsterDatos } from "../../lib/cuadrar";
@@ -89,13 +90,19 @@ export function GastosSummaryModal({
   const [johnster, setJohnster] = useState<JohnsterDatos | null>(null);
   const [viendo, setViendo] = useState<Comprobante | null>(null);
   const [justificando, setJustificando] = useState<{ id: string; texto: string } | null>(null);
-  useEffect(() => {
+  const cargarJohnster = () =>
     supabase
       .from("johnster_datos")
       .select("sucursal, ingresos, gastos, actualizado_en, error")
       .maybeSingle()
       .then(({ data }) => setJohnster((data as JohnsterDatos | null) ?? null));
+  useEffect(() => {
+    cargarJohnster();
   }, []);
+  // Jalar para actualizar: trae de nuevo los datos del bot.
+  useAlRecargar(() => {
+    supabase.functions.invoke("johnster", { body: {} }).then(cargarJohnster);
+  });
 
   const month = months[monthKey];
   const week = month?.weeks[weekIndex];

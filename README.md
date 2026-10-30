@@ -363,6 +363,18 @@ volver también queda anotado y se puede deshacer.
 - **Backend**: Supabase (Auth + Postgres).
 - **Hosting sugerido**: Vercel.
 
+**Jalar hacia abajo para actualizar** (`components/JalarParaActualizar.tsx`,
+para dueño y personal): si lo que se ve ya está hasta arriba — la página o
+una pantalla completa con su propio scroll (asistentes, hojas) — y se jala
+hacia abajo, sale arriba "Jala para actualizar" / "Suelta para actualizar"
+y al soltar "Actualizando…": vuelve a traer los datos de la app
+(`recargar` en `useAppData`; se salta si hay un guardado propio en curso).
+No se activa empezando sobre un campo de texto ni al deslizar de lado. Las
+pantallas con datos de Johnster (Control de gastos en efectivo y en
+transferencia, Dashboard, Resumen semanal, ⚖︎ Cuadrar y Guardar corte)
+escuchan el evento `recargar-datos` (`useAlRecargar`) y vuelven a traer
+los datos del bot.
+
 La vista del dueño se organiza en 5 secciones, accesibles desde la barra de
 navegación de abajo (Inicio · Corte · Equipo · Negocio · Dashboard) — tocar una pestaña siempre regresa al inicio de esa
 sección, aunque ya estés adentro de una de sus páginas (ej. tocar "Equipo"

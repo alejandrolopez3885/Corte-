@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useAlRecargar } from "../JalarParaActualizar";
 import { supabase } from "../../lib/supabaseClient";
 import { TOLERANCIA, adelantosEnSuDia, cierreSemana, type JohnsterDatos } from "../../lib/cuadrar";
 import { Sheet, Field, SumInput } from "../ui";
@@ -72,6 +73,7 @@ export function WeekSummaryModal({
   useEffect(() => {
     cargarJohnster();
   }, []);
+  useAlRecargar(actualizarJohnster);
   const hasta = addDaysIso(startDate, 6);
   const enSemana = (f: string) => f >= startDate && f <= hasta;
   const jIngresos = johnster?.ingresos.filter((i) => enSemana(i.fecha)) || [];

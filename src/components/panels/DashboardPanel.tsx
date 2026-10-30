@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useAlRecargar } from "../JalarParaActualizar";
 import { Check, ChevronDown, ChevronUp, Copy } from "lucide-react";
 import { supabase } from "../../lib/supabaseClient";
 import { TOLERANCIA, type JohnsterDatos } from "../../lib/cuadrar";
@@ -71,6 +72,7 @@ export function DashboardPanel({
     await cargarJohnster();
     setActualizando(false);
   }
+  useAlRecargar(actualizarJohnster);
   useEffect(() => {
     // Datos guardados antes de separar los gastos por tipo: se actualizan una vez.
     cargarJohnster().then((d) => {

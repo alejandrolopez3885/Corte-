@@ -128,5 +128,16 @@ export function useAppData(profile: Profile | null, soloLectura = false) {
     [targetOwnerId, profile, soloLectura]
   );
 
-  return { data, status, saveState, persist };
+  // Jalar hacia abajo para actualizar: vuelve a traer los datos de la base
+  // (si no hay un guardado propio en curso, que los sobrescribiría).
+  const recargar = useCallback(async () => {
+    if (!targetOwnerId || pendingWrite.current) return;
+    const { data: row, error } = await supabase.from("app_data").select("data").eq("owner_id", targetOwnerId).maybeSingle();
+    if (error || !row || pendingWrite.current) return;
+    const { data: migrated } = migrateAppData(row.data as AppData);
+    setData(migrated);
+    guardado.current = migrated;
+  }, [targetOwnerId]);
+
+  return { data, status, saveState, persist, recargar };
 }

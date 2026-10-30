@@ -35,6 +35,7 @@ import { InicioPanel } from "../components/panels/InicioPanel";
 import { ubicarFechas, type Destino } from "../lib/inicio";
 import { WeekSummaryModal } from "../components/modals/WeekSummaryModal";
 import { CuadrarJohnster } from "../components/modals/CuadrarJohnster";
+import { JalarParaActualizar } from "../components/JalarParaActualizar";
 import { estadoAutomatico, estadosDesdeBot, type JohnsterDatos, type RazonPendiente } from "../lib/cuadrar";
 import { GastosSummaryModal } from "../components/modals/GastosSummaryModal";
 import { DeleteMonthModal } from "../components/modals/DeleteMonthModal";
@@ -119,7 +120,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
   // De quién es el negocio (para leer su Actividad, Inicio, etc.).
   const duenoId = esInvitado ? (profile.owner_id as string) : profile.id;
   const [recorrido, setRecorrido] = useState<"bienvenida" | "pasos" | "opinion" | null>(esInvitado ? "bienvenida" : null);
-  const { data, status, saveState, persist } = useAppData(profile, soloLectura);
+  const { data, status, saveState, persist, recargar } = useAppData(profile, soloLectura);
   // Nombres de todos los gastos capturados, para autocompletar el concepto.
   const historialGastos = useMemo(() => (data ? historialNombres(data) : []), [data]);
 
@@ -1577,6 +1578,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
 
   return (
     <div className={`app-shell ${isOwner ? "with-bottom-nav" : ""}`}>
+      <JalarParaActualizar onRecargar={recargar} />
       {isOwner && !soloLectura && <NovedadesAlEntrar profile={profile} data={data} tieneCorte={false} />}
       {soloLectura && <SoloLecturaGuard />}
       {soloLectura && recorrido === "bienvenida" && (

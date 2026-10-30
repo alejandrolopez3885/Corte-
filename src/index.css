@@ -2401,3 +2401,8 @@ button.cj-seccion { cursor: pointer; }
 .buscar-bot-der { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
 .gasto-sin-ticket-btn { align-self: flex-start; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 7px 10px; font: inherit; font-size: 12.5px; font-weight: 600; color: var(--accent); cursor: pointer; }
 .gasto-sin-ticket { color: var(--warn); }
+
+/* Jalar hacia abajo para actualizar */
+.jalar { position: fixed; top: calc(env(safe-area-inset-top) + 0px); left: 50%; z-index: 400; display: flex; align-items: center; gap: 8px; background: var(--surface); color: var(--accent); border: 1px solid var(--border); border-radius: 100px; padding: 8px 14px; font-size: 13px; font-weight: 600; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12); pointer-events: none; }
+.jalar .girando { animation: jalar-gira 0.8s linear infinite; }
+@keyframes jalar-gira { to { transform: rotate(360deg); } }

@@ -349,6 +349,14 @@ export const NOVEDADES: Novedad[] = [
     visual: "autocompletar",
   },
   {
+    id: "jalar-para-actualizar",
+    fecha: "2026-10-30T04:00:00Z",
+    seccion: "general",
+    titulo: "Jala hacia abajo para actualizar",
+    texto: "En cualquier pantalla, si estás hasta arriba, **jala hacia abajo y suelta** para volver a cargar todos los datos.",
+    visual: "barraTitulo",
+  },
+  {
     id: "gastos-estado-bot",
     soloDueno: true,
     fecha: "2026-10-30T01:30:00Z",
