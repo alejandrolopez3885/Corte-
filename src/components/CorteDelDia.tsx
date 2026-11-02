@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { ArrowLeftRight, Check, Lock, Plus, Receipt, Users, Wallet } from "lucide-react";
+import { AlertCircle, AlertTriangle, ArrowLeftRight, Check, Lock, Plus, Receipt, Users, Wallet } from "lucide-react";
 import { Empty } from "./ui";
 import { acumuladosDelDia, efectivoDelDia, money, round2 } from "../lib/dataModel";
 import { faltantesDelCorte } from "./modals/GuardarCorteModal";
@@ -91,6 +91,10 @@ export function CorteDelDia(p: CorteDelDiaProps) {
   const cortesCierre = day.meseros.filter((m) => !enApertura(m.id));
   const faltan = faltantesDelCorte(day, !!p.estadoAuto).filter((f) => f.titulo !== "Meseros");
   const gastosPendientes = day.gastos.filter((g) => g.estado === "pendiente");
+  // Con el estado automático, "capturados" no quiere decir que ya estén en el
+  // bot: los que el bot todavía no tiene se avisan aparte (se revisan al
+  // guardar el corte). Los que se suben juntos el domingo no cuentan.
+  const sinBot = p.estadoAuto ? gastosPendientes.filter((g) => g.estadoBot && g.estadoBot !== "domingo").length : 0;
   const acumulados = turnos ? acumuladosDelDia(day) : [];
   const revisar = [
     ...(day.ventaApps ? [`las apps del día (${money(day.ventaApps)})`] : []),
@@ -133,7 +137,7 @@ export function CorteDelDia(p: CorteDelDiaProps) {
     },
     {
       clave: "pendientes",
-      corto: p.estadoAuto ? (faltan.length ? "Completar gastos" : "Gastos completos") : faltan.length ? "Confirmar gastos" : "Gastos confirmados",
+      corto: p.estadoAuto ? (faltan.length ? "Completar gastos" : "Gastos capturados") : faltan.length ? "Confirmar gastos" : "Gastos confirmados",
       hecho: faltan.length === 0,
       titulo:
         !p.estadoAuto && faltan.length && faltan.length === gastosPendientes.length
@@ -267,7 +271,11 @@ export function CorteDelDia(p: CorteDelDiaProps) {
             {vista === "dia" && ap ? (
               <>
                 <tr className="cd-sub">
-                  <td colSpan={6}>Turno 1 · Apertura 🔒</td>
+                  <td colSpan={6}>
+                    <span className="cd-sub-in">
+                      Turno 1 · Apertura <Lock size={12} aria-hidden />
+                    </span>
+                  </td>
                 </tr>
                 {filasCortes(cortes.filter((m) => enApertura(m.id)))}
                 <tr className="cd-sub">
@@ -428,6 +436,11 @@ export function CorteDelDia(p: CorteDelDiaProps) {
     ) : (
       <>
         <div className="cd-caja">
+          <div className="cd-caja-fila cab" aria-hidden>
+            <span />
+            <b>Movimiento</b>
+            <i>Queda</i>
+          </div>
           {renglonesCaja.map((r, i) => {
             lleva = round2(lleva + r.monto);
             return (
@@ -475,7 +488,7 @@ export function CorteDelDia(p: CorteDelDiaProps) {
           </div>
         )}
         {!corteBloqueado && efectivoDia && (
-          <button type="button" className="link-btn" onClick={p.onDejarEfectivo}>
+          <button type="button" className="cd-btn sec cd-btn-ancho" onClick={p.onDejarEfectivo}>
             {day.efectivoDejado ? "Cambiar el efectivo que se deja" : "+ Dejar efectivo para mañana"}
           </button>
         )}
@@ -579,7 +592,7 @@ export function CorteDelDia(p: CorteDelDiaProps) {
               <h2>{paso.titulo}</h2>
               {paso.texto && <p>{paso.texto}</p>}
             </div>
-            {paso.boton && !corteBloqueado && (
+            {paso.boton && !corteBloqueado && paso.clave !== "guardar" && (
               <button type="button" className="cd-hero-btn" onClick={paso.boton.accion}>
                 {paso.boton.texto} ›
               </button>
@@ -587,29 +600,61 @@ export function CorteDelDia(p: CorteDelDiaProps) {
             <div className="cd-pasos">
               {pasos.map((x, i) => (
                 <span key={x.clave} className={x.hecho ? "ok" : i === actual ? "act" : ""}>
-                  {x.hecho ? <Check size={12} /> : `${i + 1} ·`} {x.corto}
+                  {x.hecho ? <Check size={13} aria-hidden /> : `${i + 1} ·`} {x.corto}
                 </span>
               ))}
             </div>
+            {sinBot > 0 && (
+              <button type="button" className="cd-hero-aviso" onClick={verGastos}>
+                <AlertTriangle size={16} aria-hidden />
+                <span>
+                  {sinBot === 1 ? "1 gasto aún no está en el bot" : `${sinBot} gastos aún no están en el bot`} · se revisa al guardar el corte
+                </span>
+              </button>
+            )}
           </div>
         )
       )}
 
       {turnos && (
         <div className="cd-pestanas" role="tablist">
-          <button type="button" role="tab" className={vista === "t1" ? "on" : ""} onClick={() => setPestana("t1")}>
+          <button type="button" role="tab" aria-selected={vista === "t1"} className={vista === "t1" ? "on" : ""} onClick={() => setPestana("t1")}>
             <span>
               Turno 1<span className="cd-largo"> · Apertura</span>
             </span>
-            <small>{ap ? `✓ 🔒 ${new Date(ap.fecha).toLocaleTimeString("es-MX", { hour: "numeric", minute: "2-digit" })}` : `${day.meseros.length} ${day.meseros.length === 1 ? "corte" : "cortes"} · en curso`}</small>
+            <small>
+              {ap ? (
+                <>
+                  <Lock size={12} aria-label="Guardado" /> {new Date(ap.fecha).toLocaleTimeString("es-MX", { hour: "numeric", minute: "2-digit" })}
+                </>
+              ) : (
+                `${day.meseros.length} ${day.meseros.length === 1 ? "corte" : "cortes"} · en curso`
+              )}
+            </small>
           </button>
-          <button type="button" role="tab" className={vista === "t2" ? "on" : ""} onClick={() => setPestana("t2")}>
+          <button type="button" role="tab" aria-selected={vista === "t2"} className={vista === "t2" ? "on" : ""} onClick={() => setPestana("t2")}>
             <span>
               Turno 2<span className="cd-largo"> · Cierre</span>
             </span>
-            <small>{!ap ? "después de la apertura" : `${cortesCierre.length} ${cortesCierre.length === 1 ? "corte" : "cortes"}${day.corteGuardado ? " · 🔒" : " · en curso"}`}</small>
+            <small>
+              {!ap ? (
+                "después de la apertura"
+              ) : (
+                <>
+                  {cortesCierre.length} {cortesCierre.length === 1 ? "corte" : "cortes"}
+                  {day.corteGuardado ? (
+                    <>
+                      {" · "}
+                      <Lock size={12} aria-hidden /> guardado
+                    </>
+                  ) : (
+                    " · en curso"
+                  )}
+                </>
+              )}
+            </small>
           </button>
-          <button type="button" role="tab" className={vista === "dia" ? "on" : ""} onClick={() => setPestana("dia")}>
+          <button type="button" role="tab" aria-selected={vista === "dia"} className={vista === "dia" ? "on" : ""} onClick={() => setPestana("dia")}>
             Todo el día
             <small>resumen</small>
           </button>
@@ -731,5 +776,11 @@ function ChipEstado({ g }: { g: Gasto }) {
             : g.estadoBot === "diferente"
               ? "Otro monto en el bot"
               : "Pendiente";
-  return <span className={`estado-chip ${g.estado} ${g.estadoBot === "no-esta" || g.estadoBot === "diferente" ? "mal" : ""}`}>{texto}</span>;
+  const mal = g.estado !== "ingresado" && (g.estadoBot === "no-esta" || g.estadoBot === "diferente");
+  return (
+    <span className={`estado-chip ${g.estado} ${mal ? "mal" : ""}`}>
+      {mal && <AlertCircle size={13} aria-hidden />}
+      {texto}
+    </span>
+  );
 }

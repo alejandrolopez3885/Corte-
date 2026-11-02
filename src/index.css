@@ -11,6 +11,7 @@
   --accent-soft: #DCEAE3;
   --warn: #B8752D;
   --warn-soft: #F5E3CD;
+  --warn-ink: #7A4A12; /* texto naranja sobre warn-soft (contraste 5.9:1) */
   --good: #2E7D53;
   --good-soft: #DCEEDF;
   --bad: #A23B2E;
@@ -2530,3 +2531,24 @@ button.cj-seccion { cursor: pointer; }
 .emp-btn-cancelar { min-height: 44px; text-align: center; width: 100%; font-weight: 600; }
 .emp-btn-peligro { background: var(--bad); }
 .emp-btn-salir { background: none; color: var(--bad); border: 1.5px solid var(--bad); }
+
+/* Corte del día (revisión UX): totales visibles, estados claros, botones de 44 px */
+.estado-chip.pendiente { color: var(--warn-ink); }
+.estado-chip.mal { background: var(--bad-soft); color: var(--bad); font-weight: 600; }
+.cd-hero-aviso { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; min-height: 44px; margin-top: 4px; padding: 8px 12px; border: 0; border-radius: 12px; background: #fff; color: #7A4A12; font: 600 13.5px 'IBM Plex Sans', sans-serif; text-align: left; cursor: pointer; }
+.cd-hero-aviso svg { flex-shrink: 0; color: var(--warn); }
+.cd-pasos { font-size: 12.5px; }
+.cd-pestanas small { font-size: 12.5px; display: inline-flex; align-items: center; gap: 3px; justify-content: center; flex-wrap: wrap; }
+.cd-tag { font-size: 12px; }
+.cd-tabla th { font-size: 12px; }
+.cd-tabla .cd-sub td { font-size: 12px; }
+.cd-sub-in { display: inline-flex; align-items: center; gap: 5px; }
+.cd-card-head .icon-btn { width: 44px; height: 44px; }
+.cd-btn-ancho { width: 100%; margin-top: 10px; }
+.cd-aviso .link-btn { min-height: 44px; padding: 0 6px; display: inline-flex; align-items: center; font-weight: 600; }
+.cd-caja-fila.cab { padding: 0 0 4px; border-bottom: 1px solid var(--border); font-size: 12px; }
+.cd-caja-fila.cab b, .cd-caja-fila.cab i { font-size: 12px; font-weight: 600; color: var(--ink-soft); text-align: right; text-transform: uppercase; letter-spacing: .04em; }
+.cd-kpis { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); overflow: visible; }
+.cd-kpi { flex: none; }
+.cd-kpi.h { grid-column: 1 / -1; flex-direction: row; justify-content: space-between; align-items: center; }
+.cd-kpi.h b { font-size: 21px; margin-top: 0; }
