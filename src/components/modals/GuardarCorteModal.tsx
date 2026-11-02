@@ -1,11 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useAlRecargar } from "../JalarParaActualizar";
-import { Lock } from "lucide-react";
-import { Sheet } from "../ui";
+import { AlertTriangle, Check, Lock, Pencil, RotateCw } from "lucide-react";
+import { Field, Sheet } from "../ui";
 import { addDaysIso, money } from "../../lib/dataModel";
 import { supabase } from "../../lib/supabaseClient";
 import { VerComprobante, type Comprobante } from "./ComprobanteJohnster";
-import { estadoAutomatico, compararSemana, type DiaComparado, type EstadoGasto, type JohnsterDatos } from "../../lib/cuadrar";
+import { TOLERANCIA, estadoAutomatico, compararSemana, type DiaComparado, type EstadoGasto, type JohnsterDatos } from "../../lib/cuadrar";
 import type { DayData, DayName, EmpleadoEntry } from "../../lib/types";
 
 // Revisión con Johnster antes de cerrar: las mismas secciones y notas que
@@ -18,6 +18,11 @@ const SECCIONES_J: { clave: "venta" | "tarjetas" | "transferencias" | "efectivo"
   { clave: "gastos", titulo: "Gastos en efectivo" },
 ];
 const ETIQUETA_J: Record<Exclude<EstadoGasto, "igual">, string> = { "solo-tu": "Solo tú", "solo-johnster": "Solo Johnster", "otro-dia": "Otro día", "otro-monto": "Otro monto" };
+// "Ir a completar": Corte del día abre Todo el día y baja a la sección.
+export const EVENTO_IR_A_CORTE = "corte-ir-a";
+function irACompletar(a: "gastos" | "cortes") {
+  window.setTimeout(() => window.dispatchEvent(new CustomEvent(EVENTO_IR_A_CORTE, { detail: a })), 60);
+}
 const nombreDiaJ = (fecha: string) => new Date(`${fecha}T12:00:00`).toLocaleDateString("es-MX", { weekday: "long" });
 const ayudaGasto = (g: DiaComparado["gastos"][number]) =>
   g.junto
@@ -94,6 +99,14 @@ export function GuardarCorteModal({
   const [sinRevisar, setSinRevisar] = useState(false);
   const [escribiendo, setEscribiendo] = useState<{ clave: string; texto: string } | null>(null);
   const [viendo, setViendo] = useState<Comprobante | null>(null);
+  // Segundos esperando al bot (si tarda, se avisa que estaba dormido).
+  const [espera, setEspera] = useState(0);
+  useEffect(() => {
+    if (rev.estado !== "cargando") return;
+    setEspera(0);
+    const t = window.setInterval(() => setEspera((n) => n + 1), 1000);
+    return () => window.clearInterval(t);
+  }, [rev.estado]);
   async function revisar() {
     if (!semana.length) return setRev({ estado: "error", error: "No se encontró la semana de este día." });
     setRev({ estado: "cargando" });
@@ -137,7 +150,11 @@ export function GuardarCorteModal({
   // Con la revisión de Johnster, el "ya subí todo al bot" lo comprueba la
   // app; solo se palomea a mano si se guarda sin revisar.
   const revisadoEnBot = !sinRevisar && !!rev.datos?.ingresos.some((i) => i.fecha === fecha);
-  const todos = renglones.every((r) => marcados.has(r.key)) && (marcados.has("bot") || revisadoEnBot);
+  // Sin la revisión del bot se palomean a mano los 5 totales y el aviso del
+  // bot; con ella no hace falta (el bot ya comparó cada total).
+  const porMarcar = [...renglones.map((r) => r.key), "bot"];
+  const marcadosN = porMarcar.filter((k) => marcados.has(k)).length;
+  const todos = revisadoEnBot || marcadosN === porMarcar.length;
 
   if (faltan.length > 0) {
     return (
@@ -158,7 +175,13 @@ export function GuardarCorteModal({
             </div>
           ))}
         </div>
-        <button className="btn-primary" onClick={onClose}>
+        <button
+          className="btn-primary"
+          onClick={() => {
+            onClose();
+            irACompletar(faltan[0]?.titulo.startsWith("Mesero") ? "cortes" : "gastos");
+          }}
+        >
           Ir a completar
         </button>
       </Sheet>
@@ -166,8 +189,8 @@ export function GuardarCorteModal({
   }
 
   const emergencia = esDueno && (
-    <button className="link-btn gc-volver" onClick={() => setSinRevisar(true)}>
-      Guardar sin revisar Johnster (emergencia)
+    <button className="gc-emergencia" onClick={() => setSinRevisar(true)}>
+      <AlertTriangle size={16} aria-hidden /> Guardar sin revisar Johnster (emergencia)
     </button>
   );
   const datos = rev.datos;
@@ -183,12 +206,18 @@ export function GuardarCorteModal({
     return (
       <Sheet title={rev.estado === "cargando" ? "Revisando con Johnster…" : "No se pudo revisar con Johnster"} onClose={onClose}>
         {rev.estado === "cargando" ? (
-          <p className="hint">Puede tardar hasta un minuto si el bot estaba dormido.</p>
+          <div className="gc-cargando" role="status">
+            <span className="gc-girando" aria-hidden />
+            <span>
+              {espera < 15 ? "Comparando tu corte con el bot…" : "El bot estaba dormido, ya casi…"}
+              <small>Puede tardar hasta un minuto si el bot estaba dormido.</small>
+            </span>
+          </div>
         ) : (
           <>
             <p className="gc-aviso">{rev.error}</p>
             <button className="btn-primary" onClick={revisar}>
-              Revisar de nuevo ↻
+              <RotateCw size={16} aria-hidden /> Revisar de nuevo
             </button>
           </>
         )}
@@ -204,7 +233,7 @@ export function GuardarCorteModal({
           luego toca <strong>Revisar de nuevo</strong>.
         </p>
         <button className="btn-primary" onClick={revisar}>
-          Revisar de nuevo ↻
+          <RotateCw size={16} aria-hidden /> Revisar de nuevo
         </button>
         <button className="link-btn gc-volver" onClick={onClose}>
           Volver
@@ -252,14 +281,16 @@ export function GuardarCorteModal({
                 ))}
               {nota !== undefined ? (
                 <p className="gc-j-nota">
-                  ✎ “{nota}”{" "}
+                  <Pencil size={13} aria-hidden /> “{nota}”{" "}
                   <button className="link-btn" onClick={() => onNota(clave, undefined)}>
                     Quitar nota
                   </button>
                 </p>
               ) : escribiendo?.clave === clave ? (
                 <div className="gc-j-escribir">
-                  <textarea className="text-input" rows={2} placeholder="¿Por qué se deja así?" value={escribiendo.texto} onChange={(e) => setEscribiendo({ clave, texto: e.target.value })} autoFocus />
+                  <Field label="¿Por qué se deja así?">
+                    <textarea className="text-input" rows={2} placeholder="Ej. el bot redondeó los centavos" value={escribiendo.texto} onChange={(e) => setEscribiendo({ clave, texto: e.target.value })} autoFocus />
+                  </Field>
                   <button
                     className="btn-primary"
                     disabled={!escribiendo.texto.trim()}
@@ -273,14 +304,14 @@ export function GuardarCorteModal({
                 </div>
               ) : (
                 <button className="link-btn" onClick={() => setEscribiendo({ clave, texto: "" })}>
-                  ✎ Dejar así y anotar por qué
+                  <Pencil size={14} aria-hidden /> Dejar así y anotar por qué
                 </button>
               )}
             </div>
           );
         })}
         <button className="btn-primary" onClick={revisar}>
-          Revisar de nuevo ↻
+          <RotateCw size={16} aria-hidden /> Revisar de nuevo
         </button>
         <button className="link-btn gc-volver" onClick={onClose}>
           Volver a corregir
@@ -321,7 +352,9 @@ export function GuardarCorteModal({
           ))}
           {escribiendo?.clave === claveComp ? (
             <div className="gc-j-escribir">
-              <textarea className="text-input" rows={2} placeholder="¿Por qué no hay comprobante?" value={escribiendo.texto} onChange={(e) => setEscribiendo({ clave: claveComp, texto: e.target.value })} autoFocus />
+              <Field label="¿Por qué no hay comprobante?">
+                <textarea className="text-input" rows={2} placeholder="Ej. el proveedor no da ticket" value={escribiendo.texto} onChange={(e) => setEscribiendo({ clave: claveComp, texto: e.target.value })} autoFocus />
+              </Field>
               <button
                 className="btn-primary"
                 disabled={!escribiendo.texto.trim()}
@@ -335,12 +368,12 @@ export function GuardarCorteModal({
             </div>
           ) : (
             <button className="link-btn" onClick={() => setEscribiendo({ clave: claveComp, texto: "" })}>
-              ✎ Dejar así y anotar por qué
+              <Pencil size={14} aria-hidden /> Dejar así y anotar por qué
             </button>
           )}
         </div>
         <button className="btn-primary" onClick={revisar}>
-          Revisar de nuevo ↻
+          <RotateCw size={16} aria-hidden /> Revisar de nuevo
         </button>
         <button className="link-btn gc-volver" onClick={onClose}>
           Volver
@@ -350,87 +383,122 @@ export function GuardarCorteModal({
     );
   }
 
+  const ok = (t: string) => (
+    <div className="gc-rev-fila">
+      <Check size={15} aria-hidden /> <span>{t}</span>
+    </div>
+  );
+  const anotado = (t: ReactNode) => (
+    <div className="gc-rev-fila anotado">
+      <Pencil size={14} aria-hidden /> <span>{t}</span>
+    </div>
+  );
   return (
-    <Sheet title="¿Seguro guardar el corte?" onClose={onClose}>
-      {sinRevisar || !ing ? (
+    <Sheet title={revisadoEnBot ? "¿Guardar el corte?" : "¿Seguro guardar el corte?"} onClose={onClose}>
+      {!revisadoEnBot || !ing ? (
         <p className="gc-aviso">Se guardará sin revisar con Johnster. Cuádralo después en ⚖︎ Cuadrar.</p>
       ) : (
-        <div className="gc-revision">
-          <span className="gc-revision-titulo">Revisado en el bot</span>
-          <div>✓ Hay corte del {nombreDiaJ(fecha)} en el bot</div>
-          <div>
-            ✓ Tarjetas coinciden: {money(totals.tarjetas)}
-            {ing.tarjetaCredito ? (
-              <small>
-                {" "}
-                (bot: débito {money(ing.tarjetaDebito || 0)} + crédito {money(ing.tarjetaCredito)})
-              </small>
-            ) : null}
+        <>
+          <div className="gc-revision">
+            <span className="gc-revision-titulo">Revisado en el bot</span>
+            {ok(`Hay corte del ${nombreDiaJ(fecha)} en el bot`)}
+            {faltaBancario ? (
+              anotado("Falta el comprobante bancario (anotado)")
+            ) : (
+              <div className="gc-rev-fila">
+                <Check size={15} aria-hidden />
+                <span>{ing.tarjetas > 0 ? "Comprobante bancario subido" : "Sin tarjetas este día"}</span>
+                {ing.tarjetas > 0 && ing.comprobanteBancario && (
+                  <button
+                    className="vc-ver"
+                    onClick={() => setViendo({ pedido: { fecha }, titulo: "Comprobante bancario de tarjetas", monto: ing.tarjetas, drive: ing.comprobanteUrl })}
+                  >
+                    Ver
+                  </button>
+                )}
+              </div>
+            )}
+            {sinComprobante.length
+              ? anotado(`${sinComprobante.length} de ${gastosBot.length} ${gastosBot.length === 1 ? "gasto" : "gastos"} sin comprobante (anotado)`)
+              : ok(`${gastosBot.length} ${gastosBot.length === 1 ? "gasto" : "gastos"} en efectivo en el bot, todos con comprobante`)}
+            {(faltaBancario || sinComprobante.length > 0) && <small className="anotado">Nota: “{notas[claveComp]}”</small>}
+            {gastosBot.length > 0 && (
+              <div className="gc-tickets">
+                {gastosBot.map((g) => (
+                  <div key={g.id}>
+                    <span>{g.concepto}</span>
+                    <span>{money(g.monto)}</span>
+                    {g.comprobante ? (
+                      <button className="vc-ver" onClick={() => setViendo({ pedido: { id: g.id }, titulo: g.concepto, monto: g.monto })}>
+                        Ver
+                      </button>
+                    ) : (
+                      <span className="anotado">Sin ticket</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-          {faltaBancario ? (
-            <div className="anotado">✎ Falta el comprobante bancario (anotado)</div>
-          ) : (
-            <div>
-              {ing.tarjetas > 0 ? "✓ Comprobante bancario subido " : "✓ Sin tarjetas este día"}
-              {ing.tarjetas > 0 && ing.comprobanteBancario && (
-                <button
-                  className="vc-ver"
-                  onClick={() => setViendo({ pedido: { fecha }, titulo: "Comprobante bancario de tarjetas", monto: ing.tarjetas, drive: ing.comprobanteUrl })}
-                >
-                  Ver
-                </button>
-              )}
+          {comp && (
+            <div className="gc-totales">
+              <span className="gc-revision-titulo">Totales comparados con el bot</span>
+              {comp.todos.map((t) => {
+                const igual = Math.abs(t.dif) <= (t.clave === "gastos" ? 0.009 : TOLERANCIA);
+                return (
+                  <div key={t.clave} className="gc-total">
+                    <span>
+                      {t.titulo === "Venta total" ? "Venta (incluye apps)" : t.titulo}
+                      {!igual && (
+                        <small>
+                          Johnster {money(t.johnster)} · {t.dif > 0 ? "+" : "−"}
+                          {money(Math.abs(t.dif))}
+                        </small>
+                      )}
+                    </span>
+                    <b>{money(t.tuyo)}</b>
+                    <em className={igual ? "ok" : "anotado"}>
+                      {igual ? <Check size={13} aria-hidden /> : <Pencil size={12} aria-hidden />}
+                      {igual ? "Coincide" : "Anotado"}
+                    </em>
+                  </div>
+                );
+              })}
             </div>
           )}
-          {sinComprobante.length ? (
-            <div className="anotado">
-              ✎ {sinComprobante.length} de {gastosBot.length} {gastosBot.length === 1 ? "gasto" : "gastos"} sin comprobante (anotado)
-            </div>
-          ) : (
-            <div>✓ {gastosBot.length} {gastosBot.length === 1 ? "gasto" : "gastos"} en efectivo en el bot, todos con comprobante</div>
+        </>
+      )}
+      {!revisadoEnBot && (
+        <>
+          <p className="hint">Revisa que cada total coincida y márcalo.</p>
+          <div className="gc-lista">
+            {renglones.map((r) => (
+              <label key={r.key} className="gc-check">
+                <input type="checkbox" checked={marcados.has(r.key)} onChange={() => toggle(r.key)} />
+                <span>{r.texto}</span>
+                <strong>{money(r.monto)}</strong>
+              </label>
+            ))}
+            <label className="gc-check gc-bot">
+              <input type="checkbox" checked={marcados.has("bot")} onChange={() => toggle("bot")} />
+              <span>
+                Ya subí al bot los comprobantes de <strong>gastos</strong>, <strong>bancarios</strong> y <strong>transferencias</strong>, y la{" "}
+                <strong>venta</strong>.
+              </span>
+            </label>
+          </div>
+          {!todos && (
+            <p className="gc-contador" aria-live="polite">
+              Marca todo para poder guardar · {marcadosN} de {porMarcar.length}
+            </p>
           )}
-          {(faltaBancario || sinComprobante.length > 0) && <small className="anotado">Nota: “{notas[claveComp]}”</small>}
-          {gastosBot.length > 0 && (
-            <div className="gc-tickets">
-              {gastosBot.map((g) => (
-                <div key={g.id}>
-                  <span>{g.concepto}</span>
-                  <span>{money(g.monto)}</span>
-                  {g.comprobante ? (
-                    <button className="vc-ver" onClick={() => setViendo({ pedido: { id: g.id }, titulo: g.concepto, monto: g.monto })}>
-                      Ver
-                    </button>
-                  ) : (
-                    <span className="anotado">Sin ticket</span>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-          <div>✓ Venta, transferencias, efectivo y gastos cuadran</div>
-        </div>
+        </>
       )}
       <p className="hint">
-        Revisa que cada total coincida y márcalo. Al guardar, el corte <strong>ya no se podrá editar</strong>.
+        Al guardar, el corte <strong>ya no se podrá editar</strong>.
       </p>
-      <div className="gc-lista">
-        {renglones.map((r) => (
-          <label key={r.key} className="gc-check">
-            <input type="checkbox" checked={marcados.has(r.key)} onChange={() => toggle(r.key)} />
-            <span>{r.texto}</span>
-            <strong>{money(r.monto)}</strong>
-          </label>
-        ))}
-        {(sinRevisar || !ing) && <label className="gc-check gc-bot">
-          <input type="checkbox" checked={marcados.has("bot")} onChange={() => toggle("bot")} />
-          <span>
-            Ya subí al bot los comprobantes de <strong>gastos</strong>, <strong>bancarios</strong> y{" "}
-            <strong>transferencias</strong>, y la <strong>venta</strong>.
-          </span>
-        </label>}
-      </div>
       <button className="btn-primary" disabled={!todos} onClick={onGuardar}>
-        <Lock size={16} /> Sí, todo coincide — guardar corte
+        <Lock size={16} /> Guardar corte
       </button>
       <button className="link-btn gc-volver" onClick={onClose}>
         Volver a revisar

@@ -1,8 +1,8 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { AlertCircle, AlertTriangle, ArrowLeftRight, Check, Lock, Plus, Receipt, Users, Wallet } from "lucide-react";
 import { Empty } from "./ui";
 import { acumuladosDelDia, efectivoDelDia, money, round2 } from "../lib/dataModel";
-import { faltantesDelCorte } from "./modals/GuardarCorteModal";
+import { EVENTO_IR_A_CORTE, faltantesDelCorte } from "./modals/GuardarCorteModal";
 import { etiquetaCategoria } from "./modals/asistente";
 import type { AppData, DayData, Gasto, MeseroCut, Transferencia } from "../lib/types";
 
@@ -84,6 +84,16 @@ export function CorteDelDia(p: CorteDelDiaProps) {
     if (turnos) setPestana("dia");
     setTimeout(() => document.querySelector(".cd-gastos")?.scrollIntoView({ behavior: "smooth", block: "center" }), 50);
   }
+  // "Ir a completar" desde Guardar corte: a Todo el día y a la sección.
+  useEffect(() => {
+    const h = (e: Event) => {
+      const a = (e as CustomEvent<"gastos" | "cortes">).detail;
+      if (turnos) setPestana("dia");
+      window.setTimeout(() => document.querySelector(a === "cortes" ? ".cd-a" : ".cd-gastos")?.scrollIntoView({ behavior: "smooth", block: "center" }), 50);
+    };
+    window.addEventListener(EVENTO_IR_A_CORTE, h);
+    return () => window.removeEventListener(EVENTO_IR_A_CORTE, h);
+  }, [turnos]);
   // fechaHora ya puede terminar en punto ("a.m.").
   const conPunto = (t: string) => (t.endsWith(".") ? t : `${t}.`);
 
