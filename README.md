@@ -978,9 +978,13 @@ estando en Nómina te regresa al menú de Equipo):
   sin monto o sin categoría, un corte de mesero sin venta (de cualquier
   turno; si de verdad no hubo venta, ej. el usuario de para llevar, el
   botón **"No hubo venta · dejarlo en $0"** marca ese corte como
-  `sinVenta` y ya no lo pide), o que no haya ningún corte de mesero. Si
+  `sinVenta` y ya no lo pide), o que no haya ningún corte de mesero; "Ir a
+  completar" cierra y lleva a Todo el día, a los cortes o a los gastos
+  según lo que falte. Si
   está completo, **se revisa con Johnster**
-  (a todos los que guardan corte): "Revisando con Johnster…" (la función
+  (a todos los que guardan corte): "Revisando con Johnster…" con un
+  círculo girando ("Comparando tu corte con el bot…" y, después de 15
+  segundos, "El bot estaba dormido, ya casi…") (la función
   `johnster` con `{ accion: "semana" }`, que también acepta al personal y
   solo devuelve los días de esa semana). Si Johnster todavía no tiene el
   corte de ese día, "Todavía no se puede guardar" con "Revisar de nuevo ↻";
@@ -990,28 +994,31 @@ estando en Nómina te regresa al menú de Equipo):
   adelantos juntos y las comidas gratis del domingo) y "Dejar así y anotar
   por qué" (las mismas notas de Cuadrar). No deja guardar hasta que todo
   cuadre o esté anotado. Solo el dueño tiene "Guardar sin revisar Johnster
-  (emergencia)". Si todo cuadra, revisa los **comprobantes en el bot**:
+  (emergencia)", separado con una línea, en rojo y con ícono de alerta. Si todo cuadra, revisa los **comprobantes en el bot**:
   el comprobante bancario de tarjetas (si hubo tarjetas ese día) y el de
   cada gasto en efectivo del día (las transferencias no llevan). Si falta
   alguno sale "Faltan comprobantes en el bot" con la lista ("Falta ·
   Comprobante bancario de tarjetas", "Sin comprobante · [gasto]"),
   "Revisar de nuevo ↻" y "Dejar así y anotar por qué" (nota
-  `comprobantes:[fecha]`). Luego "¿Seguro guardar el corte?" muestra
+  `comprobantes:[fecha]`). Luego "¿Guardar el corte?" muestra
   arriba el cuadro verde **Revisado en el bot**: hay corte del día en el
   bot, tarjetas coinciden (si el bot separa **débito y crédito**, se
   suman — los dos juntos son el total del banco — y se muestra el
   desglose), comprobante bancario subido, cuántos gastos en efectivo hay
-  en el bot y que todos tienen comprobante, y que venta, transferencias,
-  efectivo y gastos cuadran; lo que se dejó anotado sale en ámbar con la
-  nota. Debajo de los gastos sale la lista de los gastos en efectivo del
+  en el bot y que todos tienen comprobante; lo que se dejó anotado sale
+  en ámbar con la nota. Debajo de los gastos sale la lista de los gastos en efectivo del
   día en el bot (concepto, monto y **Ver**) y junto al comprobante
   bancario otro **Ver** (ver "Ver comprobante" en ⚖︎ Cuadrar).
-  Abajo, un renglón con casilla por cada total — tarjetas,
-  transferencias, gastos, venta (total) y apps. Solo si se guarda sin
-  revisar Johnster sale además la casilla "Ya subí al bot los
-  comprobantes de gastos, bancarios y transferencias, y la venta".
-  El botón "Sí, todo coincide — guardar corte" solo se activa con todas
-  las casillas marcadas. Ya guardado, arriba de los totales sale "Corte
+  Abajo, **Totales comparados con el bot** (venta, que incluye las apps,
+  tarjetas, transferencias, efectivo de ventas y gastos en efectivo), cada
+  uno con "Coincide" o, si no cuadraba y se anotó, "Anotado" con lo que
+  tiene Johnster y la diferencia; como el bot ya los comparó, no se
+  palomea nada y el botón **Guardar corte** está listo. Solo si se guarda
+  sin revisar Johnster (emergencia) sale "¿Seguro guardar el corte?" con
+  una casilla por cada total (tarjetas, transferencias, gastos, venta y
+  apps) y "Ya subí al bot los comprobantes de gastos, bancarios y
+  transferencias, y la venta"; el botón se activa con todas marcadas y
+  mientras tanto dice "Marca todo para poder guardar · N de 6". Ya guardado, arriba de los totales sale "Corte
   guardado por [nombre] el [fecha] a las [hora]". Para el personal el día
   queda bloqueado: el aviso agrega "Ya no se puede editar. Si algo está
   mal, avísale al dueño", desaparecen los botones "+" de meseros, gastos y
