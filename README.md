@@ -176,8 +176,10 @@ Guardar corte deja de pedir "toca Confirmar" (ya revisa en el bot) y la
 categoría se elige siempre a mano ("Sin categoría" cuenta todos los que no
 tienen).
 
-**Pendientes en Control de gastos en efectivo**: arriba de la lista de
-gastos hay filtros con cuántos hay de cada uno — **Todos**, **Pendientes**,
+**Pendientes en Control de gastos en efectivo**: justo debajo del buscador
+(el mes dice "Oct 2026"; el recuadro de totales — total, ingresados y
+pendientes — y la explicación de cómo sale el estado van hasta abajo) hay
+filtros con cuántos hay de cada uno — **Todos**, **Pendientes**,
 **Sin categoría** (pendientes sin categoría) e **Ingresados**. Si la semana
 tiene pendientes se abre directo en Pendientes; si no, en Todos. Con un
 filtro solo salen los días que tienen algo de ese filtro (con "2
@@ -212,7 +214,14 @@ sin perder su historial (mismo id, categoría y estado). Si el gasto estaba
 restado del corte de un mesero ese día, al moverlo se desliga de ese corte y
 el total de ese mesero en el día de origen se recalcula sumando de vuelta
 el monto — para que el corte diario no quede desacomodado. El gasto llega
-al día destino como un gasto suelto (sin ligar a ningún mesero).
+al día destino como un gasto suelto (sin ligar a ningún mesero). Al
+moverlo sale 5 segundos el aviso "Hielo se movió al Martes · Deshacer";
+Deshacer lo deja exactamente como estaba (en su día y su lugar y, si venía
+de un corte, ligado otra vez a ese corte con su total como antes;
+`restaurarGastoMovido` en `CortesApp`). Las etiquetas de cada gasto miden
+12.5 px ("Falta ticket" y "Se sube junto el domingo" en naranja oscuro),
+y "Subir sin ticket", "Editar concepto o monto" (con etiquetas Concepto y
+Monto al editar) y "Quitar" son botones de 44 px.
 
 También desde ahí se puede editar el concepto y el monto de un gasto —
 oculto detrás de un botón de editar (lápiz), para que no se cambie por
