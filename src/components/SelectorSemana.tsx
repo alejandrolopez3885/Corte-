@@ -5,7 +5,7 @@ import type { MonthData } from "../lib/types";
 // Mes y semana con sus fechas ("Nov 2026", "Sem 1 · 2–8 nov"), para
 // que no se corten en el celular y se sepa qué semana es sin buscarla.
 const MESES = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
-const mesCorto = (mk: string) => `${MESES[Number(mk.slice(5, 7)) - 1]} ${mk.slice(0, 4)}`;
+export const mesCorto = (mk: string) => `${MESES[Number(mk.slice(5, 7)) - 1]} ${mk.slice(0, 4)}`;
 
 export function SelectorSemana({
   months,

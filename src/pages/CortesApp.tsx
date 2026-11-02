@@ -1053,6 +1053,29 @@ export default function CortesApp({ profile }: { profile: Profile }) {
     persist(next);
   }
 
+  // "Deshacer" de Mover a… en Control de gastos: el gasto vuelve tal cual
+  // estaba (a su día, en su lugar y ligado otra vez al corte del mesero,
+  // con el total de ese corte como antes).
+  function restaurarGastoMovido(monthKey: string, weekIndex: number, fromDay: DayName, toDay: DayName, original: Gasto, indice: number) {
+    if (!data) return;
+    const next = structuredClone(data);
+    const week = next.months[monthKey].weeks[weekIndex];
+    const destino = week.days[toDay];
+    const i = destino.gastos.findIndex((g) => g.id === original.id);
+    if (i < 0) return;
+    destino.gastos.splice(i, 1);
+    const origenDia = week.days[fromDay];
+    if (original.meseroCutId) {
+      const cut = origenDia.meseros.find((m) => m.id === original.meseroCutId);
+      if (cut) {
+        cut.gastosTotal = round2(cut.gastosTotal + original.total);
+        cut.total = round2(cut.total - original.total);
+      }
+    }
+    origenDia.gastos.splice(Math.min(indice, origenDia.gastos.length), 0, structuredClone(original));
+    persist(next);
+  }
+
   // Editar concepto/monto de un gasto desde "Control de gastos en
   // efectivo" — se refleja solo en el corte diario, porque es el mismo
   // registro (mismo id) en la misma estructura de datos. Si el gasto
@@ -2656,6 +2679,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           onSinTicket={justificarSinTicket}
           onSetCategoria={setGastoCategoriaInWeek}
           onMoverGasto={moverGastoEnSemana}
+          onDeshacerMover={restaurarGastoMovido}
           onEditarGasto={editarGastoEnSemana}
           onAgregarGasto={agregarGastoEnSemana}
           empleados={data.empleados}

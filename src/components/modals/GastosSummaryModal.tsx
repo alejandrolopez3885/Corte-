@@ -39,6 +39,7 @@ const DIA_CORTO: Record<DayName, string> = {
 const SEMANAS_ATRAS = 2;
 import type { NombreHistorial } from "../../lib/gastosBusqueda";
 import { BuscarGastos } from "./BuscarGastos";
+import { mesCorto } from "../SelectorSemana";
 import type { GastoFormValues } from "./GastoModal";
 
 export function GastosSummaryModal({
@@ -50,6 +51,7 @@ export function GastosSummaryModal({
   onToggleEstado,
   onSetCategoria,
   onMoverGasto,
+  onDeshacerMover,
   onEditarGasto,
   onAgregarGasto,
   empleados,
@@ -66,6 +68,8 @@ export function GastosSummaryModal({
   onToggleEstado: (monthKey: string, weekIndex: number, dayName: DayName, id: string) => void;
   onSetCategoria: (monthKey: string, weekIndex: number, dayName: DayName, id: string, categoria: GastoCategoria | "") => void;
   onMoverGasto: (monthKey: string, weekIndex: number, fromDay: DayName, toDay: DayName, id: string) => void;
+  // Deshacer el último "Mover a…" (deja el gasto exactamente como estaba).
+  onDeshacerMover?: (monthKey: string, weekIndex: number, fromDay: DayName, toDay: DayName, original: Gasto, indice: number) => void;
   onEditarGasto: (monthKey: string, weekIndex: number, dayName: DayName, id: string, concepto: string, total: number) => void;
   onAgregarGasto: (monthKey: string, weekIndex: number, dayName: DayName, form: GastoFormValues) => void;
   empleados: EmpleadoEntry[];
@@ -81,7 +85,7 @@ export function GastosSummaryModal({
   const [editing, setEditing] = useState<{ id: string; concepto: string; total: string } | null>(null);
   // null = automático: Pendientes si la semana tiene, si no Todos.
   const [filtroElegido, setFiltroElegido] = useState<Filtro | null>(null);
-  const [aviso, setAviso] = useState<string | null>(null);
+  const [aviso, setAviso] = useState<{ texto: string; deshacer?: () => void } | null>(null);
   const avisoTimer = useRef<number | undefined>(undefined);
   // Acordeón: cada gasto muestra lo principal; al abrirlo, categoría,
   // confirmar, mover y editar. Los pendientes empiezan abiertos.
@@ -174,14 +178,36 @@ export function GastosSummaryModal({
     setFiltroElegido(null);
   }
 
+  function avisar(a: { texto: string; deshacer?: () => void }, ms: number) {
+    setAviso(a);
+    window.clearTimeout(avisoTimer.current);
+    avisoTimer.current = window.setTimeout(() => setAviso(null), ms);
+  }
+  // Mover a… pasa el gasto de inmediato y deja 5 segundos para deshacerlo.
+  function mover(day: DayName, toDay: DayName, item: Gasto, indice: number) {
+    const mk = monthKey;
+    const wi = weekIndex;
+    onMoverGasto(mk, wi, day, toDay, item.id);
+    avisar(
+      {
+        texto: `${item.concepto || "El gasto"} se movió al ${toDay}`,
+        deshacer: onDeshacerMover
+          ? () => {
+              onDeshacerMover(mk, wi, day, toDay, item, indice);
+              setAviso(null);
+            }
+          : undefined,
+      },
+      5000
+    );
+  }
+
   // Al confirmar un pendiente se quita de la lista (si el filtro es
   // Pendientes) y queda un aviso discreto de cuál fue.
   function cambiarEstado(day: DayName, item: Gasto) {
     onToggleEstado(monthKey, weekIndex, day, item.id);
     if (item.estado === "pendiente") {
-      setAviso(`${item.concepto} ${money(item.total)} confirmado`);
-      window.clearTimeout(avisoTimer.current);
-      avisoTimer.current = window.setTimeout(() => setAviso(null), 2500);
+      avisar({ texto: `${item.concepto} ${money(item.total)} confirmado` }, 2500);
     }
   }
 
@@ -196,7 +222,7 @@ export function GastosSummaryModal({
           >
             {monthKeys.map((mk) => (
               <option key={mk} value={mk}>
-                {months[mk].label}
+                {mesCorto(mk)}
               </option>
             ))}
           </select>
@@ -250,32 +276,6 @@ export function GastosSummaryModal({
         historial={historial}
       />
 
-      <div className="summary-grid-modal">
-        <div className="summary-item highlight" style={{ gridColumn: "1 / -1" }}>
-          <span>Total de gastos ({g.countTotal})</span>
-          <strong>{money(g.totalMonto)}</strong>
-        </div>
-        <div className="summary-item">
-          <span>Ingresados ({g.countIngresado})</span>
-          <strong>{money(g.totalIngresado)}</strong>
-        </div>
-        <div className="summary-item">
-          <span>Pendientes ({g.countPendiente})</span>
-          <strong>{money(g.totalPendiente)}</strong>
-        </div>
-      </div>
-      {auto ? (
-        <p className="hint">
-          El estado sale de Johnster: <strong>Ingresado</strong> = está en el bot con su ticket (o con tu justificación "sin ticket"); los de
-          nómina, comida de empleado y retiros no piden ticket. La categoría se elige aquí.
-        </p>
-      ) : (
-        <p className="hint">
-          Elige la categoría de cada gasto antes de confirmarlo. Una vez ingresado, la categoría queda bloqueada — para cambiarla,
-          vuelve a marcarlo como pendiente.
-        </p>
-      )}
-
       <div className="gastos-filtros">
         {filtros.map((f) => (
           <button
@@ -299,7 +299,12 @@ export function GastosSummaryModal({
       )}
       {aviso && (
         <div className="toast-discreto gastos-aviso" role="status">
-          <Check size={14} /> {aviso}
+          <Check size={14} aria-hidden /> <span>{aviso.texto}</span>
+          {aviso.deshacer && (
+            <button type="button" className="gastos-deshacer" onClick={aviso.deshacer}>
+              Deshacer
+            </button>
+          )}
         </div>
       )}
 
@@ -338,17 +343,21 @@ export function GastosSummaryModal({
                     >
                       {isEditing ? (
                         <div className="gasto-row-edit">
-                          <input
-                            className="text-input"
-                            value={editing.concepto}
-                            onChange={(e) => setEditing({ ...editing, concepto: e.target.value })}
-                            placeholder="Concepto"
-                          />
-                          <NumInput
-                            value={editing.total}
-                            onChange={(e) => setEditing({ ...editing, total: e.target.value })}
-                            placeholder="0.00"
-                          />
+                          <Field label="Concepto">
+                            <input
+                              className="text-input"
+                              value={editing.concepto}
+                              onChange={(e) => setEditing({ ...editing, concepto: e.target.value })}
+                              placeholder="Ej. Hielo"
+                            />
+                          </Field>
+                          <Field label="Monto">
+                            <NumInput
+                              value={editing.total}
+                              onChange={(e) => setEditing({ ...editing, total: e.target.value })}
+                              placeholder="0.00"
+                            />
+                          </Field>
                           <div className="gasto-row-edit-actions">
                             <button type="button" className="link-btn" onClick={() => setEditing(null)}>
                               Cancelar
@@ -439,7 +448,7 @@ export function GastosSummaryModal({
                               )}
                               {auto && item.sinTicket && (
                                 <p className="hint gasto-row-hint gasto-sin-ticket">
-                                  ✎ Sin ticket: “{item.sinTicket}”{" "}
+                                  <Pencil size={13} aria-hidden /> Sin ticket: “{item.sinTicket}”{" "}
                                   <button type="button" className="link-btn" onClick={() => onSinTicket?.(monthKey, weekIndex, d.day, item.id, undefined)}>
                                     Quitar
                                   </button>
@@ -448,14 +457,16 @@ export function GastosSummaryModal({
                               {auto && item.estadoBot === "sin-ticket" && !item.sinTicket && onSinTicket &&
                                 (justificando?.id === item.id ? (
                                   <div className="gc-j-escribir">
+                                    <Field label="¿Por qué no tiene ticket?">
                                     <textarea
                                       className="text-input"
                                       rows={2}
-                                      placeholder="¿Por qué no tiene ticket? Ej. la central no da ticket"
+                                      placeholder="Ej. la central no da ticket"
                                       value={justificando.texto}
                                       onChange={(e) => setJustificando({ id: item.id, texto: e.target.value })}
                                       autoFocus
                                     />
+                                    </Field>
                                     <button
                                       type="button"
                                       className="btn-primary"
@@ -470,12 +481,13 @@ export function GastosSummaryModal({
                                   </div>
                                 ) : (
                                   <button type="button" className="gasto-sin-ticket-btn" onClick={() => setJustificando({ id: item.id, texto: "" })}>
-                                    ✎ Subir sin ticket · anotar por qué
+                                    <Pencil size={14} aria-hidden /> Subir sin ticket · anotar por qué
                                   </button>
                                 ))}
                               <div className="gasto-row-controls">
                                 <select
                                   className="categoria-select"
+                                  aria-label={`Categoría de ${item.concepto}`}
                                   value={item.categoria || ""}
                                   disabled={!auto && item.estado === "ingresado"}
                                   onChange={(e) => onSetCategoria(monthKey, weekIndex, d.day, item.id, e.target.value as GastoCategoria | "")}
@@ -505,10 +517,11 @@ export function GastosSummaryModal({
                                 )}
                                 <select
                                   className="categoria-select mover-gasto-select"
+                                  aria-label={`Mover ${item.concepto} a otro día`}
                                   value=""
                                   onChange={(e) => {
                                     const toDay = e.target.value as DayName;
-                                    if (toDay) onMoverGasto(monthKey, weekIndex, d.day, toDay, item.id);
+                                    if (toDay) mover(d.day, toDay, item, d.items.indexOf(item));
                                   }}
                                 >
                                   <option value="">Mover a...</option>
@@ -547,10 +560,32 @@ export function GastosSummaryModal({
       </div>
 
       {viendo && <VerComprobante {...viendo} onClose={() => setViendo(null)} />}
-      <div className="week-total-row">
-        <span>Total semanal</span>
-        <strong>{money(g.totalMonto)}</strong>
+      <div className="summary-grid-modal">
+        <div className="summary-item highlight" style={{ gridColumn: "1 / -1" }}>
+          <span>Total de gastos ({g.countTotal})</span>
+          <strong>{money(g.totalMonto)}</strong>
+        </div>
+        <div className="summary-item">
+          <span>Ingresados ({g.countIngresado})</span>
+          <strong>{money(g.totalIngresado)}</strong>
+        </div>
+        <div className="summary-item">
+          <span>Pendientes ({g.countPendiente})</span>
+          <strong>{money(g.totalPendiente)}</strong>
+        </div>
       </div>
+      {auto ? (
+        <p className="hint">
+          El estado sale de Johnster: <strong>Ingresado</strong> = está en el bot con su ticket (o con tu justificación "sin ticket"); los de
+          nómina, comida de empleado y retiros no piden ticket. La categoría se elige aquí.
+        </p>
+      ) : (
+        <p className="hint">
+          Elige la categoría de cada gasto antes de confirmarlo. Una vez ingresado, la categoría queda bloqueada — para cambiarla,
+          vuelve a marcarlo como pendiente.
+        </p>
+      )}
+
     </Sheet>
   );
 }
