@@ -8,6 +8,11 @@
   que es la que despliega la app live — sin PR. Si se trabaja en otra rama,
   al final también se empuja a la principal.
 - Los PNG de vista previa no se suben al repo.
+- Para cualquier cambio visible usar la skill `ui-ux-pro-max`
+  (`.claude/skills/ui-ux-pro-max`) como guía de UX/UI (accesibilidad,
+  botones grandes para celular, jerarquía, formularios), sin cambiar el
+  estilo que ya tiene la app (colores verdes, títulos en Fraunces) y sin
+  saltarse la vista previa en PNG.
 - Todo en español (textos de la app, README, commits).
 - El README describe cada pantalla a detalle: actualizarlo junto con el código.
 - Si un cambio lo ve el personal (cuentas de equipo), agregar en el mismo
