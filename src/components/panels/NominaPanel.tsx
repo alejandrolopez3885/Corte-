@@ -3,6 +3,7 @@ import { DatoPagoFila } from "../DatoPagoFila";
 import type { DatosPago } from "../../lib/datosPago";
 import { Check, ChevronDown, ChevronUp, Copy, Trash2, Wallet } from "lucide-react";
 import { Empty, Field, Sheet, SumInput } from "../ui";
+import { SelectorSemana } from "../SelectorSemana";
 import { computeNominaHastaHoyPorEmpleado, computeNominaSemana, computeWeekSummary, formatShortDayDate, formatWeekRange, isoWeekNumber, money, resolveWeekStartDate, sumFromText, todayIso, uid } from "../../lib/dataModel";
 import { copyNominaImage } from "../../lib/nominaImage";
 import { DAY_SHORT, NOMINA_DESCUENTO_TIPOS, NOMINA_EXTRA_TIPOS } from "../../lib/types";
@@ -69,6 +70,9 @@ export function NominaPanel({
   // Resultado del último "Copiar imagen" — se borra solo a los pocos
   // segundos para que el botón vuelva a su texto normal.
   const [copiaEstado, setCopiaEstado] = useState<"copiada" | "descargada" | null>(null);
+  // Confirmaciones: marcar pagada / pendiente y quitar un descuento o extra.
+  const [confirmandoPago, setConfirmandoPago] = useState<{ empleadoId: string; nombre: string; monto: number; pagada: boolean } | null>(null);
+  const [quitando, setQuitando] = useState<{ tipo: "extra" | "descuento"; id: string; texto: string; monto: number } | null>(null);
 
   const soloLectura = !!soloEmpleadoId;
   const month = months[monthKey];
@@ -171,6 +175,8 @@ export function NominaPanel({
     <div className="page-section">
       <TituloPagina titulo="Nómina" onBack={onBack} backLabel={backLabel} />
       {avisoPago && <p className="aviso-dejado">{avisoPago}</p>}
+      <details className="nomina-como">
+        <summary>¿Cómo se calcula?</summary>
       <p className="hint">
         Calculada sola a partir de Horarios y el sueldo diario de cada quien en Personal: Z paga doble, O/X pagan normal, el
         descanso (OFF) solo se paga si se trabajaron los otros 6 días, y un día marcado festivo en Horarios paga 1 turno
@@ -179,35 +185,18 @@ export function NominaPanel({
           ? "Los descuentos y percepciones extra los agrega el dueño — aquí solo se ven."
           : "Los descuentos (tardanzas, adelantos, comida) y las percepciones extra (finiquitos, bonos — solo existen en la semana donde se capturan) se agregan aquí mismo, por persona."}
       </p>
+      </details>
 
-      <div className="field-row">
-        <Field label="Mes">
-          <select
-            className="text-input"
-            value={monthKey}
-            onChange={(e) => {
-              setMonthKey(e.target.value);
-              setWeekIndex(0);
-            }}
-          >
-            {monthKeys.map((mk) => (
-              <option key={mk} value={mk}>
-                {months[mk].label}
-              </option>
-            ))}
-          </select>
-        </Field>
-        <Field label="Semana">
-          <select className="text-input" value={weekIndex} onChange={(e) => setWeekIndex(Number(e.target.value))}>
-            {[0, 1, 2, 3].map((i) => (
-              <option key={i} value={i}>
-                Semana {i + 1}
-              </option>
-            ))}
-          </select>
-        </Field>
-      </div>
-      <p className="hint">{formatWeekRange(weekStartDate)}</p>
+      <SelectorSemana
+        months={months}
+        monthKeys={monthKeys}
+        monthKey={monthKey}
+        weekIndex={weekIndex}
+        onCambiar={(mk, wi) => {
+          setMonthKey(mk);
+          setWeekIndex(wi);
+        }}
+      />
 
       {!semana ? (
         <>
@@ -237,8 +226,8 @@ export function NominaPanel({
       ) : (
         <>
           {!soloLectura && (
-            <div className="field-row">
-              <button className="link-btn" onClick={copiarImagen}>
+            <div className="horario-descargas">
+              <button className="horario-copiar nomina-copiar" onClick={copiarImagen}>
                 {copiaEstado === "copiada" ? (
                   <>
                     <Check size={15} /> ¡Copiada! Pégala en WhatsApp
@@ -286,6 +275,20 @@ export function NominaPanel({
                 <div
                   className={`nomina-emp-head ${soloLectura ? "" : "plegable"}`}
                   onClick={soloLectura ? undefined : () => toggleAbierta(e.empleadoId)}
+                  {...(soloLectura
+                    ? {}
+                    : {
+                        role: "button",
+                        tabIndex: 0,
+                        "aria-expanded": abierta,
+                        onKeyDown: (ev: React.KeyboardEvent) => {
+                          if (ev.target !== ev.currentTarget) return;
+                          if (ev.key === "Enter" || ev.key === " ") {
+                            ev.preventDefault();
+                            toggleAbierta(e.empleadoId);
+                          }
+                        },
+                      })}
                 >
                   <span className="nomina-emp-nombre">
                     {e.nombre}
@@ -296,15 +299,15 @@ export function NominaPanel({
                         onClick={(ev) => {
                           // No abre ni cierra la tarjeta — solo cambia el estado de pago.
                           ev.stopPropagation();
-                          onTogglePagado?.(monthKey, weekIndex, e.empleadoId, e.nombre, aRecibirHastaHoy(e));
+                          setConfirmandoPago({ empleadoId: e.empleadoId, nombre: e.nombre, monto: e.confirmado ? montoPagado(e) : aRecibirHastaHoy(e), pagada: !!e.confirmado });
                         }}
                       >
                         {e.confirmado ? (
                           <>
-                            <Check size={12} /> Pagada {money(montoPagado(e))}
+                            <Check size={13} aria-hidden /> Pagada {money(montoPagado(e))}
                           </>
                         ) : (
-                          "Pendiente"
+                          "Marcar pagada"
                         )}
                       </button>
                     )}
@@ -353,7 +356,11 @@ export function NominaPanel({
                             </span>
                             <span>+{money(x.monto)}</span>
                             {!soloLectura && (
-                              <button className="icon-btn" onClick={() => removeExtra(x.id)} aria-label="Quitar percepción extra">
+                              <button
+                                className="icon-btn"
+                                onClick={() => setQuitando({ tipo: "extra", id: x.id, texto: NOMINA_EXTRA_TIPOS.find((t) => t.value === x.tipo)?.label || "Percepción extra", monto: x.monto })}
+                                aria-label="Quitar percepción extra"
+                              >
                                 <Trash2 size={13} />
                               </button>
                             )}
@@ -378,7 +385,11 @@ export function NominaPanel({
                               (d.origen === "corte" ? (
                                 <span className="icon-btn-spacer" />
                               ) : (
-                                <button className="icon-btn" onClick={() => removeDescuento(d.id)} aria-label="Quitar descuento">
+                                <button
+                                  className="icon-btn"
+                                  onClick={() => setQuitando({ tipo: "descuento", id: d.id, texto: NOMINA_DESCUENTO_TIPOS.find((t) => t.value === d.tipo)?.label || "Descuento", monto: d.monto })}
+                                  aria-label="Quitar descuento"
+                                >
                                   <Trash2 size={13} />
                                 </button>
                               ))}
@@ -391,24 +402,24 @@ export function NominaPanel({
                         <div className={`nomina-dia ${d.monto === 0 ? "cero" : ""} ${d.esFestivo ? "festivo" : ""}`} key={d.day}>
                           <div className="nomina-dia-label">{DAY_SHORT[d.day]}</div>
                           <div className="nomina-dia-valor">{d.valor || "–"}</div>
-                          <div className="nomina-dia-monto">{money(d.monto)}</div>
+                          <div className="nomina-dia-monto">{montoCorto(d.monto)}</div>
                         </div>
                       ))}
                     </div>
       
                     {!soloLectura && (
-                      <div className="field-row">
+                      <div className="nomina-agregar">
                         <button
-                          className="link-btn"
+                          className="nomina-agregar-btn"
                           onClick={() => setAddingExtraFor({ empleadoId: e.empleadoId, nombre: e.nombre })}
                         >
-                          + Agregar percepción extra
+                          + Percepción extra
                         </button>
                         <button
-                          className="link-btn"
+                          className="nomina-agregar-btn"
                           onClick={() => setAddingDescuentoFor({ empleadoId: e.empleadoId, nombre: e.nombre })}
                         >
-                          + Agregar descuento
+                          + Descuento
                         </button>
                       </div>
                     )}
@@ -498,6 +509,52 @@ export function NominaPanel({
         </>
       )}
 
+      {confirmandoPago && (
+        <Sheet
+          title={confirmandoPago.pagada ? `¿Regresar a ${confirmandoPago.nombre} a pendiente?` : `¿Marcar a ${confirmandoPago.nombre} como pagada?`}
+          onClose={() => setConfirmandoPago(null)}
+        >
+          <p className="hint emp-confirma-texto">
+            {confirmandoPago.pagada
+              ? `Se quita la marca de pagada (${money(confirmandoPago.monto)}) de esta semana.`
+              : `Se guarda que le pagaste ${money(confirmandoPago.monto)}, lo que le toca hasta hoy.`}
+          </p>
+          <button
+            className={confirmandoPago.pagada ? "btn-warn emp-btn-salir" : "btn-primary"}
+            onClick={() => {
+              onTogglePagado?.(monthKey, weekIndex, confirmandoPago.empleadoId, confirmandoPago.nombre, confirmandoPago.monto);
+              setConfirmandoPago(null);
+            }}
+          >
+            {confirmandoPago.pagada ? "Sí, regresar a pendiente" : `Sí, pagada · ${money(confirmandoPago.monto)}`}
+          </button>
+          <button className="link-btn emp-btn-cancelar" onClick={() => setConfirmandoPago(null)}>
+            Cancelar
+          </button>
+        </Sheet>
+      )}
+
+      {quitando && (
+        <Sheet title={`¿Quitar ${quitando.texto} de ${money(quitando.monto)}?`} onClose={() => setQuitando(null)}>
+          <p className="hint emp-confirma-texto">
+            {quitando.tipo === "descuento" ? "Ya no se le descuenta en esta semana." : "Ya no se le suma en esta semana."}
+          </p>
+          <button
+            className="btn-warn emp-btn-peligro"
+            onClick={() => {
+              if (quitando.tipo === "descuento") removeDescuento(quitando.id);
+              else removeExtra(quitando.id);
+              setQuitando(null);
+            }}
+          >
+            Sí, quitar
+          </button>
+          <button className="link-btn emp-btn-cancelar" onClick={() => setQuitando(null)}>
+            Cancelar
+          </button>
+        </Sheet>
+      )}
+
       {addingDescuentoFor && (
         <DescuentoModal
           nombre={addingDescuentoFor.nombre}
@@ -516,6 +573,9 @@ export function NominaPanel({
     </div>
   );
 }
+
+// "$400" si es exacto, "$412.50" si lleva centavos (para que quepan los 7 días).
+const montoCorto = (n: number) => (Number.isInteger(n) ? `$${n.toLocaleString("es-MX")}` : money(n));
 
 function ExtraModal({
   nombre,
