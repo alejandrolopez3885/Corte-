@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Coins } from "lucide-react";
-import { Empty, Field } from "../ui";
-import { dateForDay, formatShortDayDate, formatWeekRange, money, repartoPropinas, resolveWeekStartDate, round2 } from "../../lib/dataModel";
+import { Empty } from "../ui";
+import { SelectorSemana } from "../SelectorSemana";
+import { dateForDay, formatShortDayDate, money, repartoPropinas, round2 } from "../../lib/dataModel";
 import { DAYS } from "../../lib/types";
 import type { MonthData } from "../../lib/types";
 import { TituloPagina } from "../BarraTitulo";
@@ -38,7 +39,6 @@ export function PropinasPanel({
     );
   }
 
-  const weekStartDate = resolveWeekStartDate(monthKey, weekIndex, month);
   const week = month.weeks[weekIndex];
   const porDia = DAYS.map((day) => ({
     day,
@@ -53,34 +53,16 @@ export function PropinasPanel({
       <TituloPagina titulo="Propinas" onBack={onBack} backLabel={backLabel} />
       <p className="hint">Total de propinas de cada día, tomado de los cortes de los meseros. Solo consulta.</p>
 
-      <div className="field-row">
-        <Field label="Mes">
-          <select
-            className="text-input"
-            value={monthKey}
-            onChange={(e) => {
-              setMonthKey(e.target.value);
-              setWeekIndex(0);
-            }}
-          >
-            {monthKeys.map((mk) => (
-              <option key={mk} value={mk}>
-                {months[mk].label}
-              </option>
-            ))}
-          </select>
-        </Field>
-        <Field label="Semana">
-          <select className="text-input" value={weekIndex} onChange={(e) => setWeekIndex(Number(e.target.value))}>
-            {[0, 1, 2, 3].map((i) => (
-              <option key={i} value={i}>
-                Semana {i + 1}
-              </option>
-            ))}
-          </select>
-        </Field>
-      </div>
-      <p className="hint">{formatWeekRange(weekStartDate)}</p>
+      <SelectorSemana
+        months={months}
+        monthKeys={monthKeys}
+        monthKey={monthKey}
+        weekIndex={weekIndex}
+        onCambiar={(mk, wi) => {
+          setMonthKey(mk);
+          setWeekIndex(wi);
+        }}
+      />
 
       <div className="propinas-dias">
         {porDia.map((d) => (

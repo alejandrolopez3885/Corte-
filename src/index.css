@@ -2588,3 +2588,33 @@ button.cj-seccion { cursor: pointer; }
 .gc-rev-fila svg { margin-top: 2px; }
 .gc-rev-fila span { flex: 0 1 auto; }
 .gc-rev-fila .vc-ver { margin: -9px 0; }
+
+/* Horarios (revisión UX): los 7 días a la vista, leyenda y botones grandes */
+.selector-semana select { font-size: 15px; }
+.horario-descargas { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.horario-copiar { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 0 10px; border: 1.5px solid var(--border); border-radius: 12px; background: var(--surface); color: var(--accent); font: 600 13.5px 'IBM Plex Sans', sans-serif; cursor: pointer; }
+.horario-copiar:last-child:nth-child(odd) { grid-column: 1 / -1; }
+.horario-table-wrap { margin: 0 -6px; padding: 0; }
+.horario-table { table-layout: fixed; }
+.horario-table th, .horario-table td { padding: 2px; }
+.horario-table th { font-size: 12px; }
+.horario-table th small { font-size: 12px; }
+.horario-table .horario-col-nombre { width: 74px; max-width: 74px; font-size: 13px; padding-right: 4px; }
+.horario-nombre-btn { width: 100%; min-height: 44px; padding: 0; border: 0; background: none; font: 500 13px 'IBM Plex Sans', sans-serif; color: var(--ink); text-align: left; text-decoration: underline dotted var(--ink-soft); text-underline-offset: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
+.horario-cell { min-width: 0; height: 44px; padding: 0 1px; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.horario-cell.off { background: var(--surface-alt); color: var(--ink-soft); }
+.horario-cell.x { background: var(--accent); color: #fff; border-color: var(--accent); }
+.horario-cell.esp { background: var(--warn-soft); color: var(--warn-ink); border-color: var(--warn-soft); }
+.horario-leyenda { display: flex; flex-wrap: wrap; gap: 6px 12px; font-size: 13px; color: var(--ink-soft); }
+.horario-leyenda span { display: inline-flex; align-items: center; gap: 5px; }
+.horario-leyenda i { font-style: normal; font-weight: 600; font-size: 12px; min-width: 30px; text-align: center; padding: 3px 6px; border-radius: 7px; background: var(--accent-soft); color: var(--accent); }
+.horario-leyenda i.off { background: var(--surface-alt); color: var(--ink-soft); border: 1px solid var(--border); }
+.horario-leyenda i.x { background: var(--accent); color: #fff; }
+.horario-leyenda i.esp { background: var(--warn-soft); color: var(--warn-ink); }
+.horario-leyenda p { flex-basis: 100%; margin: 2px 0 0; font-size: 13px; color: var(--ink); }
+.horario-agregar { min-height: 44px; padding: 0; border: 0; background: none; color: var(--accent); font: 600 14px 'IBM Plex Sans', sans-serif; text-align: left; cursor: pointer; }
+.horario-agregar:disabled { opacity: .45; cursor: not-allowed; }
+.sug-card h3, .sug-aviso, .sug-banner { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.horario-etq button em { font-size: 12px; }
+.selector-semana > :first-child { flex: 0 0 38%; }
+.selector-semana > :last-child { flex: 1; min-width: 0; }

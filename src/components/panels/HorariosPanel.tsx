@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { miles, pronosticoSemana } from "../../lib/pronostico";
 import { PronosticoDetalle } from "../PronosticoDetalle";
-import { Check, Clock, Copy, Trash2, TriangleAlert } from "lucide-react";
+import { Check, Clock, Copy, Sparkles, TriangleAlert } from "lucide-react";
+import { SelectorSemana } from "../SelectorSemana";
 import { Empty, Field, Sheet } from "../ui";
 import { cielo, useClima } from "../../lib/clima";
 import { addDaysIso, dateForDay, findPreviousHorarioSemana, formatDayNumber, money, todayIso, formatWeekRange, isoWeekNumber, normalizeHorarioSemana, resolveWeekStartDate } from "../../lib/dataModel";
@@ -83,6 +84,12 @@ export function HorariosPanel({
   const [copia, setCopia] = useState<{ clave: string; copiada: boolean } | null>(null);
 
   const [verReglas, setVerReglas] = useState(false);
+  // Cambios sin guardar en el horario: al salir o cambiar de semana se
+  // pregunta antes (si no, se perderían).
+  const [sucio, setSucio] = useState(false);
+  const guardarRef = useRef<(() => void) | null>(null);
+  const [pendiente, setPendiente] = useState<(() => void) | null>(null);
+  const intentar = (accion: () => void) => (sucio ? setPendiente(() => accion) : accion());
   // Cuántas sugerencias de "Lo que aprendí" hay (para el aviso del enlace).
   const pendientesReglas = useMemo(() => {
     if (!onSaveReglas || readOnly) return 0;
@@ -150,7 +157,7 @@ export function HorariosPanel({
 
   return (
     <div className="page-section">
-      <TituloPagina titulo="Horarios" onBack={onBack} backLabel={backLabel} />
+      <TituloPagina titulo="Horarios" onBack={onBack ? () => intentar(onBack) : undefined} backLabel={backLabel} />
       <p className="hint">Por área, con el nombre, el día y la hora de entrada — igual que llevabas el control antes.</p>
       {onSaveReglas && !readOnly && (
         <button className="link-btn" onClick={() => setVerReglas(true)}>
@@ -158,61 +165,45 @@ export function HorariosPanel({
         </button>
       )}
 
-      <div className="field-row">
-        <Field label="Mes">
-          <select
-            className="text-input"
-            value={monthKey}
-            onChange={(e) => {
-              setMonthKey(e.target.value);
-              setWeekIndex(0);
-            }}
-          >
-            {monthKeys.map((mk) => (
-              <option key={mk} value={mk}>
-                {months[mk].label}
-              </option>
-            ))}
-          </select>
-        </Field>
-        <Field label="Semana">
-          <select className="text-input" value={weekIndex} onChange={(e) => setWeekIndex(Number(e.target.value))}>
-            {[0, 1, 2, 3].map((i) => (
-              <option key={i} value={i}>
-                Semana {i + 1}
-              </option>
-            ))}
-          </select>
-        </Field>
-      </div>
-      <p className="hint">{formatWeekRange(weekStartDate)}</p>
+      <SelectorSemana
+        months={months}
+        monthKeys={monthKeys}
+        monthKey={monthKey}
+        weekIndex={weekIndex}
+        onCambiar={(mk, wi) =>
+          intentar(() => {
+            setMonthKey(mk);
+            setWeekIndex(wi);
+          })
+        }
+      />
 
       {saved && !readOnly && (
-        <div className="field-row horario-descargas">
+        <div className="horario-descargas">
           {HORARIO_AREAS_FIJAS.filter(
             (a) => (!soloAreaId || a.id === soloAreaId) && (saved.areas.find((sa) => sa.id === a.id)?.filas.length ?? 0) > 0
           ).map((a) => (
-            <button key={a.id} className="link-btn" onClick={() => copiarImagen(saved, a.id, a.id)}>
+            <button key={a.id} className="horario-copiar" onClick={() => copiarImagen(saved, a.id, a.id)}>
               {copia?.clave === a.id && copia.copiada ? (
                 <>
-                  <Check size={15} /> ¡Copiada! Pégala en WhatsApp
+                  <Check size={15} /> ¡Copiada! Pégala
                 </>
               ) : (
                 <>
-                  <Copy size={15} /> Copiar imagen · {a.nombre}
+                  <Copy size={15} /> Copiar {a.nombre}
                 </>
               )}
             </button>
           ))}
           {!soloAreaId && saved.areas.filter((a) => a.filas.length > 0).length > 1 && (
-            <button className="link-btn" onClick={() => copiarImagen(saved, "todas")}>
+            <button className="horario-copiar" onClick={() => copiarImagen(saved, "todas")}>
               {copia?.clave === "todas" && copia.copiada ? (
                 <>
-                  <Check size={15} /> ¡Copiada! Pégala en WhatsApp
+                  <Check size={15} /> ¡Copiada! Pégala
                 </>
               ) : (
                 <>
-                  <Copy size={15} /> Copiar imagen · Las 2 áreas
+                  <Copy size={15} /> Copiar imagen de las 2 áreas
                 </>
               )}
             </button>
@@ -304,6 +295,8 @@ export function HorariosPanel({
           onSaveSemana={onSaveSemana}
           soloAreaId={soloAreaId}
           readOnly={readOnly}
+          onSucio={setSucio}
+          guardarRef={guardarRef}
           sugerir={
             onSaveReglas && !readOnly
               ? () => ({
@@ -323,6 +316,38 @@ export function HorariosPanel({
           }
         />
       )}
+
+      {pendiente && (
+        <Sheet title="Tienes cambios sin guardar" onClose={() => setPendiente(null)}>
+          <p className="hint emp-confirma-texto">Si sales ahora, se pierde lo que cambiaste en el horario de esta semana.</p>
+          <button
+            className="btn-primary"
+            onClick={() => {
+              guardarRef.current?.();
+              const accion = pendiente;
+              setPendiente(null);
+              setSucio(false);
+              accion();
+            }}
+          >
+            Guardar horario y salir
+          </button>
+          <button
+            className="btn-warn emp-btn-salir"
+            onClick={() => {
+              const accion = pendiente;
+              setPendiente(null);
+              setSucio(false);
+              accion();
+            }}
+          >
+            Salir sin guardar
+          </button>
+          <button className="link-btn emp-btn-cancelar" onClick={() => setPendiente(null)}>
+            Seguir editando
+          </button>
+        </Sheet>
+      )}
     </div>
   );
 }
@@ -340,7 +365,12 @@ function HorarioSemanaForm({
   soloAreaId,
   readOnly,
   sugerir,
+  onSucio,
+  guardarRef,
 }: {
+  // Avisa si hay cambios sin guardar y deja guardar desde afuera.
+  onSucio?: (sucio: boolean) => void;
+  guardarRef?: { current: (() => void) | null };
   // Íconos de las etiquetas de cada día, debajo del nombre del día.
   iconosDia?: Partial<Record<DayName, string>>;
   monthKey: string;
@@ -383,6 +413,11 @@ function HorarioSemanaForm({
   }, [locked, guardadaActual]);
 
   const igual = (a: unknown, b: unknown) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
+  const [quitando, setQuitando] = useState<{ areaId: string; areaNombre: string; empleadoId: string; nombre: string } | null>(null);
+  const hayCambios = !locked && !readOnly && !igual(semana, referencia);
+  useEffect(() => {
+    onSucio?.(hayCambios);
+  }, [hayCambios, onSucio]);
 
   // Se guarda sobre la versión más reciente: solo se reemplazan las áreas
   // (y los festivos) que se cambiaron en esta pantalla; lo demás se queda como
@@ -415,6 +450,7 @@ function HorarioSemanaForm({
     setSugeridoUsado(null);
     setLocked(true);
   }
+  if (guardarRef) guardarRef.current = guardar;
 
   function addEmpleadoToArea(areaId: string, empleado: EmpleadoEntry) {
     setSemana((s) => ({
@@ -507,7 +543,7 @@ function HorarioSemanaForm({
       {sugerir && !locked && !readOnly &&
         (antesDeSugerir ? (
           <div className="sug-banner">
-            ✨ Se cargó el horario sugerido. Cambia lo que quieras tocando las celdas y luego "Guardar horario".{" "}
+            <Sparkles size={15} aria-hidden /> Se cargó el horario sugerido. Cambia lo que quieras tocando las celdas y luego "Guardar horario".{" "}
             <button
               className="link-btn"
               onClick={() => {
@@ -521,7 +557,9 @@ function HorarioSemanaForm({
           </div>
         ) : (
           <div className="sug-card">
-            <h3>✨ Horario sugerido</h3>
+            <h3>
+              <Sparkles size={17} aria-hidden /> Horario sugerido
+            </h3>
             <p>Arma la semana con las reglas del personal y la venta esperada. Lo revisas y lo corriges antes de guardar.</p>
             <button onClick={() => setPropuesta(sugerir())}>Sugerir horario de esta semana</button>
           </div>
@@ -534,7 +572,7 @@ function HorarioSemanaForm({
           </p>
           {propuesta.areas.flatMap((a) => a.avisos).map((av) => (
             <p key={av} className="sug-aviso">
-              ⚠️ {av}
+              <TriangleAlert size={15} aria-hidden /> {av}
             </p>
           ))}
           {propuesta.areas.map((a) => (
@@ -597,6 +635,15 @@ function HorarioSemanaForm({
         </>
       )}
 
+      <div className="horario-leyenda" aria-label="Qué significa cada celda">
+        <span><i className="off">OFF</i> descansa</span>
+        <span><i>O</i> cierra</span>
+        <span><i className="x">X</i> abre</span>
+        <span><i className="x">Z</i> abre y dobla</span>
+        <span><i className="esp">6:30</i> hora especial</span>
+        {!locked && !readOnly && <p>Toca una celda para cambiarla: OFF → O → X → Z → hora. Toca un nombre para quitarlo de la semana.</p>}
+      </div>
+
       {semana.areas
         .filter((area) => !soloAreaId || area.id === soloAreaId)
         .map((area) => (
@@ -619,20 +666,33 @@ function HorarioSemanaForm({
                         {iconosDia?.[d] && <small>{iconosDia[d]}</small>}
                       </th>
                     ))}
-                    {!readOnly && <th></th>}
                   </tr>
                 </thead>
                 <tbody>
                   {area.filas.map((fila) => (
                     <tr key={fila.empleadoId}>
-                      <td className="horario-col-nombre">{fila.nombre}</td>
+                      <td className="horario-col-nombre">
+                        {!locked && !readOnly ? (
+                          <button
+                            type="button"
+                            className="horario-nombre-btn"
+                            onClick={() => setQuitando({ areaId: area.id, areaNombre: area.nombre, empleadoId: fila.empleadoId, nombre: fila.nombre })}
+                            aria-label={`Quitar a ${fila.nombre} de ${area.nombre}`}
+                          >
+                            {fila.nombre}
+                          </button>
+                        ) : (
+                          fila.nombre
+                        )}
+                      </td>
                       {DAYS.map((d) => {
                         const value = fila.valores[d];
                         return (
                           <td key={d}>
                             <button
                               type="button"
-                              className={`horario-cell ${value ? "filled" : ""}`}
+                              className={`horario-cell ${value ? "filled" : ""} ${value === "OFF" ? "off" : value === "X" || value === "Z" ? "x" : value && value !== "O" ? "esp" : ""}`}
+                              title={value || undefined}
                               onClick={() => handleCellTap(area.id, fila.empleadoId, fila.nombre, d, value || "")}
                               disabled={locked || readOnly}
                             >
@@ -641,18 +701,6 @@ function HorarioSemanaForm({
                           </td>
                         );
                       })}
-                      {!readOnly && (
-                        <td>
-                          <button
-                            className="icon-btn horario-row-remove"
-                            onClick={() => removeFila(area.id, fila.empleadoId)}
-                            aria-label={`Quitar a ${fila.nombre} de ${area.nombre}`}
-                            disabled={locked}
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </td>
-                      )}
                     </tr>
                   ))}
                 </tbody>
@@ -661,7 +709,7 @@ function HorarioSemanaForm({
           )}
 
           {!readOnly && (
-            <button className="link-btn" onClick={() => setAddingEmpleadoToArea(area.id)} disabled={locked}>
+            <button className="horario-agregar" onClick={() => setAddingEmpleadoToArea(area.id)} disabled={locked}>
               + Agregar empleado a {area.nombre}
             </button>
           )}
@@ -706,6 +754,26 @@ function HorarioSemanaForm({
             setCellEditor(null);
           }}
         />
+      )}
+
+      {quitando && (
+        <Sheet title={`¿Quitar a ${quitando.nombre}?`} onClose={() => setQuitando(null)}>
+          <p className="hint emp-confirma-texto">
+            Se quita de {quitando.areaNombre} en esta semana, con los días que tenía capturados. No se borra de Personal.
+          </p>
+          <button
+            className="btn-warn emp-btn-peligro"
+            onClick={() => {
+              removeFila(quitando.areaId, quitando.empleadoId);
+              setQuitando(null);
+            }}
+          >
+            Sí, quitar de esta semana
+          </button>
+          <button className="link-btn emp-btn-cancelar" onClick={() => setQuitando(null)}>
+            Cancelar
+          </button>
+        </Sheet>
       )}
 
       {pidiendoConfirmacion && (
