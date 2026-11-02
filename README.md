@@ -828,19 +828,29 @@ estando en Nómina te regresa al menú de Equipo):
   pero ya no se guarda solo — hay un botón "Guardar horario" y, en cuanto
   se guarda, la semana queda bloqueada para evitar ediciones accidentales,
   igual que Conteo diario e Inventario, para tener un historial real por
-  semana. Ahí mismo se pueden marcar uno o más días como "festivo" —
+  semana. En el celular caben los 7 días sin deslizar (celdas de 44 px
+  de alto con color: X y Z verde fuerte, O verde claro, OFF gris, horas
+  en naranja; lo largo se corta con "…"), arriba de la tabla hay una
+  leyenda (OFF descansa, O cierra, X abre, Z abre y dobla, 6:30 hora
+  especial; al editar, "Toca una celda para cambiarla… Toca un nombre
+  para quitarlo de la semana") y el mes y la semana se eligen con sus
+  fechas ("Nov 2026", "Sem 1 · 2–8 nov", `SelectorSemana`). Para quitar a
+  alguien se toca su nombre (subrayado al editar) y pide confirmación
+  ("¿Quitar a …?", no se borra de Personal). Si hay cambios sin guardar
+  y se sale o se cambia de semana, pregunta "Guardar horario y salir /
+  Salir sin guardar / Seguir editando". Ahí mismo se pueden marcar uno o más días como "festivo" —
   específico de esa semana, no se precarga de la semana anterior — y a
   quien trabaje ese día (cualquier valor salvo OFF) se le paga 1 turno
   extra además de lo que le tocaba; el descanso pagado en un día festivo
   no cuenta como trabajado, así que no recibe el extra. En cuanto un
-  horario queda guardado aparecen botones "Copiar imagen · Piso" /
-  "Copiar imagen · Cocina" / "Copiar imagen · Las 2 áreas" (solo los que
+  horario queda guardado aparecen botones grandes "Copiar PISO" /
+  "Copiar COCINA" / "Copiar imagen de las 2 áreas" (solo los que
   aplican — si un área no tiene personal capturado, no sale su botón) que
   generan un PNG con esa parte del horario, agrupado por área igual que
   la hoja de cálculo que se usaba antes para esto, y lo copian al
   portapapeles para pegarlo directo en el chat de WhatsApp de cada
   encargado de área — igual que la imagen de Nómina: el botón tocado
-  cambia unos segundos a "¡Copiada! Pégala en WhatsApp", y si el
+  cambia unos segundos a "¡Copiada! Pégala", y si el
   navegador no permite copiar imágenes, el PNG se descarga como antes con
   el aviso "Tu navegador no permite copiar imágenes — se descargó el
   PNG")
@@ -939,9 +949,8 @@ estando en Nómina te regresa al menú de Equipo):
   nombre, sin sueldo, para el corte.
 
   **Propinas** (Equipo > Propinas): pantalla de solo consulta, con el
-  mismo selector de mes y semana que Nómina ("Semana 1" a "4" dentro del
-  mes, como el resto de la app), y abajo el rango de fechas de esa semana
-  (ej. "12 – 18 oct"). Debajo, la lista de lunes a
+  mismo selector de mes y semana que Horarios, con sus fechas ("Nov 2026",
+  "Sem 1 · 2–8 nov"; las semanas 1 a 4 del mes, como el resto de la app). Debajo, la lista de lunes a
   domingo, cada día con su fecha y el total de propinas de ese día (la
   suma de las propinas de todos los cortes de meseros de ese día; sin
   desglose por mesero — un día sin corte sale en $0.00, en gris), y al
