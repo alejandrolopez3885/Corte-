@@ -726,7 +726,10 @@ estando en Nómina te regresa al menú de Equipo):
   así un aumento no cambia las nóminas pasadas. A quien no tenía historial,
   su sueldo de antes queda como "Sueldo de entrada" al primer cambio. Un
   empleado nuevo captura su sueldo diario directo (queda como su sueldo de
-  entrada). Al editar a alguien hay un interruptor **Activo / Inactivo**: los
+  entrada). "Eliminar" pide confirmación (dice qué se pierde y ofrece
+  primero "Marcarlo inactivo"), y cerrar la ficha con cambios sin guardar
+  pregunta "Guardar y salir / Salir sin guardar / Seguir editando". Al
+  editar a alguien hay un interruptor **Activo / Inactivo**: los
   inactivos (ya no trabajan aquí) salen al final en "Inactivos", atenuados,
   y se conserva todo su historial (horarios, nómina), pero ya no salen en
   "Agregar empleado" de Horarios, no se precargan en una semana nueva y no
