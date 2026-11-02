@@ -883,8 +883,11 @@ estando en Nómina te regresa al menú de Equipo):
   completa: "Generada hasta hoy" es el bruto acumulado solo de los días
   de esa semana cuya fecha ya pasó o es hoy (en una semana ya cerrada
   equivale al bruto completo, y en una futura es $0), y "A recibir hasta
-  hoy" = generada hasta hoy + percepciones extra − descuentos. Arriba de
-  todo, debajo del selector y la fecha de la semana, el botón "Copiar
+  hoy" = generada hasta hoy + percepciones extra − descuentos (esta
+  explicación de cómo se calcula va en un desplegable "¿Cómo se
+  calcula?"; el mes y la semana se eligen con sus fechas, "Nov 2026" y
+  "Sem 1 · 26 oct–1 nov"). Arriba de
+  todo, debajo del selector, el botón grande "Copiar
   imagen de la nómina" (ver más abajo), y luego un resumen con el **Total a pagar hasta
   hoy** de todo el personal (resaltado), y debajo de él la generada hasta
   hoy, las percepciones extra (si hay) y los descuentos. En la vista del
@@ -898,9 +901,10 @@ estando en Nómina te regresa al menú de Equipo):
   sueldo diario y días trabajados; un recuadro verde con **A recibir
   hasta hoy** en grande y su cuenta debajo — la generada hasta hoy, cada
   percepción extra (+) y cada descuento (-), con su botón para quitarlo
-  (salvo los que vienen del Corte) —; las 7 casillas de la semana con el
-  código del horario y el monto de cada día; los botones para agregar
-  percepción extra o descuento; y al final, discreta en gris, la línea
+  (salvo los que vienen del Corte; pide confirmar "¿Quitar Tardanza de
+  $50?") —; las 7 casillas de la semana, todas a la vista en el celular,
+  con el código del horario y el monto de cada día (sin centavos si es
+  exacto, "$400"); los botones "+ Percepción extra" y "+ Descuento"; y al final, discreta en gris, la línea
   "Al cierre de la semana (según horario)" con el neto de la semana
   completa. Hasta abajo de la página (solo el dueño), primero el control
   de pagos (cuántos ya están pagados, total pagado y restante por pagar,
@@ -932,13 +936,15 @@ estando en Nómina te regresa al menú de Equipo):
   septiembre se ve ahí como "Semana 38".
 
   Control de pagos: en Equipo > Nómina (solo el dueño), junto al nombre
-  de cada quien hay una etiqueta que se toca — por defecto dice
-  "Pendiente" (gris); un toque la cambia a "✓ Pagada" (verde) para marcar
-  que ya le pagaste esa semana, y otro toque la regresa a "Pendiente".
+  de cada quien hay un botón — por defecto dice "Marcar pagada" (con
+  borde verde); al tocarlo pide confirmar ("¿Marcar a Jennifer como
+  pagada? … Sí, pagada · $3,550") y queda "✓ Pagada" (verde) para marcar
+  que ya le pagaste esa semana; tocarlo otra vez pregunta "¿Regresar a
+  … a pendiente?".
   Al marcarla se guarda lo que le tocaba en ese momento (su "A recibir
   hasta hoy") y la etiqueta lo muestra ("✓ Pagada $2,000.00"); si
   después trabaja más días, la etiqueta se queda con lo que se le pagó y
-  la diferencia sigue en el restante por pagar. Regresarla a "Pendiente"
+  la diferencia sigue en el restante por pagar. Regresarla a pendiente
   borra ese monto.
   Funciona con la tarjeta cerrada: tocar la etiqueta no abre ni cierra la
   tarjeta. Al final de la página, el apartado de pagos muestra "Ya
