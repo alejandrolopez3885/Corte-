@@ -598,27 +598,37 @@ estando en Nómina te regresa al menú de Equipo):
     gastos** (los que siguen en Pendiente o les falta algo, con "Ver
     gastos", que pasa a Todo el día y baja a Gastos) → **Guardar corte**
     ("Revisa que las apps del día ($…) y Johnster del día ($…) coincidan
-    con el sistema"). Los días sin turnos (antes del 21/10/2026) son 3
+    con el sistema"; en este paso la tarjeta ya no repite el botón: se
+    guarda con el de la barra de abajo). Desde la semana del 26/10/2026
+    el paso de gastos dice **Gastos capturados** (que tengan concepto,
+    monto y categoría) y, si hay gastos que el bot todavía no tiene (sin
+    contar los que se suben juntos el domingo), sale un aviso blanco "N
+    gastos aún no están en el bot · se revisa al guardar el corte" que
+    lleva a Gastos. Los días sin turnos (antes del 21/10/2026) son 3
     pasos, sin apertura. Ya guardado, la tarjeta dice "Corte guardado" por
     quién y cuándo (el dueño con "Reabrir corte").
-  - **Pestañas** Turno 1 · Apertura (con candado y la hora si ya se
+  - **Pestañas** Turno 1 · Apertura (con el ícono de candado y la hora si ya se
     guardó; ahí el aviso con "Desbloquear apertura" para el dueño y sin
     botones +) / Turno 2 · Cierre (se abre solo cuando ya hay apertura) /
     Todo el día (resumen, con los cortes separados por turno). Los días
     sin turnos no llevan pestañas.
-  - **Totales del turno** en tarjetas (venta, tarjetas, transferencias,
-    gastos, propinas y apps del día, que se toca para cambiarla; en Todo
-    el día: venta total, venta local, etc.).
+  - **Totales del turno** en tarjetas, todas a la vista: la venta (del
+    turno o total) grande arriba y las demás en 2 columnas (tarjetas,
+    transferencias, gastos, propinas y apps del día, que se toca para
+    cambiarla; en Todo el día también venta local).
   - **Cortes de meseros** en tabla (venta, tarjetas, transf., gastos y
     entrega, con el total; tocar una fila abre el corte) — en celular,
     lista con los mismos datos; a un lado (abajo en celular) **Gastos**
-    (categoría, de qué corte, del fondo o general, y Confirmar/Ingresado)
+    (categoría, de qué corte, del fondo o general, y Confirmar/Ingresado;
+    con el estado automático, "No está en el bot" y "Otro monto en el
+    bot" salen en rojo con ícono y "Falta ticket" en naranja)
     y **Transferencias**; y **Efectivo · ¿cuánto debe haber?** (debajo de
     los cortes en iPad, al final en celular): solo dinero, como cuenta de
-    caja con lo que "lleva" cada renglón — efectivo que cobraron los
+    caja con columnas Movimiento y Queda — efectivo que cobraron los
     meseros (sin propinas, tarjetas ni transferencias), − gastos del
     turno, = debe haber en caja, − se deja para mañana, = efectivo a
-    entregar; abajo, el turno 1 ya entregado y el total del día.
+    entregar; abajo, el turno 1 ya entregado, el total del día y el botón
+    "+ Dejar efectivo para mañana". Los botones + miden 44 px.
   - **Fondo** (lo que se dejó el día anterior, desde el 25/10/2026): solo
     vive en el turno 1. Si hay fondo, el primer paso es **Recibe el fondo
     ($…)** con "Ya lo recibí". En la pestaña Turno 1 sale la tarjeta
