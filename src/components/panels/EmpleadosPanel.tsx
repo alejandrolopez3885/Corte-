@@ -2,7 +2,7 @@ import { Clock, KeyRound, LogOut, Plus, TrendingDown, TrendingUp, UsersRound } f
 import { Empty } from "../ui";
 import { Avatar } from "../Avatar";
 import { money, sueldoEnFecha } from "../../lib/dataModel";
-import { antiguedad, fechaCorta, mesCorto, resumenSueldo } from "../../lib/sueldo";
+import { antiguedad, fechaCorta, haceTiempo, mesCorto, resumenSueldo } from "../../lib/sueldo";
 import type { AreaEntry, EmpleadoEntry, PuestoEntry } from "../../lib/types";
 import { TituloPagina } from "../BarraTitulo";
 
@@ -140,7 +140,7 @@ export function EmpleadosPanel({
                       {!e.inactivo && !r.proximo && r.ultimo && (
                         <em className={`emp-chip ${r.ultimo.diferencia >= 0 ? "ok" : "baja"}`}>
                           {r.ultimo.diferencia >= 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />} {r.ultimo.diferencia >= 0 ? "+" : "−"}
-                          {money(Math.abs(r.ultimo.diferencia))} hace {antiguedad(r.ultimo.desde)}
+                          {money(Math.abs(r.ultimo.diferencia))} {haceTiempo(r.ultimo.desde)}
                         </em>
                       )}
                       {e.staffProfileId && (

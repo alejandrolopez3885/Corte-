@@ -37,6 +37,12 @@ export function antiguedad(desde: string, hasta: string = todayIso()): string {
   return dias >= 7 ? pl(Math.floor(dias / 7), "semana", "semanas") : pl(dias, "día", "días");
 }
 
+// "hace 2 semanas" / "hoy".
+export function haceTiempo(desde: string): string {
+  const t = antiguedad(desde);
+  return t === "0 días" ? "hoy" : `hace ${t}`;
+}
+
 export type RenglonHistorial = CambioSueldo & { anterior: number | null; diferencia: number; futuro: boolean; vigente: boolean };
 
 // El historial de más nuevo a más viejo, con la diferencia contra el

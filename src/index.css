@@ -2515,3 +2515,18 @@ button.cj-seccion { cursor: pointer; }
 .emp-cs-resultado.sube .emp-cs-dif { color: var(--good); }
 .emp-cs-resultado.baja .emp-cs-dif { color: var(--bad); }
 .emp-cs-dif span:last-child { font-size: 13px; text-align: right; }
+
+/* Personal: tamaños para el dedo, contraste y letra (revisión UX) */
+.emp-chip { font-size: 12.5px; padding: 4px 10px; }
+.emp-chip.ok, .emp-dif.sube, .emp-cs-resultado.sube .emp-cs-dif, .emp-sueldo-stats b.sube { color: #1E6B42; }
+.emp-chip.warn, .emp-aviso-guardar { color: #7A4A12; }
+.emp-resumen small, .emp-sueldo-stats small, .emp-tarjeta-sueldo small { font-size: 12.5px; }
+.emp-linea-sub { font-size: 13px; }
+.emp-linea-tags .link-btn { font-size: 13.5px; font-weight: 600; min-height: 44px; padding: 0 10px; margin-top: -10px; margin-bottom: -10px; margin-right: -10px; display: inline-flex; align-items: center; }
+.emp-quitar-confirma { gap: 2px; }
+.empleado-comidas .rg-paso button { width: 44px; height: 44px; font-size: 20px; }
+.empleado-activo .toggle { min-height: 44px; }
+.emp-confirma-texto { margin: 0; font-size: 14.5px; line-height: 1.5; color: var(--ink); }
+.emp-btn-cancelar { min-height: 44px; text-align: center; width: 100%; font-weight: 600; }
+.emp-btn-peligro { background: var(--bad); }
+.emp-btn-salir { background: none; color: var(--bad); border: 1.5px solid var(--bad); }

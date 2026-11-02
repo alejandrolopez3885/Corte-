@@ -5,7 +5,7 @@ import { Avatar } from "../Avatar";
 import { DatoPagoFila } from "../DatoPagoFila";
 import type { DatosPago } from "../../lib/datosPago";
 import { addDaysIso, insumoAreaForPuesto, mondayOnOrBefore, money, sueldoEnFecha, sumFromText, todayIso, uid } from "../../lib/dataModel";
-import { SUELDO_INICIAL_DESDE, antiguedad, fechaCorta, renglonesHistorial, resumenSueldo } from "../../lib/sueldo";
+import { SUELDO_INICIAL_DESDE, antiguedad, fechaCorta, haceTiempo, renglonesHistorial, resumenSueldo } from "../../lib/sueldo";
 import { supabase } from "../../lib/supabaseClient";
 import { createStaffAccount, errorMessage, revokeStaffAccess, updateStaffPermisos, PIN_LENGTH } from "../../lib/staffAccounts";
 import { PERMISOS_DISPONIBLES } from "../../lib/types";
@@ -52,6 +52,9 @@ export function EmpleadoModal({
   const [fechaIngreso, setFechaIngreso] = useState(editing?.fechaIngreso || "");
   const [fechaSalida, setFechaSalida] = useState(editing?.fechaSalida || "");
   const [pestana, setPestana] = useState<"datos" | "sueldo" | "acceso">("datos");
+  // Confirmaciones: eliminar al empleado y salir con cambios sin guardar.
+  const [pidiendoEliminar, setPidiendoEliminar] = useState(false);
+  const [pidiendoSalir, setPidiendoSalir] = useState(false);
   const [puestoId, setPuestoId] = useState(editing?.puestoId || "");
   const [activo, setActivo] = useState(!editing?.inactivo);
   const [comidasGratis, setComidasGratis] = useState(editing?.comidasGratis?.porSemana || 0);
@@ -217,6 +220,16 @@ export function EmpleadoModal({
     onClose();
   }
 
+  // Lo que se edita en la ficha, para saber si hay cambios sin guardar al
+  // cerrarla (los permisos de acceso se guardan aparte).
+  const huella = JSON.stringify([nombre, quitarFoto, sueldoDiarioText, historial, fechaIngreso, fechaSalida, puestoId, activo, comidasGratis, valorComidaText, nuevoPuestoNombre, nuevaAreaNombre]);
+  const [huellaInicial] = useState(huella);
+  const hayCambios = huella !== huellaInicial;
+  function cerrar() {
+    if (hayCambios) setPidiendoSalir(true);
+    else onClose();
+  }
+
   const puestoNombre = puestoActual ? `${puestoActual.nombre}${areaActual ? ` · ${areaActual.nombre}` : ""}` : "Sin puesto";
   const renglones = renglonesHistorial({ historialSueldo: historial });
   const PESTANAS = [
@@ -226,7 +239,7 @@ export function EmpleadoModal({
   ];
 
   return (
-    <Sheet title={editing ? "Empleado" : "Nuevo empleado"} onClose={onClose} onDelete={onDelete}>
+    <Sheet title={editing ? "Empleado" : "Nuevo empleado"} onClose={cerrar} onDelete={onDelete ? () => setPidiendoEliminar(true) : undefined}>
       {editing && (
         <div className="emp-perfil-card">
           <Avatar nombre={nombre || editing.nombre} foto={quitarFoto ? undefined : editing.foto} tamano={58} />
@@ -274,6 +287,52 @@ export function EmpleadoModal({
           <Field label="Nombre">
             <input className="text-input" value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Ej. Carlos" autoFocus={!editing} />
           </Field>
+          <Field label="Puesto (opcional)">
+            <select className="text-input" value={puestoId} onChange={(e) => setPuestoId(e.target.value)}>
+              <option value="">Sin puesto</option>
+              {puestos.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.nombre} · {areas.find((a) => a.id === p.areaId)?.nombre}
+                </option>
+              ))}
+              <option value={NUEVO_PUESTO}>+ Nuevo puesto…</option>
+            </select>
+          </Field>
+          {creandoPuestoNuevo && (
+            <>
+              <Field label="Nombre del nuevo puesto">
+                <input
+                  className="text-input"
+                  value={nuevoPuestoNombre}
+                  onChange={(e) => setNuevoPuestoNombre(e.target.value)}
+                  placeholder="Ej. Runner"
+                  autoFocus
+                />
+              </Field>
+              <Field label="Área">
+                <select className="text-input" value={nuevoPuestoAreaId} onChange={(e) => setNuevoPuestoAreaId(e.target.value)}>
+                  <option value="">Selecciona un área</option>
+                  {areas.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.nombre}
+                    </option>
+                  ))}
+                  <option value={NUEVA_AREA}>+ Nueva área…</option>
+                </select>
+              </Field>
+              {creandoAreaNueva && (
+                <Field label="Nombre de la nueva área">
+                  <input
+                    className="text-input"
+                    value={nuevaAreaNombre}
+                    onChange={(e) => setNuevaAreaNombre(e.target.value)}
+                    placeholder="Ej. Gerencia"
+                    autoFocus
+                  />
+                </Field>
+              )}
+            </>
+          )}
           {editing && (
             <div className="empleado-activo">
               <Toggle checked={activo} onChange={setActivo} label={activo ? "Activo" : "Inactivo"} />
@@ -336,52 +395,6 @@ export function EmpleadoModal({
               </>
             )}
           </div>
-          <Field label="Puesto (opcional)">
-            <select className="text-input" value={puestoId} onChange={(e) => setPuestoId(e.target.value)}>
-              <option value="">Sin puesto</option>
-              {puestos.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.nombre} · {areas.find((a) => a.id === p.areaId)?.nombre}
-                </option>
-              ))}
-              <option value={NUEVO_PUESTO}>+ Nuevo puesto…</option>
-            </select>
-          </Field>
-          {creandoPuestoNuevo && (
-            <>
-              <Field label="Nombre del nuevo puesto">
-                <input
-                  className="text-input"
-                  value={nuevoPuestoNombre}
-                  onChange={(e) => setNuevoPuestoNombre(e.target.value)}
-                  placeholder="Ej. Runner"
-                  autoFocus
-                />
-              </Field>
-              <Field label="Área">
-                <select className="text-input" value={nuevoPuestoAreaId} onChange={(e) => setNuevoPuestoAreaId(e.target.value)}>
-                  <option value="">Selecciona un área</option>
-                  {areas.map((a) => (
-                    <option key={a.id} value={a.id}>
-                      {a.nombre}
-                    </option>
-                  ))}
-                  <option value={NUEVA_AREA}>+ Nueva área…</option>
-                </select>
-              </Field>
-              {creandoAreaNueva && (
-                <Field label="Nombre de la nueva área">
-                  <input
-                    className="text-input"
-                    value={nuevaAreaNombre}
-                    onChange={(e) => setNuevaAreaNombre(e.target.value)}
-                    placeholder="Ej. Gerencia"
-                    autoFocus
-                  />
-                </Field>
-              )}
-            </>
-          )}
         </>
       )}
 
@@ -433,7 +446,7 @@ export function EmpleadoModal({
                   <div>
                     <small>Último cambio</small>
                     <b>{resumen.ultimo ? fechaCorta(resumen.ultimo.desde) : "—"}</b>
-                    {resumen.ultimo && <small>hace {antiguedad(resumen.ultimo.desde)}</small>}
+                    {resumen.ultimo && <small>{haceTiempo(resumen.ultimo.desde)}</small>}
                   </div>
                   <div>
                     <small>Cambios</small>
@@ -596,6 +609,55 @@ export function EmpleadoModal({
           onClose={() => setCambiandoSueldo(false)}
           onAgregar={agregarCambio}
         />
+      )}
+
+      {pidiendoEliminar && onDelete && (
+        <Sheet title={`¿Eliminar a ${editing?.nombre || "este empleado"}?`} onClose={() => setPidiendoEliminar(false)}>
+          <p className="hint emp-confirma-texto">
+            Se borra de Personal con sus fechas, su historial de sueldo y su acceso a la app, y no se puede deshacer. Si ya no trabaja aquí, mejor
+            márcalo <b>Inactivo</b>: se guarda todo su historial.
+          </p>
+          {activo && (
+            <button
+              className="btn-primary"
+              onClick={() => {
+                setActivo(false);
+                setPestana("datos");
+                setPidiendoEliminar(false);
+              }}
+            >
+              Marcarlo inactivo
+            </button>
+          )}
+          <button className="btn-warn emp-btn-peligro" onClick={onDelete}>
+            Sí, eliminar
+          </button>
+          <button className="link-btn emp-btn-cancelar" onClick={() => setPidiendoEliminar(false)}>
+            Cancelar
+          </button>
+        </Sheet>
+      )}
+
+      {pidiendoSalir && (
+        <Sheet title="Tienes cambios sin guardar" onClose={() => setPidiendoSalir(false)}>
+          <p className="hint emp-confirma-texto">Si sales ahora, se pierden los cambios que hiciste en la ficha{nuevosCambios.length > 0 ? ", incluido el cambio de sueldo" : ""}.</p>
+          <button
+            className="btn-primary"
+            disabled={!nombre.trim() || !puestoNuevoListo}
+            onClick={() => {
+              setPidiendoSalir(false);
+              save();
+            }}
+          >
+            Guardar y salir
+          </button>
+          <button className="btn-warn emp-btn-salir" onClick={onClose}>
+            Salir sin guardar
+          </button>
+          <button className="link-btn emp-btn-cancelar" onClick={() => setPidiendoSalir(false)}>
+            Seguir editando
+          </button>
+        </Sheet>
       )}
 
       {pidiendoQuitarAcceso && (
