@@ -94,9 +94,14 @@ async function traer(usuario: string, password: string) {
     if (esNomina(e)) return "nomina";
     const destino = String(e.gastoDestino || "").toLowerCase();
     const concepto = String(e.concept || "").toLowerCase();
-    if (destino.includes("gastos fijos") || destino.includes("gasto fijo")) return "fijos";
-    if (destino.includes("bancaria")) return "bancaria";
-    if (destino.includes("aplicaciones")) return concepto.includes("didi") ? "didi" : concepto.includes("uber") ? "uber" : concepto.includes("rappi") ? "rappi" : "otro";
+    // Por el destino o, si en el bot se eligió otro destino, por el nombre
+    // (ej. "GASTOS FIJOS" con destino distinto).
+    const fijos = /gastos? fijos?/;
+    if (fijos.test(destino) || fijos.test(concepto)) return "fijos";
+    if (destino.includes("bancaria") || /comisi[oó]n(es)? bancaria/.test(concepto)) return "bancaria";
+    const app = concepto.includes("didi") ? "didi" : concepto.includes("uber") ? "uber" : concepto.includes("rappi") ? "rappi" : null;
+    if (destino.includes("aplicaciones")) return app || "otro";
+    if (app && /\.com/.test(concepto)) return app;
     return "otro";
   };
   const transferencias = expenses
