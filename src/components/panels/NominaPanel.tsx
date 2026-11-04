@@ -4,7 +4,7 @@ import type { DatosPago } from "../../lib/datosPago";
 import { Check, ChevronDown, ChevronUp, Copy, Trash2, Wallet } from "lucide-react";
 import { Empty, Field, Sheet, SumInput } from "../ui";
 import { SelectorSemana } from "../SelectorSemana";
-import { computeNominaHastaHoyPorEmpleado, computeNominaSemana, computeWeekSummary, formatShortDayDate, formatWeekRange, isoWeekNumber, money, resolveWeekStartDate, sumFromText, todayIso, uid } from "../../lib/dataModel";
+import { computeNominaHastaHoyPorEmpleado, computeNominaSemana, efectivoParaNomina, formatShortDayDate, formatWeekRange, isoWeekNumber, money, resolveWeekStartDate, sumFromText, todayIso, uid } from "../../lib/dataModel";
 import { copyNominaImage } from "../../lib/nominaImage";
 import { DAY_SHORT, NOMINA_DESCUENTO_TIPOS, NOMINA_EXTRA_TIPOS } from "../../lib/types";
 import type {
@@ -121,7 +121,7 @@ export function NominaPanel({
   // adelantos del corte ya vienen restados ahí como gasto) y lo que falte,
   // por transferencia. Si el efectivo alcanza para todo, la transferencia
   // queda en $0; si el efectivo calculado es negativo, no se usa nada.
-  const efectivoSemana = week ? computeWeekSummary(week).efectivoRecibido : 0;
+  const efectivoSemana = efectivoParaNomina(week);
   const nominaEfectivo = Math.max(0, Math.min(efectivoSemana, totalNeto));
   const nominaTransferencia = Math.round((totalNeto - nominaEfectivo) * 100) / 100;
 
