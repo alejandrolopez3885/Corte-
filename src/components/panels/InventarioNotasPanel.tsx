@@ -80,6 +80,8 @@ export function InventarioNotasPanel({
   // Desde la alerta de Inicio se abre directo el conteo.
   const [contando, setContando] = useState(!!initialModo);
   const [sinDisponible, setSinDisponible] = useState(false);
+  // Solo el dueño: conteo de prueba con los dos días abiertos, que no guarda nada.
+  const [prueba, setPrueba] = useState(false);
   const esDueno = !!onSaltarJueves;
 
   const monthKey = initialMonthKey;
@@ -256,6 +258,20 @@ export function InventarioNotasPanel({
           </button>
         </div>
         {!disponible && sinDisponible && <p className="inv-error">{motivoContar}</p>}
+        {esDueno && (
+          <>
+            <button
+              className="inv-saltar"
+              onClick={() => {
+                setPrueba(true);
+                setContando(true);
+              }}
+            >
+              Probar el conteo (jueves o domingo)
+            </button>
+            <p className="hint inv-saltar-hint">Solo tú lo ves. Es de prueba: no guarda nada.</p>
+          </>
+        )}
         {esDueno && !juevesGuardado && !juevesSaltado && !domingoGuardado && <SaltarJueves onClick={() => setPidiendoSaltar(true)} />}
         {esDueno && juevesSaltado && (
           <button className="link-btn" onClick={() => onSaltarJueves!(fechaJueves, false)}>
@@ -281,9 +297,14 @@ export function InventarioNotasPanel({
           modoInicial={modoSugerido}
           insumos={insumos}
           proveedores={proveedores}
-          dias={dias}
-          onGuardar={(f, texto) => onGuardarNotas(f, texto)}
-          onClose={() => setContando(false)}
+          dias={prueba ? dias.map((d) => ({ ...d, motivo: "" })) : dias}
+          onGuardar={(f, texto) => {
+            if (!prueba) onGuardarNotas(f, texto);
+          }}
+          onClose={() => {
+            setContando(false);
+            setPrueba(false);
+          }}
           renderPedido={(f, m, texto) => (
             <Resultado
               fecha={f}
@@ -291,10 +312,10 @@ export function InventarioNotasPanel({
               notas={texto}
               insumos={insumos}
               proveedores={proveedores}
-              pedidoGuardado={pedidos[f]}
-              onGuardarPedido={onGuardarPedido}
-              onAsignarApodo={onAsignarApodo}
-              onUnirInsumos={onUnirInsumos}
+              pedidoGuardado={prueba ? undefined : pedidos[f]}
+              onGuardarPedido={prueba ? () => {} : onGuardarPedido}
+              onAsignarApodo={prueba ? () => {} : onAsignarApodo}
+              onUnirInsumos={prueba ? undefined : onUnirInsumos}
             />
           )}
         />
