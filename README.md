@@ -1386,8 +1386,10 @@ estando en Nómina te regresa al menú de Equipo):
   completé" para quitar el aviso. En el Catálogo, el precio de referencia
   es por su "Se pide por" (o por kg/pieza si no tiene).
 - **Dashboard**: con el estilo de la imagen del avance al momento y
-  comparado con **Johnster Bot** (`DashboardPanel.tsx`). Arriba, después de
-  Mes y Semana: encabezado negro "Resultado de la semana" (o "Avance al
+  comparado con **Johnster Bot** (`DashboardPanel.tsx`). Arriba, el selector
+  de mes y semana con fechas ("Nov 2026", "Sem 1 · 2–8 nov"), igual que en
+  Control de gastos, Nómina y Propinas, para que no se corte en el celular.
+  Después: encabezado negro "Resultado de la semana" (o "Avance al
   momento" si la semana va en curso) · Sucursal Metroplex · Semana [ISO] ·
   fechas · "completa" o "hasta hoy (día)", con la barra "✓ 8 de 9 cuadran
   con Johnster" (para volver a traer el bot se jala hacia abajo; mientras

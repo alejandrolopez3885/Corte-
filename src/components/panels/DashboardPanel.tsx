@@ -4,7 +4,7 @@ import { Check, ChevronDown, ChevronUp, Copy } from "lucide-react";
 import { supabase } from "../../lib/supabaseClient";
 import { TOLERANCIA, type JohnsterDatos, avisarDatosJohnster } from "../../lib/cuadrar";
 import { avanceSemana } from "../../lib/avanceImage";
-import { Field } from "../ui";
+import { SelectorSemana } from "../SelectorSemana";
 import {
   META_GASTOS_OPERATIVOS_PCT, addDaysIso, computeDashboardReport, computeNominaSemana, computeWeekSummary, dateForDay, computeNominaTotalHastaHoy,
   formatShortDayDate, formatWeekRange, round2, isoWeekNumber, money, resolveMontoFijo, resolveWeekStartDate, todayIso, nominaPagoSemana,
@@ -220,33 +220,16 @@ export function DashboardPanel({
   return (
     <div className="page-section">
       <TituloPagina titulo="Dashboard" />
-      <div className="field-row">
-        <Field label="Mes">
-          <select
-            className="text-input"
-            value={monthKey}
-            onChange={(e) => {
-              setMonthKey(e.target.value);
-              setWeekIndex(0);
-            }}
-          >
-            {monthKeys.map((mk) => (
-              <option key={mk} value={mk}>
-                {months[mk].label}
-              </option>
-            ))}
-          </select>
-        </Field>
-        <Field label="Semana">
-          <select className="text-input" value={weekIndex} onChange={(e) => setWeekIndex(Number(e.target.value))}>
-            {[0, 1, 2, 3].map((i) => (
-              <option key={i} value={i}>
-                Semana {i + 1}
-              </option>
-            ))}
-          </select>
-        </Field>
-      </div>
+      <SelectorSemana
+        months={months}
+        monthKeys={monthKeys}
+        monthKey={monthKey}
+        weekIndex={weekIndex}
+        onCambiar={(mk, wi) => {
+          setMonthKey(mk);
+          setWeekIndex(wi);
+        }}
+      />
 
       <div className="db-hero">
         <small>{enCurso ? "AVANCE AL MOMENTO" : "RESULTADO DE LA SEMANA"}</small>
