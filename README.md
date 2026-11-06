@@ -1378,6 +1378,10 @@ estando en Nómina te regresa al menú de Equipo):
   no contar doble), y arriba se ve cuántos proveedores de Cocina ya están
   cargados y cuáles faltan. El consumo de insumos de Inicio usa lo mismo.
   La captura semanal que vivía antes aquí se quitó;
+  "Limpiar catálogo" (solo el dueño, en Negocio > Compras): limpieza única
+  que une Limonadas con Sabroeats, quita apodos que confundían productos y
+  ordena nombres, unidades y "Se pide por". No toca precios ni historial, y
+  el botón desaparece cuando ya no hay nada que limpiar;
   y "Importar catálogo": se elige el Excel de inventario de Johnster
   (.xlsx o .xlsm) y la app lee ahí mismo su hoja "PRECIOS BASE" (nada se
   sube a ningún lado). Compara cada insumo contra el catálogo por nombre (o

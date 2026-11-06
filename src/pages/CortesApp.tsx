@@ -3,10 +3,11 @@ import { supabase } from "../lib/supabaseClient";
 import {
   Plus, Settings2, Users, Receipt, CircleDot, Circle,
   BarChart3, Scale, LogOut, Truck, Trash2, Home, Store, LayoutDashboard, Contact, Clock, Wallet, ChartLine, Martini, ChefHat, BookOpen, MessageCircle, Trophy, QrCode, Award,
-  ShoppingCart, Handshake, Boxes, Package, Coins, History, FileUp,
+  ShoppingCart, Handshake, Boxes, Package, Coins, History, FileUp, Sparkles,
 } from "lucide-react";
 import { useAuth } from "../lib/auth.tsx";
 import { useAppData } from "../lib/useAppData";
+import { limpiarCatalogo, unirInsumosEn, unirProveedoresEn } from "../lib/limpiezaCatalogo";
 import { historialNombres } from "../lib/gastosBusqueda";
 import {
   addDaysIso, aplicarApertura, buildMonth, dateForDay, ubicarDiaPorFecha, formatAssignedDate, formatDayNumber, formatLongDayDate, formatWeekRange,
@@ -122,6 +123,9 @@ export default function CortesApp({ profile }: { profile: Profile }) {
   const duenoId = esInvitado ? (profile.owner_id as string) : profile.id;
   const [recorrido, setRecorrido] = useState<"bienvenida" | "pasos" | "opinion" | null>(esInvitado ? "bienvenida" : null);
   const { data, status, saveState, persist, recargar } = useAppData(profile, soloLectura);
+  const [limpiandoCatalogo, setLimpiandoCatalogo] = useState(false);
+  // Cambios que aún faltan de la limpieza única del catálogo (0 = ya hecha).
+  const pendientesLimpieza = useMemo(() => (data ? limpiarCatalogo(data).cambios : 0), [data]);
   // Datos del bot desde cualquier pantalla → recalcular el estado de los
   // gastos (ver sincronizarTodoRef más abajo).
   const sincronizarTodoRef = useRef<(j: JohnsterDatos) => void>(() => {});
@@ -747,35 +751,14 @@ export default function CortesApp({ profile }: { profile: Profile }) {
   function unirInsumos(quedaId: string, otrosIds: string[]) {
     if (!data) return;
     const next = structuredClone(data);
-    const queda = next.insumos.find((i) => i.id === quedaId);
-    const otros = next.insumos.filter((i) => otrosIds.includes(i.id) && i.id !== quedaId);
-    if (!queda || otros.length === 0) return;
-    const nombres = [...(queda.apodos || []), ...otros.flatMap((o) => [o.nombre, ...(o.apodos || [])])];
-    const apodos = nombres.filter(
-      (a, i) => normalizarNombre(a) !== normalizarNombre(queda.nombre) && nombres.findIndex((b) => normalizarNombre(b) === normalizarNombre(a)) === i
-    );
-    if (apodos.length > 0) queda.apodos = apodos;
-    otros.forEach((o) => {
-      if (queda.precio === undefined && o.precio !== undefined) queda.precio = o.precio;
-      if (!queda.proveedorId && o.proveedorId) queda.proveedorId = o.proveedorId;
-      if (!queda.unidadPedido && o.unidadPedido) {
-        queda.unidadPedido = o.unidadPedido;
-        if (o.equivalenciaPedido) queda.equivalenciaPedido = o.equivalenciaPedido;
-      }
-      if (o.altaRotacion && o.area === queda.area) queda.altaRotacion = true;
-    });
-    const mover = (filas: Record<string, unknown> | undefined) => {
-      if (!filas) return;
-      otros.forEach((o) => {
-        if (filas[o.id] !== undefined && filas[quedaId] === undefined) filas[quedaId] = filas[o.id];
-        delete filas[o.id];
-      });
-    };
-    Object.values(next.conteosDiarios || {}).forEach(mover);
-    Object.values(next.inventarioSemanal || {}).forEach((m) => m.weeks.forEach((w) => mover(w?.filas)));
-    Object.values(next.pedidosSemanal || {}).forEach((m) => m.weeks.forEach((w) => mover(w?.filas)));
-    next.insumos = next.insumos.filter((i) => !otros.some((o) => o.id === i.id));
-    persist(next);
+    if (unirInsumosEn(next, quedaId, otrosIds)) persist(next);
+  }
+
+  function aplicarLimpiezaCatalogo() {
+    if (!data) return;
+    const { next, cambios } = limpiarCatalogo(data);
+    if (cambios > 0) persist(next);
+    setLimpiandoCatalogo(false);
   }
 
   function saltarJuevesInventario(fecha: string, saltado: boolean) {
@@ -1407,22 +1390,9 @@ export default function CortesApp({ profile }: { profile: Profile }) {
   // Importar catálogo no lo vuelva a crear, y si alguno se contaba los
   // jueves, el que se queda también.
   function unirProveedores(quedaId: string, seVaId: string) {
-    if (!data || quedaId === seVaId) return;
+    if (!data) return;
     const next = structuredClone(data);
-    const queda = next.proveedores.find((p) => p.id === quedaId);
-    const seVa = next.proveedores.find((p) => p.id === seVaId);
-    if (!queda || !seVa) return;
-    next.insumos.forEach((i) => {
-      if (i.proveedorId === seVaId) i.proveedorId = quedaId;
-    });
-    next.facturas.forEach((f) => {
-      if (f.proveedorId === seVaId) f.proveedorId = quedaId;
-    });
-    const apodos = [...(queda.apodos || []), seVa.nombre, ...(seVa.apodos || [])];
-    queda.apodos = apodos.filter((a, i) => normalizarNombre(a) !== normalizarNombre(queda.nombre) && apodos.findIndex((b) => normalizarNombre(b) === normalizarNombre(a)) === i);
-    if (seVa.incluyeJueves) queda.incluyeJueves = true;
-    next.proveedores = next.proveedores.filter((p) => p.id !== seVaId);
-    persist(next);
+    if (unirProveedoresEn(next, quedaId, seVaId)) persist(next);
   }
 
   function guardarCorte() {
@@ -1974,6 +1944,34 @@ export default function CortesApp({ profile }: { profile: Profile }) {
                 <span>Desde el Excel de precios base de Johnster</span>
               </span>
             </button>
+            {pendientesLimpieza > 0 && (
+              <button className="menu-item" onClick={() => setLimpiandoCatalogo(true)}>
+                <span className="menu-item-icon">
+                  <Sparkles size={20} />
+                </span>
+                <span className="menu-item-text">
+                  <strong>Limpiar catálogo</strong>
+                  <span>Unir Limonadas con Sabroeats, quitar apodos malos y ordenar nombres</span>
+                </span>
+              </button>
+            )}
+            {limpiandoCatalogo && (
+              <Sheet title="Limpiar catálogo" onClose={() => setLimpiandoCatalogo(false)}>
+                <p className="hint">Se aplica una sola vez y no toca precios ni el historial de inventarios y pedidos:</p>
+                <ul className="hint">
+                  <li>Limonadas se une con Sabroeats (sus 7 productos pasan a los concentrados).</li>
+                  <li>Se quitan 6 apodos que confundían productos.</li>
+                  <li>Se corrigen nombres, una unidad y el área de "Chiles jalapeños".</li>
+                  <li>Se quita "Se pide por" donde pedía lo mismo que contaba.</li>
+                </ul>
+                <button className="btn-primary" onClick={aplicarLimpiezaCatalogo}>
+                  Aplicar limpieza
+                </button>
+                <button className="link-btn" onClick={() => setLimpiandoCatalogo(false)}>
+                  Ahora no
+                </button>
+              </Sheet>
+            )}
           </div>
 
           <h3 className="menu-subtitle">Bar</h3>
