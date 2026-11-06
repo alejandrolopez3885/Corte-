@@ -807,9 +807,10 @@ function PermisosChecklist({
         // Recetario es la misma consulta para cualquier puesto o área, y ni
         // siquiera necesita puesto asignado.
         const esRecetario = p.value === "recetario";
-        const habilitado = esRecetario ? true : esConteoDiario ? !!insumoAreaLabel : !!areaActual;
+        const esMantenimiento = p.value === "mantenimiento";
+        const habilitado = esRecetario || esMantenimiento ? true : esConteoDiario ? !!insumoAreaLabel : !!areaActual;
         const etiquetaArea =
-          esConteoDiario ? insumoAreaLabel : esNomina || esInventario || esPropinas || esPedidos || esRecetario ? undefined : areaActual?.nombre;
+          esConteoDiario ? insumoAreaLabel : esNomina || esInventario || esPropinas || esPedidos || esRecetario || esMantenimiento ? undefined : areaActual?.nombre;
         return (
           <Toggle
             key={p.value}

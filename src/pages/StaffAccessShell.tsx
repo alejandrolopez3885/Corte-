@@ -1,12 +1,14 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { BookOpen, ChefHat, ClipboardList, Clock, Coins, Home, LogOut, Martini, MessageCircle, Package, QrCode, ShoppingCart, Wallet } from "lucide-react";
+import { BookOpen, ChefHat, ClipboardList, Clock, Coins, Home, LogOut, Martini, MessageCircle, Package, QrCode, ShoppingCart, Wallet, Wrench } from "lucide-react";
 import { formatAssignedDate, insumoAreaForPuesto, plantillaConteo, mostRecentWeekIndex, puedeEditarHorarios } from "../lib/dataModel";
 import { HORARIO_AREAS_FIJAS, PERMISOS_DISPONIBLES } from "../lib/types";
-import type { AppData, ConteoTextoArea, HorarioSemana, PermisoStaff, ReglasArea, Profile, StaffAssignment } from "../lib/types";
+import type { AppData, ConteoTextoArea, HorarioSemana, MantenimientoEntry, PermisoStaff, ReglasArea, Profile, StaffAssignment } from "../lib/types";
+import type { SaveState } from "../lib/useAppData";
 import { HorariosPanel } from "../components/panels/HorariosPanel";
 import { ConteoDiarioPanel } from "../components/panels/ConteoDiarioPanel";
 import { useRegistrarVista } from "../lib/bitacora";
 import { InventarioNotasPanel } from "../components/panels/InventarioNotasPanel";
+import { MantenimientoPanel } from "../components/panels/MantenimientoPanel";
 import { NominaPanel } from "../components/panels/NominaPanel";
 import { PropinasPanel } from "../components/panels/PropinasPanel";
 import { RecetarioPanel } from "../components/panels/RecetarioPanel";
@@ -60,6 +62,9 @@ export default function StaffAccessShell({
   onSavePedidoInventario,
   onAsignarApodo,
   onGuardarPedidosCargados,
+  onGuardarMantenimiento,
+  saveState,
+  onReintentarGuardar,
   onSignOut,
   assignments,
   onPickCorteDate,
@@ -77,6 +82,9 @@ export default function StaffAccessShell({
   onSavePedidoInventario: (fecha: string, pedido: Record<string, number>) => void;
   onAsignarApodo: (insumoId: string, apodo: string) => void;
   onGuardarPedidosCargados: (lunes: string, porProveedor: Record<string, Record<string, number>>) => void;
+  onGuardarMantenimiento: (registro: MantenimientoEntry) => void;
+  saveState: SaveState;
+  onReintentarGuardar: () => void;
   onSignOut: () => void;
   assignments: StaffAssignment[];
   onPickCorteDate: (date: string) => void;
@@ -332,6 +340,18 @@ export default function StaffAccessShell({
     );
   }
 
+  if (view === "mantenimiento" && permisos.includes("mantenimiento")) {
+    return (
+      <div className="app-shell">
+        <ShellHeader subtitle={area?.nombre} onSignOut={onSignOut} perfil={perfilBtn} />
+        {preguntas}
+        <MantenimientoPanel onBack={backToMenu} backLabel="Inicio"
+          registros={data.mantenimientos || []} areasAdicionales={data.areasMantenimiento || []}
+          onGuardar={onGuardarMantenimiento} saveState={saveState} onReintentar={onReintentarGuardar} />
+      </div>
+    );
+  }
+
   if (view === "inventario" && permisos.includes("inventario")) {
     return (
       <div className="app-shell">
@@ -430,7 +450,7 @@ export default function StaffAccessShell({
   }
 
   const ICONOS: Record<PermisoStaff, typeof Clock> = {
-    horarios: Clock, conteo_diario: ClipboardList, inventario: Package, pedidos: ShoppingCart, nomina: Wallet, propinas: Coins, recetario: BookOpen,
+    horarios: Clock, conteo_diario: ClipboardList, inventario: Package, pedidos: ShoppingCart, nomina: Wallet, propinas: Coins, recetario: BookOpen, mantenimiento: Wrench,
   };
 
   return (

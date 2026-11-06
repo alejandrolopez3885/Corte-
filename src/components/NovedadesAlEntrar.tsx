@@ -222,6 +222,15 @@ function Visual({ tipo }: { tipo: VisualNovedad }) {
       </>
     );
   }
+  if (tipo === "mantenimiento") {
+    return (
+      <>
+        <span className="nv-etiqueta">Mantenimiento</span>
+        <div className="nv-campo"><strong>Refrigerador · Cocina</strong><br />Revisión realizada<br />Costo por definir</div>
+        <span className="nv-suma">Registra y consulta los trabajos paso a paso.</span>
+      </>
+    );
+  }
   if (tipo === "inventarioPasos") {
     return (
       <>

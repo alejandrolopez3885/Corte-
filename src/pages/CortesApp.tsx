@@ -3,7 +3,7 @@ import { supabase } from "../lib/supabaseClient";
 import {
   Plus, Settings2, Users, Receipt, CircleDot, Circle,
   BarChart3, Scale, LogOut, Truck, Trash2, Home, Store, LayoutDashboard, Contact, Clock, Wallet, ChartLine, Martini, ChefHat, BookOpen, MessageCircle, Trophy, QrCode, Award,
-  ShoppingCart, Handshake, Boxes, Package, Coins, History, FileUp, Sparkles,
+  ShoppingCart, Handshake, Boxes, Package, Coins, History, FileUp, Sparkles, Wrench,
 } from "lucide-react";
 import { useAuth } from "../lib/auth.tsx";
 import { useAppData } from "../lib/useAppData";
@@ -16,7 +16,7 @@ import {
 } from "../lib/dataModel";
 import { removeAssignmentByStaffAndDate, upsertAssignment, useStaffAssignments } from "../lib/staffAssignments";
 import { DAYS, DAY_SHORT } from "../lib/types";
-import type { AppData, AreaEntry, ConfigNotificaciones, ConteoTextoArea, CreditoProveedores, DayData, DayName, EmpleadoEntry, Gasto, GastoCategoria, HorarioSemana, InsumoEntry, MeseroCatalogEntry, MeseroCut, NominaDescuentosSemana, PermisoStaff, Profile, ProveedorCatalogEntry, PuestoEntry, Receta, ReglasArea, CuadreSemana, Transferencia, WeekData } from "../lib/types";
+import type { AppData, AreaEntry, ConfigNotificaciones, ConteoTextoArea, CreditoProveedores, DayData, DayName, EmpleadoEntry, Gasto, GastoCategoria, HorarioSemana, InsumoEntry, MantenimientoEntry, MeseroCatalogEntry, MeseroCut, NominaDescuentosSemana, PermisoStaff, Profile, ProveedorCatalogEntry, PuestoEntry, Receta, ReglasArea, CuadreSemana, Transferencia, WeekData } from "../lib/types";
 import { Empty, Field, NumInput, Sheet } from "../components/ui";
 import { MonthModal } from "../components/modals/MonthModal";
 import { type MeseroFormValues } from "../components/modals/MeseroModal";
@@ -54,6 +54,7 @@ import { ControlCocinaPanel } from "../components/panels/ControlCocinaPanel";
 import { RecetarioPanel } from "../components/panels/RecetarioPanel";
 import { InsumosPanel } from "../components/panels/InsumosPanel";
 import { InventarioNotasPanel } from "../components/panels/InventarioNotasPanel";
+import { MantenimientoPanel } from "../components/panels/MantenimientoPanel";
 import { PedidosTotalPanel } from "../components/panels/PedidosTotalPanel";
 import { ImportarCatalogoPanel, type ImportacionCatalogo } from "../components/panels/ImportarCatalogoPanel";
 import { ActividadPanel, HistorialDiaSheet } from "../components/panels/ActividadPanel";
@@ -104,7 +105,7 @@ type EquipoView = "menu" | "personal" | "horarios" | "nomina" | "propinas" | "ra
 
 type NegocioView =
   | "menu" | "tendencias" | "bitacora" | "controlBar" | "controlCocina" | "controlGeneral" | "inventario" | "pedidos"
-  | "recetarioBar" | "recetarioCocina" | "importarCatalogo";
+  | "recetarioBar" | "recetarioCocina" | "importarCatalogo" | "mantenimiento";
 
 type OwnerTab = "inicio" | "corte" | "equipo" | "negocio" | "dashboard" | "perfil";
 
@@ -215,7 +216,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
   const NOMBRE_EQUIPO: Record<EquipoView, string> = { menu: "Equipo", personal: "Personal", horarios: "Horarios", nomina: "Nómina", propinas: "Propinas", ranking: "Ranking", encuestas: "Encuestas", puntos: "Monedas y logros" };
   const NOMBRE_NEGOCIO: Record<NegocioView, string> = {
     menu: "Negocio", tendencias: "Tendencias", bitacora: "Actividad", controlBar: "Control de Bar", controlCocina: "Control de Cocina",
-    controlGeneral: "Control General", inventario: "Inventario", pedidos: "Pedidos",
+    controlGeneral: "Control General", inventario: "Inventario", pedidos: "Pedidos", mantenimiento: "Mantenimiento",
     recetarioBar: "Recetario de Bar", recetarioCocina: "Recetario de Cocina", importarCatalogo: "Importar catálogo",
   };
   const NOMBRE_MODAL: Partial<Record<string, string>> = {
@@ -356,6 +357,9 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           onSavePedidoInventario={guardarPedidoInventario}
           onAsignarApodo={asignarApodoInsumo}
           onGuardarPedidosCargados={guardarPedidosCargados}
+          onGuardarMantenimiento={guardarMantenimiento}
+          saveState={saveState}
+          onReintentarGuardar={() => persist(data)}
           onSignOut={signOut}
           assignments={assignmentsStatus === "error" ? [] : assignments}
           onPickCorteDate={(date) => setSelectedAssignedDate(date)}
@@ -741,6 +745,19 @@ export default function CortesApp({ profile }: { profile: Profile }) {
     const next = structuredClone(data);
     next.inventariosNotas[fecha] = texto;
     persist(next);
+  }
+
+  function guardarMantenimiento(entrada: MantenimientoEntry) {
+    if (!data) return;
+    const registros = data.mantenimientos || [];
+    const areas = data.areasMantenimiento || [];
+    const existe = registros.some((r) => r.id === entrada.id);
+    persist({
+      ...data,
+      mantenimientos: existe ? registros.map((r) => r.id === entrada.id ? entrada : r) : [...registros, entrada],
+      areasMantenimiento: areas.some((a) => a.localeCompare(entrada.area, "es", { sensitivity: "base" }) === 0)
+        ? areas : [...areas, entrada.area],
+    });
   }
 
   // Une productos repetidos del catálogo en el que se queda: los nombres y
@@ -1915,6 +1932,13 @@ export default function CortesApp({ profile }: { profile: Profile }) {
             </button>
           </div>
 
+          <h3 className="menu-subtitle">Operación</h3>
+          <div className="menu-list">
+            <button className="menu-item" onClick={() => setNegocioView("mantenimiento")}>
+              <span className="menu-item-icon"><Wrench size={20} /></span>
+              <span className="menu-item-text"><strong>Mantenimiento</strong><span>Bitácora de trabajos por área y equipo</span></span>
+            </button>
+          </div>
           <h3 className="menu-subtitle">Compras</h3>
           <div className="menu-list">
             <button className="menu-item" onClick={() => setNegocioView("inventario")}>
@@ -2117,6 +2141,11 @@ export default function CortesApp({ profile }: { profile: Profile }) {
         />
       )}
 
+      {isOwner && activeTab === "negocio" && negocioView === "mantenimiento" && (
+        <MantenimientoPanel onBack={() => setNegocioView("menu")} backLabel="Negocio"
+          registros={data.mantenimientos || []} areasAdicionales={data.areasMantenimiento || []}
+          onGuardar={guardarMantenimiento} saveState={saveState} onReintentar={() => persist(data)} />
+      )}
       {isOwner && activeTab === "negocio" && negocioView === "inventario" && (
         <InventarioNotasPanel
           onBack={() => setNegocioView("menu")}

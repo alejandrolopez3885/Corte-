@@ -1075,6 +1075,17 @@ estando en Nómina te regresa al menú de Equipo):
   deshace con un botón;
   agrupadas bajo "Control de gastos",
   Control de gastos en efectivo y Control de gastos en transferencia; y
+  bajo "Operación", **Mantenimiento**: al entrar se elige registrar un
+  mantenimiento o consultar la bitácora. El registro pregunta paso a paso
+  el área (Comedor, Cocina, Bar, Terraza, Baño hombres, Baño mujeres o una
+  nueva), el nombre del equipo, la fecha y el trabajo realizado. El costo
+  puede quedar por definir; el pago se marca por separado como pendiente,
+  pagado o por definir. Antes de guardar se revisan todos los datos. En la
+  bitácora se filtra por área o se busca por equipo; cada registro permite
+  corregir los datos, el costo y el estado del pago. Las áreas nuevas se
+  conservan al guardar. Los costos son informativos y no generan ni
+  modifican gastos: estos se capturan por separado. El dueño puede habilitar
+  el permiso "Mantenimiento" a cada cuenta de equipo desde Personal;
   bajo "Análisis", "Tendencias" — la
   sección más dinámica: se reacomoda sola según los datos. Arriba, "Para
   revisar" (siempre primero) es exclusivamente de la semana en curso (de

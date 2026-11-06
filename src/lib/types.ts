@@ -602,6 +602,16 @@ export interface MonthData {
   week1StartDate?: string;
 }
 
+export interface MantenimientoEntry {
+  id: string;
+  area: string;
+  equipo: string;
+  fecha: string;
+  descripcion: string;
+  costo: number | null;
+  pago: "pendiente" | "pagado" | "por_definir";
+}
+
 export interface AppData {
   meseros: MeseroCatalogEntry[];
   empleados: EmpleadoEntry[];
@@ -647,6 +657,8 @@ export interface AppData {
   // Inventario del domingo/jueves en notas libres (Negocio > Inventario):
   // fecha real del domingo o jueves (ISO) -> texto tal cual lo escribieron.
   inventariosNotas: Record<string, string>;
+  mantenimientos?: MantenimientoEntry[];
+  areasMantenimiento?: string[];
   // Jueves que el dueño marcó como "No se hizo" (fecha -> true): habilitan
   // el inventario del domingo de esa semana sin el del jueves.
   inventarioJuevesSaltado?: Record<string, boolean>;
@@ -733,9 +745,14 @@ export type Role = "owner" | "staff";
 // allá del acceso por día asignado (mesero) — ver EmpleadoEntry.staffProfileId
 // y PERMISOS_DISPONIBLES. Se agregan más conforme el dueño los vaya
 // necesitando, sin rehacer el checklist.
-export type PermisoStaff = "horarios" | "conteo_diario" | "inventario" | "pedidos" | "nomina" | "propinas" | "recetario";
+export type PermisoStaff = "horarios" | "conteo_diario" | "inventario" | "pedidos" | "nomina" | "propinas" | "recetario" | "mantenimiento";
 
 export const PERMISOS_DISPONIBLES: { value: PermisoStaff; label: string; description: string }[] = [
+  {
+    value: "mantenimiento",
+    label: "Mantenimiento",
+    description: "Registrar y consultar mantenimientos, costos y pagos de los equipos.",
+  },
   {
     value: "horarios",
     label: "Horarios",

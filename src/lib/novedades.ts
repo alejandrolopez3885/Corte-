@@ -19,7 +19,7 @@ import type { AppData, ConteoTextoArea, PermisoStaff, Profile } from "./types";
 // "general" = de toda la app: le sale a cualquiera que ya entraba antes.
 export type SeccionNovedad = "corte" | PermisoStaff | "general";
 
-export type VisualNovedad = "sumar" | "autocompletar" | "categoria" | "faltan" | "guardarCorte" | "inventarioPasos" | "recetarioArea" | "apertura" | "cierreTotal" | "efectivoEntregar" | "conteoBar" | "pedidosPegar" | "preguntas" | "perfil" | "datosPago" | "logo" | "barraTitulo" | "ranking" | "encuesta" | "puntos";
+export type VisualNovedad = "sumar" | "autocompletar" | "categoria" | "faltan" | "guardarCorte" | "inventarioPasos" | "recetarioArea" | "apertura" | "cierreTotal" | "efectivoEntregar" | "conteoBar" | "pedidosPegar" | "preguntas" | "perfil" | "datosPago" | "logo" | "barraTitulo" | "ranking" | "encuesta" | "puntos" | "mantenimiento";
 
 export interface Novedad {
   id: string;
@@ -36,9 +36,19 @@ export interface Novedad {
   trasCargaMonedas?: boolean;
   // Solo para el dueño (el personal no la ve).
   soloDueno?: boolean;
+  nuevaSeccion?: boolean;
 }
 
 export const NOVEDADES: Novedad[] = [
+  {
+    id: "bitacora-mantenimiento",
+    fecha: "2026-11-06T22:21:00Z",
+    seccion: "mantenimiento",
+    titulo: "Nueva bitácora de mantenimiento",
+    texto: "Registra los trabajos por **área y equipo**, aunque el costo esté por definir.",
+    visual: "mantenimiento",
+    nuevaSeccion: true,
+  },
   {
     id: "autocompletar-gasto",
     fecha: "2026-10-20T05:20:00Z",
@@ -510,6 +520,7 @@ export async function novedadesPendientes(profile: Profile, data: AppData, tiene
     if (n.soloArea && n.soloArea !== areaConteo) return false;
     if (n.soloPiso && !esDePiso(data, profile)) return false;
     if (n.trasCargaMonedas && !data.monedasCargaInicial) return false;
+    if (n.nuevaSeccion) return true;
     const tiempos: number[] = [];
     const accesos = general ? Object.values(estado.ultimoAcceso) : [estado.ultimoAcceso[n.seccion]];
     accesos.forEach((acceso) => acceso && tiempos.push(new Date(acceso).getTime()));
