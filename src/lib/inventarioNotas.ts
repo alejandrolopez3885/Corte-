@@ -1,4 +1,26 @@
-import type { InsumoEntry } from "./types";
+import type { InsumoArea, InsumoEntry, ProveedorCatalogEntry } from "./types";
+
+export const NOMBRE_AREA: Record<InsumoArea, string> = { bar: "Bar", cocina: "Cocina", general: "General" };
+
+export type ModoInventario = "completo" | "jueves";
+
+// Del catálogo que tocaba contar (todos el domingo; el jueves, solo los de
+// proveedores marcados) y no aparece en las notas — sin los de alta
+// rotación, que se cuentan aparte en el Conteo diario.
+export function faltantesPorContar(
+  insumos: InsumoEntry[],
+  proveedores: ProveedorCatalogEntry[],
+  modo: ModoInventario,
+  contados: Set<string>
+): InsumoEntry[] {
+  const proveedoresDelModo = new Set(proveedores.filter((p) => modo === "completo" || p.incluyeJueves).map((p) => p.id));
+  return insumos.filter(
+    (i) =>
+      !i.altaRotacion &&
+      !contados.has(i.id) &&
+      (modo === "completo" || (i.proveedorId !== undefined && proveedoresDelModo.has(i.proveedorId)))
+  );
+}
 
 // Lector de las notas libres del Inventario (domingo/jueves): el cocinero
 // escribe lo que va contando, un producto por renglón, como le salga

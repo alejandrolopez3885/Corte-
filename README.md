@@ -1275,16 +1275,31 @@ estando en Nómina te regresa al menú de Equipo):
   hizo el jueves, solo el dueño ve "Saltar el jueves de esta semana" (con
   confirmación): el jueves queda como "No se hizo", se habilita el
   domingo, y se puede deshacer desde el mismo paso. Las semanas de antes
-  que solo tienen el domingo guardado se respetan tal cual. Va en notas
-  libres: el cuadro arranca vacío y quien cuenta escribe lo que va viendo,
-  un producto por renglón y como le salga (".6 consomé", "1k ajo en
-  polvo", "500 bolsas Johnster", "250 gms habanero"). Se guarda por la
-  fecha real del domingo o jueves de esa semana; un renglón con texto pero
-  sin número no deja guardar. Al tocar "Guardar inventario" también se
-  revisa qué productos del catálogo tocaba contar ese día (todos el
+  que solo tienen el domingo guardado se respetan tal cual. Un día sin
+    guardar muestra "Empezar inventario", que abre un asistente paso por
+    paso (pantalla completa, barra de avance, Atrás/Siguiente): 1) "¿Qué día
+    estás contando?" (jueves o domingo; el que aún no se puede sale
+    atenuado con su motivo); 2) "¿Cómo vas a contar?": "Por proveedor" o
+    "Sin ningún orden". Por proveedor hay un paso por proveedor (el jueves,
+    solo los marcados; el domingo, todos y "Sin proveedor"; sin los de alta
+    rotación), con un campo numérico grande por producto, su unidad y el
+    botón "No hay" (pone 0). Sin orden es el cuadro de notas libres de
+    siempre (".6 consomé", "1k ajo en polvo", "500 bolsas Johnster", "250
+    gms habanero"; un renglón sin número no deja continuar). Lo capturado se
+    guarda como borrador en el dispositivo y se retoma al volver a abrir ese
+    día; se borra al guardar. Después siguen "Faltó contar esto" (si hay),
+    "Revisa y guarda" (un renglón por proveedor con "Cambiar", y un aviso si
+    algún producto se llama igual que otro del catálogo y podría contarse en
+    el equivocado) y, ya guardado, "Inventario guardado" con el pedido. Se guarda
+    el mismo texto de notas de siempre ("2.5 Limón"), por la
+    fecha real del domingo o jueves de esa semana, así que Pedidos, Consumo
+    e Inicio no cambian. Al terminar de contar también
+    se
+    revisa qué productos del catálogo tocaba contar ese día (todos el
   domingo; el jueves, solo los de proveedores marcados; sin los de alta
-  rotación) y no aparecen en las notas: si falta alguno, sale el aviso
-  "Faltan por contar" con esos productos separados por proveedor, cada uno
+  rotación) y no aparecen en las notas: si falta alguno, sale el paso
+    "Faltó contar esto" (al corregir un inventario ya guardado, el aviso
+    "Faltan por contar") con esos productos separados por proveedor, cada uno
   con su casilla, todas marcadas de inicio. "No hay — guardar marcados en
   0" guarda y agrega al final de las notas un renglón "0 [producto]" por
   cada marcado (ej. "0 Zanahoria"), para que salgan en la lista de abajo

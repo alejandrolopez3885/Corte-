@@ -5,11 +5,12 @@ import { ErroresSheet, ListaPorProveedor, type ErroresCaptura } from "./ConteoDi
 import {
   dateForDay, formatDayNumber, formatLongDayDate, formatWeekRange, resolveWeekStartDate, todayIso, type LineaConteoTexto,
 } from "../../lib/dataModel";
-import { leerNotasInventario, normalizar, type RenglonInventario } from "../../lib/inventarioNotas";
-import type { InsumoArea, InsumoEntry, MonthData, ProveedorCatalogEntry } from "../../lib/types";
+import {
+  faltantesPorContar, leerNotasInventario, normalizar, NOMBRE_AREA, type ModoInventario, type RenglonInventario,
+} from "../../lib/inventarioNotas";
+import { InventarioAsistente } from "../modals/InventarioAsistente";
+import type { InsumoEntry, MonthData, ProveedorCatalogEntry } from "../../lib/types";
 import { TituloPagina } from "../BarraTitulo";
-
-const NOMBRE_AREA: Record<InsumoArea, string> = { bar: "Bar", cocina: "Cocina", general: "General" };
 
 // "Limón · Cocina · Frutas y Verduras · kg" — para distinguir productos que
 // se llaman igual.
@@ -18,25 +19,7 @@ function etiquetaInsumo(i: InsumoEntry, proveedores: ProveedorCatalogEntry[]): s
   return `${i.nombre} · ${NOMBRE_AREA[i.area]} · ${prov} · ${i.unidad === "pieza" ? "pz" : i.unidad}`;
 }
 
-type Modo = "completo" | "jueves";
-
-// Del catálogo que tocaba contar (todos el domingo; el jueves, solo los de
-// proveedores marcados) y no aparece en las notas — sin los de alta
-// rotación, que se cuentan aparte en el Conteo diario.
-function faltantesPorContar(
-  insumos: InsumoEntry[],
-  proveedores: ProveedorCatalogEntry[],
-  modo: Modo,
-  contados: Set<string>
-): InsumoEntry[] {
-  const proveedoresDelModo = new Set(proveedores.filter((p) => modo === "completo" || p.incluyeJueves).map((p) => p.id));
-  return insumos.filter(
-    (i) =>
-      !i.altaRotacion &&
-      !contados.has(i.id) &&
-      (modo === "completo" || (i.proveedorId !== undefined && proveedoresDelModo.has(i.proveedorId)))
-  );
-}
+type Modo = ModoInventario;
 
 // Inventario por pasos: primero el jueves (parcial) y después el domingo
 // (completo). Cada uno se captura desde su día; el domingo además espera a
@@ -97,6 +80,7 @@ export function InventarioNotasPanel({
   // null = el paso que toca (jueves si no está listo, si no el domingo).
   const [modoElegido, setModoElegido] = useState<Modo | null>(initialModo ?? null);
   const [pidiendoSaltar, setPidiendoSaltar] = useState(false);
+  const [contando, setContando] = useState(false);
   const esDueno = !!onSaltarJueves;
 
   const month = months[monthKey] || null;
@@ -187,7 +171,8 @@ export function InventarioNotasPanel({
     contenido = (
       <>
         <NotasForm
-          key={fecha}
+          key={`${fecha}-${notas[fecha] !== undefined}`}
+          onEmpezar={() => setContando(true)}
           fecha={fecha}
           modo={modo}
           guardado={notas[fecha]}
@@ -259,6 +244,57 @@ export function InventarioNotasPanel({
 
       {contenido}
 
+      {contando && (
+        <InventarioAsistente
+          modoInicial={modo}
+          insumos={insumos}
+          proveedores={proveedores}
+          dias={[
+            {
+              modo: "jueves",
+              fecha: fechaJueves,
+              motivo: juevesGuardado
+                ? "Ya se guardó"
+                : juevesSaltado
+                  ? "Se marcó como No se hizo"
+                  : domingoGuardado
+                    ? "Ya se guardó el domingo"
+                    : hoy < fechaJueves
+                      ? `Se habilita el jueves ${formatDayNumber(fechaJueves)}`
+                      : "",
+            },
+            {
+              modo: "completo",
+              fecha: fechaDomingo,
+              motivo: domingoGuardado
+                ? "Ya se guardó"
+                : !juevesListo
+                  ? "Se habilita después de guardar el jueves"
+                  : hoy < fechaDomingo
+                    ? `Se habilita el domingo ${formatDayNumber(fechaDomingo)}`
+                    : "",
+            },
+          ]}
+          onGuardar={(f, texto, m) => {
+            onGuardarNotas(f, texto);
+            setModoElegido(m);
+          }}
+          onClose={() => setContando(false)}
+          renderPedido={(f, m, texto) => (
+            <Resultado
+              fecha={f}
+              modo={m}
+              notas={texto}
+              insumos={insumos}
+              proveedores={proveedores}
+              pedidoGuardado={pedidos[f]}
+              onGuardarPedido={onGuardarPedido}
+              onAsignarApodo={onAsignarApodo}
+              onUnirInsumos={onUnirInsumos}
+            />
+          )}
+        />
+      )}
       {pidiendoSaltar && (
         <Sheet title="Saltar el jueves" onClose={() => setPidiendoSaltar(false)}>
           <p className="hint">
@@ -335,7 +371,9 @@ function NotasForm({
   onAsignarApodo,
   onUnirInsumos,
   cerrado,
+  onEmpezar,
 }: {
+  onEmpezar: () => void;
   fecha: string;
   modo: Modo;
   // Jueves ya cerrado para el personal (se guardó el domingo).
@@ -407,21 +445,33 @@ function NotasForm({
           )}
         </div>
       )}
-      <textarea
-        className="text-input conteo-texto"
-        value={texto}
-        onChange={(e) => setTexto(e.target.value)}
-        rows={Math.max(12, texto.split("\n").length + 2)}
-        placeholder={"Escribe lo que vas contando, un producto por renglón:\n25 vasos litro\n.6 consomé\n1k ajo en polvo"}
-        disabled={locked}
-      />
-      {!locked && (
-        <>
-          <p className="hint">Un producto por renglón, con la cantidad como lo cuentes.</p>
-          <button className="btn-primary" onClick={guardar} disabled={!texto.trim()}>
-            Guardar inventario del {modo === "jueves" ? "jueves" : "domingo"}
+      {guardado === undefined ? (
+        <div className="inv-empezar">
+          <strong>Inventario del {modo === "jueves" ? "jueves" : "domingo"}</strong>
+          <span>Cuenta paso a paso, por proveedor o sin orden. Lo que captures queda como borrador.</span>
+          <button className="btn-primary" onClick={onEmpezar}>
+            Empezar inventario
           </button>
-          {modo === "jueves" && guardado === undefined && <p className="hint inv-saltar-hint">Al guardarlo se habilita el domingo.</p>}
+          {modo === "jueves" && <p className="hint inv-saltar-hint">Al guardarlo se habilita el domingo.</p>}
+        </div>
+      ) : (
+        <>
+          <textarea
+            className="text-input conteo-texto"
+            value={texto}
+            onChange={(e) => setTexto(e.target.value)}
+            rows={Math.max(12, texto.split("\n").length + 2)}
+            placeholder={"Escribe lo que vas contando, un producto por renglón:\n25 vasos litro\n.6 consomé\n1k ajo en polvo"}
+            disabled={locked}
+          />
+          {!locked && (
+            <>
+              <p className="hint">Un producto por renglón, con la cantidad como lo cuentes.</p>
+              <button className="btn-primary" onClick={guardar} disabled={!texto.trim()}>
+                Guardar cambios del inventario del {modo === "jueves" ? "jueves" : "domingo"}
+              </button>
+            </>
+          )}
         </>
       )}
 
