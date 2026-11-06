@@ -838,20 +838,9 @@ export function nominaPagoSemana(
   const extras = suma((e) => e.totalExtras);
   const descuentos = suma((e) => e.totalDescuentos);
   const neto = suma((e) => e.neto);
-  const efectivoSemana = efectivoParaNomina(week);
+  const efectivoSemana = week ? computeWeekSummary(week).efectivoRecibido : 0;
   const efectivo = Math.max(0, Math.min(efectivoSemana, neto));
   return { bruto, extras, descuentos, neto, efectivo, transferencia: round2(neto - efectivo), total: round2(bruto + extras) };
-}
-
-// Efectivo con el que se paga la nómina: el de la semana según el corte,
-// sin contar el pago de nómina que ya se registró como gasto del corte
-// (Nómina sin empleado, ej. "Nómina efectivo"): ese gasto ES el pago, no
-// algo que reduzca lo disponible. Los adelantos (Nómina de un empleado) sí
-// se quedan restados: ya vienen como descuento en su nómina.
-export function efectivoParaNomina(week: WeekData | null | undefined): number {
-  if (!week) return 0;
-  const pagoNomina = DAYS.reduce((t, d) => t + week.days[d].gastos.filter((g) => g.categoria === "nomina" && !g.empleadoId).reduce((s, g) => s + g.total, 0), 0);
-  return round2(computeWeekSummary(week).efectivoRecibido + pagoNomina);
 }
 
 export function computeNominaSemana(
