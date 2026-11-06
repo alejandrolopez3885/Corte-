@@ -1078,8 +1078,13 @@ estando en Nómina te regresa al menú de Equipo):
   bajo "Operación", **Mantenimiento**: al entrar se elige registrar un
   mantenimiento o consultar la bitácora. El registro pregunta paso a paso
   el área (Comedor, Cocina, Bar, Terraza, Baño hombres, Baño mujeres o una
-  nueva), el nombre del equipo, la fecha y el trabajo realizado. El costo
-  puede quedar por definir; el pago se marca por separado como pendiente,
+  nueva), el nombre del equipo, la fecha y el trabajo realizado. Al escribir
+  el equipo se sugieren nombres de mantenimientos del área elegida,
+  por cualquier parte del nombre, sin distinguir acentos ni mayúsculas;
+  cada sugerencia muestra su área y la fecha más reciente. Al elegirla se
+  usa el nombre guardado y se muestra el último mantenimiento; también se
+  puede escribir un equipo nuevo. Al editar se excluye el propio registro.
+  El costo puede quedar por definir; el pago se marca por separado como pendiente,
   pagado o por definir. Antes de guardar se revisan todos los datos. En la
   bitácora se filtra por área o se busca por equipo; cada registro permite
   corregir los datos, el costo y el estado del pago. Las áreas nuevas se

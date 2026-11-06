@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ClipboardList, FolderOpen, Wrench } from "lucide-react";
 import { TituloPagina } from "../BarraTitulo";
 import { Field } from "../ui";
+import { EquipoInput } from "../mantenimiento/EquipoInput";
 import { money, todayIso, uid } from "../../lib/dataModel";
 import type { MantenimientoEntry } from "../../lib/types";
 import type { SaveState } from "../../lib/useAppData";
@@ -122,7 +123,7 @@ export function MantenimientoPanel({ onBack, backLabel, registros, areasAdiciona
             const existente = areas.find((a) => a.localeCompare(nombre, "es", { sensitivity: "base" }) === 0);
             setBorrador({ ...borrador, area: existente || nombre }); setAgregandoArea(false); setError("");
           }}>Usar esta área</button>{borrador.area && !areas.includes(borrador.area) && <p className="hint">Área seleccionada: {borrador.area}</p>}</> : <><button className="btn-secundario" onClick={() => setAgregandoArea(true)}>+ Agregar otra área</button>{borrador.area && !areas.includes(borrador.area) && <p className="hint">Área seleccionada: {borrador.area}</p>}</>}</>}
-        {paso === 2 && <><h2 className="ca-pregunta">¿Qué equipo se atendió?</h2><p className="hint">Área: {borrador.area}</p><Field label="Nombre del equipo"><input value={borrador.equipo} onChange={(e) => setBorrador({ ...borrador, equipo: e.target.value })} /></Field></>}
+        {paso === 2 && <><h2 className="ca-pregunta">¿Qué equipo se atendió?</h2><p className="hint">Área: {borrador.area}</p><EquipoInput value={borrador.equipo} area={borrador.area} registroId={borrador.id} registros={registros} onChange={(equipo) => setBorrador({ ...borrador, equipo })} /></>}
         {paso === 3 && <><h2 className="ca-pregunta">¿Qué se hizo y cuándo?</h2><Field label="Fecha del mantenimiento"><input type="date" value={borrador.fecha} onChange={(e) => setBorrador({ ...borrador, fecha: e.target.value })} /></Field><Field label="Descripción del trabajo"><textarea rows={4} value={borrador.descripcion} onChange={(e) => setBorrador({ ...borrador, descripcion: e.target.value })} /></Field></>}
         {paso === 4 && <><h2 className="ca-pregunta">¿Cuál es el costo?</h2><p className="hint">Si aún no lo sabes, puedes registrarlo después.</p><div className="ca-opciones"><button className={`ca-opcion ${borrador.costoConocido ? "elegida" : ""}`} aria-pressed={borrador.costoConocido} onClick={() => setBorrador({ ...borrador, costoConocido: true })}>Ya conozco el costo</button><button className={`ca-opcion ${!borrador.costoConocido ? "elegida" : ""}`} aria-pressed={!borrador.costoConocido} onClick={() => setBorrador({ ...borrador, costoConocido: false })}>Costo por definir</button></div>
           {borrador.costoConocido && <Field label="Costo en pesos"><input type="text" inputMode="decimal" value={borrador.costoTexto} onChange={(e) => setBorrador({ ...borrador, costoTexto: e.target.value })} /></Field>}

@@ -689,6 +689,7 @@ body {
 .mant-aviso { margin: 0; padding: 12px; border-radius: 12px; background: var(--accent-soft); color: var(--accent); font-size: 14px; }
 .mant-resumen { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 14px; overflow-wrap: anywhere; }
 .mant-resumen p { margin: 8px 0; white-space: pre-wrap; }
+.mant-sugerencias { max-height: 260px; overflow-y: auto; }
 
 /* ---- Propinas (solo consulta) ---- */
 .propinas-dias { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }

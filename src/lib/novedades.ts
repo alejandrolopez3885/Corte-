@@ -41,6 +41,14 @@ export interface Novedad {
 
 export const NOVEDADES: Novedad[] = [
   {
+    id: "mantenimiento-equipos-historial",
+    fecha: "2026-11-06T22:52:00Z",
+    seccion: "mantenimiento",
+    titulo: "Encuentra equipos anteriores",
+    texto: "Al escribir un equipo, elige una sugerencia y consulta la fecha de su **último mantenimiento**.",
+    visual: "mantenimiento",
+  },
+  {
     id: "bitacora-mantenimiento",
     fecha: "2026-11-06T22:21:00Z",
     seccion: "mantenimiento",
