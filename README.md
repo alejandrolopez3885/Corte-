@@ -1076,15 +1076,20 @@ estando en Nómina te regresa al menú de Equipo):
   agrupadas bajo "Control de gastos",
   Control de gastos en efectivo y Control de gastos en transferencia; y
   bajo "Operación", **Mantenimiento**: al entrar se elige registrar un
-  mantenimiento o consultar la bitácora. El registro pregunta paso a paso
+  mantenimiento, ver los pendientes por hacer o consultar la bitácora. El registro pregunta paso a paso
   el área (Comedor, Cocina, Bar, Terraza, Baño hombres, Baño mujeres o una
   nueva), el nombre del equipo, la fecha y el trabajo realizado. Al escribir
   el equipo se sugieren nombres de mantenimientos del área elegida,
   por cualquier parte del nombre, sin distinguir acentos ni mayúsculas;
-  cada sugerencia muestra su área y la fecha más reciente. Al elegirla se
+  cada sugerencia muestra su área y la fecha del mantenimiento terminado más reciente. Al elegirla se
   usa el nombre guardado y se muestra el último mantenimiento; también se
   puede escribir un equipo nuevo. Al editar se excluye el propio registro.
-  El costo puede quedar por definir; el pago se marca por separado como pendiente,
+  El trabajo se marca como pendiente por hacer o terminado. Si está
+  pendiente se describe el problema y se conserva la fecha del reporte;
+  al actualizarlo como terminado se agrega en la misma descripción quién lo
+  hizo y qué hizo, y se indica la fecha de terminación. La lista Pendientes
+  por hacer reúne los trabajos sin terminar. Los registros anteriores se
+  consideran terminados. El costo puede quedar por definir; el pago se marca por separado como pendiente,
   pagado o por definir. Antes de guardar se revisan todos los datos. En la
   bitácora se filtra por área o se busca por equipo; cada registro permite
   corregir los datos, el costo y el estado del pago. Las áreas nuevas se

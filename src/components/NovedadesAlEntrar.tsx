@@ -222,6 +222,15 @@ function Visual({ tipo }: { tipo: VisualNovedad }) {
       </>
     );
   }
+  if (tipo === "mantenimientoPendiente") {
+    return (
+      <>
+        <span className="nv-etiqueta">Pendientes por hacer</span>
+        <div className="nv-campo"><strong>Refrigerador · Cocina</strong><br />No enfría bien<br />Pendiente por hacer</div>
+        <span className="nv-suma">Después actualiza el mismo registro al terminar.</span>
+      </>
+    );
+  }
   if (tipo === "mantenimiento") {
     return (
       <>

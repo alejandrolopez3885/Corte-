@@ -19,7 +19,7 @@ import type { AppData, ConteoTextoArea, PermisoStaff, Profile } from "./types";
 // "general" = de toda la app: le sale a cualquiera que ya entraba antes.
 export type SeccionNovedad = "corte" | PermisoStaff | "general";
 
-export type VisualNovedad = "sumar" | "autocompletar" | "categoria" | "faltan" | "guardarCorte" | "inventarioPasos" | "recetarioArea" | "apertura" | "cierreTotal" | "efectivoEntregar" | "conteoBar" | "pedidosPegar" | "preguntas" | "perfil" | "datosPago" | "logo" | "barraTitulo" | "ranking" | "encuesta" | "puntos" | "mantenimiento";
+export type VisualNovedad = "sumar" | "autocompletar" | "categoria" | "faltan" | "guardarCorte" | "inventarioPasos" | "recetarioArea" | "apertura" | "cierreTotal" | "efectivoEntregar" | "conteoBar" | "pedidosPegar" | "preguntas" | "perfil" | "datosPago" | "logo" | "barraTitulo" | "ranking" | "encuesta" | "puntos" | "mantenimiento" | "mantenimientoPendiente";
 
 export interface Novedad {
   id: string;
@@ -40,6 +40,14 @@ export interface Novedad {
 }
 
 export const NOVEDADES: Novedad[] = [
+  {
+    id: "mantenimiento-pendientes",
+    fecha: "2026-11-06T23:13:00Z",
+    seccion: "mantenimiento",
+    titulo: "Mantenimientos pendientes",
+    texto: "Reporta un problema como **pendiente por hacer** y actualiza el mismo registro cuando se termine.",
+    visual: "mantenimientoPendiente",
+  },
   {
     id: "mantenimiento-equipos-historial",
     fecha: "2026-11-06T22:52:00Z",

@@ -608,6 +608,8 @@ export interface MantenimientoEntry {
   equipo: string;
   fecha: string;
   descripcion: string;
+  estado?: "pendiente" | "terminado";
+  fechaTerminacion?: string;
   costo: number | null;
   pago: "pendiente" | "pagado" | "por_definir";
 }
