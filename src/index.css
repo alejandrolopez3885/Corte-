@@ -1235,10 +1235,7 @@ button.pill { cursor: pointer; }
 .prov-cancelar { text-align: center; }
 
 /* ---- Inventario por pasos ---- */
-.inv-empezar {
-  display: flex; flex-direction: column; gap: 10px; background: var(--surface-alt); border-radius: 14px; padding: 20px 18px; color: var(--ink-soft); font-size: 13.5px;
-}
-.inv-empezar strong { font-family: 'Fraunces', serif; font-size: 19px; font-weight: 600; color: var(--ink); }
+.inv-mes { display: flex; flex-direction: column; gap: 8px; }
 .inv-prod { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 10px 12px; }
 .inv-prod-fila { display: flex; gap: 8px; align-items: center; }
 .inv-prod-fila .num-input { flex: 1; min-width: 0; }
@@ -1269,12 +1266,6 @@ button.pill { cursor: pointer; }
 }
 .inv-paso.hecho .inv-paso-num { background: var(--good); }
 .inv-paso.bloqueado .inv-paso-num { background: var(--ink-soft); }
-.inv-espera {
-  display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center;
-  background: var(--surface-alt); border-radius: 14px; padding: 24px 18px; color: var(--ink-soft); font-size: 13.5px;
-}
-.inv-espera strong { display: flex; align-items: center; gap: 6px; color: var(--ink); font-size: 15px; }
-.inv-espera .link-btn { font-weight: 600; text-align: center; }
 .inv-saltar {
   background: none; border: 1px dashed var(--border); border-radius: 100px; padding: 10px; font-size: 13.5px;
   color: var(--ink); font-weight: 600; width: 100%; cursor: pointer; font-family: inherit;

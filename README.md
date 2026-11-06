@@ -1262,22 +1262,27 @@ estando en Nómina te regresa al menú de Equipo):
   abre directo al catálogo, sin menú intermedio, porque es su única
   función. Es para insumos que gerencia maneja aparte, sin ser de Bar ni
   de Cocina — desechables, limpieza y similares; y bajo "Compras", "Inventario" — el conteo completo del domingo y el
-  parcial del jueves, por pasos y en orden: arriba, "1 · Jueves [día]" y
-  "2 · Domingo [día]" con la fecha real de esa semana y su estado (Sin
-  guardar, Guardado ✓, No se hizo, Desde el jueves/domingo, Después del
-  jueves). Al abrir una semana se abre el paso que toca. Cada uno se
-  captura desde su día (antes sale "🔒 Se habilita el jueves 22", también
-  para el dueño), y el domingo además espera a que se guarde el jueves
-  ("🔒 Primero guarda el inventario del jueves", con "Ir al jueves"). El
-  jueves se puede corregir con "Editar" mientras no se guarde el domingo;
-  ya guardado el domingo, para el personal queda "Cerrado: ya se guardó el
-  inventario del domingo" (el dueño siempre puede). Si una semana no se
-  hizo el jueves, solo el dueño ve "Saltar el jueves de esta semana" (con
-  confirmación): el jueves queda como "No se hizo", se habilita el
-  domingo, y se puede deshacer desde el mismo paso. Las semanas de antes
-  que solo tienen el domingo guardado se respetan tal cual. Un día sin
-    guardar muestra "Empezar inventario", que abre un asistente paso por
-    paso (pantalla completa, barra de avance, Atrás/Siguiente): 1) "¿Qué día
+  parcial del jueves. Al entrar, sin selector de mes ni semana, pregunta
+  "¿Qué vas a hacer?" con dos botones grandes: "Contar inventario" (dice
+  qué día toca, ej. "Jueves 5 · parcial"; si no se puede, sale atenuado
+  con el motivo, ej. "🔒 Se habilita el domingo 8") y "Consultar
+  inventario" (dice cuál fue el último; atenuado si aún no hay ninguno
+  guardado). Consultar abre la lista de inventarios guardados por mes,
+  del más nuevo al más viejo (día, Parcial/Completo y cuántos productos),
+  y al tocar uno se ve su detalle: pedido por proveedor, "No
+  reconocidos" y "Editar". Cada día se cuenta desde su fecha (antes sale
+  "🔒 Se habilita el jueves 22", también para el dueño), y el domingo
+  además espera a que se guarde el jueves ("🔒 Se habilita después de
+  guardar el jueves"). El jueves se puede corregir con "Editar" mientras
+  no se guarde el domingo; ya guardado el domingo, para el personal queda
+  "Cerrado: ya se guardó el inventario del domingo" (el dueño siempre
+  puede). Si una semana no se hizo el jueves, solo el dueño ve "Saltar el
+  jueves de esta semana" (con confirmación) bajo los dos botones: el
+  jueves queda como "No se hizo", se habilita el domingo, y se puede
+  deshacer con "Deshacer: capturar el jueves". También ahí, "Editar
+  proveedores del jueves". Las semanas de antes que solo tienen el
+  domingo guardado se respetan tal cual. Desde el aviso de Inicio se abre
+  directo el conteo. "Contar inventario" abre un asistente paso (pantalla completa, barra de avance, Atrás/Siguiente): 1) "¿Qué día
     estás contando?" (jueves o domingo; el que aún no se puede sale
     atenuado con su motivo); 2) "¿Cómo vas a contar?": "Por proveedor" o
     "Sin ningún orden". Por proveedor hay un paso por proveedor (el jueves,
