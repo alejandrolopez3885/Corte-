@@ -346,10 +346,13 @@ function TecladoCantidad({
                 <Delete size={24} />
               </button>
             </div>
-            <div className="ib-acciones">
-              <button type="button" className="ib-nohay" onClick={() => guardar(0)}>
-                No hay · 0
-              </button>
+            {/* "No hay" solo la primera vez (del buscador y sin contar todavía). */}
+            <div className={`ib-acciones ${antes === null && !modo ? "" : "solo"}`}>
+              {antes === null && !modo && (
+                <button type="button" className="ib-nohay" onClick={() => guardar(0)}>
+                  No hay · 0
+                </button>
+              )}
               <button type="button" className="ca-boton" disabled={!listo} onClick={() => guardar(n)}>
                 Guardar
               </button>

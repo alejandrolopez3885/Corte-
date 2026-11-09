@@ -2736,3 +2736,4 @@ button.cj-seccion { cursor: pointer; }
 .ib-si { border: 0; background: var(--bad); color: #fff; }
 .ib-no { border: 1.5px solid var(--border); background: var(--surface); color: var(--ink); }
 .ib-modo { margin: 0; padding: 10px 12px; border-radius: 12px; background: var(--accent-soft); color: var(--accent); font-size: 14px; }
+.ib-acciones.solo { grid-template-columns: 1fr; }
