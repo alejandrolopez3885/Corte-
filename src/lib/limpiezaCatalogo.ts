@@ -207,7 +207,7 @@ const UNIONES: [string, string[]][] = [
   ["mvgfbffg-0on53a", ["mveg5b2s-ndpgs9"]], // Palillo elotero ← Palo elotero
   ["mu9ra2sp-b0un4j", ["mvgfbffe-67tdv2"]], // Carne de hamburguesa ← Carne molida 80/20
   ["muadp8eu-sqt69p", ["mvgfbffe-a9gqvp"]], // Carne de taco ← Pulpa china
-  ["mu9qqvrr-brsblr", ["mvgfbffe-mo1i8q"]], // XX Lager ← Dos Equis (XX) Lager
+  ["mu9qqvrr-brsblr", ["mvgfbffe-mo1i8q", "mv940wef-67hvj2"]], // XX Lager ← Dos Equis (XX) Lager, XX
   ["muarm6uv-95pjq9", ["mvgfbffe-o6c34m"]], // XX ultra ← Dos Equis (XX) Ultra
   ["muarm6uv-8gwouv", ["mvgfbffe-ycpnxr"]], // XX ámbar ← Dos Equis (XX) Ambar
   ["muarm6uv-db8w6j", ["mvgfbffe-foqn8c"]], // Coca light ← Coca-Cola Light

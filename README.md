@@ -1428,13 +1428,13 @@ estando en Nómina te regresa al menú de Equipo):
   los repetidos (el nombre viejo quedó como apodo y sus capturas pasaron
   al que se quedó), entre ellos Carne molida 80/20 con Carne de hamburguesa,
   Pulpa china con Carne de taco, las Dos Equis del Excel con las XX del
-  Conteo diario y las Coca-Cola Regular/Light/Sin Azúcar con Coca
+  Conteo diario ("XX" sola es XX Lager) y las Coca-Cola Regular/Light/Sin Azúcar con Coca
   regular/light/zero; nombres y "Se cuenta por" como en la libreta
   (Pepperoni por paquete, Catsup de sobre por millar, Aceite por bidón,
   Lemon pepper líquido de Wish por galón — distinto al Lemon pepper polvo
   de Lorsa; contenedores, ramiking y Bolsa Johnster por pieza); vasos y
   tapas en Lorsa; Polvo azul y Champú azul nuevos; en Postres solo
-  Cheesecake tortuga. Quedaron 195 productos en 15 proveedores;
+  Cheesecake tortuga. Quedaron 194 productos en 15 proveedores;
   y "Importar catálogo": se elige el Excel de inventario de Johnster
   (.xlsx o .xlsm) y la app lee ahí mismo su hoja "PRECIOS BASE" (nada se
   sube a ningún lado). Compara cada insumo contra el catálogo por nombre (o
