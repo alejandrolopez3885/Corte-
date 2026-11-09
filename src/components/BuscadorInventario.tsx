@@ -1,5 +1,5 @@
-import { useRef, useState } from "react";
-import { Check, Delete, Search, Trash2, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Check, ChevronDown, Delete, Search, Trash2, X } from "lucide-react";
 import { sugerirInsumos } from "../lib/inventarioNotas";
 import { unidadConteo } from "../lib/dataModel";
 import type { InsumoEntry } from "../lib/types";
@@ -22,7 +22,12 @@ export function BuscadorInventario({
   onQuitar,
   sueltos,
   onQuitarSuelto,
+  grupos,
 }: {
+  // Con grupos, lo contado se ve por proveedor: barra de avance y "X de Y",
+  // el del último producto contado hasta arriba; al tocar uno se abren sus
+  // productos y se cierra al tocar fuera.
+  grupos?: { key: string; nombre: string; items: InsumoEntry[] }[];
   // "Sin ningún orden": la lista de lo que se lleva contado (el más nuevo
   // arriba), para corregir tocando un producto o quitarlo, y los renglones
   // que no se reconocen (de un borrador viejo escrito a mano).
@@ -45,7 +50,18 @@ export function BuscadorInventario({
   const [quitando, setQuitando] = useState<string | null>(null);
   const campo = useRef<HTMLInputElement>(null);
   const avisoTimer = useRef<number | undefined>(undefined);
+  const [abierto, setAbierto] = useState<string | null>(null);
+  const grupoAbierto = useRef<HTMLDivElement>(null);
   const sugerencias = sugerirInsumos(texto, productos);
+  // Tocar fuera del proveedor abierto lo cierra (salvo con el teclado abierto).
+  useEffect(() => {
+    if (!abierto || elegido) return;
+    const cerrar = (e: PointerEvent) => {
+      if (!grupoAbierto.current?.contains(e.target as Node)) setAbierto(null);
+    };
+    document.addEventListener("pointerdown", cerrar);
+    return () => document.removeEventListener("pointerdown", cerrar);
+  }, [abierto, elegido]);
   const unidad = unidadConteo;
 
   function guardar(i: InsumoEntry, cantidad: number, accion: AccionConteo) {
@@ -59,6 +75,73 @@ export function BuscadorInventario({
     avisoTimer.current = window.setTimeout(() => setAviso(null), 3000);
     window.setTimeout(() => campo.current?.focus(), 50);
   }
+
+  const filaContado = (i: InsumoEntry, cantidad: number) => (
+                <div key={i.id} className="ib-fila">
+                  <button
+                    type="button"
+                    className="ib-fila-main"
+                    onClick={() => {
+                      setDesdeLista(true);
+                      setElegido(i);
+                    }}
+                    aria-label={`Cambiar ${i.nombre}`}
+                  >
+                    <span>
+                      <b>{i.nombre}</b>
+                      <small>{detalle(i)}</small>
+                    </span>
+                    <strong>
+                      {fmt(cantidad)} {unidad(i)}
+                    </strong>
+                  </button>
+                  {quitando === i.id ? (
+                    <span className="ib-quitar-confirma">
+                      <button type="button" className="ib-si" onClick={() => (onQuitar?.(i), setQuitando(null))}>
+                        Quitar
+                      </button>
+                      <button type="button" className="ib-no" onClick={() => setQuitando(null)}>
+                        No
+                      </button>
+                    </span>
+                  ) : (
+                    <button type="button" className="ib-basura" aria-label={`Quitar ${i.nombre}`} onClick={() => setQuitando(i.id)}>
+                      <Trash2 size={18} />
+                    </button>
+                  )}
+                </div>
+  );
+  const filaSinContar = (i: InsumoEntry) => (
+    <div key={i.id} className="ib-fila">
+      <button
+        type="button"
+        className="ib-fila-main"
+        onClick={() => {
+          setDesdeLista(false);
+          setElegido(i);
+        }}
+        aria-label={`Contar ${i.nombre}`}
+      >
+        <span>
+          <b>{i.nombre}</b>
+          <small>{unidad(i)}</small>
+        </span>
+        <em className="ib-falta">Sin contar</em>
+      </button>
+    </div>
+  );
+  // Proveedores: primero el del último producto contado, luego los demás.
+  const porProveedor = (() => {
+    if (!grupos || !contados) return [];
+    const orden = new Map<string, number>();
+    contados.forEach(({ i }, n) => {
+      const g = grupos.find((x) => x.items.some((y) => y.id === i.id));
+      if (g && !orden.has(g.key)) orden.set(g.key, n);
+    });
+    return grupos
+      .map((g, n) => ({ ...g, n, hechos: g.items.filter((i) => contado(i) !== null).length }))
+      .sort((x, y) => (orden.get(x.key) ?? 1e6 + x.n) - (orden.get(y.key) ?? 1e6 + y.n));
+  })();
 
   return (
     <div className="ib">
@@ -129,47 +212,57 @@ export function BuscadorInventario({
       {contados && (
         <div className="ib-contados">
           <span className="ib-contados-titulo">
-            Lo que llevas contado <b>{contados.length}</b>
+            {grupos ? (
+              <>
+                Llevas contado{" "}
+                <b>
+                  {porProveedor.reduce((t, g) => t + g.hechos, 0)} de {porProveedor.reduce((t, g) => t + g.items.length, 0)}
+                </b>
+              </>
+            ) : (
+              <>
+                Lo que llevas contado <b>{contados.length}</b>
+              </>
+            )}
           </span>
-          {contados.length === 0 && (sueltos || []).length === 0 ? (
+          {!grupos && contados.length === 0 && (sueltos || []).length === 0 ? (
             <p className="ib-nada">Busca arriba cada producto que vas viendo y pon su cantidad.</p>
           ) : (
             <>
-              {contados.map(({ i, cantidad }) => (
-                <div key={i.id} className="ib-fila">
-                  <button
-                    type="button"
-                    className="ib-fila-main"
-                    onClick={() => {
-                      setDesdeLista(true);
-                      setElegido(i);
-                    }}
-                    aria-label={`Cambiar ${i.nombre}`}
-                  >
-                    <span>
-                      <b>{i.nombre}</b>
-                      <small>{detalle(i)}</small>
-                    </span>
-                    <strong>
-                      {fmt(cantidad)} {unidad(i)}
-                    </strong>
-                  </button>
-                  {quitando === i.id ? (
-                    <span className="ib-quitar-confirma">
-                      <button type="button" className="ib-si" onClick={() => (onQuitar?.(i), setQuitando(null))}>
-                        Quitar
-                      </button>
-                      <button type="button" className="ib-no" onClick={() => setQuitando(null)}>
-                        No
-                      </button>
-                    </span>
-                  ) : (
-                    <button type="button" className="ib-basura" aria-label={`Quitar ${i.nombre}`} onClick={() => setQuitando(i.id)}>
-                      <Trash2 size={18} />
-                    </button>
-                  )}
-                </div>
-              ))}
+              {grupos
+                ? porProveedor.map((g) => {
+                    const estaAbierto = abierto === g.key;
+                    const pct = g.items.length ? Math.round((g.hechos / g.items.length) * 100) : 0;
+                    const hechos = contados.filter(({ i }) => g.items.some((x) => x.id === i.id));
+                    return (
+                      <div key={g.key} className={`ib-prov ${estaAbierto ? "abierto" : ""}`} ref={estaAbierto ? grupoAbierto : undefined}>
+                        <button
+                          type="button"
+                          className="ib-prov-cab"
+                          aria-expanded={estaAbierto}
+                          onClick={() => setAbierto(estaAbierto ? null : g.key)}
+                        >
+                          <span className="ib-prov-nombre">
+                            <b>{g.nombre}</b>
+                            <small>
+                              {g.hechos} de {g.items.length} contados
+                            </small>
+                          </span>
+                          <span className="ib-prov-barra" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label={`${g.nombre}: ${pct}%`}>
+                            <span style={{ width: `${pct}%` }} className={pct === 100 ? "completo" : undefined} />
+                          </span>
+                          <ChevronDown size={20} className="ib-prov-flecha" aria-hidden />
+                        </button>
+                        {estaAbierto && (
+                          <div className="ib-prov-lista">
+                            {hechos.map(({ i, cantidad }) => filaContado(i, cantidad))}
+                            {g.items.filter((i) => contado(i) === null).map(filaSinContar)}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })
+                : contados.map(({ i, cantidad }) => filaContado(i, cantidad))}
               {(sueltos || []).map((l) => (
                 <div key={l} className="ib-fila suelto">
                   <span className="ib-fila-main">

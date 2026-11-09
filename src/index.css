@@ -2730,6 +2730,21 @@ button.cj-seccion { cursor: pointer; }
 .ib-fila-main small { font-size: 13px; color: var(--ink-soft); }
 .ib-fila-main strong { font-size: 16px; color: var(--accent); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .ib-fila.suelto b { color: var(--warn-ink); }
+.ib-prov { border-top: 1px solid var(--surface-alt); }
+.ib-prov:first-of-type { border-top: 0; }
+.ib-prov-cab { width: 100%; display: grid; grid-template-columns: minmax(0, 1fr) 96px 24px; align-items: center; gap: 12px; min-height: 64px; padding: 10px 12px 10px 14px; border: 0; background: none; font: inherit; color: var(--ink); text-align: left; cursor: pointer; }
+.ib-prov-nombre { display: flex; flex-direction: column; min-width: 0; }
+.ib-prov-nombre b { font-size: 16px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ib-prov-nombre small { font-size: 13px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+.ib-prov-barra { height: 8px; border-radius: 99px; background: var(--surface-alt); overflow: hidden; }
+.ib-prov-barra span { display: block; height: 100%; border-radius: 99px; background: var(--accent); transition: width .25s ease; }
+.ib-prov-barra span.completo { background: var(--good); }
+.ib-prov-flecha { color: var(--ink-soft); transition: transform .2s ease; }
+.ib-prov.abierto { background: var(--accent-soft); }
+.ib-prov.abierto .ib-prov-flecha { transform: rotate(180deg); }
+.ib-prov-lista { background: var(--surface); border-top: 1px solid var(--surface-alt); }
+.ib-prov-lista .ib-fila-main { padding-left: 24px; }
+@media (prefers-reduced-motion: reduce) { .ib-prov-barra span, .ib-prov-flecha { transition: none; } }
 .ib-basura { width: 48px; height: 48px; flex: none; border: 0; background: none; color: var(--ink-soft); display: grid; place-items: center; cursor: pointer; }
 .ib-quitar-confirma { display: flex; gap: 6px; padding-right: 8px; }
 .ib-si, .ib-no { height: 40px; padding: 0 12px; border-radius: 10px; font: 700 14px 'IBM Plex Sans', sans-serif; cursor: pointer; }

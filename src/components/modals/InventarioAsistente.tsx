@@ -420,6 +420,7 @@ export function InventarioAsistente({
             onQuitar={(i) => quitarLinea((l) => idDeLinea(l) === i.id)}
             sueltos={sueltosLibre}
             onQuitarSuelto={(linea) => quitarLinea((l) => l.trim() === linea)}
+            grupos={grupos}
           />
           {error && <p className="inv-error" role="alert">{error}</p>}
         </>
