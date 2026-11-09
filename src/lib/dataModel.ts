@@ -1178,7 +1178,9 @@ export function computeVentaProyeccion(puntos: WeekTrendPoint[]): VentaProyeccio
 // Lista base del Conteo diario en texto: Cocina usa la lista fija que pidió
 // el dueño; Bar arma la suya con sus insumos de alta rotación.
 // Unidad de conteo para mostrar: "pieza" → "pz".
+// Si se cuenta por presentación ("paquete", "bolsa"...), esa.
 export function unidadConteo(insumo: InsumoEntry): string {
+  if (insumo.presentacion && insumo.unidad !== "kg") return insumo.presentacion;
   return insumo.unidad === "pieza" ? "pz" : insumo.unidad;
 }
 
@@ -1192,7 +1194,8 @@ export function pidePorOtraUnidad(insumo: InsumoEntry): boolean {
     kg: ["kg", "kgs", "kilo", "kilos", "k"],
     pz: ["pz", "pza", "pzas", "pzs", "pieza", "piezas"],
   };
-  return !(sinonimos[base] || [base]).includes(u);
+  const sing = (x: string) => normalizarNombre(x).replace(/e?s$/, "");
+  return !(sinonimos[base] || [base]).includes(u) && sing(u) !== sing(base);
 }
 
 export function plantillaConteo(area: ConteoTextoArea): string {

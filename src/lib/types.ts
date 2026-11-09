@@ -457,6 +457,10 @@ export interface InsumoEntry {
   // Cuánto trae 1 unidadPedido en la unidad en que se cuenta (1 caja =
   // 10 kg) — para pasar lo pedido a kg/pz en Negocio > Pedidos.
   equivalenciaPedido?: number;
+  // "Se cuenta por": presentación en que se cuenta cuando no es kg ni pieza
+  // suelta ("paquete", "bolsa", "millar", "bidón"...). Es lo que se ve al
+  // contar y en Pedidos; por dentro sigue siendo unidad "pieza".
+  presentacion?: string;
   // Cómo lo escriben en las notas del Inventario ("6x6", "Lyncott") cuando no
   // se parece al nombre — se guardan al ligar un renglón no reconocido.
   apodos?: string[];

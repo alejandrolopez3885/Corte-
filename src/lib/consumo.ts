@@ -16,6 +16,11 @@ const singular = (u: string) => normalizarNombre(u).replace(/e?s$/, "");
 function inventarioAConteo(cantidad: number, unidad: string | undefined, insumo: InsumoEntry): number | null {
   const base = unidadConteo(insumo);
   if (!unidad || unidad === base) return cantidad;
+  // Se cuenta por presentación ("paquete"): "3 paq" o "3 pz" ya están en ella.
+  if (insumo.presentacion && base === insumo.presentacion) {
+    const u = singular(unidad), p = singular(normalizarNombre(insumo.presentacion));
+    if (unidad === "pz" || u === p || p.startsWith(u)) return cantidad;
+  }
   if (base === "kg" && unidad === "g") return cantidad / 1000;
   if (base === "l" && unidad === "ml") return cantidad / 1000;
   if (insumo.unidadPedido && singular(unidad) === singular(insumo.unidadPedido)) {

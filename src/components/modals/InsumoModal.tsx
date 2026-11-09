@@ -28,6 +28,7 @@ export function InsumoModal({
   const [nuevoProveedor, setNuevoProveedor] = useState("");
   const [altaRotacion, setAltaRotacion] = useState(editing?.altaRotacion || false);
   const [unidadPedido, setUnidadPedido] = useState(editing?.unidadPedido || "");
+  const [presentacion, setPresentacion] = useState(editing?.presentacion || "");
   const [pendiente, setPendiente] = useState(editing?.pendiente);
   const [equivalenciaText, setEquivalenciaText] = useState(editing?.equivalenciaPedido ? String(editing.equivalenciaPedido) : "");
 
@@ -36,8 +37,11 @@ export function InsumoModal({
   // separado arriesga que el segundo persist se base en datos viejos y
   // borre al primero, porque ambos parten de un structuredClone(data)
   // tomado en el mismo instante.
-  const unidadConteoLabel = (esBar ? "pieza" : unidad) === "pieza" ? "pz" : "kg";
-  const necesitaEquivalencia = pidePorOtraUnidad({ id: "", area, nombre, unidad: esBar ? "pieza" : unidad, unidadPedido });
+  const esPieza = (esBar ? "pieza" : unidad) === "pieza";
+  const unidadConteoLabel = esPieza ? presentacion.trim() || "pz" : "kg";
+  const necesitaEquivalencia = pidePorOtraUnidad({
+    id: "", area, nombre, unidad: esBar ? "pieza" : unidad, unidadPedido, presentacion: esPieza ? presentacion.trim() : undefined,
+  });
 
   function save() {
     if (!nombre.trim()) return;
@@ -56,6 +60,7 @@ export function InsumoModal({
         precio: sumFromText(precioText) || undefined,
         proveedorId: finalProveedorId,
         altaRotacion,
+        presentacion: esPieza ? presentacion.trim() || undefined : undefined,
         unidadPedido: unidadPedido.trim() || undefined,
         equivalenciaPedido: necesitaEquivalencia ? sumFromText(equivalenciaText) || undefined : undefined,
         apodos: editing?.apodos,
@@ -98,6 +103,23 @@ export function InsumoModal({
           <option value="pieza">Pieza</option>
         </select>
       </Field>
+      {esPieza && (
+        <Field label="Se cuenta por (opcional)">
+          <input
+            className="text-input"
+            value={presentacion}
+            onChange={(e) => setPresentacion(e.target.value)}
+            placeholder="Pieza — o paquete, bolsa, millar…"
+            list="unidades-conteo"
+          />
+          <datalist id="unidades-conteo">
+            {["paquete", "bolsa", "millar", "caja", "bidón", "litro", "galón", "tapa", "bote", "porrón"].map((u) => (
+              <option key={u} value={u} />
+            ))}
+          </datalist>
+          <span className="hint">Es la unidad que se ve al contar en Inventario.</span>
+        </Field>
+      )}
       <Field label="Se pide por (opcional)">
         <input
           className="text-input"
@@ -124,7 +146,7 @@ export function InsumoModal({
           </span>
         </Field>
       )}
-      <Field label={`Precio de referencia (opcional, por ${unidadPedido.trim() || (esBar ? "pieza" : unidad)})`}>
+      <Field label={`Precio de referencia (opcional, por ${unidadPedido.trim() || (esPieza ? presentacion.trim() || "pieza" : unidad)})`}>
         <SumInput value={precioText} onChange={setPrecioText} placeholder="0.00" />
       </Field>
       <Field label="Proveedor (opcional)">

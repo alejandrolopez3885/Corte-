@@ -3,7 +3,7 @@ import { Check, ClipboardList, FolderOpen, Lock, Package, TriangleAlert } from "
 import { Empty, Sheet } from "../ui";
 import { ErroresSheet, ListaPorProveedor, type ErroresCaptura } from "./ConteoDiarioPanel";
 import {
-  addDaysIso, dateForDay, formatDayNumber, formatLongDayDate, formatShortDayDate, todayIso, type LineaConteoTexto,
+  addDaysIso, dateForDay, unidadConteo, formatDayNumber, formatLongDayDate, formatShortDayDate, todayIso, type LineaConteoTexto,
 } from "../../lib/dataModel";
 import {
   faltantesPorContar, leerNotasInventario, normalizar, NOMBRE_AREA, type ModoInventario, type RenglonInventario,
@@ -16,7 +16,7 @@ import { TituloPagina } from "../BarraTitulo";
 // se llaman igual.
 function etiquetaInsumo(i: InsumoEntry, proveedores: ProveedorCatalogEntry[]): string {
   const prov = proveedores.find((p) => p.id === i.proveedorId)?.nombre || "sin proveedor";
-  return `${i.nombre} · ${NOMBRE_AREA[i.area]} · ${prov} · ${i.unidad === "pieza" ? "pz" : i.unidad}`;
+  return `${i.nombre} · ${NOMBRE_AREA[i.area]} · ${prov} · ${unidadConteo(i)}`;
 }
 
 type Modo = ModoInventario;
@@ -552,7 +552,7 @@ function Resultado({
   });
   const lineas: LineaConteoTexto[] = [...porInsumo.entries()].map(([id, rs]) => {
     const insumo = porId.get(id)!;
-    const unidadCatalogo = insumo.unidad === "pieza" ? "pz" : insumo.unidad;
+    const unidadCatalogo = unidadConteo(insumo);
     const valor = rs.map((r) => (rs.length > 1 && r.unidad ? `${r.cantidadTexto} ${r.unidad}` : r.cantidadTexto)).join(" + ");
     const presentacion = rs.length > 1 ? undefined : rs[0].unidad || unidadCatalogo;
     return { nombre: insumo.nombre, presentacion, etiqueta: insumo.nombre, valor };

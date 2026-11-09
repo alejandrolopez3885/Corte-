@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Check, ChevronLeft, TriangleAlert } from "lucide-react";
 import { MarcoAsistente, Opcion } from "./asistente";
 import { BuscadorInventario, type AccionConteo } from "../BuscadorInventario";
-import { formatLongDayDate } from "../../lib/dataModel";
+import { formatLongDayDate, unidadConteo } from "../../lib/dataModel";
 import {
   faltantesPorContar, leerNotasInventario, normalizar, NOMBRE_AREA, type ModoInventario,
 } from "../../lib/inventarioNotas";
@@ -371,7 +371,7 @@ export function InventarioAsistente({
                     setValores((v) => ({ ...v, [i.id]: e.target.value }));
                   }}
                 />
-                <b className="inv-prod-unidad">{i.unidad === "pieza" ? "pz" : i.unidad}</b>
+                <b className="inv-prod-unidad">{unidadConteo(i)}</b>
                 <button
                   type="button"
                   className={`inv-nohay ${valores[i.id] === "0" ? "activo" : ""}`}

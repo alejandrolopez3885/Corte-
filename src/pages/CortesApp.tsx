@@ -1975,7 +1975,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
                 </span>
                 <span className="menu-item-text">
                   <strong>Limpiar catálogo</strong>
-                  <span>Unir Limonadas con Sabroeats, quitar apodos malos y ordenar nombres</span>
+                  <span>Una sola lista por proveedor: sin repetidos, con nombres y unidades de la libreta</span>
                 </span>
               </button>
             )}
@@ -1983,10 +1983,12 @@ export default function CortesApp({ profile }: { profile: Profile }) {
               <Sheet title="Limpiar catálogo" onClose={() => setLimpiandoCatalogo(false)}>
                 <p className="hint">Se aplica una sola vez y no toca precios ni el historial de inventarios y pedidos:</p>
                 <ul className="hint">
-                  <li>Limonadas se une con Sabroeats (sus 7 productos pasan a los concentrados).</li>
-                  <li>Se quitan 6 apodos que confundían productos.</li>
-                  <li>Se corrigen nombres, una unidad y el área de "Chiles jalapeños".</li>
-                  <li>Se quita "Se pide por" donde pedía lo mismo que contaba.</li>
+                  <li>Limonadas se une con Sabroeats y todos quedan como "Concentrado de …".</li>
+                  <li>Se juntan los productos repetidos (Excel y libreta): el nombre viejo queda como apodo, así las notas se siguen leyendo.</li>
+                  <li>Nombres y unidades como en la libreta: se cuenta por paquete, bolsa, millar, bidón…</li>
+                  <li>Vasos y tapas pasan a Lorsa; Polvo azul y Champú azul se agregan a Compras Johnster.</li>
+                  <li>En Postres solo queda Cheesecake tortuga.</li>
+                  <li>Se quitan apodos que confundían productos y "Se pide por" donde pedía lo mismo que contaba.</li>
                 </ul>
                 <button className="btn-primary" onClick={aplicarLimpiezaCatalogo}>
                   Aplicar limpieza

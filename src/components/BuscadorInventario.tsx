@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { Check, Delete, Search, Trash2, X } from "lucide-react";
 import { sugerirInsumos } from "../lib/inventarioNotas";
+import { unidadConteo } from "../lib/dataModel";
 import type { InsumoEntry } from "../lib/types";
 
 // Inventario: buscador para anotar el producto que se va viendo, en
@@ -45,7 +46,7 @@ export function BuscadorInventario({
   const campo = useRef<HTMLInputElement>(null);
   const avisoTimer = useRef<number | undefined>(undefined);
   const sugerencias = sugerirInsumos(texto, productos);
-  const unidad = (i: InsumoEntry) => (i.unidad === "pieza" ? "pz" : i.unidad);
+  const unidad = unidadConteo;
 
   function guardar(i: InsumoEntry, cantidad: number, accion: AccionConteo) {
     onGuardar(i, cantidad, accion);
@@ -103,7 +104,9 @@ export function BuscadorInventario({
                 >
                   <span>
                     <b>{i.nombre}</b>
-                    <small>{detalle(i)}</small>
+                    <small>
+                      {unidad(i)} · {detalle(i)}
+                    </small>
                   </span>
                   {c !== null ? (
                     <em className="ib-contado">
