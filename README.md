@@ -1355,8 +1355,12 @@ estando en Nómina te regresa al menú de Equipo):
   solo faltó anotarlo) no se agrega y queda en "No se contaron"; si se
   desmarca todo, el botón dice "Guardar sin los que faltan". "Volver a
   contar" cierra el aviso sin guardar. Si no falta nada, se guarda
-  directo. Ya guardado (y bloqueado, con "Editar" igual
-  que el Conteo diario), cada renglón se lee — cantidad, unidad si la
+  directo. Ya guardado, el texto queda bloqueado (solo para consultar).
+  "Editar" (con confirmación) abre el asistente directo en **"Sigue
+  contando"**: buscador y teclado con lo ya contado en "Lo que llevas
+  contado" para sumar, corregir o agregar lo que falta; los renglones
+  guardados en 0 no se cargan (eran los faltantes) y vuelven a salir en
+  "Faltó contar esto" al guardar, seguido del pedido. Cada renglón se lee — cantidad, unidad si la
   escribió (k/kg, gms, paq, bolsa…) y nombre — y se busca en el catálogo
   de Bar, Cocina y General por nombre o apodo, aunque esté abreviado, en
   otro orden o en plural. Lo que no se reconoce (o tiene más de un
