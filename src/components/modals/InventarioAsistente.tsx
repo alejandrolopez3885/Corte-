@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Check, ChevronLeft, TriangleAlert } from "lucide-react";
 import { MarcoAsistente, Opcion } from "./asistente";
+import { BuscadorInventario, type AccionConteo } from "../BuscadorInventario";
 import { formatLongDayDate } from "../../lib/dataModel";
 import {
   faltantesPorContar, leerNotasInventario, normalizar, NOMBRE_AREA, type ModoInventario,
@@ -155,6 +156,37 @@ export function InventarioAsistente({
     setClave(pasoId(pasos[Math.min(Math.max(i, 0), pasos.length - 1)]));
   };
 
+  // Buscador (las dos formas de contar): los productos que tocan este día.
+  const productosDelDia = useMemo(() => grupos.flatMap((g) => g.items), [grupos]);
+  const nombreGrupo = useMemo(() => new Map(grupos.flatMap((g) => g.items.map((i) => [i.id, g.nombre] as const))), [grupos]);
+  const detalleProducto = (i: InsumoEntry) => `${nombreGrupo.get(i.id) || "Sin proveedor"}${repetido(i) ? ` · ${NOMBRE_AREA[i.area]}` : ""}`;
+  const fmtCantidad = (n: number) => String(Math.round(n * 1000) / 1000);
+  const idDeLinea = (l: string) => leerNotasInventario(l, insumos).renglones[0]?.insumoId;
+  function contadoDe(i: InsumoEntry): number | null {
+    if (forma === "proveedor") {
+      const v = (valores[i.id] ?? "").trim();
+      return v !== "" && CANTIDAD.test(v) ? Number(v.replace(",", ".")) : null;
+    }
+    const rs = leerNotasInventario(libre, insumos).renglones.filter((r) => r.insumoId === i.id);
+    return rs.length ? rs.reduce((t, r) => t + r.cantidad, 0) : null;
+  }
+  function guardarDesdeBuscador(i: InsumoEntry, cantidad: number, accion: AccionConteo) {
+    setError("");
+    const antes = contadoDe(i);
+    const total = accion === "sumar" && antes !== null ? antes + cantidad : cantidad;
+    if (forma === "proveedor") {
+      setValores((v) => ({ ...v, [i.id]: fmtCantidad(total) }));
+      return;
+    }
+    // Sin orden: el renglón del producto queda al final con el total (los
+    // que ya tenía se quitan al sumar o corregir).
+    setLibre((t) => {
+      const lineas = t.split(/\r?\n/).filter((l) => l.trim() !== "" && (accion === "nuevo" || idDeLinea(l) !== i.id));
+      return [...lineas, renglon(fmtCantidad(total), i)].join("\n");
+    });
+  }
+  const buscador = <BuscadorInventario productos={productosDelDia} contado={contadoDe} detalle={detalleProducto} onGuardar={guardarDesdeBuscador} />;
+
   const contadosDe = (g: Grupo) => g.items.filter((i) => (valores[i.id] ?? "") !== "").length;
 
   function siguiente() {
@@ -294,6 +326,7 @@ export function InventarioAsistente({
 
       {paso.t === "prov" && (
         <>
+          {buscador}
           <h2 className="ca-pregunta">{paso.g.nombre}</h2>
           <p className="ca-ayuda">
             {paso.g.items.length} productos · {contadosDe(paso.g)} contados
@@ -333,8 +366,9 @@ export function InventarioAsistente({
 
       {paso.t === "libre" && (
         <>
+          {buscador}
           <h2 className="ca-pregunta">Escribe lo que vas contando</h2>
-          <p className="ca-ayuda">Un producto por renglón, con la cantidad como lo cuentes.</p>
+          <p className="ca-ayuda">Búscalo arriba y pon la cantidad con el teclado, o escríbelo aquí: un producto por renglón, con la cantidad como lo cuentes.</p>
           <textarea
             className="text-input conteo-texto"
             rows={12}

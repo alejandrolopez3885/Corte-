@@ -186,3 +186,45 @@ export function leerNotasInventario(notas: string, insumos: InsumoEntry[]): Nota
   });
   return { renglones, sinCantidad };
 }
+
+// Buscador del Inventario: sugerencias mientras se escribe, tolerantes a
+// acentos, abreviaturas, apodos, otro orden de palabras y errores de dedo
+// ("tosino" → Tocino, "limon" → Limón). Primero lo que empieza igual, luego
+// lo que lo contiene y al final lo parecido.
+function distancia(a: string, b: string): number {
+  const d = Array.from({ length: a.length + 1 }, (_, i) => [i, ...Array(b.length).fill(0)]);
+  for (let j = 1; j <= b.length; j++) d[0][j] = j;
+  for (let i = 1; i <= a.length; i++)
+    for (let j = 1; j <= b.length; j++) d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+  return d[a.length][b.length];
+}
+// La palabra escrita se parece al inicio de la del catálogo (hasta 1 error
+// en palabras cortas, 2 en largas).
+function parecida(w: string, n: string): boolean {
+  if (w.length < 3) return false;
+  const tope = w.length <= 4 ? 1 : 2;
+  return distancia(w, n.slice(0, w.length)) <= tope || distancia(w, n) <= tope;
+}
+
+export function sugerirInsumos(texto: string, lista: InsumoEntry[], max = 6): InsumoEntry[] {
+  const e = palabras(texto);
+  if (e.length === 0) return [];
+  const puntos = (i: InsumoEntry) =>
+    Math.max(
+      ...claves(i).map((k) => {
+        if (abreviado(e, k)) return 4;
+        if (contenido(e, k)) return 3;
+        if (iniciales(e, k)) return 2;
+        if (e.every((w) => k.some((x) => x.startsWith(w) || parecida(w, x)))) return 1;
+        return 0;
+      })
+    );
+  const conPuntos = lista.map((i) => ({ i, p: puntos(i) })).filter((x) => x.p > 0);
+  // Lo "parecido" solo cuando no hay nada mejor (que "pollo" no traiga "polvo").
+  const minimo = conPuntos.some((x) => x.p > 1) ? 2 : 1;
+  return conPuntos
+    .filter((x) => x.p >= minimo)
+    .sort((a, b) => b.p - a.p || a.i.nombre.localeCompare(b.i.nombre))
+    .slice(0, max)
+    .map((x) => x.i);
+}
