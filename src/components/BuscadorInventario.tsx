@@ -38,6 +38,8 @@ export function BuscadorInventario({
 }) {
   const [texto, setTexto] = useState("");
   const [elegido, setElegido] = useState<InsumoEntry | null>(null);
+  // Desde la lista de ya contados primero se pregunta qué hacer.
+  const [desdeLista, setDesdeLista] = useState(false);
   const [aviso, setAviso] = useState<string | null>(null);
   const [quitando, setQuitando] = useState<string | null>(null);
   const campo = useRef<HTMLInputElement>(null);
@@ -88,7 +90,17 @@ export function BuscadorInventario({
             sugerencias.map((i) => {
               const c = contado(i);
               return (
-                <button key={i.id} type="button" role="option" aria-selected={false} className="ib-item" onClick={() => setElegido(i)}>
+                <button
+                  key={i.id}
+                  type="button"
+                  role="option"
+                  aria-selected={false}
+                  className="ib-item"
+                  onClick={() => {
+                    setDesdeLista(false);
+                    setElegido(i);
+                  }}
+                >
                   <span>
                     <b>{i.nombre}</b>
                     <small>{detalle(i)}</small>
@@ -122,7 +134,15 @@ export function BuscadorInventario({
             <>
               {contados.map(({ i, cantidad }) => (
                 <div key={i.id} className="ib-fila">
-                  <button type="button" className="ib-fila-main" onClick={() => setElegido(i)} aria-label={`Cambiar ${i.nombre}`}>
+                  <button
+                    type="button"
+                    className="ib-fila-main"
+                    onClick={() => {
+                      setDesdeLista(true);
+                      setElegido(i);
+                    }}
+                    aria-label={`Cambiar ${i.nombre}`}
+                  >
                     <span>
                       <b>{i.nombre}</b>
                       <small>{detalle(i)}</small>
@@ -170,6 +190,7 @@ export function BuscadorInventario({
           unidad={unidad(elegido)}
           detalle={detalle(elegido)}
           antes={contado(elegido)}
+          preguntarAntes={desdeLista}
           onClose={() => setElegido(null)}
           onGuardar={(n, accion) => guardar(elegido, n, accion)}
         />
@@ -183,6 +204,7 @@ function TecladoCantidad({
   unidad,
   detalle,
   antes,
+  preguntarAntes,
   onClose,
   onGuardar,
 }: {
@@ -190,21 +212,33 @@ function TecladoCantidad({
   unidad: string;
   detalle: string;
   antes: number | null;
+  // Desde la lista de ya contados: primero "¿contar más o editar?".
+  preguntarAntes?: boolean;
   onClose: () => void;
   onGuardar: (cantidad: number, accion: AccionConteo) => void;
 }) {
   const [valor, setValor] = useState("");
   const [preguntando, setPreguntando] = useState(false);
+  // Ya elegido desde la lista: el teclado guarda directo en ese modo.
+  const [modo, setModo] = useState<"sumar" | "corregir" | null>(null);
+  const [eligiendo, setEligiendo] = useState(!!preguntarAntes && antes !== null);
+  // Al editar, la cantidad de antes se ve, pero la primera tecla la reemplaza.
+  const [fresco, setFresco] = useState(false);
   const n = Number(valor || "0");
-  const tecla = (t: string) =>
-    setValor((v) => {
+  const tecla = (t: string) => {
+    const reemplazar = fresco;
+    setFresco(false);
+    setValor((anterior) => {
+      const v = reemplazar ? "" : anterior;
       if (t === "." && v.includes(".")) return v;
       if (t === "." && v === "") return "0.";
       if (v === "0" && t !== ".") return t;
       return (v + t).slice(0, 8);
     });
+  };
   const listo = valor !== "" && valor !== "0." && !Number.isNaN(n);
-  const guardar = (cantidad: number) => (antes !== null ? (setValor(fmt(cantidad)), setPreguntando(true)) : onGuardar(cantidad, "nuevo"));
+  const guardar = (cantidad: number) =>
+    modo ? onGuardar(cantidad, modo) : antes !== null ? (setValor(fmt(cantidad)), setPreguntando(true)) : onGuardar(cantidad, "nuevo");
 
   return (
     <div className="ib-fondo" onClick={onClose}>
@@ -222,7 +256,44 @@ function TecladoCantidad({
           </button>
         </div>
 
-        {preguntando && antes !== null ? (
+        {eligiendo && antes !== null ? (
+          <div className="ib-pregunta">
+            <p>
+              Ya contaste <b>{fmt(antes)} {unidad}</b> de {producto.nombre}. ¿Qué quieres hacer?
+            </p>
+            <button
+              type="button"
+              className="ib-opcion"
+              onClick={() => {
+                setModo("sumar");
+                setEligiendo(false);
+              }}
+            >
+              <span>
+                Contar más
+                <small>Lo que pongas se suma a los {fmt(antes)} {unidad}</small>
+              </span>
+            </button>
+            <button
+              type="button"
+              className="ib-opcion"
+              onClick={() => {
+                setModo("corregir");
+                setValor(fmt(antes));
+                setFresco(true);
+                setEligiendo(false);
+              }}
+            >
+              <span>
+                Editar lo ya contado
+                <small>Cambias los {fmt(antes)} {unidad} por la cantidad correcta</small>
+              </span>
+            </button>
+            <button type="button" className="link-btn emp-btn-cancelar" onClick={onClose}>
+              Cancelar
+            </button>
+          </div>
+        ) : preguntando && antes !== null ? (
           <div className="ib-pregunta">
             <p>
               Ya contaste <b>{fmt(antes)} {unidad}</b> de {producto.nombre} hoy. ¿Qué hago con <b>{fmt(n)} {unidad}</b>?
@@ -245,6 +316,19 @@ function TecladoCantidad({
           </div>
         ) : (
           <>
+            {modo && antes !== null && (
+              <p className="ib-modo">
+                {modo === "sumar" ? (
+                  <>
+                    Contar más · se suma a {fmt(antes)} {unidad} → <b>quedan {fmt(antes + n)} {unidad}</b>
+                  </>
+                ) : (
+                  <>
+                    Editar lo ya contado · antes {fmt(antes)} {unidad} → <b>quedan {fmt(n)} {unidad}</b>
+                  </>
+                )}
+              </p>
+            )}
             <div className="ib-pantalla" aria-live="polite">
               <span>{valor || "0"}</span>
               <b>{unidad}</b>
@@ -255,7 +339,10 @@ function TecladoCantidad({
                   {t}
                 </button>
               ))}
-              <button type="button" className="ib-tecla borrar" aria-label="Borrar" onClick={() => setValor((v) => v.slice(0, -1))}>
+              <button type="button" className="ib-tecla borrar" aria-label="Borrar" onClick={() => {
+                  setFresco(false);
+                  setValor((v) => v.slice(0, -1));
+                }}>
                 <Delete size={24} />
               </button>
             </div>
