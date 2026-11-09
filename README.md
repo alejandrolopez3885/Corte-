@@ -1303,15 +1303,20 @@ estando en Nómina te regresa al menú de Equipo):
   deshacer con "Deshacer: capturar el jueves". También ahí, "Editar
   proveedores del jueves". Las semanas de antes que solo tienen el
   domingo guardado se respetan tal cual. Desde el aviso de Inicio se abre
-  directo el conteo. "Contar inventario" abre un asistente paso (pantalla completa, barra de avance, Atrás/Siguiente): 1) "¿Qué día
+  directo el conteo. "Contar inventario" abre un asistente paso
+ (pantalla completa, barra de avance, Atrás/Siguiente): 1) "¿Qué día
     estás contando?" (jueves o domingo; el que aún no se puede sale
     atenuado con su motivo); 2) "¿Cómo vas a contar?": "Por proveedor" o
     "Sin ningún orden". Por proveedor hay un paso por proveedor (el jueves,
     solo los marcados; el domingo, todos y "Sin proveedor"; sin los de alta
     rotación), con un campo numérico grande por producto, su unidad y el
-    botón "No hay" (pone 0). Sin orden es el cuadro de notas libres de
-    siempre (".6 consomé", "1k ajo en polvo", "500 bolsas Johnster", "250
-    gms habanero"; un renglón sin número no deja continuar). Lo capturado se
+    botón "No hay" (pone 0). Sin orden ya no tiene cuadro de notas: es el
+    buscador y debajo **Lo que llevas contado** (el más nuevo arriba, con
+    cantidad y unidad); tocar uno pregunta "Contar más" (se suma) o "Editar
+    lo ya contado" (trae la cantidad y la primera tecla la reemplaza) y abre
+    el teclado en ese modo; el bote de basura lo quita con confirmación; los
+    renglones de un borrador viejo que no se reconocen salen en naranja para
+    quitarlos (se guardan como el texto de notas de siempre, "2.5 Limón"). Lo capturado se
     guarda como borrador en el dispositivo y se retoma al volver a abrir ese
     día; se borra al guardar. Después siguen "Faltó contar esto" (si hay),
     "Revisa y guarda" (un renglón por proveedor con "Cambiar", y un aviso si

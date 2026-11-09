@@ -468,6 +468,14 @@ export const NOVEDADES: Novedad[] = [
     texto: "En Reglas del personal: quién hace corte, máximo de días que abre cada quien, quién abre siempre doblando y no doblar dos días seguidos. Arriba, **Lo que aprendí** propone ajustes según los horarios que se han guardado.",
     visual: "ranking",
   },
+  {
+    id: "inventario-buscador",
+    fecha: "2026-11-09T07:10:00Z",
+    seccion: "inventario",
+    titulo: "Busca y anota productos más rápido",
+    texto: "Al contar, **busca el producto** arriba (aunque lo escribas con errores) y pon la cantidad con el teclado de la pantalla. Si ya lo contaste, te pregunta si **sumar** o **corregir**.",
+    visual: "inventarioPasos",
+  },
 ];
 
 interface EstadoNovedades {
