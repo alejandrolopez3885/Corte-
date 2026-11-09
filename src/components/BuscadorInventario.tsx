@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Check, Delete, Search, X } from "lucide-react";
+import { Check, Delete, Search, Trash2, X } from "lucide-react";
 import { sugerirInsumos } from "../lib/inventarioNotas";
 import type { InsumoEntry } from "../lib/types";
 
@@ -17,7 +17,18 @@ export function BuscadorInventario({
   contado,
   detalle,
   onGuardar,
+  contados,
+  onQuitar,
+  sueltos,
+  onQuitarSuelto,
 }: {
+  // "Sin ningún orden": la lista de lo que se lleva contado (el más nuevo
+  // arriba), para corregir tocando un producto o quitarlo, y los renglones
+  // que no se reconocen (de un borrador viejo escrito a mano).
+  contados?: { i: InsumoEntry; cantidad: number }[];
+  onQuitar?: (i: InsumoEntry) => void;
+  sueltos?: string[];
+  onQuitarSuelto?: (linea: string) => void;
   productos: InsumoEntry[];
   // Lo ya contado de ese producto en este inventario (null = no se ha contado).
   contado: (i: InsumoEntry) => number | null;
@@ -28,6 +39,7 @@ export function BuscadorInventario({
   const [texto, setTexto] = useState("");
   const [elegido, setElegido] = useState<InsumoEntry | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
+  const [quitando, setQuitando] = useState<string | null>(null);
   const campo = useRef<HTMLInputElement>(null);
   const avisoTimer = useRef<number | undefined>(undefined);
   const sugerencias = sugerirInsumos(texto, productos);
@@ -97,6 +109,59 @@ export function BuscadorInventario({
       {aviso && (
         <div className="ib-aviso" role="status">
           <Check size={15} aria-hidden /> {aviso}
+        </div>
+      )}
+      {contados && (
+        <div className="ib-contados">
+          <span className="ib-contados-titulo">
+            Lo que llevas contado <b>{contados.length}</b>
+          </span>
+          {contados.length === 0 && (sueltos || []).length === 0 ? (
+            <p className="ib-nada">Busca arriba cada producto que vas viendo y pon su cantidad.</p>
+          ) : (
+            <>
+              {contados.map(({ i, cantidad }) => (
+                <div key={i.id} className="ib-fila">
+                  <button type="button" className="ib-fila-main" onClick={() => setElegido(i)} aria-label={`Cambiar ${i.nombre}`}>
+                    <span>
+                      <b>{i.nombre}</b>
+                      <small>{detalle(i)}</small>
+                    </span>
+                    <strong>
+                      {fmt(cantidad)} {unidad(i)}
+                    </strong>
+                  </button>
+                  {quitando === i.id ? (
+                    <span className="ib-quitar-confirma">
+                      <button type="button" className="ib-si" onClick={() => (onQuitar?.(i), setQuitando(null))}>
+                        Quitar
+                      </button>
+                      <button type="button" className="ib-no" onClick={() => setQuitando(null)}>
+                        No
+                      </button>
+                    </span>
+                  ) : (
+                    <button type="button" className="ib-basura" aria-label={`Quitar ${i.nombre}`} onClick={() => setQuitando(i.id)}>
+                      <Trash2 size={18} />
+                    </button>
+                  )}
+                </div>
+              ))}
+              {(sueltos || []).map((l) => (
+                <div key={l} className="ib-fila suelto">
+                  <span className="ib-fila-main">
+                    <span>
+                      <b>{l}</b>
+                      <small>No se reconoce: búscalo arriba y quita este renglón</small>
+                    </span>
+                  </span>
+                  <button type="button" className="ib-basura" aria-label={`Quitar ${l}`} onClick={() => onQuitarSuelto?.(l)}>
+                    <Trash2 size={18} />
+                  </button>
+                </div>
+              ))}
+            </>
+          )}
         </div>
       )}
       {elegido && (

@@ -186,6 +186,28 @@ export function InventarioAsistente({
     });
   }
   const buscador = <BuscadorInventario productos={productosDelDia} contado={contadoDe} detalle={detalleProducto} onGuardar={guardarDesdeBuscador} />;
+  // Sin orden: lo contado sale de las notas (el renglón más nuevo arriba).
+  const lecturaLibre = useMemo(() => leerNotasInventario(libre, insumos), [libre, insumos]);
+  const contadosLibre = useMemo(() => {
+    const vistos = new Set<string>();
+    return [...lecturaLibre.renglones]
+      .reverse()
+      .flatMap((r) => {
+        const i = r.insumoId ? insumos.find((x) => x.id === r.insumoId) : undefined;
+        if (!i || vistos.has(i.id)) return [];
+        vistos.add(i.id);
+        return [{ i, cantidad: contadoDe(i) ?? r.cantidad }];
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lecturaLibre, insumos]);
+  const sueltosLibre = [...lecturaLibre.renglones.filter((r) => !r.insumoId).map((r) => r.linea), ...lecturaLibre.sinCantidad];
+  const quitarLinea = (pred: (l: string) => boolean) =>
+    setLibre((t) =>
+      t
+        .split(/\r?\n/)
+        .filter((l) => l.trim() !== "" && !pred(l))
+        .join("\n")
+    );
 
   const contadosDe = (g: Grupo) => g.items.filter((i) => (valores[i.id] ?? "") !== "").length;
 
@@ -196,9 +218,9 @@ export function InventarioAsistente({
       if (mala) return setError(`Revisa la cantidad de ${mala.nombre}: solo números.`);
     }
     if (paso.t === "libre") {
-      if (!libre.trim()) return setError("Escribe al menos un producto.");
+      if (!libre.trim()) return setError("Cuenta al menos un producto.");
       const { sinCantidad } = leerNotasInventario(libre, insumos);
-      if (sinCantidad.length > 0) return setError(`Falta la cantidad en: ${sinCantidad.slice(0, 3).join(", ")}${sinCantidad.length > 3 ? "…" : ""}`);
+      if (sinCantidad.length > 0) return setError(`Quita los renglones sin cantidad: ${sinCantidad.slice(0, 3).join(", ")}${sinCantidad.length > 3 ? "…" : ""}`);
     }
     if (paso.t === "resumen") {
       if (!textoFinal.trim()) return setError("Cuenta al menos un producto.");
@@ -318,7 +340,7 @@ export function InventarioAsistente({
             </Opcion>
             <Opcion elegida={forma === "libre"} onClick={() => setForma("libre")}>
               Sin ningún orden
-              <small className="ca-sub">Escribes lo que vas viendo, como en notas</small>
+              <small className="ca-sub">Buscas cada producto que vas viendo y pones la cantidad</small>
             </Opcion>
           </div>
         </>
@@ -366,21 +388,18 @@ export function InventarioAsistente({
 
       {paso.t === "libre" && (
         <>
-          {buscador}
-          <h2 className="ca-pregunta">Escribe lo que vas contando</h2>
-          <p className="ca-ayuda">Búscalo arriba y pon la cantidad con el teclado, o escríbelo aquí: un producto por renglón, con la cantidad como lo cuentes.</p>
-          <textarea
-            className="text-input conteo-texto"
-            rows={12}
-            value={libre}
-            onChange={(e) => {
-              setError("");
-              setLibre(e.target.value);
-            }}
-            aria-label="Notas del inventario"
-            placeholder={"25 vasos litro\n.6 consomé\n1k ajo en polvo"}
+          <h2 className="ca-pregunta">Cuenta lo que vas viendo</h2>
+          <p className="ca-ayuda">Busca cada producto y pon la cantidad con el teclado. Toca uno de la lista para cambiarlo.</p>
+          <BuscadorInventario
+            productos={productosDelDia}
+            contado={contadoDe}
+            detalle={detalleProducto}
+            onGuardar={guardarDesdeBuscador}
+            contados={contadosLibre}
+            onQuitar={(i) => quitarLinea((l) => idDeLinea(l) === i.id)}
+            sueltos={sueltosLibre}
+            onQuitarSuelto={(linea) => quitarLinea((l) => l.trim() === linea)}
           />
-          <p className="hint">Si algo no se reconoce, después de guardar te preguntamos cuál producto es.</p>
           {error && <p className="inv-error" role="alert">{error}</p>}
         </>
       )}

@@ -2718,3 +2718,20 @@ button.cj-seccion { cursor: pointer; }
 .ib-opcion { display: flex; align-items: center; min-height: 64px; padding: 10px 16px; border: 2px solid var(--accent); border-radius: 14px; background: var(--surface); font: 700 16px 'IBM Plex Sans', sans-serif; color: var(--accent); text-align: left; cursor: pointer; }
 .ib-opcion span { display: flex; flex-direction: column; gap: 2px; }
 .ib-opcion small { font-size: 14px; font-weight: 500; color: var(--ink-soft); }
+
+.ib-contados { display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; margin-top: 6px; }
+.ib-contados-titulo { padding: 10px 14px; font-size: 13px; font-weight: 700; color: var(--ink-soft); text-transform: uppercase; letter-spacing: .04em; border-bottom: 1px solid var(--surface-alt); }
+.ib-contados-titulo b { color: var(--accent); margin-left: 4px; }
+.ib-fila { display: flex; align-items: center; border-top: 1px solid var(--surface-alt); }
+.ib-fila:first-of-type { border-top: 0; }
+.ib-fila-main { flex: 1; min-width: 0; display: flex; justify-content: space-between; align-items: center; gap: 10px; min-height: 56px; padding: 8px 6px 8px 14px; border: 0; background: none; font: inherit; color: var(--ink); text-align: left; cursor: pointer; }
+.ib-fila-main > span { display: flex; flex-direction: column; min-width: 0; }
+.ib-fila-main b { font-size: 16px; font-weight: 600; }
+.ib-fila-main small { font-size: 13px; color: var(--ink-soft); }
+.ib-fila-main strong { font-size: 16px; color: var(--accent); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.ib-fila.suelto b { color: var(--warn-ink); }
+.ib-basura { width: 48px; height: 48px; flex: none; border: 0; background: none; color: var(--ink-soft); display: grid; place-items: center; cursor: pointer; }
+.ib-quitar-confirma { display: flex; gap: 6px; padding-right: 8px; }
+.ib-si, .ib-no { height: 40px; padding: 0 12px; border-radius: 10px; font: 700 14px 'IBM Plex Sans', sans-serif; cursor: pointer; }
+.ib-si { border: 0; background: var(--bad); color: #fff; }
+.ib-no { border: 1.5px solid var(--border); background: var(--surface); color: var(--ink); }
