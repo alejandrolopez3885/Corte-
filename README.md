@@ -1360,10 +1360,12 @@ estando en Nómina te regresa al menú de Equipo):
   solo faltó anotarlo) no se agrega y queda en "No se contaron"; si se
   desmarca todo, el botón dice "Guardar sin los que faltan". "Volver a
   contar" cierra el aviso sin guardar. Si no falta nada, se guarda
-  directo. Ya guardado, el texto queda bloqueado (solo para consultar).
-  "Editar" (con confirmación) abre el asistente directo en **"Sigue
-  contando"**: buscador y teclado con lo ya contado en "Lo que llevas
-  contado" para sumar, corregir o agregar lo que falta; los renglones
+  directo. Ya guardado, en Consultar se ve bloqueado ("Inventario
+  guardado", sin bloc de notas): "Contado X de Y · N en 0" y la misma
+  lista por proveedor con barras, solo para ver (al abrir un proveedor,
+  cada producto con su cantidad; los de 0 dicen "No hay" y van al final).
+  El botón **"Editar o seguir contando"** abre el asistente directo en
+  **"Sigue contando"**: buscador y teclado con lo ya contado para sumar, corregir o agregar lo que falta; los renglones
   guardados en 0 no se cargan (eran los faltantes) y vuelven a salir en
   "Faltó contar esto" al guardar, seguido del pedido. Cada renglón se lee — cantidad, unidad si la
   escribió (k/kg, gms, paq, bolsa…) y nombre — y se busca en el catálogo
@@ -2379,3 +2381,9 @@ supabase/
   migration_022_bitacora_dia_antes.sql copia del día antes de cada cambio (Volver a antes de este cambio)
   migration_023_johnster_transferencias.sql gastos en transferencia de Johnster (Control de gastos en transferencia)
 ```
+
+**Aviso de versión nueva** (`components/AvisoVersion.tsx`): con la app
+abierta, al volver a ella y cada 5 minutos revisa si se publicó otra
+versión; si sí, arriba sale "Hay una versión nueva · Actualizar" y con un
+toque se recarga (lo que se esté contando en Inventario queda como
+borrador).
