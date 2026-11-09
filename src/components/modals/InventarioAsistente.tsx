@@ -62,6 +62,7 @@ export function InventarioAsistente({
   onGuardar,
   onClose,
   renderPedido,
+  retomarTexto,
 }: {
   dias: DiaInventario[];
   modoInicial: ModoInventario;
@@ -70,19 +71,36 @@ export function InventarioAsistente({
   onGuardar: (fecha: string, texto: string, modo: ModoInventario) => void;
   onClose: () => void;
   renderPedido: (fecha: string, modo: ModoInventario, texto: string) => ReactNode;
+  // Seguir con un inventario ya guardado: se abre directo "Sin orden" con lo
+  // contado. Los renglones en 0 no se cargan (son los que faltaban): al
+  // guardar se vuelven a preguntar en "Faltó contar esto".
+  retomarTexto?: string;
 }) {
+  const editando = retomarTexto !== undefined;
   const disponibleInicial = dias.find((d) => d.modo === modoInicial && !d.motivo) || dias.find((d) => !d.motivo);
   const modoArranque = disponibleInicial?.modo ?? modoInicial;
-  const [borradorInicial] = useState(() => leerBorrador(dias.find((d) => d.modo === modoArranque)!.fecha));
+  const [borradorInicial] = useState<Borrador | null>(() => {
+    const b = leerBorrador(dias.find((d) => d.modo === modoArranque)!.fecha);
+    if (!editando) return b;
+    if (b?.forma === "libre") return b;
+    const contado = (retomarTexto || "")
+      .split(/\r?\n/)
+      .filter((l) => {
+        const r = leerNotasInventario(l, insumos).renglones[0];
+        return l.trim() !== "" && !(r && r.insumoId && r.cantidad === 0);
+      })
+      .join("\n");
+    return { forma: "libre", valores: {}, libre: contado };
+  });
   const [modo, setModo] = useState<ModoInventario>(modoArranque);
   const [forma, setForma] = useState<Forma>(borradorInicial?.forma ?? "proveedor");
   const [valores, setValores] = useState<Record<string, string>>(borradorInicial?.valores ?? {});
   const [libre, setLibre] = useState(borradorInicial?.libre ?? "");
   const [desmarcados, setDesmarcados] = useState<Set<string>>(new Set());
-  const [clave, setClave] = useState("dia");
+  const [clave, setClave] = useState(editando ? "libre" : "dia");
   const [error, setError] = useState("");
   const [guardado, setGuardado] = useState<string | null>(null);
-  const [retomado, setRetomado] = useState(!!borradorInicial);
+  const [retomado, setRetomado] = useState(!!borradorInicial && !editando);
 
   const dia = dias.find((d) => d.modo === modo)!;
   const fecha = dia.fecha;
@@ -142,8 +160,7 @@ export function InventarioAsistente({
   }, [textoBase, faltan, desmarcados, insumos]);
 
   const pasos: Paso[] = [
-    { t: "dia" },
-    { t: "forma" },
+    ...(editando ? [] : [{ t: "dia" } as Paso, { t: "forma" } as Paso]),
     ...(forma === "proveedor" ? grupos.map((g) => ({ t: "prov", g }) as Paso) : [{ t: "libre" } as Paso]),
     ...(faltan.length > 0 ? [{ t: "faltan" } as Paso] : []),
     { t: "resumen" },
@@ -282,7 +299,7 @@ export function InventarioAsistente({
   else
     pie = (
       <>
-        {botonAtras}
+        {idx > 0 && botonAtras}
         {botonSi(
           paso.t === "forma"
             ? "Empezar a contar"
@@ -388,8 +405,12 @@ export function InventarioAsistente({
 
       {paso.t === "libre" && (
         <>
-          <h2 className="ca-pregunta">Cuenta lo que vas viendo</h2>
-          <p className="ca-ayuda">Busca cada producto y pon la cantidad con el teclado. Toca uno de la lista para cambiarlo.</p>
+          <h2 className="ca-pregunta">{editando ? "Sigue contando" : "Cuenta lo que vas viendo"}</h2>
+          <p className="ca-ayuda">
+            {editando
+              ? `${formatLongDayDate(fecha)}. Abajo está lo que ya se contó: busca lo que falta o toca uno para cambiarlo.`
+              : "Busca cada producto y pon la cantidad con el teclado. Toca uno de la lista para cambiarlo."}
+          </p>
           <BuscadorInventario
             productos={productosDelDia}
             contado={contadoDe}

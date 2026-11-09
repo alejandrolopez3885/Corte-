@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { Check, ClipboardList, FolderOpen, Lock, Package, TriangleAlert } from "lucide-react";
 import { Empty, Sheet } from "../ui";
-import { ErroresSheet, ListaPorProveedor, type ErroresCaptura } from "./ConteoDiarioPanel";
+import { ListaPorProveedor } from "./ConteoDiarioPanel";
 import {
   addDaysIso, dateForDay, unidadConteo, formatDayNumber, formatLongDayDate, formatShortDayDate, todayIso, type LineaConteoTexto,
 } from "../../lib/dataModel";
@@ -383,55 +383,18 @@ function NotasForm({
   onUnirInsumos?: (quedaId: string, otrosIds: string[]) => void;
 }) {
   const [texto, setTexto] = useState(guardado);
-  const [locked, setLocked] = useState(true);
   const [pidiendoConfirmacion, setPidiendoConfirmacion] = useState(false);
-  const [errores, setErrores] = useState<ErroresCaptura | null>(null);
-  const [faltantes, setFaltantes] = useState<InsumoEntry[] | null>(null);
-  const [marcados, setMarcados] = useState<Set<string>>(new Set());
-
-  // Solo bloquea un renglón con texto pero sin cantidad; lo que no se
-  // reconoce en el catálogo se resuelve después de guardar. Si falta por
-  // contar algo del catálogo, antes se pregunta si es que no hay.
-  function guardar() {
-    if (!texto.trim()) return;
-    const { renglones, sinCantidad } = leerNotasInventario(texto, insumos);
-    if (sinCantidad.length > 0) {
-      setErrores({ titulo: "Renglones sin cantidad", faltan: sinCantidad, invalidas: [] });
-      return;
-    }
-    const contados = new Set(renglones.flatMap((r) => (r.insumoId ? [r.insumoId] : [])));
-    const faltan = faltantesPorContar(insumos, proveedores, modo, contados);
-    if (faltan.length > 0) {
-      setFaltantes(faltan);
-      setMarcados(new Set(faltan.map((i) => i.id)));
-      return;
-    }
-    guardarTexto(texto);
-  }
+  // Editar abre el buscador y teclado con lo ya contado.
+  const [editando, setEditando] = useState(false);
 
   function guardarTexto(t: string) {
     setTexto(t);
     onGuardarNotas(fecha, t);
-    setLocked(true);
-  }
-
-  // Los marcados como "no hay" se agregan al final de las notas en 0, para
-  // que salgan en la lista de abajo y se puedan pedir.
-  function guardarConCeros() {
-    // Si otro producto se llama igual, va con su área ("0 Limón (Bar)") para
-    // que se sepa cuál es.
-    const repetido = (i: InsumoEntry) => insumos.some((x) => x.id !== i.id && normalizar(x.nombre) === normalizar(i.nombre));
-    const ceros = (faltantes || [])
-      .filter((i) => marcados.has(i.id))
-      .map((i) => `0 ${i.nombre}${repetido(i) ? ` (${NOMBRE_AREA[i.area]})` : ""}`);
-    setFaltantes(null);
-    guardarTexto(ceros.length > 0 ? `${texto.trimEnd()}\n${ceros.join("\n")}` : texto);
   }
 
   return (
     <>
-      {locked && (
-        <div className="conteo-locked-banner">
+      <div className="conteo-locked-banner">
           <span>{cerrado ? "Cerrado: ya se guardó el inventario del domingo." : "Inventario guardado y bloqueado."}</span>
           {!cerrado && (
             <button className="link-btn" onClick={() => setPidiendoConfirmacion(true)}>
@@ -439,69 +402,61 @@ function NotasForm({
             </button>
           )}
         </div>
-      )}
       <textarea
         className="text-input conteo-texto"
         value={texto}
-        onChange={(e) => setTexto(e.target.value)}
+        readOnly
         rows={Math.max(12, texto.split("\n").length + 2)}
-        placeholder={"Escribe lo que vas contando, un producto por renglón:\n25 vasos litro\n.6 consomé\n1k ajo en polvo"}
-        disabled={locked}
+        disabled
       />
-      {!locked && (
-        <>
-          <p className="hint">Un producto por renglón, con la cantidad como lo cuentes.</p>
-          <button className="btn-primary" onClick={guardar} disabled={!texto.trim()}>
-            Guardar cambios del inventario del {modo === "jueves" ? "jueves" : "domingo"}
-          </button>
-        </>
-      )}
 
-      {locked && (
-        <Resultado
-          fecha={fecha}
-          modo={modo}
-          notas={guardado}
+      <Resultado
+        fecha={fecha}
+        modo={modo}
+        notas={guardado}
+        insumos={insumos}
+        proveedores={proveedores}
+        pedidoGuardado={pedidoGuardado}
+        onGuardarPedido={onGuardarPedido}
+        onAsignarApodo={onAsignarApodo}
+        onUnirInsumos={onUnirInsumos}
+      />
+
+      {editando && (
+        <InventarioAsistente
+          modoInicial={modo}
+          dias={[{ modo, fecha, motivo: "" }]}
+          retomarTexto={texto}
           insumos={insumos}
           proveedores={proveedores}
-          pedidoGuardado={pedidoGuardado}
-          onGuardarPedido={onGuardarPedido}
-          onAsignarApodo={onAsignarApodo}
-          onUnirInsumos={onUnirInsumos}
-        />
-      )}
-
-      {errores && <ErroresSheet errores={errores} onClose={() => setErrores(null)} />}
-
-      {faltantes && (
-        <FaltanPorContarSheet
-          modo={modo}
-          faltantes={faltantes}
-          proveedores={proveedores}
-          marcados={marcados}
-          onToggle={(id) =>
-            setMarcados((m) => {
-              const n = new Set(m);
-              if (n.has(id)) n.delete(id);
-              else n.add(id);
-              return n;
-            })
-          }
-          onGuardar={guardarConCeros}
-          onClose={() => setFaltantes(null)}
+          onGuardar={(_f, t) => guardarTexto(t)}
+          onClose={() => setEditando(false)}
+          renderPedido={(f, m, t) => (
+            <Resultado
+              fecha={f}
+              modo={m}
+              notas={t}
+              insumos={insumos}
+              proveedores={proveedores}
+              pedidoGuardado={pedidoGuardado}
+              onGuardarPedido={onGuardarPedido}
+              onAsignarApodo={onAsignarApodo}
+              onUnirInsumos={onUnirInsumos}
+            />
+          )}
         />
       )}
 
       {pidiendoConfirmacion && (
         <Sheet title="Editar inventario guardado" onClose={() => setPidiendoConfirmacion(false)}>
           <p className="hint">
-            Este inventario de {formatLongDayDate(fecha)} ya se guardó. No deberías editarlo salvo que estés seguro de
-            que algo quedó mal.
+            Este inventario de {formatLongDayDate(fecha)} ya se guardó. Se abre con lo ya contado para que sigas
+            contando o corrijas cantidades.
           </p>
           <button
             className="btn-warn"
             onClick={() => {
-              setLocked(false);
+              setEditando(true);
               setPidiendoConfirmacion(false);
             }}
           >
@@ -661,64 +616,6 @@ function Resultado({
         </details>
       )}
     </>
-  );
-}
-
-// Aviso al guardar: lo que tocaba contar y no está en las notas, separado
-// por proveedor y todo marcado de inicio. Los marcados se guardan en 0
-// ("no hay"); se desmarca lo que sí hay y solo faltó anotar.
-function FaltanPorContarSheet({
-  modo,
-  faltantes,
-  proveedores,
-  marcados,
-  onToggle,
-  onGuardar,
-  onClose,
-}: {
-  modo: Modo;
-  faltantes: InsumoEntry[];
-  proveedores: ProveedorCatalogEntry[];
-  marcados: Set<string>;
-  onToggle: (id: string) => void;
-  onGuardar: () => void;
-  onClose: () => void;
-}) {
-  const grupos = [
-    ...proveedores.map((p) => ({ key: p.id, nombre: p.nombre, items: faltantes.filter((i) => i.proveedorId === p.id) })),
-    {
-      key: "sin",
-      nombre: "Sin proveedor",
-      items: faltantes.filter((i) => !i.proveedorId || !proveedores.some((p) => p.id === i.proveedorId)),
-    },
-  ].filter((g) => g.items.length > 0);
-
-  return (
-    <Sheet title={`Faltan por contar (${faltantes.length})`} onClose={onClose}>
-      <p className="hint">
-        Estos productos tocaba contarlos {modo === "completo" ? "el domingo" : "el jueves"} y no están en tus notas. Los
-        marcados se guardan como <strong>0 (no hay)</strong> y salen abajo para que puedas pedirlos.
-      </p>
-      <div className="faltan-lista">
-        {grupos.map((g) => (
-          <div key={g.key} className="faltan-grupo">
-            <span className="insumos-grupo-titulo">{g.nombre}</span>
-            {g.items.map((i) => (
-              <label key={i.id} className="faltan-item">
-                <input type="checkbox" checked={marcados.has(i.id)} onChange={() => onToggle(i.id)} />
-                {i.nombre}
-              </label>
-            ))}
-          </div>
-        ))}
-      </div>
-      <button className="btn-primary" onClick={onGuardar}>
-        {marcados.size > 0 ? "No hay — guardar marcados en 0" : "Guardar sin los que faltan"}
-      </button>
-      <button className="btn-secundario" onClick={onClose}>
-        Volver a contar
-      </button>
-    </Sheet>
   );
 }
 
