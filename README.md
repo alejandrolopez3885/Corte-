@@ -1304,7 +1304,18 @@ estando en Nómina te regresa al menú de Equipo):
   proveedores del jueves". Las semanas de antes que solo tienen el
   domingo guardado se respetan tal cual. Desde el aviso de Inicio se abre
   directo el conteo. "Contar inventario" abre un asistente paso
- (pantalla completa, barra de avance, Atrás/Siguiente): 1) "¿Qué día
+  (pantalla completa, barra de avance, Atrás/Siguiente). En las dos formas
+  de contar hay arriba un **buscador** (`BuscadorInventario`): se escribe el
+  producto como sea y sugiere entre los que tocan ese día, tolerando
+  acentos, abreviaturas, apodos y errores de dedo ("tosino" → Tocino;
+  `sugerirInsumos` en `lib/inventarioNotas.ts`), con su proveedor y si ya
+  está contado ("✓ 3 kg") o "Sin contar". Al elegir uno se abre un
+  **teclado numérico en pantalla** (no el del celular) con la unidad del
+  producto y "Guardar"; "No hay · 0" solo sale la primera vez que se elige
+  del buscador un producto sin contar. Si ese día ya se contó, pregunta
+  "Sumarlo a lo ya contado" o "Corregir la cantidad". Al guardar avisa
+  "Limón · 5 kg (sumado)" y el buscador queda listo para el siguiente.
+  Los pasos: 1) "¿Qué día
     estás contando?" (jueves o domingo; el que aún no se puede sale
     atenuado con su motivo); 2) "¿Cómo vas a contar?": "Por proveedor" o
     "Sin ningún orden". Por proveedor hay un paso por proveedor (el jueves,
