@@ -1420,19 +1420,21 @@ estando en Nómina te regresa al menú de Equipo):
   no contar doble), y arriba se ve cuántos proveedores de Cocina ya están
   cargados y cuáles faltan. El consumo de insumos de Inicio usa lo mismo.
   La captura semanal que vivía antes aquí se quitó;
-  "Limpiar catálogo" (solo el dueño, en Negocio > Compras): limpieza única
-  que deja una sola lista por proveedor juntando la libreta de inventario
-  y el Excel de precios base (`lib/limpiezaCatalogo.ts`): une Limonadas con
-  Sabroeats (todos "Concentrado de …"), junta los productos repetidos (el
-  nombre viejo queda como apodo y sus capturas pasan al que se queda),
-  pone nombres y "Se cuenta por" como en la libreta (Pepperoni por
-  paquete, Catsup de sobre por millar, Aceite por bidón, Lemon pepper
-  líquido de Wish por galón — distinto al Lemon pepper polvo de Lorsa),
-  pasa vasos y tapas a Lorsa, agrega Polvo azul y Champú azul, deja en
-  Postres solo Cheesecake tortuga y quita apodos que confundían productos
-  y "Se pide por" repetido. Va por id, así que correrla otra vez no cambia
-  nada. No toca precios ni historial, y
-  el botón desaparece cuando ya no hay nada que limpiar;
+  El catálogo se limpió una sola vez en noviembre 2026, directo en la base
+  (sin botón en la app; queda la lógica en `lib/limpiezaCatalogo.ts` y un
+  respaldo de antes en la tabla `respaldo_catalogo`): una sola lista por
+  proveedor juntando la libreta de inventario y el Excel de precios base.
+  Limonadas quedó unido a Sabroeats (todos "Concentrado de …"); se juntaron
+  los repetidos (el nombre viejo quedó como apodo y sus capturas pasaron
+  al que se quedó), entre ellos Carne molida 80/20 con Carne de hamburguesa,
+  Pulpa china con Carne de taco, las Dos Equis del Excel con las XX del
+  Conteo diario y las Coca-Cola Regular/Light/Sin Azúcar con Coca
+  regular/light/zero; nombres y "Se cuenta por" como en la libreta
+  (Pepperoni por paquete, Catsup de sobre por millar, Aceite por bidón,
+  Lemon pepper líquido de Wish por galón — distinto al Lemon pepper polvo
+  de Lorsa; contenedores, ramiking y Bolsa Johnster por pieza); vasos y
+  tapas en Lorsa; Polvo azul y Champú azul nuevos; en Postres solo
+  Cheesecake tortuga. Quedaron 195 productos en 15 proveedores;
   y "Importar catálogo": se elige el Excel de inventario de Johnster
   (.xlsx o .xlsm) y la app lee ahí mismo su hoja "PRECIOS BASE" (nada se
   sube a ningún lado). Compara cada insumo contra el catálogo por nombre (o

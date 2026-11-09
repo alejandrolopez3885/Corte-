@@ -3,11 +3,11 @@ import { supabase } from "../lib/supabaseClient";
 import {
   Plus, Settings2, Users, Receipt, CircleDot, Circle,
   BarChart3, Scale, LogOut, Truck, Trash2, Home, Store, LayoutDashboard, Contact, Clock, Wallet, ChartLine, Martini, ChefHat, BookOpen, MessageCircle, Trophy, QrCode, Award,
-  ShoppingCart, Handshake, Boxes, Package, Coins, History, FileUp, Sparkles, Wrench,
+  ShoppingCart, Handshake, Boxes, Package, Coins, History, FileUp, Wrench,
 } from "lucide-react";
 import { useAuth } from "../lib/auth.tsx";
 import { useAppData } from "../lib/useAppData";
-import { limpiarCatalogo, unirInsumosEn, unirProveedoresEn } from "../lib/limpiezaCatalogo";
+import { unirInsumosEn, unirProveedoresEn } from "../lib/limpiezaCatalogo";
 import { historialNombres } from "../lib/gastosBusqueda";
 import {
   addDaysIso, aplicarApertura, buildMonth, dateForDay, ubicarDiaPorFecha, formatAssignedDate, formatDayNumber, formatLongDayDate, formatWeekRange,
@@ -124,9 +124,6 @@ export default function CortesApp({ profile }: { profile: Profile }) {
   const duenoId = esInvitado ? (profile.owner_id as string) : profile.id;
   const [recorrido, setRecorrido] = useState<"bienvenida" | "pasos" | "opinion" | null>(esInvitado ? "bienvenida" : null);
   const { data, status, saveState, persist, recargar } = useAppData(profile, soloLectura);
-  const [limpiandoCatalogo, setLimpiandoCatalogo] = useState(false);
-  // Cambios que aún faltan de la limpieza única del catálogo (0 = ya hecha).
-  const pendientesLimpieza = useMemo(() => (data ? limpiarCatalogo(data).cambios : 0), [data]);
   // Datos del bot desde cualquier pantalla → recalcular el estado de los
   // gastos (ver sincronizarTodoRef más abajo).
   const sincronizarTodoRef = useRef<(j: JohnsterDatos) => void>(() => {});
@@ -769,13 +766,6 @@ export default function CortesApp({ profile }: { profile: Profile }) {
     if (!data) return;
     const next = structuredClone(data);
     if (unirInsumosEn(next, quedaId, otrosIds)) persist(next);
-  }
-
-  function aplicarLimpiezaCatalogo() {
-    if (!data) return;
-    const { next, cambios } = limpiarCatalogo(data);
-    if (cambios > 0) persist(next);
-    setLimpiandoCatalogo(false);
   }
 
   function saltarJuevesInventario(fecha: string, saltado: boolean) {
@@ -1968,36 +1958,6 @@ export default function CortesApp({ profile }: { profile: Profile }) {
                 <span>Desde el Excel de precios base de Johnster</span>
               </span>
             </button>
-            {pendientesLimpieza > 0 && (
-              <button className="menu-item" onClick={() => setLimpiandoCatalogo(true)}>
-                <span className="menu-item-icon">
-                  <Sparkles size={20} />
-                </span>
-                <span className="menu-item-text">
-                  <strong>Limpiar catálogo</strong>
-                  <span>Una sola lista por proveedor: sin repetidos, con nombres y unidades de la libreta</span>
-                </span>
-              </button>
-            )}
-            {limpiandoCatalogo && (
-              <Sheet title="Limpiar catálogo" onClose={() => setLimpiandoCatalogo(false)}>
-                <p className="hint">Se aplica una sola vez y no toca precios ni el historial de inventarios y pedidos:</p>
-                <ul className="hint">
-                  <li>Limonadas se une con Sabroeats y todos quedan como "Concentrado de …".</li>
-                  <li>Se juntan los productos repetidos (Excel y libreta): el nombre viejo queda como apodo, así las notas se siguen leyendo.</li>
-                  <li>Nombres y unidades como en la libreta: se cuenta por paquete, bolsa, millar, bidón…</li>
-                  <li>Vasos y tapas pasan a Lorsa; Polvo azul y Champú azul se agregan a Compras Johnster.</li>
-                  <li>En Postres solo queda Cheesecake tortuga.</li>
-                  <li>Se quitan apodos que confundían productos y "Se pide por" donde pedía lo mismo que contaba.</li>
-                </ul>
-                <button className="btn-primary" onClick={aplicarLimpiezaCatalogo}>
-                  Aplicar limpieza
-                </button>
-                <button className="link-btn" onClick={() => setLimpiandoCatalogo(false)}>
-                  Ahora no
-                </button>
-              </Sheet>
-            )}
           </div>
 
           <h3 className="menu-subtitle">Bar</h3>

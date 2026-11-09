@@ -205,6 +205,14 @@ const UNIONES: [string, string[]][] = [
   ["muaeb22f-mfv6kj", ["mvgfbffe-ty4454"]], // Papa blanca ← Papa (fresca)
   ["muarm6uu-2iap14", ["mu9q1h8f-0oy2l3"]], // Agua natural ← Agua natural Johnster
   ["mvgfbffg-0on53a", ["mveg5b2s-ndpgs9"]], // Palillo elotero ← Palo elotero
+  ["mu9ra2sp-b0un4j", ["mvgfbffe-67tdv2"]], // Carne de hamburguesa ← Carne molida 80/20
+  ["muadp8eu-sqt69p", ["mvgfbffe-a9gqvp"]], // Carne de taco ← Pulpa china
+  ["mu9qqvrr-brsblr", ["mvgfbffe-mo1i8q"]], // XX Lager ← Dos Equis (XX) Lager
+  ["muarm6uv-95pjq9", ["mvgfbffe-o6c34m"]], // XX ultra ← Dos Equis (XX) Ultra
+  ["muarm6uv-8gwouv", ["mvgfbffe-ycpnxr"]], // XX ámbar ← Dos Equis (XX) Ambar
+  ["muarm6uv-db8w6j", ["mvgfbffe-foqn8c"]], // Coca light ← Coca-Cola Light
+  ["muf8ghp6-6y67pf", ["mvgfbffe-ikbzkp"]], // Coca regular ← Coca-Cola Regular
+  ["muarm6uv-ab2a29", ["mvgfbffe-n7mtup"]], // Coca zero ← Coca-Cola Sin Azúcar
 ];
 // Nombres que NO deben quedar como apodo al unir (ya son otro producto).
 const SIN_APODO = ["lemon pepper", "Limón", "Mango"];
@@ -231,13 +239,13 @@ const AJUSTES: Record<string, Ajuste> = {
   // Huachileteke
   "mvgfbffe-9d5roy": { nombre: "Jalapeño ranch" },
   // Lorsa
-  "mvghza23-birljk": { nombre: "Contenedor negro 8x8", presentacion: "paquete", unidadPedido: null, quitarApodos: ["8x8"] },
+  "mvghza23-birljk": { nombre: "Contenedor negro 8x8", presentacion: null, unidadPedido: null, quitarApodos: ["8x8"] },
   "muae59lb-1b4id2": { nombre: "Contenedor negro 6x6" },
-  "muadqopl-4jv1dt": { nombre: "Ramiking negro 2 oz", presentacion: "paquete", unidadPedido: null },
-  "muadr1mu-yk6jfm": { nombre: "Tapa ramiking 2 oz", presentacion: "paquete", unidadPedido: null },
+  "muadqopl-4jv1dt": { nombre: "Ramiking negro 2 oz", presentacion: null, unidadPedido: null },
+  "muadr1mu-yk6jfm": { nombre: "Tapa ramiking 2 oz", presentacion: null, unidadPedido: null },
   "muaendvw-njiabi": { proveedorId: P.lorsa },
   "muaenjxh-yhw03i": { proveedorId: P.lorsa },
-  "mvgfbffe-d6lgka": { presentacion: "millar", unidadPedido: null },
+  "mvgfbffe-d6lgka": { presentacion: null, unidadPedido: null },
   "mvgfbffe-dit9jt": { nombre: "Botella PET 500 ml" },
   "mvgfbffe-lgm0l3": { nombre: "Popote estuchado", presentacion: "caja" },
   "muadtatb-wohby5": { nombre: "Bolsa 1 kg" },
