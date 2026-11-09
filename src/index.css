@@ -654,6 +654,16 @@ body {
   animation: toast-in 0.15s ease-out;
 }
 @keyframes toast-in { from { opacity: 0; transform: translate(-50%, 6px); } }
+.aviso-version {
+  position: fixed; left: 50%; top: calc(12px + env(safe-area-inset-top)); transform: translateX(-50%); z-index: 200;
+  display: flex; align-items: center; gap: 12px; width: max-content; max-width: calc(100% - 32px);
+  background: var(--accent); color: #fff; font-size: 15px; font-weight: 600; padding: 8px 8px 8px 16px; border-radius: 100px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
+}
+.aviso-version button {
+  display: flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 14px; border: 0; border-radius: 100px;
+  background: #fff; color: var(--accent); font: inherit; font-size: 15px; font-weight: 700; cursor: pointer;
+}
 
 /* ---- Inventario en notas libres ---- */
 .inv-no-reconocidos {
@@ -2731,6 +2741,11 @@ button.cj-seccion { cursor: pointer; }
 .ib-fila-main strong { font-size: 16px; color: var(--accent); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .ib-fila.suelto b { color: var(--warn-ink); }
 .ib-prov { border-top: 1px solid var(--surface-alt); }
+.inv-guardado { display: flex; flex-direction: column; gap: 10px; margin: 4px 0 12px; }
+.inv-guardado-texto { display: flex; align-items: center; gap: 8px; color: var(--ink-soft); font-size: 14px; }
+.inv-guardado-btn { display: flex; align-items: center; justify-content: center; gap: 8px; }
+.ib-fila-main strong.ib-cero { color: var(--ink-soft); font-weight: 600; }
+.ib-fila > span.ib-fila-main { cursor: default; padding-right: 16px; }
 .ib-prov:first-of-type { border-top: 0; }
 .ib-prov-cab { width: 100%; display: grid; grid-template-columns: minmax(0, 1fr) 96px 24px; align-items: center; gap: 12px; min-height: 64px; padding: 10px 12px 10px 14px; border: 0; background: none; font: inherit; color: var(--ink); text-align: left; cursor: pointer; }
 .ib-prov-nombre { display: flex; flex-direction: column; min-width: 0; }

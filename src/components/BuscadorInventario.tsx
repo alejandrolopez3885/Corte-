@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Check, ChevronDown, Delete, Search, Trash2, X } from "lucide-react";
 import { sugerirInsumos } from "../lib/inventarioNotas";
 import { unidadConteo } from "../lib/dataModel";
@@ -50,18 +50,7 @@ export function BuscadorInventario({
   const [quitando, setQuitando] = useState<string | null>(null);
   const campo = useRef<HTMLInputElement>(null);
   const avisoTimer = useRef<number | undefined>(undefined);
-  const [abierto, setAbierto] = useState<string | null>(null);
-  const grupoAbierto = useRef<HTMLDivElement>(null);
   const sugerencias = sugerirInsumos(texto, productos);
-  // Tocar fuera del proveedor abierto lo cierra (salvo con el teclado abierto).
-  useEffect(() => {
-    if (!abierto || elegido) return;
-    const cerrar = (e: PointerEvent) => {
-      if (!grupoAbierto.current?.contains(e.target as Node)) setAbierto(null);
-    };
-    document.addEventListener("pointerdown", cerrar);
-    return () => document.removeEventListener("pointerdown", cerrar);
-  }, [abierto, elegido]);
   const unidad = unidadConteo;
 
   function guardar(i: InsumoEntry, cantidad: number, accion: AccionConteo) {
@@ -130,18 +119,6 @@ export function BuscadorInventario({
       </button>
     </div>
   );
-  // Proveedores: primero el del último producto contado, luego los demás.
-  const porProveedor = (() => {
-    if (!grupos || !contados) return [];
-    const orden = new Map<string, number>();
-    contados.forEach(({ i }, n) => {
-      const g = grupos.find((x) => x.items.some((y) => y.id === i.id));
-      if (g && !orden.has(g.key)) orden.set(g.key, n);
-    });
-    return grupos
-      .map((g, n) => ({ ...g, n, hechos: g.items.filter((i) => contado(i) !== null).length }))
-      .sort((x, y) => (orden.get(x.key) ?? 1e6 + x.n) - (orden.get(y.key) ?? 1e6 + y.n));
-  })();
 
   return (
     <div className="ib">
@@ -216,7 +193,7 @@ export function BuscadorInventario({
               <>
                 Llevas contado{" "}
                 <b>
-                  {porProveedor.reduce((t, g) => t + g.hechos, 0)} de {porProveedor.reduce((t, g) => t + g.items.length, 0)}
+                  {avanceTotal(grupos, contado)}
                 </b>
               </>
             ) : (
@@ -230,38 +207,16 @@ export function BuscadorInventario({
           ) : (
             <>
               {grupos
-                ? porProveedor.map((g) => {
-                    const estaAbierto = abierto === g.key;
-                    const pct = g.items.length ? Math.round((g.hechos / g.items.length) * 100) : 0;
-                    const hechos = contados.filter(({ i }) => g.items.some((x) => x.id === i.id));
-                    return (
-                      <div key={g.key} className={`ib-prov ${estaAbierto ? "abierto" : ""}`} ref={estaAbierto ? grupoAbierto : undefined}>
-                        <button
-                          type="button"
-                          className="ib-prov-cab"
-                          aria-expanded={estaAbierto}
-                          onClick={() => setAbierto(estaAbierto ? null : g.key)}
-                        >
-                          <span className="ib-prov-nombre">
-                            <b>{g.nombre}</b>
-                            <small>
-                              {g.hechos} de {g.items.length} contados
-                            </small>
-                          </span>
-                          <span className="ib-prov-barra" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label={`${g.nombre}: ${pct}%`}>
-                            <span style={{ width: `${pct}%` }} className={pct === 100 ? "completo" : undefined} />
-                          </span>
-                          <ChevronDown size={20} className="ib-prov-flecha" aria-hidden />
-                        </button>
-                        {estaAbierto && (
-                          <div className="ib-prov-lista">
-                            {hechos.map(({ i, cantidad }) => filaContado(i, cantidad))}
-                            {g.items.filter((i) => contado(i) === null).map(filaSinContar)}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })
+                ? (
+                    <AvancePorProveedor
+                      grupos={grupos}
+                      contados={contados}
+                      contado={contado}
+                      pausado={!!elegido}
+                      filaContado={filaContado}
+                      filaSinContar={filaSinContar}
+                    />
+                  )
                 : contados.map(({ i, cantidad }) => filaContado(i, cantidad))}
               {(sueltos || []).map((l) => (
                 <div key={l} className="ib-fila suelto">
@@ -457,5 +412,86 @@ function TecladoCantidad({
         )}
       </div>
     </div>
+  );
+}
+
+type GrupoConteo = { key: string; nombre: string; items: InsumoEntry[] };
+
+export function avanceTotal(grupos: GrupoConteo[], contado: (i: InsumoEntry) => number | null): string {
+  const total = grupos.reduce((t, g) => t + g.items.length, 0);
+  const hechos = grupos.reduce((t, g) => t + g.items.filter((i) => contado(i) !== null).length, 0);
+  return `${hechos} de ${total}`;
+}
+
+// Lo contado por proveedor: nombre, "X de Y contados" y barra de avance; el
+// del último producto contado hasta arriba y los que no llevan nada al
+// final. Al tocar uno se abren sus productos (contados primero) y se cierra
+// al tocar fuera o abrir otro — salvo mientras está "pausado" (teclado abierto).
+export function AvancePorProveedor({
+  grupos,
+  contados,
+  contado,
+  pausado,
+  filaContado,
+  filaSinContar,
+}: {
+  grupos: GrupoConteo[];
+  // Lo contado, el más nuevo primero.
+  contados: { i: InsumoEntry; cantidad: number }[];
+  contado: (i: InsumoEntry) => number | null;
+  pausado?: boolean;
+  filaContado: (i: InsumoEntry, cantidad: number) => ReactNode;
+  filaSinContar: (i: InsumoEntry) => ReactNode;
+}) {
+  const [abierto, setAbierto] = useState<string | null>(null);
+  const grupoAbierto = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!abierto || pausado) return;
+    const cerrar = (e: PointerEvent) => {
+      if (!grupoAbierto.current?.contains(e.target as Node)) setAbierto(null);
+    };
+    document.addEventListener("pointerdown", cerrar);
+    return () => document.removeEventListener("pointerdown", cerrar);
+  }, [abierto, pausado]);
+
+  const grupoDe = new Map(grupos.flatMap((g) => g.items.map((i) => [i.id, g.key] as const)));
+  const orden = new Map<string, number>();
+  contados.forEach(({ i }, n) => {
+    const k = grupoDe.get(i.id);
+    if (k && !orden.has(k)) orden.set(k, n);
+  });
+  const lista = grupos
+    .map((g, n) => ({ ...g, n, hechos: g.items.filter((i) => contado(i) !== null).length }))
+    .sort((x, y) => (orden.get(x.key) ?? 1e6 + x.n) - (orden.get(y.key) ?? 1e6 + y.n));
+
+  return (
+    <>
+      {lista.map((g) => {
+        const estaAbierto = abierto === g.key;
+        const pct = g.items.length ? Math.round((g.hechos / g.items.length) * 100) : 0;
+        return (
+          <div key={g.key} className={`ib-prov ${estaAbierto ? "abierto" : ""}`} ref={estaAbierto ? grupoAbierto : undefined}>
+            <button type="button" className="ib-prov-cab" aria-expanded={estaAbierto} onClick={() => setAbierto(estaAbierto ? null : g.key)}>
+              <span className="ib-prov-nombre">
+                <b>{g.nombre}</b>
+                <small>
+                  {g.hechos} de {g.items.length} contados
+                </small>
+              </span>
+              <span className="ib-prov-barra" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label={`${g.nombre}: ${pct}%`}>
+                <span style={{ width: `${pct}%` }} className={pct === 100 ? "completo" : undefined} />
+              </span>
+              <ChevronDown size={20} className="ib-prov-flecha" aria-hidden />
+            </button>
+            {estaAbierto && (
+              <div className="ib-prov-lista">
+                {contados.filter(({ i }) => grupoDe.get(i.id) === g.key).map(({ i, cantidad }) => filaContado(i, cantidad))}
+                {g.items.filter((i) => contado(i) === null).map(filaSinContar)}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </>
   );
 }

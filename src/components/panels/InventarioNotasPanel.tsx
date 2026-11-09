@@ -1,14 +1,15 @@
-import { useState, type ReactNode } from "react";
-import { Check, ClipboardList, FolderOpen, Lock, Package, TriangleAlert } from "lucide-react";
+import { useMemo, useState, type ReactNode } from "react";
+import { Check, ClipboardList, FolderOpen, Lock, Package, Pencil, TriangleAlert } from "lucide-react";
 import { Empty, Sheet } from "../ui";
 import { ListaPorProveedor } from "./ConteoDiarioPanel";
 import {
   addDaysIso, dateForDay, unidadConteo, formatDayNumber, formatLongDayDate, formatShortDayDate, todayIso, type LineaConteoTexto,
 } from "../../lib/dataModel";
 import {
-  faltantesPorContar, leerNotasInventario, normalizar, NOMBRE_AREA, type ModoInventario, type RenglonInventario,
+  faltantesPorContar, gruposDelModo, leerNotasInventario, normalizar, NOMBRE_AREA, type ModoInventario, type RenglonInventario,
 } from "../../lib/inventarioNotas";
 import { InventarioAsistente } from "../modals/InventarioAsistente";
+import { AvancePorProveedor, avanceTotal } from "../BuscadorInventario";
 import type { InsumoEntry, MonthData, ProveedorCatalogEntry } from "../../lib/types";
 import { TituloPagina } from "../BarraTitulo";
 
@@ -383,7 +384,6 @@ function NotasForm({
   onUnirInsumos?: (quedaId: string, otrosIds: string[]) => void;
 }) {
   const [texto, setTexto] = useState(guardado);
-  const [pidiendoConfirmacion, setPidiendoConfirmacion] = useState(false);
   // Editar abre el buscador y teclado con lo ya contado.
   const [editando, setEditando] = useState(false);
 
@@ -392,23 +392,70 @@ function NotasForm({
     onGuardarNotas(fecha, t);
   }
 
+  // Lo guardado, por proveedor y solo para ver (el renglón más nuevo arriba).
+  const grupos = useMemo(() => gruposDelModo(insumos, proveedores, modo), [insumos, proveedores, modo]);
+  const { suma, contados } = useMemo(() => {
+    const suma = new Map<string, number>();
+    const renglones = leerNotasInventario(texto, insumos).renglones;
+    renglones.forEach((r) => r.insumoId && suma.set(r.insumoId, (suma.get(r.insumoId) ?? 0) + r.cantidad));
+    const vistos = new Set<string>();
+    const contados = [...renglones].reverse().flatMap((r) => {
+      const i = r.insumoId ? insumos.find((x) => x.id === r.insumoId) : undefined;
+      if (!i || vistos.has(i.id)) return [];
+      vistos.add(i.id);
+      return [{ i, cantidad: suma.get(i.id)! }];
+    });
+    // Los que quedaron en 0 (no hay) no cuentan para el orden: van al final.
+    return { suma, contados: [...contados.filter((c) => c.cantidad !== 0), ...contados.filter((c) => c.cantidad === 0)] };
+  }, [texto, insumos]);
+  const contado = (i: InsumoEntry) => suma.get(i.id) ?? null;
+  const fmt = (n: number) => String(Math.round(n * 1000) / 1000);
+
   return (
     <>
-      <div className="conteo-locked-banner">
-          <span>{cerrado ? "Cerrado: ya se guardó el inventario del domingo." : "Inventario guardado y bloqueado."}</span>
-          {!cerrado && (
-            <button className="link-btn" onClick={() => setPidiendoConfirmacion(true)}>
-              Editar
-            </button>
+      <div className="inv-guardado">
+        <span className="inv-guardado-texto">
+          <Lock size={16} aria-hidden /> {cerrado ? "Cerrado: ya se guardó el inventario del domingo." : "Inventario guardado."}
+        </span>
+        {!cerrado && (
+          <button type="button" className="btn-primary inv-guardado-btn" onClick={() => setEditando(true)}>
+            <Pencil size={17} aria-hidden /> Editar o seguir contando
+          </button>
+        )}
+      </div>
+      <div className="ib-contados">
+        <span className="ib-contados-titulo">
+          Contado <b>{avanceTotal(grupos, contado)}</b>
+          {contados.some((c) => c.cantidad === 0) && <> · {contados.filter((c) => c.cantidad === 0).length} en 0</>}
+        </span>
+        <AvancePorProveedor
+          grupos={grupos}
+          contados={contados}
+          contado={contado}
+          filaContado={(i, cantidad) => (
+            <div key={i.id} className="ib-fila">
+              <span className="ib-fila-main">
+                <span>
+                  <b>{i.nombre}</b>
+                </span>
+                <strong className={cantidad === 0 ? "ib-cero" : undefined}>
+                  {cantidad === 0 ? "No hay" : `${fmt(cantidad)} ${unidadConteo(i)}`}
+                </strong>
+              </span>
+            </div>
           )}
-        </div>
-      <textarea
-        className="text-input conteo-texto"
-        value={texto}
-        readOnly
-        rows={Math.max(12, texto.split("\n").length + 2)}
-        disabled
-      />
+          filaSinContar={(i) => (
+            <div key={i.id} className="ib-fila">
+              <span className="ib-fila-main">
+                <span>
+                  <b>{i.nombre}</b>
+                </span>
+                <em className="ib-falta">Sin contar</em>
+              </span>
+            </div>
+          )}
+        />
+      </div>
 
       <Resultado
         fecha={fecha}
@@ -447,26 +494,6 @@ function NotasForm({
         />
       )}
 
-      {pidiendoConfirmacion && (
-        <Sheet title="Editar inventario guardado" onClose={() => setPidiendoConfirmacion(false)}>
-          <p className="hint">
-            Este inventario de {formatLongDayDate(fecha)} ya se guardó. Se abre con lo ya contado para que sigas
-            contando o corrijas cantidades.
-          </p>
-          <button
-            className="btn-warn"
-            onClick={() => {
-              setEditando(true);
-              setPidiendoConfirmacion(false);
-            }}
-          >
-            <TriangleAlert size={16} /> Sí, necesito editarlo
-          </button>
-          <button className="link-btn" onClick={() => setPidiendoConfirmacion(false)}>
-            Cancelar
-          </button>
-        </Sheet>
-      )}
     </>
   );
 }

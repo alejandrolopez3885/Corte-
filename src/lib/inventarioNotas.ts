@@ -22,6 +22,24 @@ export function faltantesPorContar(
   );
 }
 
+// Los proveedores que tocan contar ese día con sus productos (sin los de
+// alta rotación): el jueves solo los marcados; el domingo todos y "Sin
+// proveedor".
+export interface GrupoInventario {
+  key: string;
+  nombre: string;
+  items: InsumoEntry[];
+}
+export function gruposDelModo(insumos: InsumoEntry[], proveedores: ProveedorCatalogEntry[], modo: ModoInventario): GrupoInventario[] {
+  const base = insumos.filter((i) => !i.altaRotacion).sort((a, b) => a.nombre.localeCompare(b.nombre));
+  const delModo = proveedores.filter((p) => modo === "completo" || p.incluyeJueves);
+  const g: GrupoInventario[] = delModo.map((p) => ({ key: p.id, nombre: p.nombre, items: base.filter((i) => i.proveedorId === p.id) }));
+  if (modo === "completo") {
+    g.push({ key: "sin", nombre: "Sin proveedor", items: base.filter((i) => !i.proveedorId || !proveedores.some((p) => p.id === i.proveedorId)) });
+  }
+  return g.filter((x) => x.items.length > 0);
+}
+
 // Lector de las notas libres del Inventario (domingo/jueves): el cocinero
 // escribe lo que va contando, un producto por renglón, como le salga
 // (".6 consomé", "1k ajo en polvo", "500 bolsas Johnster", "Pollo 9kg").

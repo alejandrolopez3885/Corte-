@@ -4,7 +4,7 @@ import { MarcoAsistente, Opcion } from "./asistente";
 import { BuscadorInventario, type AccionConteo } from "../BuscadorInventario";
 import { formatLongDayDate, unidadConteo } from "../../lib/dataModel";
 import {
-  faltantesPorContar, leerNotasInventario, normalizar, NOMBRE_AREA, type ModoInventario,
+  faltantesPorContar, gruposDelModo, leerNotasInventario, normalizar, NOMBRE_AREA, type ModoInventario,
 } from "../../lib/inventarioNotas";
 import type { InsumoEntry, ProveedorCatalogEntry } from "../../lib/types";
 
@@ -126,15 +126,7 @@ export function InventarioAsistente({
     }
   }, [fecha, forma, valores, libre, guardado]);
 
-  const grupos = useMemo<Grupo[]>(() => {
-    const base = insumos.filter((i) => !i.altaRotacion).sort((a, b) => a.nombre.localeCompare(b.nombre));
-    const delModo = proveedores.filter((p) => modo === "completo" || p.incluyeJueves);
-    const g: Grupo[] = delModo.map((p) => ({ key: p.id, nombre: p.nombre, items: base.filter((i) => i.proveedorId === p.id) }));
-    if (modo === "completo") {
-      g.push({ key: "sin", nombre: "Sin proveedor", items: base.filter((i) => !i.proveedorId || !proveedores.some((p) => p.id === i.proveedorId)) });
-    }
-    return g.filter((x) => x.items.length > 0);
-  }, [insumos, proveedores, modo]);
+  const grupos = useMemo<Grupo[]>(() => gruposDelModo(insumos, proveedores, modo), [insumos, proveedores, modo]);
 
   const repetido = (i: InsumoEntry) => insumos.some((x) => x.id !== i.id && normalizar(x.nombre) === normalizar(i.nombre));
   const renglon = (cantidad: string, i: InsumoEntry) => `${cantidad.replace(",", ".")} ${i.nombre}${repetido(i) ? ` (${NOMBRE_AREA[i.area]})` : ""}`;
@@ -179,13 +171,21 @@ export function InventarioAsistente({
   const detalleProducto = (i: InsumoEntry) => `${nombreGrupo.get(i.id) || "Sin proveedor"}${repetido(i) ? ` · ${NOMBRE_AREA[i.area]}` : ""}`;
   const fmtCantidad = (n: number) => String(Math.round(n * 1000) / 1000);
   const idDeLinea = (l: string) => leerNotasInventario(l, insumos).renglones[0]?.insumoId;
+  // Las notas se leen una sola vez por cambio (no una vez por producto).
+  const lecturaLibre = useMemo(() => leerNotasInventario(libre, insumos), [libre, insumos]);
+  const sumaLibre = useMemo(() => {
+    const m = new Map<string, number>();
+    lecturaLibre.renglones.forEach((r) => {
+      if (r.insumoId) m.set(r.insumoId, (m.get(r.insumoId) ?? 0) + r.cantidad);
+    });
+    return m;
+  }, [lecturaLibre]);
   function contadoDe(i: InsumoEntry): number | null {
     if (forma === "proveedor") {
       const v = (valores[i.id] ?? "").trim();
       return v !== "" && CANTIDAD.test(v) ? Number(v.replace(",", ".")) : null;
     }
-    const rs = leerNotasInventario(libre, insumos).renglones.filter((r) => r.insumoId === i.id);
-    return rs.length ? rs.reduce((t, r) => t + r.cantidad, 0) : null;
+    return sumaLibre.get(i.id) ?? null;
   }
   function guardarDesdeBuscador(i: InsumoEntry, cantidad: number, accion: AccionConteo) {
     setError("");
@@ -204,7 +204,6 @@ export function InventarioAsistente({
   }
   const buscador = <BuscadorInventario productos={productosDelDia} contado={contadoDe} detalle={detalleProducto} onGuardar={guardarDesdeBuscador} />;
   // Sin orden: lo contado sale de las notas (el renglón más nuevo arriba).
-  const lecturaLibre = useMemo(() => leerNotasInventario(libre, insumos), [libre, insumos]);
   const contadosLibre = useMemo(() => {
     const vistos = new Set<string>();
     return [...lecturaLibre.renglones]
