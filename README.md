@@ -1327,8 +1327,13 @@ estando en Nómina te regresa al menú de Equipo):
     solo los marcados; el domingo, todos y "Sin proveedor"; sin los de alta
     rotación), con un campo numérico grande por producto, su unidad y el
     botón "No hay" (pone 0). Sin orden ya no tiene cuadro de notas: es el
-    buscador y debajo **Lo que llevas contado** (el más nuevo arriba, con
-    cantidad y unidad); tocar uno pregunta "Contar más" (se suma) o "Editar
+    buscador y debajo **Llevas contado X de Y**, por proveedor: cada uno
+    con su nombre, "X de Y contados" y una barra de avance (verde al
+    completarse), y hasta arriba el proveedor del último producto contado
+    (los que no llevan nada, al final). Al tocar un proveedor se abren sus
+    productos —primero los contados con cantidad y unidad, luego los "Sin
+    contar", que se tocan para contarlos— y se cierra al tocar fuera o abrir
+    otro (no mientras está abierto el teclado). Tocar uno contado pregunta "Contar más" (se suma) o "Editar
     lo ya contado" (trae la cantidad y la primera tecla la reemplaza) y abre
     el teclado en ese modo; el bote de basura lo quita con confirmación; los
     renglones de un borrador viejo que no se reconocen salen en naranja para
