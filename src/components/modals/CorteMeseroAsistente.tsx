@@ -1,12 +1,13 @@
 import { useState, type ReactNode } from "react";
 import { ArrowLeft, ArrowRight, Check } from "lucide-react";
 import { NumInput, SumInput } from "../ui";
-import { money, round2, sumFromText, uid } from "../../lib/dataModel";
+import { money, recalcularAcumulados, round2, sumFromText, uid } from "../../lib/dataModel";
 import type { NombreHistorial } from "../../lib/gastosBusqueda";
 import type { EmpleadoEntry, Gasto, GastoCategoria, MeseroCatalogEntry, MeseroCut, PropinaTipo } from "../../lib/types";
 import type { MeseroFormValues } from "./MeseroModal";
+import { GastoPasos } from "./GastoPasos";
 import {
-  FormularioGasto, ListaAgregados, MarcoAsistente, Opcion, etiquetaCategoria, faltaEnGasto, gastoEnBlanco, gastoSinLlenar, iniciales, ligasDeGasto,
+  ListaAgregados, MarcoAsistente, Opcion, etiquetaCategoria, gastoEnBlanco, iniciales, ligasDeGasto,
   type BorradorGasto,
 } from "./asistente";
 
@@ -25,7 +26,7 @@ interface GastoNuevo extends BorradorGasto {
   categoria: GastoCategoria;
 }
 
-type Paso = "mesero" | "cobro" | "propina" | "venta" | "tarjetas" | "transferencias" | "gastos";
+type Paso = "mesero" | "cobro" | "propina" | "propinaManual" | "venta" | "tarjetas" | "transferencias" | "gastos" | "entrega";
 
 const PROPINAS: { valor: PropinaTipo; texto: string }[] = [
   { valor: "p3", texto: "Sí, 3%" },
@@ -74,13 +75,17 @@ export function CorteMeseroAsistente({
   const [transferDesglose, setTransferDesglose] = useState<number[] | undefined>(editing?.transferenciaDesglose);
   const [gastos, setGastos] = useState<GastoNuevo[]>([]);
   // El gasto que se está llenando (se agrega con "Guardar otro gasto" o "Siguiente").
-  const [g, setG] = useState<BorradorGasto>(gastoEnBlanco);
-  const [avisoGasto, setAvisoGasto] = useState("");
+  const [capturandoGasto, setCapturandoGasto] = useState(false);
   const [recibido, setRecibido] = useState("");
+  const [recibidoDueno, setRecibidoDueno] = useState<boolean | undefined>(
+    editing?.efectivoRecibidoDueno === undefined ? undefined : editing.efectivoRecibidoDueno !== null
+  );
+  const [entregaModificada, setEntregaModificada] = useState(false);
   // Al editar se empieza en el resultado; "Cambiar" lleva a un paso y regresa.
   const [paso, setPaso] = useState(0);
   const [enResultado, setEnResultado] = useState(!!editing);
   const [desdeResultado, setDesdeResultado] = useState(false);
+  const [confirmarEliminar, setConfirmarEliminar] = useState(false);
 
   // Mismo cálculo que el corte de siempre (MeseroModal): usuarios acumulados
   // ("Para llevar" y los del corte de apertura) capturan la lectura del día.
@@ -89,8 +94,14 @@ export function CorteMeseroAsistente({
   const previos = cortesDelDia.filter(
     (m, i) => m.meseroId === meseroId && m.lecturaSistema !== undefined && m.id !== editing?.id && (idxEditing < 0 || i < idxEditing)
   );
-  const esAcumulado = turnos && (esParaLlevar || previos.length > 0 || editing?.lecturaSistema !== undefined);
-  const lecturaPrevia = previos.length ? (previos[previos.length - 1].lecturaSistema as number) : 0;
+  const lecturaDiaria = turnos && (!editing || !!editing.lecturaDiaria);
+  const esAcumulado = turnos && (editing ? editing.lecturaSistema !== undefined : lecturaDiaria);
+  const cortesPrevios = cortesDelDia.filter(
+    (m, i) => m.meseroId === meseroId && m.id !== editing?.id && (idxEditing < 0 || i < idxEditing)
+  );
+  const lecturaPrevia = lecturaDiaria
+    ? round2(cortesPrevios.reduce((s, m) => s + m.venta, 0))
+    : previos.length ? previos[previos.length - 1].lecturaSistema || 0 : 0;
   const lectura = parseFloat(venta) || 0;
   const v = esAcumulado ? round2(lectura - lecturaPrevia) : lectura;
   const t = sumFromText(tarjetas);
@@ -103,8 +114,23 @@ export function CorteMeseroAsistente({
   const total = round2(v - t - transferSum + propina - gastosSum);
   const rec = sumFromText(recibido);
   const diferencia = round2(rec - total);
+  const prueba = cortesDelDia.map((m) => ({ ...m }));
+  const candidato: MeseroCut = {
+    ...(editing || { id: "__nuevo__", meseroId, nombre, tarjetas: 0, transferencia: 0, propina: 0, gastosTotal: 0, total: 0 }),
+    meseroId,
+    nombre,
+    venta: lectura,
+    lecturaSistema: esAcumulado ? lectura : undefined,
+    lecturaDiaria: lecturaDiaria || undefined,
+  };
+  if (idxEditing >= 0) prueba[idxEditing] = candidato;
+  else prueba.push(candidato);
+  recalcularAcumulados({ meseros: prueba });
+  const lecturaPosteriorInvalida = prueba.some(
+    (m) => m.lecturaDiaria && m.venta < 0 && (m.meseroId === meseroId || m.meseroId === editing?.meseroId)
+  );
 
-  const pasos: Paso[] = ["mesero", ...(esParaLlevar ? (["cobro"] as Paso[]) : (["propina"] as Paso[])), "venta", "tarjetas", "transferencias", "gastos"];
+  const pasos: Paso[] = ["mesero", ...(esParaLlevar ? (["cobro"] as Paso[]) : (["propina", ...(propinaTipo === "manual" ? ["propinaManual" as const] : [])] as Paso[])), "venta", "tarjetas", "transferencias", "gastos", ...(turnos && !editing?.apertura ? (["entrega"] as Paso[]) : [])];
   const actual = pasos[Math.min(paso, pasos.length - 1)];
   const totalPasos = pasos.length;
   const porcentaje = enResultado ? 100 : Math.round((paso / totalPasos) * 100);
@@ -112,28 +138,21 @@ export function CorteMeseroAsistente({
   const listo: Record<Paso, boolean> = {
     mesero: !!meseroId,
     cobro: true,
-    propina: !!propinaTipo && (propinaTipo !== "manual" || manualPropina.trim() !== ""),
-    venta: venta.trim() !== "",
+    propina: !!propinaTipo,
+    propinaManual: manualPropina.trim() !== "" && Number.isFinite(Number(manualPropina)) && Number(manualPropina) >= 0,
+    venta: venta.trim() !== "" && Number.isFinite(Number(venta)) && Number(venta) >= 0 && v >= 0 && !lecturaPosteriorInvalida,
     // El campo de montos se suma al salir de él; vacío cuenta como $0.
     tarjetas: true,
     transferencias: true,
     gastos: true,
+    entrega: recibidoDueno !== undefined && (!recibidoDueno || (!entregaModificada && typeof editing?.efectivoRecibidoDueno === "number") || total - propina >= 0),
   };
 
-  const gastoVacio = gastoSinLlenar(g);
-  // Agrega el gasto que se está llenando; false si le falta algo.
-  function agregarGasto(): boolean {
-    const falta = faltaEnGasto(g);
-    if (falta) return setAvisoGasto(falta), false;
-    setGastos((l) => [...l, { id: uid(), ...g, categoria: g.categoria as GastoCategoria, concepto: g.concepto.trim() }]);
-    setG(gastoEnBlanco());
-    setAvisoGasto("");
-    return true;
-  }
-
   function siguiente() {
-    // En gastos: lo que se dejó llenado se agrega solo; a medias no deja seguir.
-    if (!enResultado && actual === "gastos" && !gastoVacio && !agregarGasto()) return;
+    if (desdeResultado && actual === "propina" && propinaTipo === "manual" && !listo.propinaManual) {
+      setPaso(pasos.indexOf("propinaManual"));
+      return;
+    }
     if (desdeResultado || paso >= totalPasos - 1) {
       setDesdeResultado(false);
       setEnResultado(true);
@@ -180,7 +199,12 @@ export function CorteMeseroAsistente({
           ...ligasDeGasto(x),
         })),
         transferMonto: transferSum > 0 ? transferMonto : "",
-        ...(esAcumulado ? { lecturaSistema: lectura, cobro: esParaLlevar ? cobro || undefined : undefined } : {}),
+        ...(recibidoDueno !== undefined ? {
+          efectivoRecibidoDueno: recibidoDueno
+            ? !entregaModificada && typeof editing?.efectivoRecibidoDueno === "number" ? editing.efectivoRecibidoDueno : round2(total - propina)
+            : null,
+        } : {}),
+        ...(esAcumulado ? { lecturaSistema: lectura, lecturaDiaria: lecturaDiaria || undefined, cobro: esParaLlevar ? cobro || undefined : undefined } : {}),
       },
       editing?.id,
       otro
@@ -209,7 +233,7 @@ export function CorteMeseroAsistente({
                 meseroId === c.id,
                 <>
                   {c.nombre}
-                  {yaConCorte.has(c.id) && <small>{c.acumulado ? "Ya hay corte hoy: se resta lo ya cortado" : "Ya tiene un corte hoy"}</small>}
+                  {yaConCorte.has(c.id) && <small>{turnos ? "Ya tiene un corte hoy: se resta lo ya cortado" : "Ya tiene un corte hoy"}</small>}
                 </>,
                 () => {
                   setMeseroId(c.id);
@@ -238,14 +262,12 @@ export function CorteMeseroAsistente({
       contenido: (
         <div className="ca-opciones">
           {PROPINAS.map((p) => opcion(propinaTipo === p.valor, p.texto, () => setPropinaTipo(p.valor)))}
-          {propinaTipo === "manual" && (
-            <label className="ca-campo">
-              <span>¿Cuánto de propina?</span>
-              <NumInput autoFocus value={manualPropina} onChange={(e) => setManualPropina(e.target.value)} placeholder="$0.00" />
-            </label>
-          )}
         </div>
       ),
+    },
+    propinaManual: {
+      titulo: "¿Cuánto es de propina?",
+      contenido: <label className="ca-campo"><span>Propina</span><NumInput autoFocus value={manualPropina} onChange={(e) => setManualPropina(e.target.value)} placeholder="$0.00" /></label>,
     },
     venta: {
       titulo: esAcumulado ? "¿Cuánto marca el sistema en todo el día?" : "¿Cuánto vendió en el sistema?",
@@ -255,7 +277,7 @@ export function CorteMeseroAsistente({
           <NumInput className="num-input ca-grande" autoFocus value={venta} onChange={(e) => setVenta(e.target.value)} placeholder="$0.00" />
           {esAcumulado && venta && (
             <div className={`acumulado-calculo${v < 0 ? " negativo" : ""}`}>
-              {previos.length > 0 ? (
+              {(lecturaDiaria ? cortesPrevios.length : previos.length) > 0 ? (
                 <>
                   Ya se cortaron hoy <strong>{money(lecturaPrevia)}</strong>
                   <br />
@@ -266,6 +288,9 @@ export function CorteMeseroAsistente({
                 <>
                   Primer corte del día de {nombre}: <strong>{money(v)}</strong>
                 </>
+              )}
+              {venta && lecturaPosteriorInvalida && v >= 0 && (
+                <p className="gc-aviso" role="alert">Esta lectura dejaría un corte posterior con venta negativa. Revisa las lecturas de ese mesero.</p>
               )}
             </div>
           )}
@@ -305,6 +330,16 @@ export function CorteMeseroAsistente({
       ayuda: gastos.length || existingGastos.length ? undefined : "Si no tuvo gastos, toca No tuvo gastos.",
       contenido: (
         <>
+          {capturandoGasto ? (
+            <GastoPasos inicial={gastoEnBlanco()} catalog={catalog} empleados={empleados} historial={historial} meseroCancelacion={meseroId} estadoAuto={estadoAuto}
+              onCancelar={() => setCapturandoGasto(false)}
+              onGuardar={(g) => {
+                setGastos((l) => [...l, { ...g, id: uid() }]);
+                setCapturandoGasto(false);
+              }}
+            />
+          ) : (
+          <>
           <ListaAgregados
             filas={[
               ...existingGastos.map((x) => ({ id: x.id, titulo: x.concepto, detalle: etiquetaCategoria(x.categoria), monto: x.total })),
@@ -317,8 +352,21 @@ export function CorteMeseroAsistente({
               })),
             ]}
           />
-          <FormularioGasto g={g} setG={setG} catalog={catalog} empleados={empleados} historial={historial} meseroCancelacion={meseroId} estadoAuto={estadoAuto} aviso={avisoGasto} />
+          <button type="button" className="ca-boton secundario" onClick={() => setCapturandoGasto(true)}>Sí, agregar gasto</button>
+          </>
+          )}
         </>
+      ),
+    },
+    entrega: {
+      titulo: "¿El dueño ya recibió este dinero?",
+      ayuda: `Efectivo de ventas: ${money(round2(total - propina))}. La propina se lleva aparte.`,
+      contenido: (
+        <div className="ca-opciones">
+          {opcion(recibidoDueno === true, <>Sí, ya lo recibió<small>Ya no queda pendiente de entregar.</small></>, () => { setRecibidoDueno(true); setEntregaModificada(true); })}
+          {opcion(recibidoDueno === false, <>No, aún lo tenemos<small>Sigue pendiente para el corte del día.</small></>, () => { setRecibidoDueno(false); setEntregaModificada(true); })}
+          {recibidoDueno && entregaModificada && total - propina < 0 && <p className="aviso-faltante">El efectivo de ventas es negativo. Revisa el corte antes de registrar la entrega.</p>}
+        </div>
       ),
     },
   };
@@ -339,7 +387,7 @@ export function CorteMeseroAsistente({
   const textoPropina = tipoPropina === "p3" ? "Propina 3%" : tipoPropina === "p2" ? "Propina 2%" : tipoPropina === "manual" ? "Propina" : "Sin propina";
   const pregunta = enResultado ? null : preguntas[actual];
 
-  const pie = (
+  const pie = capturandoGasto ? null : (
     <>
       {desdeResultado && !enResultado ? (
         <button type="button" className="ca-boton" disabled={!listo[actual]} onClick={siguiente}>
@@ -353,24 +401,18 @@ export function CorteMeseroAsistente({
           {enResultado ? (
             <>
               {!editing && (
-                <button type="button" className="ca-boton secundario ca-medio" disabled={!meseroId || !venta.trim()} onClick={() => guardar(true)}>
+                <button type="button" className="ca-boton secundario ca-medio" disabled={!meseroId || !listo.venta || (pasos.includes("entrega") && !listo.entrega)} onClick={() => guardar(true)}>
                   Hacer otro corte
                 </button>
               )}
-              <button type="button" className="ca-boton" disabled={!meseroId || !venta.trim()} onClick={() => guardar()}>
+              <button type="button" className="ca-boton" disabled={!meseroId || !listo.venta || (pasos.includes("entrega") && recibidoDueno !== undefined && !listo.entrega)} onClick={() => guardar()}>
                 <Check size={19} /> Guardar corte
               </button>
             </>
           ) : (
             <>
-              {actual === "gastos" && (
-                <button type="button" className="ca-boton secundario ca-medio" disabled={gastoVacio} onClick={agregarGasto}>
-                  Guardar otro gasto
-                </button>
-              )}
               <button type="button" className="ca-boton" disabled={!listo[actual]} onClick={siguiente}>
-                {/* En gastos: sin nada llenado es "No tuvo gastos"; con algo, "Guardar y continuar". */}
-                {actual !== "gastos" ? "Siguiente" : !gastoVacio ? "Guardar y continuar" : gastos.length ? "Siguiente" : "No tuvo gastos"}
+                {actual !== "gastos" ? "Siguiente" : gastos.length ? "Siguiente" : "No tuvo gastos"}
                 <ArrowRight size={19} />
               </button>
             </>
@@ -380,6 +422,16 @@ export function CorteMeseroAsistente({
     </>
   );
 
+  if (confirmarEliminar && editing && onDelete) {
+    return (
+      <MarcoAsistente titulo="Eliminar corte" avance="Confirmación" porcentaje={100} clavePaso="eliminar" onClose={() => setConfirmarEliminar(false)}
+        pie={<><button type="button" className="ca-boton secundario" onClick={() => setConfirmarEliminar(false)}>Cancelar</button><button type="button" className="ca-boton" onClick={onDelete}>Sí, eliminar</button></>}>
+        <h2 className="ca-pregunta">¿Eliminar el corte de {editing.nombre}?</h2>
+        <p className="ca-ayuda">También se eliminarán sus gastos y transferencias, y se ajustarán los cortes posteriores.</p>
+        {typeof editing.efectivoRecibidoDueno === "number" && <p className="aviso-faltante">Se eliminará el registro de {money(editing.efectivoRecibidoDueno)} recibido por el dueño y ya no se descontará del pendiente.</p>}
+      </MarcoAsistente>
+    );
+  }
   return (
     <MarcoAsistente
       titulo={editing ? `Corte de ${editing.nombre}` : "Hacer corte a mesero"}
@@ -387,14 +439,14 @@ export function CorteMeseroAsistente({
       porcentaje={porcentaje}
       clavePaso={enResultado ? "resultado" : paso}
       onClose={onClose}
-      onDelete={onDelete}
+      onDelete={onDelete ? () => setConfirmarEliminar(true) : undefined}
       etiquetaEliminar="Eliminar corte"
       pie={pie}
     >
       {pregunta && (
         <>
-          <h2 className="ca-pregunta">{pregunta.titulo}</h2>
-          {pregunta.ayuda && <p className="ca-ayuda">{pregunta.ayuda}</p>}
+          {!capturandoGasto && <h2 className="ca-pregunta">{pregunta.titulo}</h2>}
+          {!capturandoGasto && pregunta.ayuda && <p className="ca-ayuda">{pregunta.ayuda}</p>}
           {pregunta.contenido}
         </>
       )}
@@ -409,10 +461,14 @@ export function CorteMeseroAsistente({
             {filaResultado("Tarjetas", `−${money(t)}`, "tarjetas")}
             {filaResultado("Transferencias", `−${money(transferSum)}`, "transferencias")}
             {filaResultado("Gastos", `−${money(gastosSum)}`, "gastos")}
+            {pasos.includes("entrega") && filaResultado("Dinero de venta", recibidoDueno === undefined ? "Sin registrar" : recibidoDueno ? `Recibido: ${money(!entregaModificada && typeof editing?.efectivoRecibidoDueno === "number" ? editing.efectivoRecibidoDueno : total - propina)}` : "Pendiente", "entrega")}
             <div className="ca-res-total">
               <span>Efectivo a entregar</span>
               <b>{money(total)}</b>
             </div>
+            {typeof editing?.efectivoRecibidoDueno === "number" && recibidoDueno && !entregaModificada && Math.abs(editing.efectivoRecibidoDueno - (total - propina)) >= 0.01 && (
+              <p className="aviso-faltante">El efectivo del corte cambió; la entrega registrada sigue siendo {money(editing.efectivoRecibidoDueno)}. Si fue un error, toca Cambiar en Dinero de venta.</p>
+            )}
           </div>
           <label className="ca-campo">
             <span>Efectivo recibido</span>

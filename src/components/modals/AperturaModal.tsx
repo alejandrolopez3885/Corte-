@@ -7,6 +7,7 @@ import { ConceptoInput } from "../ConceptoInput";
 import { money, normalizarNombre, round2, sumFromText, uid } from "../../lib/dataModel";
 import type { NombreHistorial } from "../../lib/gastosBusqueda";
 import type { EmpleadoEntry, MeseroCatalogEntry } from "../../lib/types";
+import { MarcoAsistente } from "./asistente";
 
 // Corte de apertura (turno 1): en una sola pantalla, lo que llevan hasta
 // este momento las apps, el usuario de para llevar ("Johnster") y el usuario
@@ -57,6 +58,7 @@ export function AperturaModal({
   fecha,
   notas = {},
   esDueno = false,
+  validar,
 }: {
   onClose: () => void;
   // nota: si se guarda sin que estén todos los gastos en el bot ("Dejar así").
@@ -83,6 +85,7 @@ export function AperturaModal({
   fecha?: string;
   notas?: Record<string, string>;
   esDueno?: boolean;
+  validar?: (v: AperturaValues) => string | undefined;
 }) {
   const paraLlevar = catalog.find((c) => c.acumulado);
   const usuarioDe = (empleadoId: string) => {
@@ -116,70 +119,58 @@ export function AperturaModal({
   const [llevar, setLlevar] = useState<Bloque>(bLlevar ? aBloque(bLlevar) : vacio(paraLlevar?.id || ""));
   const [persona, setPersona] = useState<Bloque>(bPersona ? aBloque(bPersona) : vacio(""));
   const [intento, setIntento] = useState(false);
+  const [avisoValidacion, setAvisoValidacion] = useState("");
   const [rev, setRev] = useState<null | { estado: "cargando" | "error" | "listo"; gastos?: JohnsterGasto[]; error?: string }>(null);
   const [escribiendo, setEscribiendo] = useState<string | null>(null);
+  const [paso, setPaso] = useState(0);
+  const [gastoEditando, setGastoEditando] = useState<null | { bloque: "llevar" | "persona"; id: string; concepto: string; monto: string; campo: "concepto" | "monto" }>(null);
 
   const nombreAbrio = empleados.find((e) => e.id === abrioId)?.nombre || abren.find((a) => a.empleadoId === abrioId)?.nombre;
   const usuario = catalog.find((c) => c.id === usuarioId);
   const usuarioLlevar = catalog.find((c) => c.id === llevar.meseroId);
   const otrosEmpleados = empleados.filter((e) => !abren.some((a) => a.empleadoId === e.id));
   const falta = !abrioId || !usuarioId || !llevar.meseroId || usuarioId === llevar.meseroId;
+  const pasos = ["abrio", "usuario", ...(!paraLlevar ? ["usuarioLlevar"] : []), "apps", "llevarVenta", "llevarTarjetas", "llevarTransfer", "llevarGastos", "personaVenta", "personaTarjetas", "personaTransfer", "personaGastos", "revision"];
+  const actual = pasos[paso];
 
   // Se actualiza sobre el valor más reciente: los campos de suma avisan el
   // total y sus partes por separado y no se deben pisar.
-  function bloqueUI(titulo: string, b: Bloque, setter: (f: (prev: Bloque) => Bloque) => void) {
+  function bloqueUI(titulo: string, b: Bloque, setter: (f: (prev: Bloque) => Bloque) => void, bloque: "llevar" | "persona", campo: string) {
     const set = (cambio: Partial<Bloque>) => setter((prev) => ({ ...prev, ...cambio }));
-    const gastosSum = b.gastos.reduce((s, g) => s + (parseFloat(g.monto) || 0), 0);
-    const efectivo = round2((parseFloat(b.venta) || 0) - sumFromText(b.tarjetas) - sumFromText(b.transfer) - gastosSum);
     return (
       <div className="apertura-bloque">
         <div className="apertura-bloque-titulo">
           <strong>{titulo}</strong>
           <span>sin propina</span>
         </div>
-        <div className="field-row">
+        {campo === "Venta" &&
           <Field label="Venta hasta ahora">
             <NumInput value={b.venta} onChange={(e) => set({ venta: e.target.value })} placeholder="0.00" />
           </Field>
+        }
+        {campo === "Tarjetas" &&
           <Field label="Tarjetas">
             <SumInput value={b.tarjetas} onChange={(v) => set({ tarjetas: v })} onPartes={(p) => set({ tarjetasDesglose: p })} placeholder="0.00" sumar />
           </Field>
-        </div>
+        }
+        {campo === "Transfer" &&
         <Field label="Transferencias">
           <SumInput value={b.transfer} onChange={(v) => set({ transfer: v })} onPartes={(p) => set({ transferDesglose: p })} placeholder="0.00" sumar />
         </Field>
+        }
+        {campo === "Gastos" && <>
         {b.gastos.map((g) => (
           <div key={g.id} className="gasto-row">
-            <Field label="Gasto">
-              <ConceptoInput
-                value={g.concepto}
-                onChange={(v) => setter((prev) => ({ ...prev, gastos: prev.gastos.map((x) => (x.id === g.id ? { ...x, concepto: v } : x)) }))}
-                historial={historial}
-                placeholder="Ej. hielo"
-              />
-            </Field>
-            <Field label="Monto">
-              <NumInput
-                value={g.monto}
-                onChange={(e) => {
-                  const monto = e.target.value;
-                  setter((prev) => ({ ...prev, gastos: prev.gastos.map((x) => (x.id === g.id ? { ...x, monto } : x)) }));
-                }}
-                placeholder="0.00"
-              />
-            </Field>
-            <button type="button" className="icon-btn" onClick={() => setter((prev) => ({ ...prev, gastos: prev.gastos.filter((x) => x.id !== g.id) }))}>
+            <button type="button" className="link-btn" onClick={() => setGastoEditando({ bloque, ...g, campo: "concepto" })}>{g.concepto} · {money(Number(g.monto))} · Cambiar</button>
+            <button type="button" className="icon-btn" aria-label={`Quitar gasto ${g.concepto}`} onClick={() => setter((prev) => ({ ...prev, gastos: prev.gastos.filter((x) => x.id !== g.id) }))}>
               <X size={16} />
             </button>
           </div>
         ))}
-        <button type="button" className="link-btn" onClick={() => setter((prev) => ({ ...prev, gastos: [...prev.gastos, { id: uid(), concepto: "", monto: "" }] }))}>
+        <button type="button" className="link-btn" onClick={() => setGastoEditando({ bloque, id: uid(), concepto: "", monto: "", campo: "concepto" })}>
           <Plus size={13} /> Agregar gasto
         </button>
-        <div className="apertura-efectivo">
-          <span>Entrega en efectivo</span>
-          <strong>{money(efectivo)}</strong>
-        </div>
+        </>}
       </div>
     );
   }
@@ -205,7 +196,16 @@ export function AperturaModal({
     ventaApps: parseFloat(apps) || 0,
     bloques: [aValores(llevar, usuarioLlevar?.nombre || "Para llevar"), aValores({ ...persona, meseroId: usuarioId }, usuario?.nombre || "")],
   });
-  const guardar = () => onGuardar(valores());
+  const guardar = (nota?: { clave: string; texto: string }) => {
+    const v = valores();
+    const error = validar?.(v);
+    if (error) {
+      setAvisoValidacion(error);
+      setRev(null);
+      return;
+    }
+    onGuardar(v, nota);
+  };
 
   // Gastos de la apertura contra los gastos en efectivo del bot de ese día:
   // cada uno busca uno con el mismo monto (el de nombre parecido primero).
@@ -277,7 +277,7 @@ export function AperturaModal({
                   className="btn-primary"
                   disabled={!escribiendo.trim()}
                   onClick={() => {
-                    onGuardar(valores(), { clave: claveNota, texto: escribiendo.trim() });
+                    guardar({ clave: claveNota, texto: escribiendo.trim() });
                     setEscribiendo(null);
                     setRev(null);
                   }}
@@ -314,13 +314,32 @@ export function AperturaModal({
   }
 
   return (
-    <Sheet title={inicial ? "Editar apertura" : "Corte de apertura"} onClose={onClose}>
+    <MarcoAsistente titulo={inicial ? "Editar apertura histórica" : "Corte de apertura"} avance={actual === "revision" ? "Revisión" : `Pregunta ${paso + 1} de ${pasos.length - 1}`} porcentaje={Math.round((paso / (pasos.length - 1)) * 100)} clavePaso={gastoEditando ? gastoEditando.campo : actual} onClose={onClose}
+      pie={gastoEditando ? <>
+        <button type="button" className="ca-boton secundario" onClick={() => gastoEditando.campo === "monto" ? setGastoEditando({ ...gastoEditando, campo: "concepto" }) : setGastoEditando(null)}>Atrás</button>
+        <button type="button" className="ca-boton" disabled={gastoEditando.campo === "concepto" ? !gastoEditando.concepto.trim() : !(Number(gastoEditando.monto) > 0) || !Number.isFinite(Number(gastoEditando.monto))}
+          onClick={() => {
+            if (gastoEditando.campo === "concepto") return setGastoEditando({ ...gastoEditando, campo: "monto" });
+            const setter = gastoEditando.bloque === "llevar" ? setLlevar : setPersona;
+            const gasto = { id: gastoEditando.id, concepto: gastoEditando.concepto.trim(), monto: gastoEditando.monto };
+            setter((prev) => ({ ...prev, gastos: prev.gastos.some((g) => g.id === gasto.id) ? prev.gastos.map((g) => g.id === gasto.id ? gasto : g) : [...prev.gastos, gasto] }));
+            setGastoEditando(null);
+          }}>{gastoEditando.campo === "concepto" ? "Siguiente" : "Guardar gasto"}</button>
+      </> : <>
+        <button type="button" className="ca-boton secundario" onClick={() => paso ? setPaso(paso - 1) : onClose()}>Atrás</button>
+        {actual !== "revision" && <button type="button" className="ca-boton" onClick={() => setPaso(paso + 1)}>Siguiente</button>}
+      </>}>
+      {gastoEditando ? <>
+        <h2 className="ca-pregunta">{gastoEditando.campo === "concepto" ? "¿En qué se gastó?" : "¿Cuánto se gastó?"}</h2>
+        {gastoEditando.campo === "concepto" ? <Field label="Concepto"><ConceptoInput value={gastoEditando.concepto} onChange={(v) => setGastoEditando({ ...gastoEditando, concepto: v })} historial={historial} placeholder="Ej. hielo" /></Field>
+          : <Field label="Monto"><NumInput autoFocus value={gastoEditando.monto} onChange={(e) => setGastoEditando({ ...gastoEditando, monto: e.target.value })} placeholder="0.00" /></Field>}
+      </> : <>
       <p className="hint">
         {inicial
           ? "Así quedó guardada la apertura. Corrige lo que haga falta: al guardar se reemplaza lo de antes (no se duplica) y vuelve a quedar bloqueada."
           : `Lo que llevan hasta este momento las apps, ${paraLlevar?.nombre || "el usuario de para llevar"} y quien abrió. Al guardarlo queda bloqueado; al cierre se escribe el total del día y la app resta esto.`}
       </p>
-      {fondo && dejadoAyer && (
+      {actual === "revision" && fondo && dejadoAyer && (
         <div className="apertura-bloque">
           <div className="apertura-bloque-titulo">
             <strong>Fondo</strong>
@@ -341,14 +360,14 @@ export function AperturaModal({
           <p className="hint">Si algo se pagó con el fondo y no está, regístralo en Gastos con "Con el fondo que se dejó ayer".</p>
         </div>
       )}
-      {!fondo && dejadoAyer && dejadoAyer.monto > 0 && (
+      {actual === "revision" && !fondo && dejadoAyer && dejadoAyer.monto > 0 && (
         <p className="aviso-dejado">
           Ayer se dejaron <strong>{money(dejadoAyer.monto)}</strong>
           {dejadoAyer.nota ? ` (${dejadoAyer.nota})` : ""}. Si un gasto se pagó con ese dinero, regístralo en Gastos del día, no
           aquí.
         </p>
       )}
-      <Field label="¿Quién abrió?">
+      {actual === "abrio" && <Field label="¿Quién abrió?">
         <select
           className="text-input"
           value={abrioId}
@@ -373,9 +392,9 @@ export function AperturaModal({
             </optgroup>
           )}
         </select>
-      </Field>
-      {abren.length === 0 && <p className="hint">Nadie tiene X ni Z ese día en el horario: elige a mano quién abrió.</p>}
-      <Field label="Su usuario en el sistema">
+      </Field>}
+      {actual === "abrio" && abren.length === 0 && <p className="hint">Nadie tiene X ni Z ese día en el horario: elige a mano quién abrió.</p>}
+      {actual === "usuario" && <Field label="Su usuario en el sistema">
         <select className="text-input" value={usuarioId} onChange={(e) => setUsuarioId(e.target.value)}>
           <option value="">Selecciona su usuario</option>
           {catalog
@@ -386,8 +405,8 @@ export function AperturaModal({
               </option>
             ))}
         </select>
-      </Field>
-      {!paraLlevar && (
+      </Field>}
+      {actual === "usuarioLlevar" && (
         <Field label="Usuario de para llevar">
           <select className="text-input" value={llevar.meseroId} onChange={(e) => setLlevar({ ...llevar, meseroId: e.target.value })}>
             <option value="">Selecciona el usuario de para llevar</option>
@@ -400,7 +419,7 @@ export function AperturaModal({
         </Field>
       )}
 
-      <div className="apertura-bloque">
+      {actual === "apps" && <div className="apertura-bloque">
         <div className="apertura-bloque-titulo">
           <strong>Apps</strong>
           <span>hasta ahora</span>
@@ -408,10 +427,20 @@ export function AperturaModal({
         <Field label="Venta de apps">
           <NumInput value={apps} onChange={(e) => setApps(e.target.value)} placeholder="0.00" />
         </Field>
-      </div>
-      {bloqueUI(usuarioLlevar?.nombre || "Para llevar", llevar, setLlevar)}
-      {bloqueUI(usuario?.nombre || nombreAbrio || "Quien abrió", persona, setPersona)}
-      {fondo && (
+      </div>}
+      {actual.startsWith("llevar") && bloqueUI(usuarioLlevar?.nombre || "Para llevar", llevar, setLlevar, "llevar", actual.slice("llevar".length))}
+      {actual.startsWith("persona") && bloqueUI(usuario?.nombre || nombreAbrio || "Quien abrió", persona, setPersona, "persona", actual.slice("persona".length))}
+      {actual === "revision" && (
+        <div className="apertura-bloque">
+          <div className="apertura-bloque-titulo"><strong>Revisa la apertura</strong></div>
+          <div className="apertura-efectivo"><span>Abrió</span><strong>{nombreAbrio || "Sin elegir"}</strong></div>
+          <div className="apertura-efectivo"><span>Apps</span><strong>{money(Number(apps) || 0)}</strong></div>
+          {[{ nombre: usuarioLlevar?.nombre || "Para llevar", b: llevar }, { nombre: usuario?.nombre || "Quien abrió", b: persona }].map(({ nombre, b }) => (
+            <div key={nombre} className="apertura-efectivo"><span>{nombre} · venta {money(Number(b.venta) || 0)}</span><strong>Efectivo {money(efectivoDe(b))}</strong></div>
+          ))}
+        </div>
+      )}
+      {actual === "revision" && fondo && (
         <div className="apertura-bloque">
           <div className="apertura-efectivo">
             <span>Efectivo de las ventas</span>
@@ -428,7 +457,7 @@ export function AperturaModal({
         </div>
       )}
 
-      {[llevar.meseroId, usuarioId]
+      {actual === "revision" && [llevar.meseroId, usuarioId]
         .map((id) => cortesDelDia.find((c) => c.meseroId === id))
         .filter((c): c is NonNullable<typeof c> => !!c)
         .map((c) => (
@@ -437,7 +466,7 @@ export function AperturaModal({
             mismo.
           </p>
         ))}
-      {intento && falta && (
+      {actual === "revision" && intento && falta && (
         <p className="aviso-faltante">
           {!abrioId
             ? "Elige quién abrió."
@@ -448,19 +477,27 @@ export function AperturaModal({
                 : "El usuario de quien abrió no puede ser el de para llevar."}
         </p>
       )}
-      <button
+      {actual === "revision" && avisoValidacion && <p className="aviso-faltante" role="alert">{avisoValidacion}</p>}
+      {actual === "revision" && <button
         className="btn-primary"
         onClick={() => {
           if (falta) {
             setIntento(true);
             return;
           }
+          const error = validar?.(valores());
+          if (error) {
+            setAvisoValidacion(error);
+            return;
+          }
+          setAvisoValidacion("");
           if (gastosApertura.length && fecha && notas[claveNota] === undefined) revisarGastos();
           else guardar();
         }}
       >
         {inicial ? "Guardar cambios de la apertura" : "Guardar corte de apertura"}
-      </button>
-    </Sheet>
+      </button>}
+      </>}
+    </MarcoAsistente>
   );
 }

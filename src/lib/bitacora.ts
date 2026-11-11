@@ -107,6 +107,8 @@ const CAMPOS: Record<string, string> = {
   sueldoDiario: "Sueldo diario", puestoId: "Puesto", areaId: "Área", numero: "Número", fecha: "Fecha",
   tipo: "Tipo", empleadoId: "Empleado", meseroId: "Mesero", label: "Nombre del mes",
   medioTurno: "Medio turno guardado", lecturaSistema: "Lo que marca el sistema", cobro: "Cobró", acumulado: "Se acumula en el día",
+  lecturaDiaria: "Lectura diaria acumulada", efectivoRecibidoDueno: "Efectivo de ventas recibido por el dueño",
+  fondoEntregado: "Fondo recibido por el dueño",
   fijosManual: "Gastos fijos editado a mano", foto: "Foto de perfil", descripcion: "Descripción", perfilDueno: "Perfil del dueño",
   usuarioSistemaId: "Usuario en el sistema", fechaIngreso: "Fecha de ingreso", fechaSalida: "Fecha de salida",
   historialSueldo: "Historial de sueldo", desde: "Desde", nota: "Nota",
@@ -114,11 +116,13 @@ const CAMPOS: Record<string, string> = {
 const CAMPOS_DINERO = new Set([
   "venta", "tarjetas", "transferencia", "propina", "gastosTotal", "total", "precio", "efectivoReal", "ventaApps",
   "monto", "operativos", "fijos", "comisionDidi", "comisionUber", "comisionRappi", "sueldoDiario",
+  "lecturaSistema", "efectivoRecibidoDueno",
 ]);
 
 const fmtNum = (n: number) => n.toLocaleString("es-MX", { maximumFractionDigits: 2 });
 
 function textoValor(v: Json, campo?: string): string {
+  if (campo === "efectivoRecibidoDueno" && v === null) return "Pendiente de entregar";
   if (v === undefined || v === null || v === "") return "—";
   // La foto de perfil es una imagen: nunca se copia al historial.
   if (campo === "foto") return "Foto";
@@ -154,6 +158,8 @@ function camposElemento(v: Json, tipoLista: string): { campo: string; valor: str
       },
       { campo: "Gastos", valor: textoValor(v.gastosTotal, "gastosTotal") },
       { campo: "Entrega", valor: textoValor(v.total, "total") },
+      ...(v.lecturaSistema !== undefined ? [{ campo: "Lectura del sistema", valor: textoValor(v.lecturaSistema, "lecturaSistema") }] : []),
+      ...(v.efectivoRecibidoDueno !== undefined ? [{ campo: "Recibido por el dueño", valor: textoValor(v.efectivoRecibidoDueno, "efectivoRecibidoDueno") }] : []),
     ];
   }
   if (tipoLista === "Transferencia" && Array.isArray(v.desglose) && v.desglose.length > 1) {

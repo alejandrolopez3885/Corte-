@@ -21,6 +21,8 @@ import { Empty, Field, NumInput, Sheet } from "../components/ui";
 import { MonthModal } from "../components/modals/MonthModal";
 import { type MeseroFormValues } from "../components/modals/MeseroModal";
 import { CorteMeseroAsistente } from "../components/modals/CorteMeseroAsistente";
+import { ResumenCorteContext } from "../components/modals/resumenCorte";
+import { MarcoAsistente } from "../components/modals/asistente";
 import { CorteDelDia } from "../components/CorteDelDia";
 import { pronosticoDia } from "../lib/pronostico";
 import { EtiquetasDiaFila, EtiquetasDiaSheet, type ValorEtiquetas } from "../components/EtiquetasDia";
@@ -384,7 +386,8 @@ export default function CortesApp({ profile }: { profile: Profile }) {
   // Medio turno y "Para llevar" acumulado: solo en cortes desde el 21/10/2026.
   const turnosDelDia = turnosActivos(activeDayDate);
   // Lo guardado con "Guardar medio turno" ya no lo puede cambiar el personal.
-  function bloqueadoMedioTurno(id?: string) {
+  function bloqueadoMedioTurno(id?: string, bloquearFondo = true) {
+    if (bloquearFondo && id && day?.fondoEntregado && day.gastos.some((g) => g.id === id && g.delFondo)) return true;
     return !isOwner && !!id && !!day?.apertura?.ids.includes(id) && !day.apertura.desbloqueada;
   }
   // Editar apertura: lo que ya tiene guardado, para precargar el formulario.
@@ -898,9 +901,12 @@ export default function CortesApp({ profile }: { profile: Profile }) {
         meseroId: form.meseroId,
         nombre: form.nombre,
         venta, tarjetas, transferencia, propinaTipo: form.propinaTipo, propina, gastosTotal, total,
+        ...(editingId && d.meseros.find((m) => m.id === editingId)?.apertura ? { apertura: true } : {}),
+        ...(editingId && d.meseros.find((m) => m.id === editingId)?.sinVenta ? { sinVenta: true } : {}),
+        ...(form.efectivoRecibidoDueno !== undefined ? { efectivoRecibidoDueno: form.efectivoRecibidoDueno } : {}),
         ...(form.tarjetasDesglose ? { tarjetasDesglose: form.tarjetasDesglose } : {}),
         ...(transferencia > 0 && form.transferDesglose ? { transferenciaDesglose: form.transferDesglose } : {}),
-        ...(form.lecturaSistema !== undefined ? { lecturaSistema: form.lecturaSistema, ...(form.cobro ? { cobro: form.cobro } : {}) } : {}),
+        ...(form.lecturaSistema !== undefined ? { lecturaSistema: form.lecturaSistema, ...(form.lecturaDiaria ? { lecturaDiaria: true } : {}), ...(form.cobro ? { cobro: form.cobro } : {}) } : {}),
       };
       if (editingId) {
         const i = d.meseros.findIndex((m) => m.id === editingId);
@@ -988,7 +994,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
   }
 
   function toggleGastoEstado(id: string) {
-    if (bloqueadoMedioTurno(id)) return;
+    if (bloqueadoMedioTurno(id, false)) return;
     updateDay((d) => {
       const g = d.gastos.find((x) => x.id === id);
       if (g) g.estado = g.estado === "pendiente" ? "ingresado" : "pendiente";
@@ -1619,6 +1625,10 @@ export default function CortesApp({ profile }: { profile: Profile }) {
   ];
 
   return (
+    <ResumenCorteContext.Provider value={totals && modal && (modal.type === "mesero" || modal.type === "gasto" || modal.type === "transfer" || modal.type === "dejarEfectivo" || modal.type === "apps" || modal.type === "guardarCorte" || modal.type === "apertura") ? {
+      venta: totals.ventaTotal, efectivo: efectivoDia?.entregar ?? totals.efectivo, tarjetas: totals.tarjetas,
+      transferencias: totals.transferencias, gastos: totals.gastos,
+    } : null}>
     <div className={`app-shell ${isOwner ? "with-bottom-nav" : ""}`}>
       <JalarParaActualizar
         onRecargar={async () => {
@@ -2396,8 +2406,15 @@ export default function CortesApp({ profile }: { profile: Profile }) {
                 fondo={fondoActivo}
                 onGastoFondo={() => setModal({ type: "gasto", fondo: true })}
                 onFondoRecibido={confirmarFondo}
+                onEntregaFondo={(recibido) => {
+                  updateDay((d) => {
+                    if (recibido && efectivoDia && efectivoDia.fondoQueda > 0) d.fondoEntregado = { fecha: new Date().toISOString(), nombre: profile.display_name || (isOwner ? "Dueño" : "Alguien del equipo"), monto: efectivoDia.fondoQueda };
+                    else if (!recibido) delete d.fondoEntregado;
+                  });
+                }}
                 totals={totals}
                 bloqueado={bloqueadoMedioTurno}
+                bloqueadoEstado={(id) => bloqueadoMedioTurno(id, false)}
                 fechaHora={fechaHoraCorta}
                 onNuevoCorte={() => setModal({ type: "mesero" })}
                 onEditarCorte={(m) => setModal({ type: "mesero", editing: m })}
@@ -2517,7 +2534,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           catalog={data.meseros}
           empleados={data.empleados}
           historial={historialGastos}
-          fondo={efectivoDia && ((fondoActivo && !day?.apertura) || modal.editing?.delFondo) ? { queda: efectivoDia.fondoQueda } : undefined}
+          fondo={efectivoDia && !day?.fondoEntregado && ((fondoActivo && !day?.apertura) || modal.editing?.delFondo) ? { queda: efectivoDia.fondoQueda } : undefined}
           inicialFondo={modal.fondo}
           estadoAuto={estadoAutomatico(activeDayDate)}
         />
@@ -2593,6 +2610,18 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           fecha={activeDayDate || undefined}
           notas={month?.weeks[activeWeek]?.cuadre?.notas || {}}
           esDueno={isOwner}
+          validar={(v) => {
+            if (!day) return "No se encontró el día del corte.";
+            if (!day.apertura && v.bloques.some((b) => day.meseros.some((m) => m.meseroId === b.meseroId))) {
+              return "Ya hay cortes de esos usuarios. Para evitar duplicarlos, registra los nuevos cortes desde el día.";
+            }
+            const copia = structuredClone(day);
+            aplicarApertura(copia, v, "Prueba");
+            if (copia.meseros.some((m) => m.lecturaDiaria && m.venta < 0)) {
+              return "La apertura dejaría un corte posterior con venta negativa. Revisa las lecturas antes de guardar.";
+            }
+            return undefined;
+          }}
         />
       )}
       {modal?.type === "dejarEfectivo" && day && (
@@ -2735,6 +2764,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
         />
       )}
     </div>
+    </ResumenCorteContext.Provider>
   );
 }
 
@@ -2757,26 +2787,25 @@ function DejarEfectivoModal({
 }) {
   const [monto, setMonto] = useState(inicial ? String(inicial.monto) : "");
   const [nota, setNota] = useState(inicial?.nota || "");
+  const [paso, setPaso] = useState(0);
+  const montoValido = monto.trim() !== "" && Number.isFinite(Number(monto)) && Number(monto) >= 0;
   return (
-    <Sheet title="Dejar efectivo para el día siguiente" onClose={onClose}>
-      <p className="hint">
-        Se resta del efectivo a entregar de hoy y se suma solo al del día siguiente. Lo que se pague con ese dinero se registra
-        en Gastos de ese día (no dentro del corte de apertura).
-      </p>
-      <Field label="Monto que se deja">
-        <NumInput value={monto} onChange={(e) => setMonto(e.target.value)} placeholder="0.00" />
-      </Field>
-      <Field label="¿Para qué? (opcional)">
-        <input className="text-input" value={nota} onChange={(e) => setNota(e.target.value)} placeholder="Ej. para hielo, retiro del dueño" />
-      </Field>
-      <button className="btn-primary" onClick={() => onGuardar(parseFloat(monto) || 0, nota)}>
-        Guardar
-      </button>
-      {inicial && (
-        <button className="btn-delete" onClick={() => onGuardar(0, "")}>
-          Ya no se deja efectivo
-        </button>
-      )}
-    </Sheet>
+    <MarcoAsistente titulo="Dejar efectivo para mañana" avance={`Pregunta ${paso + 1} de 2`} porcentaje={paso * 50} clavePaso={paso} onClose={onClose}
+      pie={<>
+        <button type="button" className="ca-boton secundario" onClick={() => paso ? setPaso(0) : onClose()}>Atrás</button>
+        {paso === 0 ? <button type="button" className="ca-boton" disabled={!montoValido} onClick={() => setPaso(1)}>Siguiente</button>
+          : <button type="button" className="ca-boton" onClick={() => onGuardar(Number(monto), nota)}>Guardar</button>}
+      </>}>
+      {paso === 0 ? <>
+        <h2 className="ca-pregunta">¿Cuánto efectivo se deja para mañana?</h2>
+        <p className="ca-ayuda">Se resta de lo pendiente hoy y se suma al fondo de mañana.</p>
+        <Field label="Monto que se deja"><NumInput autoFocus value={monto} onChange={(e) => setMonto(e.target.value)} placeholder="0.00" /></Field>
+        {inicial && <button type="button" className="btn-delete" onClick={() => onGuardar(0, "")}>Ya no se deja efectivo</button>}
+      </> : <>
+        <h2 className="ca-pregunta">¿Para qué se deja?</h2>
+        <p className="ca-ayuda">Es opcional.</p>
+        <Field label="Nota"><input className="text-input" autoFocus value={nota} onChange={(e) => setNota(e.target.value)} placeholder="Ej. para hielo" /></Field>
+      </>}
+    </MarcoAsistente>
   );
 }

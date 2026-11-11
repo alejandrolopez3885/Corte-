@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type InputHTMLAttributes, type ReactNode } from "react";
 import { X, Trash2 } from "lucide-react";
+import { ResumenCorteCaja } from "./modals/ResumenCorteCaja";
 
 export function Sheet({
   title,
@@ -22,6 +23,7 @@ export function Sheet({
             <X size={20} />
           </button>
         </div>
+        <ResumenCorteCaja />
         <div className="sheet-body">{children}</div>
         {onDelete && (
           <button className="btn-delete" onClick={onDelete}>

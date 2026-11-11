@@ -290,61 +290,42 @@ cambia el texto solo: siempre hay que tocar la sugerencia. Si LanguageTool
 no responde, simplemente no aparece la sugerencia de ortografía; el
 autocompletado del historial funciona igual.
 
-**Corte de mesero paso por paso**: el "+" de meseros en Corte abre "Hacer
-corte a mesero", a pantalla completa, una pregunta a la vez con la barra
-de avance arriba ("Pregunta 2 de 6 · 17%") y abajo Atrás / Siguiente (no
-avanza sin contestar lo obligatorio): 1) **¿A quién se le hace corte?**
-(lista con sus iniciales; "Ya tiene un corte hoy" si ya tiene); 2) **¿Se
-cobra propina?** ("Sí, 3%", "Sí, 2%", "Sí, otra cantidad" —pide cuánto— o
-"No se cobra propina"; al usuario de para llevar en su lugar le pregunta
-**¿Quién cobró este turno?**); 3) **¿Cuánto vendió en el sistema?** (al
-usuario acumulado: lo que marca en todo el día, y debajo lo ya cortado y
-lo de este corte); 4) **¿Cuánto trae en tarjetas?** (con "+" para sumar
-vouchers, o "No trae tarjetas"); 5) **¿Tiene transferencias?** (igual, o
-"No tiene transferencias"); 6) **¿Pagó algún gasto de su corte?** con el
-formulario completo: primero la **categoría** en botones, luego concepto,
-total, "¿Para quién?" (Nómina, Comida empleado) o "¿A quién se le
-cancela?" (Cancelaciones, ya con el mesero del corte), un botón **Subir
-comprobante** desactivado ("Próximamente") y "Ya está ingresado". Abajo:
-Atrás · **Guardar otro gasto** (lo agrega, limpia el formulario y sigue
-ahí; los agregados quedan arriba con su categoría y ✕) · el botón verde, que
-dice **No tuvo gastos** mientras no se ha llenado nada, **Guardar y
-continuar** en cuanto se llena algún campo (agrega ese gasto y sigue; a
-medias avisa qué falta) y Siguiente si ya hay gastos agregados y el
-formulario está vacío.
-Al final, el **Resultado**: venta, propina, tarjetas, transferencias y
-gastos, cada uno con "Cambiar", y **Efectivo a entregar** en grande; el
-cuadro **Efectivo recibido** solo calcula "Dar cambio: $…", "Faltan: $…"
-o "Exacto" — no se guarda ni cambia el efectivo del día ni de la semana.
-Botones: Atrás · **Hacer otro corte** (guarda y empieza otro) · **Guardar
-corte** (guarda y regresa al corte del día, como siempre). Tocar un corte
-ya hecho abre directo en el Resultado (sin "Hacer otro corte", con el bote
-para eliminarlo). Se guarda igual que antes: los gastos como pendientes (o
-ingresados) con su categoría, y la transferencia a nombre del mesero. Al
-**eliminar un corte** se borran con él su transferencia y los gastos que
-se capturaron en ese corte; al eliminar o cambiar el monto de uno de esos
-gastos desde Gastos del día, el corte de ese mesero se ajusta solo
-(gastos y entrega).
+**Corte de mesero paso por paso**: desde **Agregar corte**, se eligen el
+mesero, la propina (si se elige otra cantidad se pregunta por separado), la
+venta del sistema, tarjetas, transferencias y gastos. Para el usuario de
+para llevar se pregunta quién cobró en vez de pedir propina. En los días
+con lecturas acumuladas (desde el 21 de octubre de 2026), se escribe la
+venta que marca el sistema **en todo el día**: la app descuenta la venta
+ya cortada a ese usuario. Por ejemplo, $1,000 y después $1,700 generan
+cortes de $1,000 y $700. No se permite continuar con una lectura menor a
+lo ya cortado ni con una edición que vuelva negativo un corte posterior.
+Las lecturas históricas conservan su interpretación original; una nueva
+lectura diaria también descuenta las ventas anteriores sin lectura.
 
-**Gasto y transferencia paso por paso**: el "+" de Gastos abre "Nuevo
-gasto" con el mismo diseño: 1) **¿Se rebaja de algún corte?** ("Sí, del
-corte de Jenny" con su entrega, uno por cada corte del día, o "No, es un
-gasto general"; si aún no hay cortes, se salta) y 2) **¿Qué gasto es?**
-con el formulario completo (categoría primero, concepto, total, a quién,
-Subir comprobante "Próximamente" e ingresado) y arriba si se rebaja de
-alguien ("Se rebaja de la entrega de Jenny ($5,000.00)"). Botones: Atrás ·
-**Guardar otro gasto** (lo guarda, limpia y sigue ahí; con el formulario
-vacío el verde dice "Listo") · **Guardar gasto**. El "+" de Transferencias
-abre "Nueva transferencia": 1) **¿Se rebaja de algún corte?** (o "No se
-rebaja de ningún corte"), 2) **¿Quién cobró la transferencia?** (solo si
-no es de un corte: los meseros o "Otra persona" con su nombre; si es de un
-corte va a nombre de ese mesero) y 3) **¿De cuánto es?** (con "+" para
-sumar varias), con Atrás · **Guardar otra transferencia** · **Guardar
-transferencia**. Si se rebaja de un corte, se descuenta de la entrega de
-ese mesero; al editar (abre directo en el gasto o el monto; con Atrás se
-cambia de qué corte se rebaja) o eliminar, los cortes se ajustan solos. El
-efectivo del día y de la semana no cambia: ya cuenta todos los gastos y
-transferencias.
+Después se pregunta **¿El dueño ya recibió este dinero?**. Si responde que sí, se registra el
+importe de efectivo de ventas recibido (sin propina); no deja ese importe
+pendiente. El monto recibido queda registrado aunque después se corrija el
+corte; si cambia, aparece un aviso y se puede corregir la entrega. La
+propina se lleva aparte: el resultado del mesero sí la muestra y el
+resumen del efectivo de ventas no la incluye. En el resultado se muestran
+venta, propina, tarjetas, transferencias y gastos con **Cambiar**, el
+efectivo del corte y la situación de la entrega. El campo de efectivo
+recibido para calcular cambio sigue siendo independiente y no se guarda.
+**Hacer otro corte** guarda y abre uno nuevo; **Guardar corte** vuelve al
+día. Al eliminar un corte se eliminan también sus gastos y transferencia,
+y se recalculan las lecturas posteriores.
+
+**Gasto y transferencia paso por paso**: al agregar o editar un gasto se
+elige si sale del fondo, de un corte o de la caja según corresponda. Luego
+se pregunta por separado el concepto, monto y categoría; para nómina,
+comida de empleado o cancelaciones se puede asignar una persona. En días
+sin estado automático se pregunta si ya está ingresado. Se puede guardar
+otro gasto. Los gastos dentro de un corte usan las mismas preguntas. Las
+transferencias preguntan de qué corte se rebajan, quién cobró cuando no se
+rebajan de uno y el monto. Tarjetas y transferencias admiten sumas con +.
+Los cambios a gastos o transferencias vinculados ajustan el corte. Si ya
+se registró una entrega al dueño, su monto se conserva para no cambiar lo
+que realmente se entregó; se puede corregir desde el corte del mesero.
 
 Al capturar un corte, "Guardar corte" no se puede tocar si falta elegir el
 mesero o la venta; y al guardar un gasto en efectivo la categoría es obligatoria ("Es importante
@@ -596,125 +577,49 @@ estando en Nómina te regresa al menú de Equipo):
   conservó lo de alguien más, el aviso de guardado dice "Se conservó lo que
   guardó alguien más en COCINA". Con el horario bloqueado (sin editar) se ve
   siempre lo último guardado, y al tocar "Editar" se empieza desde ahí.
-- **Corte**: la pantalla principal — mes, semana, día, meseros, gastos,
-  transferencias, ventas de apps y sus resúmenes. Debajo de "Historial de este día"
-  todo va ordenado paso a paso (`src/components/CorteDelDia.tsx`):
-  - **Siguiente paso**: tarjeta verde con barra de avance ("Siguiente paso
-    · 3 de 4 · 50%"), qué toca hacer en una frase y su botón, y abajo los
-    pasos del día como etiquetas (✓ los hechos, resaltado el actual):
-    **Corte de apertura** ("Hoy abre …", botón Corte de apertura) →
-    **Cortes del cierre** (botón Hacer corte a mesero) → **Confirmar
-    gastos** (los que siguen en Pendiente o les falta algo, con "Ver
-    gastos", que pasa a Todo el día y baja a Gastos) → **Guardar corte**
-    ("Revisa que las apps del día ($…) y Johnster del día ($…) coincidan
-    con el sistema"; en este paso la tarjeta ya no repite el botón: se
-    guarda con el de la barra de abajo). Desde la semana del 26/10/2026
-    el paso de gastos dice **Gastos capturados** (que tengan concepto,
-    monto y categoría) y, si hay gastos que el bot todavía no tiene (sin
-    contar los que se suben juntos el domingo), sale un aviso blanco "N
-    gastos aún no están en el bot · se revisa al guardar el corte" que
-    lleva a Gastos. Los días sin turnos (antes del 21/10/2026) son 3
-    pasos, sin apertura. Ya guardado, la tarjeta dice "Corte guardado" por
-    quién y cuándo (el dueño con "Reabrir corte").
-  - **Pestañas** Turno 1 · Apertura (con el ícono de candado y la hora si ya se
-    guardó; ahí el aviso con "Desbloquear apertura" para el dueño y sin
-    botones +) / Turno 2 · Cierre (se abre solo cuando ya hay apertura) /
-    Todo el día (resumen, con los cortes separados por turno). Los días
-    sin turnos no llevan pestañas.
-  - **Totales del turno** en tarjetas, todas a la vista: la venta (del
-    turno o total) grande arriba y las demás en 2 columnas (tarjetas,
-    transferencias, gastos, propinas y apps del día, que se toca para
-    cambiarla; en Todo el día también venta local).
-  - **Cortes de meseros** en tabla (venta, tarjetas, transf., gastos y
-    entrega, con el total; tocar una fila abre el corte) — en celular,
-    lista con los mismos datos; a un lado (abajo en celular) **Gastos**
-    (categoría, de qué corte, del fondo o general, y Confirmar/Ingresado;
-    con el estado automático, "No está en el bot" y "Otro monto en el
-    bot" salen en rojo con ícono y "Falta ticket" en naranja)
-    y **Transferencias**; y **Efectivo · ¿cuánto debe haber?** (debajo de
-    los cortes en iPad, al final en celular): solo dinero, como cuenta de
-    caja con columnas Movimiento y Queda — efectivo que cobraron los
-    meseros (sin propinas, tarjetas ni transferencias), − gastos del
-    turno, = debe haber en caja, − se deja para mañana, = efectivo a
-    entregar; abajo, el turno 1 ya entregado, el total del día y el botón
-    "+ Dejar efectivo para mañana". Los botones + miden 44 px.
-  - **Fondo** (lo que se dejó el día anterior, desde el 25/10/2026): solo
-    vive en el turno 1. Si hay fondo, el primer paso es **Recibe el fondo
-    ($…)** con "Ya lo recibí". En la pestaña Turno 1 sale la tarjeta
-    **Fondo**: se dejó ayer, los gastos pagados con él (con +; en Nuevo
-    gasto la pregunta pasa a ser **¿Con qué dinero se pagó?** con "Con el
-    fondo que se dejó ayer · quedan $…" como primera opción) y **queda del
-    fondo**. Esos gastos se restan del fondo, no de las ventas. El **Corte
-    de apertura** muestra el bloque Fondo (se dejó, − gastos del fondo,
-    queda) y al final "Efectivo de las ventas + fondo que queda = se
-    entrega al dueño"; al guardarlo, los gastos del fondo quedan dentro de
-    la apertura. El turno 2 ya no lleva fondo: su efectivo es solo lo de su
-    turno. En Todo el día: fondo + cobrado − gastos del día − ya entregado
-    en la apertura (con el fondo). Los gastos del fondo siguen contando
-    como gastos del día en totales y Dashboard.
-  - **Barra fija abajo** con el efectivo a entregar (en la noche, si hubo
-    apertura), "Dejar efectivo" y "Guardar corte" (ya guardado: "Reabrir
-    corte" para el dueño o "Guardado"). Arriba de los totales del
-  día hay una tarjeta de asignación: quién tiene asignado ese día (si
-  alguien) y quién capturó su corte — ver "Asignar día" más abajo.
-- **Corte de apertura y cierre** (en los cortes desde el **21 de octubre
-  de 2026**; los días anteriores quedan como estaban): arriba del corte
-  aparece "Hoy abre: [nombre] (X en el horario)" — quien tiene **X** (abre)
-  o **Z** (dobla) ese día en Horarios — y el botón **"Corte de apertura"**.
-  Ahí, en una sola pantalla y sin propina, se captura lo que llevan hasta
-  ese momento: **Apps**, el **usuario de para llevar** (ej. "Johnster") y
-  el **usuario de quien abrió** (venta, tarjetas, transferencias y
-  gastos). "¿Quién abrió?" viene del horario y se puede cambiar a mano; "Su
-  usuario en el sistema" se elige (el nombre del horario no siempre es el
-  del sistema), la app lo sugiere si coincide con su primer nombre y lo
-  recuerda para la siguiente vez. Al guardarlo, esos cortes, gastos y
-  transferencias quedan bloqueados para el personal y la lista se ve en
-  "Apertura · hasta [hora]" (con candado, incluida la venta de apps) y
-  "Resto del día". Al cierre, el corte de Johnster y (si se le hace) el de
-  quien abrió se capturan con la **venta total del día que marca el
-  sistema** y las tarjetas/transferencias del resto del día: la app
-  muestra "En la apertura: $X · Este corte (resto del día): $Y" y guarda
-  solo la diferencia (se recalcula sola si se corrige la apertura).
-  Johnster nunca lleva propina; en el cierre de quien abrió se elige 3%,
-  2%, Nada o Manual. Las apps se cierran escribiendo el total del día en
-  "Ventas de apps". Arriba se muestran "Johnster del día", "[Quien abrió]
-  del día" y "Apps del día", que deben coincidir con el sistema. "Guardar
-  corte" al final bloquea todo; el dueño siempre puede editar. En el
-  aviso del candado del Turno 1 el dueño tiene **"Editar apertura"**: el
-  formulario se abre con lo que ya tiene (quién abrió, su usuario, apps y
-  cada bloque con venta, tarjetas, transferencias y gastos) y al guardar
-  reemplaza lo de antes sin duplicar (se conservan los ids y el estado y la
-  categoría de los gastos que no cambiaron; los gastos generales y del fondo
-  del turno 1 se quedan) y la vuelve a bloquear. **"Desbloquear"** ya no
-  borra la apertura: sus cortes siguen en el Turno 1 y el personal los puede
-  editar ("Apertura desbloqueada… · Editar y volver a bloquear"). En una
-  apertura nueva, si el usuario ya tiene corte ese día fuera de la apertura,
-  el formulario avisa que quedaría con dos cortes. Al guardar la apertura,
-  si tiene gastos, **se revisan en Johnster** (solo los gastos; la venta del
-  turno 1 no se sube al bot): "Revisando gastos con Johnster…" busca cada
-  uno en los gastos en efectivo del bot de ese día (mismo monto, nombre
-  parecido primero). Si todos están con su ticket se guarda solo; si no,
-  "Faltan gastos de la apertura en el bot" con cada uno ("No está en el
-  bot" o "Sin comprobante"), "Dejar así y anotar por qué" (guarda la
-  apertura y la nota `apertura:[fecha]` con las de Cuadrar), "Revisar de
-  nuevo ↻", "Volver a la apertura" y, solo el dueño, "Guardar sin revisar
-  Johnster (emergencia)". Si el bot no responde también se puede anotar y
-  guardar. El usuario de para llevar se
-  marca una vez en Equipo > Meseros ("Usuario de para llevar (sin
-  propina)").
-- **Efectivo del día** (mismos días, desde el 21/10/2026): en lugar del
-  renglón "Efectivo a entregar", el corte muestra la cuenta del efectivo:
-  "Efectivo de la apertura (ya entregado al dueño)" como referencia — el
-  dueño siempre se lleva el efectivo de la apertura —, "Efectivo del resto
-  del día (sin propinas)", "+ Se dejó el día anterior" (automático, si el
-  día anterior se dejó efectivo), "− Se deja en el restaurante" (si hoy se
-  deja) y **"Efectivo a entregar en la noche"**, lo que va en el sobre;
-  abajo, el total de efectivo del día (apertura + noche). Con "+ Dejar
-  efectivo para el día siguiente" quien cierra registra el monto y para
-  qué (ej. hielo, retiro del dueño): sale del corte de ese día y entra
-  solo al del día siguiente. Lo que se pague con ese dinero se registra en
-  Gastos del día (no dentro del corte de apertura); el corte de apertura
-  lo recuerda con un aviso cuando hay efectivo dejado.
+- **Corte**: mes, semana y día con una sola vista del día, sin pestañas de
+  turnos. El resumen muestra venta total y local, tarjetas, transferencias,
+  gastos, propinas y apps; tocar apps permite cambiarlas. **Agregar corte**
+  abre el asistente de un mesero o para llevar. **Ver movimientos** muestra
+  cortes, gastos y transferencias para agregar o editar. El botón **Corte a
+  mitad del día** es opcional: se puede registrar un corte o seguir con el
+  día. No es obligatorio hacer un corte intermedio; si se hacen dos al mismo
+  usuario, se resta lo ya cortado. En los asistentes de corte, gasto,
+  transferencia, apps, efectivo y guardado, **Resumen del día** muestra
+  los movimientos guardados y se puede desplegar sin perder la captura.
+  Los formularios de gasto y efectivo para mañana van pregunta por pregunta.
+- **Efectivo y fondo**: la cuenta del día muestra el efectivo de ventas sin
+  propinas, los gastos, el fondo del día anterior, lo ya recibido por el
+  dueño y lo que se deja para mañana. En cada corte se indica si el dueño
+  ya recibió el efectivo de ventas: solo ese importe se resta de lo
+  pendiente; si el personal conserva el dinero, sigue pendiente. Ejemplo:
+  dos cortes de $1,000 y $700 dejan $700 pendientes si el dueño recibió el
+  primero, o $1,700 si aún conserva ambos el personal. Las propinas se
+  controlan aparte. El importe recibido se guarda al confirmar y no cambia
+  automáticamente al editar ventas o gastos; se avisa si ya no coincide.
+  Al borrar el corte se borra también su registro de entrega.
+  Si hay fondo, se muestra lo recibido, sus gastos y lo que queda. Esos
+  gastos se restan del fondo, no de las ventas. **Entregar lo que queda**
+  pregunta si el dueño ya lo recibió: solo entonces se resta el sobrante
+  pendiente. Mientras la entrega está registrada no se agregan ni editan
+  gastos de ese fondo; para corregirlos, primero se cambia la entrega a
+  **No, aún está aquí**. El importe recibido se conserva aunque se cambie
+  posteriormente el fondo de origen y se avisa si hay diferencia.
+  **Dejar efectivo para mañana** pregunta monto y nota opcional por
+  separado. El botón de guardar revisa pendientes y conserva la revisión de
+  Johnster, sus comprobantes, notas y la opción de emergencia del dueño.
+  Al guardar, el personal no puede modificar el día; el dueño puede
+  reabrirlo. La barra inferior muestra el efectivo pendiente.
+- **Aperturas históricas**: las aperturas ya registradas siguen visibles y
+  conservan sus cortes, fondo, entrega, bloqueo de personal y cálculos
+  originales. El dueño puede editarlas paso a paso o desbloquearlas y se mantiene la
+  revisión de gastos y comprobantes con Johnster. No se crean aperturas
+  antiguas desde el nuevo flujo: los cortes intermedios se registran como
+  cortes normales con su estado de entrega. Una edición de apertura que
+  dejaría negativa una lectura diaria posterior no se puede guardar. Las
+  fechas anteriores al 21 de octubre de 2026 conservan el modo histórico
+  sin lecturas acumuladas. Las cuentas de personal siguen viendo solo sus
+  días asignados y los permisos existentes.
 - **Equipo**: menú con 5 opciones — "Meseros" (catálogo de
   meseros — solo nombre, para elegir a quién le haces el corte en Corte;
   vive aquí porque también son parte de tu equipo, aunque su lista está

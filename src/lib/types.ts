@@ -296,6 +296,11 @@ export interface MeseroCut {
   // que marcaba el sistema en este corte. La venta del corte es esta
   // lectura menos la del corte anterior del mismo usuario.
   lecturaSistema?: number;
+  // Las nuevas lecturas diarias descuentan todos los cortes anteriores,
+  // incluidos los registros anteriores que no guardaban lectura.
+  lecturaDiaria?: boolean;
+  // Importe recibido sin propina; null indica que sigue pendiente.
+  efectivoRecibidoDueno?: number | null;
   // Quién cobró este corte del usuario acumulado (nombre del mesero).
   cobro?: string;
   // Corte hecho en el corte de apertura (turno 1).
@@ -555,6 +560,8 @@ export interface DayData {
   efectivoDejado?: { monto: number; nota?: string };
   // Quien abrió confirmó que recibió el fondo del día anterior.
   fondoRecibido?: { fecha: string; nombre: string };
+  // El sobrante del fondo que ya recibió el dueño, separado de las ventas.
+  fondoEntregado?: { fecha: string; nombre: string; monto: number };
   // Qué pasó ese día que mueve la venta (ver lib/etiquetas.ts).
   etiquetas?: { tipos: EtiquetaDia[]; nota?: string };
 }

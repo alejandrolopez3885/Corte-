@@ -2767,3 +2767,13 @@ button.cj-seccion { cursor: pointer; }
 .ib-no { border: 1.5px solid var(--border); background: var(--surface); color: var(--ink); }
 .ib-modo { margin: 0; padding: 10px 12px; border-radius: 12px; background: var(--accent-soft); color: var(--accent); font-size: 14px; }
 .ib-acciones.solo { grid-template-columns: 1fr; }
+.cd-acciones-dia { display: grid; gap: 10px; margin: 14px 0; }
+.cd-accion-dia { width: 100%; min-height: 64px; display: flex; align-items: center; gap: 14px; padding: 14px; text-align: left; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); color: inherit; cursor: pointer; }
+.cd-accion-dia svg { flex: none; color: var(--accent); }
+.cd-accion-dia span { display: grid; gap: 3px; }
+.cd-accion-dia small { color: var(--ink-soft); font-size: 13px; }
+.ca-pie:has(.ca-resumen-dia) { flex-wrap: wrap; }
+.ca-resumen-dia { flex-basis: 100%; padding: 10px 12px; border-radius: 12px; background: var(--accent-soft); color: var(--accent); font-size: 13px; }
+.ca-resumen-dia summary { cursor: pointer; min-height: 32px; }
+.ca-resumen-dia p { margin: 6px 0; }
+.ca-gasto-pasos-botones { display: flex; gap: 10px; margin-top: 20px; }

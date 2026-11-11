@@ -41,6 +41,14 @@ export interface Novedad {
 
 export const NOVEDADES: Novedad[] = [
   {
+    id: "corte-diario-paso-a-paso",
+    fecha: "2026-11-11T22:19:00Z",
+    seccion: "corte",
+    titulo: "Un solo corte del día",
+    texto: "Agrega cortes **paso a paso** y registra si el dueño ya recibió el efectivo; el corte de mitad del día es opcional.",
+    visual: "cierreTotal",
+  },
+  {
     id: "mantenimiento-pendientes",
     fecha: "2026-11-06T23:13:00Z",
     seccion: "mantenimiento",

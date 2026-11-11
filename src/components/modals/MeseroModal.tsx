@@ -21,6 +21,8 @@ export interface MeseroFormValues {
   transferMonto: string;
   // Usuario acumulado ("Para llevar"): lo que marca el sistema y quién cobró.
   lecturaSistema?: number;
+  lecturaDiaria?: boolean;
+  efectivoRecibidoDueno?: number | null;
   cobro?: string;
 }
 

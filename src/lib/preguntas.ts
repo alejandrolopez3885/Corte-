@@ -533,6 +533,8 @@ export function responder(data: AppData, c: Consulta, hoy: string): Respuesta {
         );
       if (e.dejadoAyer && !e.fondoEnApertura) lineas.push(`+ Fondo del día anterior ${sinCentavos(e.fondoQueda)}`);
       if (e.dejadoHoy) lineas.push(`− Se deja para el día siguiente ${sinCentavos(e.dejadoHoy)}`);
+      if (e.recibidoDueno) lineas.push(`− Ya recibido por el dueño ${sinCentavos(e.recibidoDueno)} (sin propinas)`);
+      if (e.fondoEntregado) lineas.push(`− Fondo recibido por el dueño ${sinCentavos(e.fondoEntregado)}`);
       lineas.push(`Efectivo total del día ${sinCentavos(e.totalDia)}`);
       return { titulo: titulos.efectivo, valor: sinCentavos(e.entregar), lineas, enlace, dias, consulta: c };
     }

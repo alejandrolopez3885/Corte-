@@ -442,6 +442,8 @@ export function responderEquipo(data: AppData, c: Consulta, hoy: string, ctx: Co
       if (e.tieneApertura) lineas.push(`Sin lo de la apertura (${sinCentavos(e.aperturaEntregado)}, ya entregado)`);
       if (e.dejadoAyer && !e.fondoEnApertura) lineas.push(`+ Lo que queda del fondo del día anterior ${sinCentavos(e.fondoQueda)}`);
       if (e.dejadoHoy) lineas.push(`− Lo que se deja para mañana ${sinCentavos(e.dejadoHoy)}`);
+      if (e.recibidoDueno) lineas.push(`− Ya recibido por el dueño ${sinCentavos(e.recibidoDueno)} (sin propinas)`);
+      if (e.fondoEntregado) lineas.push(`− Fondo recibido por el dueño ${sinCentavos(e.fondoEntregado)}`);
       return { ...base, titulo, valor: sinCentavos(e.entregar), lineas: lineas.length ? lineas : ["Venta − tarjetas, transferencias y gastos."] };
     }
     return { ...base, titulo, valor: sinCentavos(r.efectivo), lineas: ["Venta − tarjetas, transferencias y gastos."] };

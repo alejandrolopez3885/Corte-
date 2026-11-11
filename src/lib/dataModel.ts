@@ -527,12 +527,18 @@ export function turnosActivos(fechaIso: string | null | undefined): boolean {
 // corte anterior del mismo usuario, en el orden en que se capturaron. Se
 // recalcula todo cada vez, así que corregir o borrar un corte anterior
 // ajusta solos los siguientes.
-export function recalcularAcumulados(d: DayData) {
+export function recalcularAcumulados(d: Pick<DayData, "meseros">) {
   const anterior: Record<string, number> = {};
+  const vendido: Record<string, number> = {};
   d.meseros.forEach((m) => {
-    if (m.lecturaSistema === undefined) return;
-    const venta = round2(m.lecturaSistema - (anterior[m.meseroId] || 0));
+    if (m.lecturaSistema === undefined) {
+      vendido[m.meseroId] = round2((vendido[m.meseroId] || 0) + m.venta);
+      return;
+    }
+    const base = m.lecturaDiaria ? vendido[m.meseroId] || 0 : anterior[m.meseroId] || 0;
+    const venta = round2(m.lecturaSistema - base);
     anterior[m.meseroId] = m.lecturaSistema;
+    vendido[m.meseroId] = round2((vendido[m.meseroId] || 0) + venta);
     const propina =
       m.propinaTipo === "p3" ? round2(venta * 0.03) : m.propinaTipo === "p2" ? round2(venta * 0.02) : m.propinaTipo === "manual" ? m.propina : 0;
     m.venta = venta;
@@ -582,10 +588,12 @@ export function efectivoDelDia(months: Record<string, MonthData>, fechaIso: stri
   const resto = round2(efectivo + gastosFondo - (tieneApertura ? aperturaEf : 0));
   const fondoEnApertura = tieneApertura && fechaIso >= FONDO_EN_APERTURA_DESDE;
   const aperturaEntregado = tieneApertura ? round2(aperturaEf + (fondoEnApertura ? fondoQueda : 0)) : 0;
-  const entregar = round2(resto + (fondoEnApertura ? 0 : fondoQueda) - dejadoHoy);
+  const recibidoDueno = round2(day.meseros.filter((m) => !m.apertura).reduce((s, m) => s + (m.efectivoRecibidoDueno ?? 0), 0));
+  const fondoEntregado = fondoEnApertura ? 0 : day.fondoEntregado?.monto || 0;
+  const entregar = round2(resto + (fondoEnApertura ? 0 : fondoQueda) - dejadoHoy - recibidoDueno - fondoEntregado);
   return {
-    tieneApertura, aperturaEf, resto, ayer, dejadoAyer, dejadoHoy, gastosFondo, fondoQueda, fondoEnApertura, aperturaEntregado, entregar,
-    totalDia: round2(entregar + aperturaEntregado),
+    tieneApertura, aperturaEf, resto, ayer, dejadoAyer, dejadoHoy, gastosFondo, fondoQueda, fondoEnApertura, aperturaEntregado, recibidoDueno, fondoEntregado, entregar,
+    totalDia: round2(entregar + aperturaEntregado + recibidoDueno + fondoEntregado),
   };
 }
 

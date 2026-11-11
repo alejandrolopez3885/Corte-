@@ -6,6 +6,7 @@ import { money } from "../../lib/dataModel";
 import { GASTO_CATEGORIAS } from "../../lib/types";
 import type { NombreHistorial } from "../../lib/gastosBusqueda";
 import type { EmpleadoEntry, GastoCategoria, GastoEstado, MeseroCatalogEntry, MeseroCut } from "../../lib/types";
+import { ResumenCorteCaja } from "./ResumenCorteCaja";
 
 // Piezas compartidas de los formularios paso por paso (corte de mesero,
 // gasto y transferencia): el marco con la barra de avance, las opciones
@@ -109,7 +110,10 @@ export function MarcoAsistente({
           <div className="ca-espacio-final" aria-hidden="true" />
         </div>
       </main>
-      <footer className="ca-pie">{pie}</footer>
+      <footer className="ca-pie">
+        <ResumenCorteCaja />
+        {pie}
+      </footer>
     </div>
   );
 }
