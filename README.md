@@ -1002,7 +1002,10 @@ estando en Nómina te regresa al menú de Equipo):
   modifican gastos: estos se capturan por separado. El dueño puede habilitar
   el permiso "Mantenimiento" a cada cuenta de equipo desde Personal;
   bajo "Análisis", "Tendencias" — la
-  sección más dinámica: se reacomoda sola según los datos. Arriba, "Para
+  sección más dinámica: se reacomoda sola según los datos. Cada tarjeta tiene
+  **Copiar**, que copia al portapapeles una imagen PNG de lo que se ve en
+  ella, incluidos sus gráficos y la posición visible de las tablas; si el
+  navegador no permite copiar imágenes se muestra un aviso. Arriba, "Para
   revisar" (siempre primero) es exclusivamente de la semana en curso (de
   lunes a hoy; el lunes empieza en limpio), para ir resolviendo esa semana,
   en este orden: información que parece incompleta (días de esta semana sin

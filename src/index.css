@@ -1027,8 +1027,12 @@ button.pill { cursor: pointer; }
 
 /* ---- Tendencias: semana en curso, cierre, día a día, patrones ---- */
 .tendencias-subtitulo { margin: 14px 0 0; font-size: 13px; font-weight: 600; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.04em; }
-.tend-card { display: flex; flex-direction: column; gap: 8px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 12px 14px; }
-.tend-card h4 { margin: 0; font-size: 12px; font-weight: 600; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.04em; }
+.tend-card { position: relative; display: flex; flex-direction: column; gap: 8px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 12px 14px; }
+.tend-card h4 { min-height: 44px; align-items: center; padding-right: 92px; margin: 0; font-size: 12px; font-weight: 600; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.04em; }
+.tend-copiar { position: absolute; top: 12px; right: 14px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 0 11px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--accent); font: 600 13px 'IBM Plex Sans', sans-serif; cursor: pointer; }
+.tend-copiar:disabled { cursor: wait; }
+.tend-copiar-estado { order: 10; font-size: 12px; color: var(--good); }
+.tend-copiar-estado.error { color: var(--bad); }
 .tend-hero strong { font-family: 'Fraunces', serif; font-size: 30px; font-weight: 600; }
 .tend-hero span { font-size: 13px; color: var(--ink-soft); }
 .tend-cambio { font-weight: 600; white-space: nowrap; margin-left: 2px; }

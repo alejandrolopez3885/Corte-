@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from "react";
-import { ChartLine, ChevronRight, Minus, TrendingDown, TrendingUp } from "lucide-react";
+import { ChartLine, ChevronRight, Copy, Minus, TrendingDown, TrendingUp } from "lucide-react";
+import { toBlob } from "html-to-image";
 import { Empty } from "../ui";
 import { formatWeekRange, META_NOMINA_PCT, META_NOMINA_VERDE_PCT, money, round2, todayIso } from "../../lib/dataModel";
 import { type TendenciasSemana } from "../../lib/tendencias";
@@ -23,6 +24,58 @@ interface Kpi {
   anterior: number | null;
   esPct?: boolean;
   invertido?: boolean; // true si subir es malo (gastos, nómina)
+}
+
+function CopiarTarjeta() {
+  const [estado, setEstado] = useState<"copiando" | "copiada" | "error" | null>(null);
+
+  async function copiar(evento: React.MouseEvent<HTMLButtonElement>) {
+    const tarjeta = evento.currentTarget.closest<HTMLElement>(".tend-card");
+    if (!tarjeta) {
+      setEstado("error");
+      return;
+    }
+    try {
+      if (!navigator.clipboard?.write || typeof ClipboardItem === "undefined") {
+        throw new Error("El navegador no permite copiar imágenes");
+      }
+      const clon = tarjeta.cloneNode(true);
+      if (!(clon instanceof HTMLElement) || !tarjeta.parentElement) throw new Error("No se pudo preparar la tarjeta");
+      clon.setAttribute("aria-hidden", "true");
+      Object.assign(clon.style, { position: "fixed", left: "-10000px", top: "0", width: `${tarjeta.getBoundingClientRect().width}px` });
+      // La captura no conserva scrollLeft: desplazamos la tabla solo en el clon.
+      const originales = tarjeta.querySelectorAll<HTMLElement>(".tendencias-table-wrap");
+      clon.querySelectorAll<HTMLElement>(".tendencias-table-wrap").forEach((contenedor, i) => {
+        const desplazamiento = originales[i]?.scrollLeft || 0;
+        contenedor.style.overflow = "hidden";
+        const tabla = contenedor.firstElementChild;
+        if (tabla instanceof HTMLElement && desplazamiento) tabla.style.transform = `translateX(-${desplazamiento}px)`;
+      });
+      tarjeta.parentElement.appendChild(clon);
+      const imagen = toBlob(clon, { pixelRatio: 2, style: { position: "relative", inset: "auto", insetInline: "auto", insetBlock: "auto", margin: "0" } })
+        .then((blob) => {
+          if (!blob) throw new Error("No se pudo generar la imagen");
+          return blob;
+        })
+        .finally(() => clon.remove());
+      const copia = navigator.clipboard.write([new ClipboardItem({ "image/png": imagen })]);
+      setEstado("copiando");
+      await copia;
+      setEstado("copiada");
+    } catch (error) {
+      console.error("No se pudo copiar la tarjeta", error);
+      setEstado("error");
+    }
+  }
+
+  return (
+    <>
+      <button type="button" className="tend-copiar" disabled={estado === "copiando"} onClick={copiar} aria-label="Copiar esta tarjeta como imagen PNG">
+        <Copy size={16} aria-hidden /> Copiar
+      </button>
+      {estado && estado !== "copiando" && <span className={`tend-copiar-estado ${estado}`} role="status">{estado === "copiada" ? "Imagen copiada" : "No se pudo copiar la imagen. Revisa los permisos del navegador e inténtalo de nuevo."}</span>}
+    </>
+  );
 }
 
 export function TendenciasPanel({
@@ -75,6 +128,7 @@ export function TendenciasPanel({
       contenido:
         puntos.length > 0 ? (
           <div className="tend-card">
+            <CopiarTarjeta />
             <h4>Resultados por semana cerrada</h4>
             <KpiGrid puntos={puntos} />
             <VentaChartCard puntos={puntos} proyeccion={proyeccion} />
@@ -338,6 +392,7 @@ function SemanaEnCurso({ t, meta, onGuardarMeta }: { t: TendenciasSemana; meta?:
         : `${DIA_CORTO[dias[0].dia]} – ${DIA_CORTO[dias[dias.length - 1].dia]}`;
   return (
     <div className="tend-card tend-hero">
+      <CopiarTarjeta />
       <h4>Venta hasta hoy · {rango}</h4>
       <strong>{money(t.hastaHoy)}</strong>
       {t.diasContados > 0 && (
@@ -395,6 +450,7 @@ function CierreSemana({ t }: { t: TendenciasSemana; meta?: number }) {
   const faltan = round2(t.semanaPasadaTotal - t.hastaHoy);
   return (
     <div className="tend-card">
+      <CopiarTarjeta />
       <h4>¿Cómo cerraría la semana?</h4>
       <div className="tend-dos">
         <div className="tend-mini">
@@ -437,6 +493,7 @@ function DiaADia({ t }: { t: TendenciasSemana }) {
   const max = Math.max(1, ...t.dias.flatMap((d) => [d.actual ?? d.estimado, d.semanaPasada]));
   return (
     <div className="tend-card">
+      <CopiarTarjeta />
       <h4>Día a día vs. semana pasada</h4>
       <div className="tend-leyenda">
         <span>
@@ -501,6 +558,7 @@ function SemanasCompletas({ t }: { t: TendenciasSemana }) {
   if (t.semanas.length === 0) return null;
   return (
     <div className="tend-card">
+      <CopiarTarjeta />
       <h4>Semanas</h4>
       <table className="tend-tabla">
         <thead>
@@ -541,6 +599,7 @@ function PatronSemanal({ t }: { t: TendenciasSemana }) {
   const peor = conVenta.reduce((a, b) => (b.promedio < a.promedio ? b : a));
   return (
     <div className="tend-card">
+      <CopiarTarjeta />
       <h4>Venta promedio por día de la semana</h4>
       <div className="tend-barras bajo">
         {t.patron.map((p) => (
@@ -567,6 +626,7 @@ function MezclaCobro({ t }: { t: TendenciasSemana }) {
   const pts = (a: number, b: number | null) => (b === null ? null : round2(a - b));
   return (
     <div className="tend-card">
+      <CopiarTarjeta />
       <h4>Cómo se cobra esta semana</h4>
       <div className="tend-dos">
         <div className="tend-mini">
@@ -594,6 +654,7 @@ const NIVEL: Record<Alerta["nivel"], { clase: string; icono: string }> = {
 function ParaRevisar({ alertas, lunes, onVer }: { alertas: Alerta[]; lunes: string; onVer: (id?: TarjetaId) => void }) {
   return (
     <div className="tend-card">
+      <CopiarTarjeta />
       <h4>
         <span className="tend-revisar-titulo">
           Para revisar <small>· semana del {formatWeekRange(lunes)}</small>
@@ -637,6 +698,7 @@ function FilaComparada({ nombre, actual, base, cambio, etiquetaBase }: { nombre:
 function VentaMeseros({ a }: { a: AnalisisTendencias }) {
   return (
     <div className="tend-card">
+      <CopiarTarjeta />
       <h4>Venta por mesero</h4>
       <table className="tend-tabla">
         <tbody>
@@ -669,6 +731,7 @@ function GastosVsVenta({ g, lunes, diasContados }: { g: GastosVenta; lunes: stri
     <>
       {s && (
         <div className="tend-card">
+          <CopiarTarjeta />
           <h4>Gastos vs. venta · esta semana</h4>
           <div className="gv-hero">
             <strong>{s.pct.toFixed(1)}%</strong>
@@ -712,6 +775,7 @@ function GastosVsVenta({ g, lunes, diasContados }: { g: GastosVenta; lunes: stri
       )}
       {g.suben.length > 0 && (
         <div className="tend-card">
+          <CopiarTarjeta />
           <h4>Los que suben</h4>
           {g.suben.map((x) => (
             <div key={x.categoria} className="gv-sube-item">
@@ -729,6 +793,7 @@ function GastosVsVenta({ g, lunes, diasContados }: { g: GastosVenta; lunes: stri
       )}
       {g.cerradas.some((c) => c.gastos > 0) && (
         <div className="tend-card">
+          <CopiarTarjeta />
           <h4>Gastos vs. venta · semanas cerradas</h4>
           <table className="tend-tabla">
             <thead>
@@ -758,6 +823,7 @@ function GastosVsVenta({ g, lunes, diasContados }: { g: GastosVenta; lunes: stri
 function Extras({ a }: { a: AnalisisTendencias }) {
   return (
     <div className="tend-card">
+      <CopiarTarjeta />
       <h4>Propinas, cancelaciones y cortesías</h4>
       <table className="tend-tabla">
         <tbody>
@@ -780,6 +846,7 @@ function NominaVsVenta({ nv, lunes }: { nv: NominaVenta; lunes: string }) {
     <>
       {s && (
         <div className="tend-card">
+          <CopiarTarjeta />
           <h4>Nómina vs. venta · esta semana</h4>
           <div className="nomv-hero">
             <strong className={`sem-${semaforoNomina(s.pct)}`}>{s.pct.toFixed(1)}%</strong>
@@ -816,6 +883,7 @@ function NominaVsVenta({ nv, lunes }: { nv: NominaVenta; lunes: string }) {
       )}
       {nv.cerradas.length > 0 && (
         <div className="tend-card">
+          <CopiarTarjeta />
           <h4>Nómina · semanas cerradas</h4>
           {nv.cerradas.map((c) => (
             <div key={c.label} className={`tend-ranking sem-${semaforoNomina(c.pct)}`} title={`${c.label}: ${c.pct}%`}>
@@ -828,6 +896,7 @@ function NominaVsVenta({ nv, lunes }: { nv: NominaVenta; lunes: string }) {
       )}
       {nv.semanasPorDia > 0 && (
         <div className="tend-card">
+          <CopiarTarjeta />
           <h4>
             Por día · promedio de {nv.semanasPorDia} {nv.semanasPorDia === 1 ? "semana" : "semanas"}
           </h4>
@@ -865,6 +934,7 @@ function NominaVsVenta({ nv, lunes }: { nv: NominaVenta; lunes: string }) {
       )}
       {nv.sugerencias.length > 0 && (
         <div className="tend-card">
+          <CopiarTarjeta />
           <h4>Sugerencias para el horario</h4>
           {nv.sugerencias.map((x) => (
             <div key={x.dia + x.tipo} className={`nomv-sug ${x.tipo}`}>
@@ -885,6 +955,7 @@ function conNegritas(texto: string): ReactNode[] {
 function Efectivo({ a }: { a: AnalisisTendencias }) {
   return (
     <div className="tend-card">
+      <CopiarTarjeta />
       <h4>Efectivo real vs. esperado</h4>
       <table className="tend-tabla">
         <thead>
