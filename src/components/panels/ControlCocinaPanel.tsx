@@ -53,6 +53,7 @@ export function ControlCocinaPanel({
         emptyIcon={<ChefHat size={26} strokeWidth={1.3} />}
         emptyText="Aún no agregas insumos de cocina. Empieza por proveedor, como Fracksa u otros."
         insumos={insumosCocina}
+        catalogoCompleto={insumos}
         proveedores={proveedores}
         onSaveInsumo={onSaveInsumo}
         onRemoveInsumo={onRemoveInsumo}

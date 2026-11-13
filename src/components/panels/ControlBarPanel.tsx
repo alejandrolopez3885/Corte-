@@ -53,6 +53,7 @@ export function ControlBarPanel({
         emptyIcon={<Martini size={26} strokeWidth={1.3} />}
         emptyText="Aún no agregas insumos de bar. Empieza con tus cervezas y refrescos."
         insumos={insumosBar}
+        catalogoCompleto={insumos}
         proveedores={proveedores}
         onSaveInsumo={onSaveInsumo}
         onRemoveInsumo={onRemoveInsumo}

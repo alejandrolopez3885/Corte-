@@ -23,11 +23,17 @@ export function BuscadorInventario({
   sueltos,
   onQuitarSuelto,
   grupos,
+  catalogo,
+  onAgregarProducto,
+  prueba,
 }: {
   // Con grupos, lo contado se ve por proveedor: barra de avance y "X de Y",
   // el del último producto contado hasta arriba; al tocar uno se abren sus
   // productos y se cierra al tocar fuera.
   grupos?: { key: string; nombre: string; items: InsumoEntry[] }[];
+  catalogo?: InsumoEntry[];
+  onAgregarProducto?: (nombre: string) => void;
+  prueba?: boolean;
   // "Sin ningún orden": la lista de lo que se lleva contado (el más nuevo
   // arriba), para corregir tocando un producto o quitarlo, y los renglones
   // que no se reconocen (de un borrador viejo escrito a mano).
@@ -51,6 +57,7 @@ export function BuscadorInventario({
   const campo = useRef<HTMLInputElement>(null);
   const avisoTimer = useRef<number | undefined>(undefined);
   const sugerencias = sugerirInsumos(texto, productos);
+  const fueraDelDia = sugerirInsumos(texto, catalogo || [], catalogo?.length).filter((i) => !productos.some((p) => p.id === i.id));
   const unidad = unidadConteo;
 
   function guardar(i: InsumoEntry, cantidad: number, accion: AccionConteo) {
@@ -144,11 +151,9 @@ export function BuscadorInventario({
         )}
       </label>
       {texto.trim() && (
-        <div className="ib-lista" role="listbox" aria-label="Productos encontrados">
-          {sugerencias.length === 0 ? (
-            <p className="ib-nada">No hay productos de este día con ese nombre.</p>
-          ) : (
-            sugerencias.map((i) => {
+        <div className="ib-lista">
+          {sugerencias.length === 0 ? <p className="ib-nada">No hay productos de este día con ese nombre.</p> : (
+            <div role="listbox" aria-label="Productos encontrados">{sugerencias.map((i) => {
               const c = contado(i);
               return (
                 <button
@@ -177,8 +182,13 @@ export function BuscadorInventario({
                   )}
                 </button>
               );
-            })
+            })}</div>
           )}
+          {fueraDelDia.length > 0 && <div className="ib-nada">
+            <b>En el catálogo, fuera de este conteo:</b>
+            {fueraDelDia.map((i) => <p key={i.id}><b>{i.nombre}</b> · {i.altaRotacion ? "Alta rotación: se cuenta en Conteo diario" : "No se cuenta en este inventario"} · {i.area === "bar" ? "Bar" : i.area === "cocina" ? "Cocina" : "General"}</p>)}
+          </div>}
+          {prueba ? sugerencias.length === 0 && <p className="ib-nada">En el conteo de prueba no se guardan productos.</p> : onAgregarProducto && <div className="ib-nada"><button type="button" className="ca-boton secundario" onClick={() => onAgregarProducto(texto.trim())}>＋ Agregar «{texto.trim()}» al catálogo</button></div>}
         </div>
       )}
       {aviso && (

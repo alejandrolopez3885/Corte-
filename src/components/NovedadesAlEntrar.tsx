@@ -206,6 +206,18 @@ function Visual({ tipo }: { tipo: VisualNovedad }) {
       </>
     );
   }
+  if (tipo === "productoNuevo") {
+    return (
+      <>
+        <span className="nv-etiqueta">Nuevo producto</span>
+        <div className="nv-lista">
+          <div><span>Nombre y área</span><small>Nuevo producto</small></div>
+          <div><span>Unidad y proveedor</span><small>Se guarda en el catálogo</small></div>
+          <div><span>Dónde se cuenta</span><small>Inventario o conteo diario</small></div>
+        </div>
+      </>
+    );
+  }
   if (tipo === "conteoBar") {
     return (
       <>

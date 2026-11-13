@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Sheet, Field, SumInput, Toggle } from "../ui";
-import { pidePorOtraUnidad, pluralizarUnidad, sumFromText, uid } from "../../lib/dataModel";
+import { pidePorOtraUnidad, pluralizarUnidad, sumFromText, todayIso, uid } from "../../lib/dataModel";
 import type { InsumoArea, InsumoEntry, ProveedorCatalogEntry } from "../../lib/types";
 
 const NUEVO_PROVEEDOR = "__nuevo__";
@@ -60,6 +60,7 @@ export function InsumoModal({
         precio: sumFromText(precioText) || undefined,
         proveedorId: finalProveedorId,
         altaRotacion,
+        conteoDiarioDesde: altaRotacion && !editing?.altaRotacion ? todayIso() : editing?.conteoDiarioDesde,
         presentacion: esPieza ? presentacion.trim() || undefined : undefined,
         unidadPedido: unidadPedido.trim() || undefined,
         equivalenciaPedido: necesitaEquivalencia ? sumFromText(equivalenciaText) || undefined : undefined,

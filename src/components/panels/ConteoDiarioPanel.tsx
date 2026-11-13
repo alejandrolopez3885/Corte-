@@ -12,6 +12,7 @@ import {
   leerConteoTexto,
   normalizarNombre,
   pluralizarUnidad,
+  plantillaConProductos,
   type LineaConteoTexto,
 } from "../../lib/dataModel";
 import { DAYS, DAY_SHORT } from "../../lib/types";
@@ -131,7 +132,7 @@ export function ConteoDiarioPanel({
           key={fecha}
           fecha={fecha}
           guardado={textos[fecha]}
-          plantilla={plantilla}
+          plantilla={plantillaConProductos(plantilla, insumos, fecha)}
           insumos={insumos}
           proveedores={proveedores}
           onGuardar={onGuardar}

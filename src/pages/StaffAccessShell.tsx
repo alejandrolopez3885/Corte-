@@ -2,7 +2,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { BookOpen, ChefHat, ClipboardList, Clock, Coins, Home, LogOut, Martini, MessageCircle, Package, QrCode, ShoppingCart, Wallet, Wrench } from "lucide-react";
 import { formatAssignedDate, insumoAreaForPuesto, plantillaConteo, mostRecentWeekIndex, puedeEditarHorarios } from "../lib/dataModel";
 import { HORARIO_AREAS_FIJAS, PERMISOS_DISPONIBLES } from "../lib/types";
-import type { AppData, ConteoTextoArea, HorarioSemana, MantenimientoEntry, PermisoStaff, ReglasArea, Profile, StaffAssignment } from "../lib/types";
+import type { AppData, ConteoTextoArea, HorarioSemana, InsumoEntry, MantenimientoEntry, PermisoStaff, ProveedorCatalogEntry, ReglasArea, Profile, StaffAssignment } from "../lib/types";
 import type { SaveState } from "../lib/useAppData";
 import { HorariosPanel } from "../components/panels/HorariosPanel";
 import { ConteoDiarioPanel } from "../components/panels/ConteoDiarioPanel";
@@ -59,6 +59,7 @@ export default function StaffAccessShell({
   onSaveConteoTexto,
   onSavePedidoDiario,
   onSaveInventarioNotas,
+  onSaveInsumo,
   onSavePedidoInventario,
   onAsignarApodo,
   onGuardarPedidosCargados,
@@ -79,6 +80,7 @@ export default function StaffAccessShell({
   onSaveConteoTexto: (area: ConteoTextoArea, fecha: string, texto: string) => void;
   onSavePedidoDiario: (area: ConteoTextoArea, fecha: string, pedido: Record<string, number>) => void;
   onSaveInventarioNotas: (fecha: string, texto: string) => void;
+  onSaveInsumo: (entry: InsumoEntry, proveedor?: ProveedorCatalogEntry, incluirJueves?: boolean) => void;
   onSavePedidoInventario: (fecha: string, pedido: Record<string, number>) => void;
   onAsignarApodo: (insumoId: string, apodo: string) => void;
   onGuardarPedidosCargados: (lunes: string, porProveedor: Record<string, Record<string, number>>) => void;
@@ -362,6 +364,9 @@ export default function StaffAccessShell({
           backLabel="Inicio"
           insumos={data.insumos}
           proveedores={data.proveedores}
+          onSaveInsumo={onSaveInsumo}
+          saveState={saveState}
+          onReintentar={onReintentarGuardar}
           months={data.months}
           monthKeys={monthKeys}
           initialMonthKey={mostRecentMonthKey as string}

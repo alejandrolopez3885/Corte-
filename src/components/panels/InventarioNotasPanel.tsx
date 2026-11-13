@@ -12,6 +12,7 @@ import { InventarioAsistente } from "../modals/InventarioAsistente";
 import { AvancePorProveedor, avanceTotal } from "../BuscadorInventario";
 import type { InsumoEntry, MonthData, ProveedorCatalogEntry } from "../../lib/types";
 import { TituloPagina } from "../BarraTitulo";
+import type { SaveState } from "../../lib/useAppData";
 
 // "Limón · Cocina · Frutas y Verduras · kg" — para distinguir productos que
 // se llaman igual.
@@ -52,6 +53,9 @@ export function InventarioNotasPanel({
   juevesSaltados,
   onSaltarJueves,
   onUnirInsumos,
+  onSaveInsumo,
+  saveState,
+  onReintentar,
 }: {
   onBack?: () => void;
   backLabel: string;
@@ -75,6 +79,9 @@ export function InventarioNotasPanel({
   onSaltarJueves?: (fecha: string, saltado: boolean) => void;
   // Solo el dueño: unir productos repetidos del catálogo.
   onUnirInsumos?: (quedaId: string, otrosIds: string[]) => void;
+  onSaveInsumo: (entry: InsumoEntry, proveedor?: ProveedorCatalogEntry, incluirJueves?: boolean) => void;
+  saveState: SaveState;
+  onReintentar: () => void;
 }) {
   const [vista, setVista] = useState<Vista>({ t: "inicio" });
   const [pidiendoSaltar, setPidiendoSaltar] = useState(false);
@@ -176,6 +183,9 @@ export function InventarioNotasPanel({
           onGuardarPedido={onGuardarPedido}
           onAsignarApodo={onAsignarApodo}
           onUnirInsumos={onUnirInsumos}
+          onSaveInsumo={onSaveInsumo}
+          saveState={saveState}
+          onReintentar={onReintentar}
           cerrado={m === "jueves" && notas[addDaysIso(f, 3)] !== undefined && !esDueno}
         />
       </>
@@ -298,6 +308,10 @@ export function InventarioNotasPanel({
           modoInicial={modoSugerido}
           insumos={insumos}
           proveedores={proveedores}
+          onSaveInsumo={onSaveInsumo}
+          saveState={saveState}
+          onReintentar={onReintentar}
+          prueba={prueba}
           dias={prueba ? dias.map((d) => ({ ...d, motivo: "" })) : dias}
           onGuardar={(f, texto) => {
             if (!prueba) onGuardarNotas(f, texto);
@@ -368,6 +382,9 @@ function NotasForm({
   onGuardarPedido,
   onAsignarApodo,
   onUnirInsumos,
+  onSaveInsumo,
+  saveState,
+  onReintentar,
   cerrado,
 }: {
   fecha: string;
@@ -382,6 +399,9 @@ function NotasForm({
   onGuardarPedido: (fecha: string, pedido: Record<string, number>) => void;
   onAsignarApodo: (insumoId: string, apodo: string) => void;
   onUnirInsumos?: (quedaId: string, otrosIds: string[]) => void;
+  onSaveInsumo: (entry: InsumoEntry, proveedor?: ProveedorCatalogEntry, incluirJueves?: boolean) => void;
+  saveState: SaveState;
+  onReintentar: () => void;
 }) {
   const [texto, setTexto] = useState(guardado);
   // Editar abre el buscador y teclado con lo ya contado.
@@ -476,6 +496,9 @@ function NotasForm({
           retomarTexto={texto}
           insumos={insumos}
           proveedores={proveedores}
+          onSaveInsumo={onSaveInsumo}
+          saveState={saveState}
+          onReintentar={onReintentar}
           onGuardar={(_f, t) => guardarTexto(t)}
           onClose={() => setEditando(false)}
           renderPedido={(f, m, t) => (

@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Check, ChevronLeft, TriangleAlert } from "lucide-react";
 import { MarcoAsistente, Opcion } from "./asistente";
+import { InsumoAsistente } from "./InsumoAsistente";
 import { BuscadorInventario, type AccionConteo } from "../BuscadorInventario";
 import { formatLongDayDate, unidadConteo } from "../../lib/dataModel";
 import {
   faltantesPorContar, gruposDelModo, leerNotasInventario, normalizar, NOMBRE_AREA, type ModoInventario,
 } from "../../lib/inventarioNotas";
 import type { InsumoEntry, ProveedorCatalogEntry } from "../../lib/types";
+import type { SaveState } from "../../lib/useAppData";
 
 // Inventario paso a paso: ¿qué día?, ¿cómo vas a contar? (por proveedor o
 // sin orden), un paso por proveedor, lo que faltó, resumen y pedido. Al
@@ -63,6 +65,10 @@ export function InventarioAsistente({
   onClose,
   renderPedido,
   retomarTexto,
+  onSaveInsumo,
+  prueba = false,
+  saveState,
+  onReintentar,
 }: {
   dias: DiaInventario[];
   modoInicial: ModoInventario;
@@ -75,11 +81,16 @@ export function InventarioAsistente({
   // contado. Los renglones en 0 no se cargan (son los que faltaban): al
   // guardar se vuelven a preguntar en "Faltó contar esto".
   retomarTexto?: string;
+  onSaveInsumo?: (entry: InsumoEntry, proveedor?: ProveedorCatalogEntry, incluirJueves?: boolean) => void;
+  prueba?: boolean;
+  saveState?: SaveState;
+  onReintentar?: () => void;
 }) {
   const editando = retomarTexto !== undefined;
   const disponibleInicial = dias.find((d) => d.modo === modoInicial && !d.motivo) || dias.find((d) => !d.motivo);
   const modoArranque = disponibleInicial?.modo ?? modoInicial;
   const [borradorInicial] = useState<Borrador | null>(() => {
+    if (prueba) return null;
     const b = leerBorrador(dias.find((d) => d.modo === modoArranque)!.fecha);
     if (!editando) return b;
     if (b?.forma === "libre") return b;
@@ -101,6 +112,8 @@ export function InventarioAsistente({
   const [error, setError] = useState("");
   const [guardado, setGuardado] = useState<string | null>(null);
   const [retomado, setRetomado] = useState(!!borradorInicial && !editando);
+  const [nuevoProducto, setNuevoProducto] = useState<string | null>(null);
+  const [avisoProducto, setAvisoProducto] = useState("");
 
   const dia = dias.find((d) => d.modo === modo)!;
   const fecha = dia.fecha;
@@ -108,7 +121,7 @@ export function InventarioAsistente({
   // Al elegir el día se retoma su borrador, si hay.
   function elegirDia(m: ModoInventario) {
     setModo(m);
-    const b = leerBorrador(dias.find((d) => d.modo === m)!.fecha);
+    const b = prueba ? null : leerBorrador(dias.find((d) => d.modo === m)!.fecha);
     setRetomado(!!b);
     setForma(b?.forma ?? "proveedor");
     setValores(b?.valores ?? {});
@@ -117,14 +130,14 @@ export function InventarioAsistente({
     setError("");
   }
   useEffect(() => {
-    if (guardado !== null) return;
+    if (prueba || guardado !== null) return;
     const hay = Object.values(valores).some((v) => v !== "") || libre.trim() !== "";
     try {
       if (hay) localStorage.setItem(claveBorrador(fecha), JSON.stringify({ forma, valores, libre } satisfies Borrador));
     } catch {
       // Sin espacio o modo privado: se sigue sin borrador.
     }
-  }, [fecha, forma, valores, libre, guardado]);
+  }, [fecha, forma, valores, libre, guardado, prueba]);
 
   const grupos = useMemo<Grupo[]>(() => gruposDelModo(insumos, proveedores, modo), [insumos, proveedores, modo]);
 
@@ -202,7 +215,7 @@ export function InventarioAsistente({
       return [...lineas, renglon(fmtCantidad(total), i)].join("\n");
     });
   }
-  const buscador = <BuscadorInventario productos={productosDelDia} contado={contadoDe} detalle={detalleProducto} onGuardar={guardarDesdeBuscador} />;
+  const buscador = <BuscadorInventario productos={productosDelDia} catalogo={insumos} onAgregarProducto={onSaveInsumo ? setNuevoProducto : undefined} prueba={prueba} contado={contadoDe} detalle={detalleProducto} onGuardar={guardarDesdeBuscador} />;
   // Sin orden: lo contado sale de las notas (el renglón más nuevo arriba).
   const contadosLibre = useMemo(() => {
     const vistos = new Set<string>();
@@ -242,7 +255,7 @@ export function InventarioAsistente({
       if (!textoFinal.trim()) return setError("Cuenta al menos un producto.");
       onGuardar(fecha, textoFinal, modo);
       try {
-        localStorage.removeItem(claveBorrador(fecha));
+        if (!prueba) localStorage.removeItem(claveBorrador(fecha));
       } catch {
         // nada que limpiar
       }
@@ -365,6 +378,7 @@ export function InventarioAsistente({
       {paso.t === "prov" && (
         <>
           {buscador}
+          {avisoProducto && <p className="ca-ayuda" role="status">{saveState === "saving" ? "Guardando producto…" : saveState === "error" ? "No se pudo guardar el producto." : avisoProducto}{saveState === "error" && onReintentar && <button type="button" className="link-btn" onClick={onReintentar}>Reintentar</button>}</p>}
           <h2 className="ca-pregunta">{paso.g.nombre}</h2>
           <p className="ca-ayuda">
             {paso.g.items.length} productos · {contadosDe(paso.g)} contados
@@ -412,6 +426,9 @@ export function InventarioAsistente({
           </p>
           <BuscadorInventario
             productos={productosDelDia}
+            catalogo={insumos}
+            onAgregarProducto={onSaveInsumo ? setNuevoProducto : undefined}
+            prueba={prueba}
             contado={contadoDe}
             detalle={detalleProducto}
             onGuardar={guardarDesdeBuscador}
@@ -421,6 +438,7 @@ export function InventarioAsistente({
             onQuitarSuelto={(linea) => quitarLinea((l) => l.trim() === linea)}
             grupos={grupos}
           />
+          {avisoProducto && <p className="ca-ayuda" role="status">{saveState === "saving" ? "Guardando producto…" : saveState === "error" ? "No se pudo guardar el producto." : avisoProducto}{saveState === "error" && onReintentar && <button type="button" className="link-btn" onClick={onReintentar}>Reintentar</button>}</p>}
           {error && <p className="inv-error" role="alert">{error}</p>}
         </>
       )}
@@ -516,6 +534,13 @@ export function InventarioAsistente({
           {renderPedido(fecha, modo, guardado)}
         </>
       )}
+      {nuevoProducto !== null && onSaveInsumo && !prueba && <InsumoAsistente nombreInicial={nuevoProducto} insumos={insumos} proveedores={proveedores}
+        inventarioJueves={modo === "jueves"} onClose={() => setNuevoProducto(null)} onSave={(entry, proveedor, incluirJueves) => {
+          onSaveInsumo(entry, proveedor, incluirJueves);
+          const cuenta = !entry.altaRotacion && (modo !== "jueves" || incluirJueves || proveedores.some((p) => p.id === entry.proveedorId && p.incluyeJueves));
+          setAvisoProducto(entry.altaRotacion ? `${entry.nombre} se guardó en el catálogo y se contará en Conteo diario.` : cuenta ? `${entry.nombre} se guardó en el catálogo. Búscalo para contarlo.` : `${entry.nombre} se guardó en el catálogo, pero no se cuenta este jueves.`);
+          setNuevoProducto(null);
+        }} />}
     </MarcoAsistente>
   );
 }

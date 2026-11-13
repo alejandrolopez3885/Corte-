@@ -353,6 +353,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           onSaveConteoTexto={guardarConteoTexto}
           onSavePedidoDiario={guardarPedidoDiario}
           onSaveInventarioNotas={guardarInventarioNotas}
+          onSaveInsumo={upsertInsumo}
           onSavePedidoInventario={guardarPedidoInventario}
           onAsignarApodo={asignarApodoInsumo}
           onGuardarPedidosCargados={guardarPedidosCargados}
@@ -672,10 +673,14 @@ export default function CortesApp({ profile }: { profile: Profile }) {
   // guardar el insumo sea una sola escritura atómica (si fueran dos
   // llamadas separadas, la segunda partiría de un `data` desactualizado y
   // borraría el proveedor que acababa de crear la primera).
-  function upsertInsumo(entry: InsumoEntry, nuevoProveedor?: ProveedorCatalogEntry) {
+  function upsertInsumo(entry: InsumoEntry, nuevoProveedor?: ProveedorCatalogEntry, incluirJueves = false) {
     if (!data) return;
     const next = structuredClone(data);
-    if (nuevoProveedor) next.proveedores.push(nuevoProveedor);
+    if (nuevoProveedor) next.proveedores.push({ ...nuevoProveedor, ...(incluirJueves ? { incluyeJueves: true } : {}) });
+    else if (incluirJueves) {
+      const proveedor = next.proveedores.find((p) => p.id === entry.proveedorId);
+      if (proveedor) proveedor.incluyeJueves = true;
+    }
     const idx = next.insumos.findIndex((i) => i.id === entry.id);
     if (idx >= 0) next.insumos[idx] = entry;
     else next.insumos.push(entry);
@@ -2107,6 +2112,7 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           emptyIcon={<Boxes size={26} strokeWidth={1.3} />}
           emptyText="Aún no agregas insumos generales. Aquí van desechables, limpieza y lo que no sea de Bar ni Cocina."
           insumos={data.insumos.filter((i) => i.area === "general")}
+          catalogoCompleto={data.insumos}
           proveedores={data.proveedores}
           onSaveInsumo={upsertInsumo}
           onRemoveInsumo={removeInsumo}
@@ -2124,6 +2130,9 @@ export default function CortesApp({ profile }: { profile: Profile }) {
           backLabel="Negocio"
           insumos={data.insumos}
           proveedores={data.proveedores}
+          onSaveInsumo={upsertInsumo}
+          saveState={saveState}
+          onReintentar={() => persist(data)}
           months={data.months}
           monthKeys={monthKeys}
           initialMonthKey={desdeInicio?.mk ?? (mostRecentMonthKey as string)}

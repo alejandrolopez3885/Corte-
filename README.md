@@ -1142,7 +1142,13 @@ estando en Nómina te regresa al menú de Equipo):
   "Metroplex" (quién pide) y un renglón por producto con pedido mayor a 0
   ("Papas a la francesa 1 caja", "Papas crisscut 2 cajas" — la
   presentación va en plural cuando no es 1, salvo abreviaturas como kg o
-  pz). El botón no cambia, para poder copiar
+  pz). Los productos nuevos de alta rotación de Bar o Cocina se suman
+  automáticamente a la lista fija de su área desde la fecha de alta, sin
+  duplicar nombres ya presentes. Si después se marca un producto como
+  alta rotación, se incluye desde ese día; desmarcarlo lo retira de las
+  listas nuevas. Los conteos ya guardados conservan su texto original y
+  los productos históricos ya marcados no se agregan automáticamente.
+  El botón no cambia, para poder copiar
   las veces que sea; solo aparece abajo un aviso discreto "✓ Pedido
   copiado" que se quita solo a los 2 segundos. En cuanto se
   guarda, el texto queda bloqueado; para corregirlo
@@ -1151,7 +1157,14 @@ estando en Nómina te regresa al menú de Equipo):
   precio de referencia opcional y un proveedor opcional (el mismo
   catálogo de proveedores en ambas áreas, y se puede crear uno nuevo al
   vuelo desde el propio insumo), agrupados en la lista por proveedor, y
-  una marca de "alta rotación" para que aparezca en el Conteo diario. Opcional,
+  una marca de "alta rotación" para que aparezca en el Conteo diario.
+  Agregar un producto abre el mismo asistente paso a paso que se usa desde
+  Inventario: nombre, área, unidad de conteo, proveedor, presentación de
+  pedido, precio, alta rotación (solo Bar y Cocina) y resumen. Se puede
+  crear un proveedor ahí mismo; producto y proveedor se guardan juntos.
+  La edición conserva el formulario existente, apodos y pendientes.
+  El asistente evita nombres repetidos en la misma área y nombres que
+  ya son apodos, y evita crear proveedores que ya existen. Opcional,
   "Se pide por": la presentación en que se le pide al proveedor (caja,
   bolsa, kg, pz…). En los de Pieza, opcional "Se cuenta por": la
   presentación en que se cuenta (paquete, bolsa, millar, bidón, litro,
@@ -1222,7 +1235,19 @@ estando en Nómina te regresa al menú de Equipo):
   acentos, abreviaturas, apodos y errores de dedo ("tosino" → Tocino;
   `sugerirInsumos` en `lib/inventarioNotas.ts`); cada sugerencia muestra
   nombre, unidad en que se cuenta ("paquete · Lorsa") y proveedor, y si ya
-  está contado ("✓ 3 kg") o "Sin contar". Al elegir uno se abre un
+  está contado ("✓ 3 kg") o "Sin contar".
+  El buscador también muestra coincidencias del catálogo que no
+  corresponden al conteo (incluidos los de alta rotación), y permite
+  agregar un producto nuevo con el mismo
+  asistente del Catálogo. Al terminar se vuelve al buscador: si corresponde
+  a ese día, se puede buscar y contar; los de alta rotación van al Conteo
+  diario, no a Inventario. En el jueves, si el proveedor no está incluido,
+  se avisa que el producto no se contará y se puede decidir incluir al
+  proveedor desde ahora: esto incorpora todos sus productos habituales al
+  inventario y también al pedido de jueves. Sin proveedor se puede regresar
+  a elegirlo o guardar sin contarlo ese jueves. En la prueba del dueño no
+  se crean productos ni se leen, cambian o eliminan borradores reales.
+  Al elegir una sugerencia se abre un
   **teclado numérico en pantalla** (no el del celular) con la unidad del
   producto y "Guardar"; "No hay · 0" solo sale la primera vez que se elige
   del buscador un producto sin contar. Si ese día ya se contó, pregunta

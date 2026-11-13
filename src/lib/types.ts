@@ -455,6 +455,7 @@ export interface InsumoEntry {
   precio?: number;
   proveedorId?: string;
   altaRotacion?: boolean;
+  conteoDiarioDesde?: string;
   // Presentación en que se le pide al proveedor ("caja", "bolsa"...) — puede
   // ser distinta a la del conteo (las papas se cuentan en kg y se piden por
   // caja). Sin valor, se usa la presentación del conteo.

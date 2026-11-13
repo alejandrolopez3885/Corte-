@@ -3,6 +3,7 @@ import { Plus } from "lucide-react";
 import { Empty } from "../ui";
 import { money } from "../../lib/dataModel";
 import { InsumoModal } from "../modals/InsumoModal";
+import { InsumoAsistente } from "../modals/InsumoAsistente";
 import type { InsumoArea, InsumoEntry, ProveedorCatalogEntry } from "../../lib/types";
 import { TituloPagina } from "../BarraTitulo";
 
@@ -14,6 +15,7 @@ export function InsumosPanel({
   emptyIcon,
   emptyText,
   insumos,
+  catalogoCompleto = insumos,
   proveedores,
   onSaveInsumo,
   onRemoveInsumo,
@@ -25,6 +27,7 @@ export function InsumosPanel({
   emptyIcon: ReactNode;
   emptyText: string;
   insumos: InsumoEntry[];
+  catalogoCompleto?: InsumoEntry[];
   proveedores: ProveedorCatalogEntry[];
   onSaveInsumo: (entry: InsumoEntry, nuevoProveedor?: ProveedorCatalogEntry) => void;
   onRemoveInsumo: (id: string) => void;
@@ -83,7 +86,11 @@ export function InsumosPanel({
         ))
       )}
 
-      {modal && (
+      {modal && !modal.editing && (
+        <InsumoAsistente areaInicial={area} insumos={catalogoCompleto} proveedores={proveedores}
+          onClose={() => setModal(null)} onSave={(entry, proveedor) => { onSaveInsumo(entry, proveedor); setModal(null); }} />
+      )}
+      {modal?.editing && (
         <InsumoModal
           area={area}
           editing={modal.editing}

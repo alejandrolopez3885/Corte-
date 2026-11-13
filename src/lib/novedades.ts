@@ -19,7 +19,7 @@ import type { AppData, ConteoTextoArea, PermisoStaff, Profile } from "./types";
 // "general" = de toda la app: le sale a cualquiera que ya entraba antes.
 export type SeccionNovedad = "corte" | PermisoStaff | "general";
 
-export type VisualNovedad = "sumar" | "autocompletar" | "categoria" | "faltan" | "guardarCorte" | "inventarioPasos" | "recetarioArea" | "apertura" | "cierreTotal" | "efectivoEntregar" | "conteoBar" | "pedidosPegar" | "preguntas" | "perfil" | "datosPago" | "logo" | "barraTitulo" | "ranking" | "encuesta" | "puntos" | "mantenimiento" | "mantenimientoPendiente";
+export type VisualNovedad = "sumar" | "autocompletar" | "categoria" | "faltan" | "guardarCorte" | "inventarioPasos" | "productoNuevo" | "recetarioArea" | "apertura" | "cierreTotal" | "efectivoEntregar" | "conteoBar" | "pedidosPegar" | "preguntas" | "perfil" | "datosPago" | "logo" | "barraTitulo" | "ranking" | "encuesta" | "puntos" | "mantenimiento" | "mantenimientoPendiente";
 
 export interface Novedad {
   id: string;
@@ -40,6 +40,22 @@ export interface Novedad {
 }
 
 export const NOVEDADES: Novedad[] = [
+  {
+    id: "inventario-agregar-productos",
+    fecha: "2026-11-13T03:37:00Z",
+    seccion: "inventario",
+    titulo: "Agrega productos al contar",
+    texto: "Si no encuentras un producto, puedes **agregarlo paso a paso** al catálogo desde el inventario.",
+    visual: "productoNuevo",
+  },
+  {
+    id: "conteo-diario-productos-nuevos",
+    fecha: "2026-11-13T03:37:00Z",
+    seccion: "conteo_diario",
+    titulo: "Productos nuevos en el conteo",
+    texto: "Los productos nuevos de **alta rotación** se agregan al conteo diario de su área.",
+    visual: "productoNuevo",
+  },
   {
     id: "corte-diario-paso-a-paso",
     fecha: "2026-11-11T22:19:00Z",

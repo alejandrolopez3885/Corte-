@@ -1210,6 +1210,18 @@ export function plantillaConteo(area: ConteoTextoArea): string {
   return area === "cocina" ? PLANTILLA_CONTEO_COCINA : PLANTILLA_CONTEO_BAR;
 }
 
+export function plantillaConProductos(plantilla: string, insumos: InsumoEntry[], fecha: string): string {
+  const nombres = new Set(leerConteoTexto(plantilla).map((l) => normalizarNombre(l.nombre)));
+  const adicionales = insumos.filter((i) => i.altaRotacion && i.conteoDiarioDesde && i.conteoDiarioDesde <= fecha)
+    .filter((i) => {
+      const nombre = normalizarNombre(i.nombre);
+      if (nombres.has(nombre)) return false;
+      nombres.add(nombre);
+      return true;
+    }).map((i) => `${i.nombre} (${unidadConteo(i)}): `);
+  return [plantilla, ...adicionales].filter(Boolean).join("\n");
+}
+
 export interface LineaConteoTexto {
   nombre: string; // "Pollo"
   presentacion?: string; // "kg" — lo que va entre paréntesis
